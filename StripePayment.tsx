@@ -1,4 +1,3 @@
-$content = @'
 'use client'
 import { useState } from 'react'
 import { X } from 'lucide-react'
@@ -114,6 +113,3 @@ export function StripePayment({ isOpen, onClose, onSuccess: _onSuccess }: Stripe
     </div>
   )
 }
-'@
-
-Set-Content -Path "src/components/StripePayment.tsx" -Value $content
