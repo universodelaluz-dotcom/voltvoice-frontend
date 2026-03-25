@@ -53,17 +53,15 @@ export function SynthesisStudio() {
     }
     fetchVoices()
       try {
-        const response = await fetch('https://voltvoice-backend.onrender.com/api/synthesis/voices', {
-          headers: {
-            'x-user-id': userId
-          }
-        })
-        const data = await response.json()
-        if (data.voices) {
-          setVoices(data.voices)
-          setSelectedVoice(data.voices[0]?.id || '')
-        }
-      } catch (err) {
+        // Voces de ElevenLabs Flash/Turbo (Plan Free)
+        const elevenLabsVoices = [
+          { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', category: 'premade' },
+          { id: 'AZnzlk1uvptSRtMUZeKw', name: 'Domi', category: 'premade' },
+          { id: 'EL1QtFI7ePme4xLqrPzT', name: 'Elli', category: 'premade' },
+          { id: 'MF3mGyEYCl7XYWbV7PLe', name: 'Gigi', category: 'premade' },
+        ]
+        setVoices(elevenLabsVoices)
+        setSelectedVoice(elevenLabsVoices[0]?.id || '')
         setError('No se pudieron cargar las voces disponibles')
         console.error(err)
       }
