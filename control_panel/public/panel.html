@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoltVoice - Lector de Chat TikTok Live</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Hide scrollbar globally */
+    *::-webkit-scrollbar {
+      display: none;
+    }
+
+    *::-webkit-scrollbar-track {
+      display: none;
+    }
+
+    *::-webkit-scrollbar-thumb {
+      display: none;
+    }
+
+    * {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    body.dark-mode .container {
+      background: #1e1e2e;
+      color: #e0e0e0;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 1.5em;
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .header p {
+      font-size: 0.8em;
+      opacity: 0.9;
+      margin: 0;
+    }
+
+    .header-left {
+      flex: 1;
+    }
+
+    .header-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.2em;
+      transition: background 0.3s;
+    }
+
+    .header-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 15px;
+      padding: 15px;
+      height: calc(100vh - 100px);
+    }
+
+    @media (max-width: 768px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+    }
+
+    .section h2 {
+      font-size: 1em;
+      color: #333;
+      margin: 0 0 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    body.dark-mode .section h2 {
+      color: #e0e0e0;
+    }
+
+    .section h2::before {
+      content: "";
+      width: 3px;
+      height: 1em;
+      background: #667eea;
+      border-radius: 2px;
+    }
+
+    input[type="text"] {
+      padding: 10px 12px;
+      font-size: 0.9em;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      transition: all 0.3s;
+      background: white;
+      color: #333;
+    }
+
+    body.dark-mode input[type="text"] {
+      background: #2a2a3e;
+      border-color: #444;
+      color: #e0e0e0;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 15px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px 12px;
+      font-size: 0.85em;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-danger {
+      background: #ef5350;
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #e53935;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(239, 83, 80, 0.3);
+    }
+
+    .btn-danger:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .status-card {
+      background: #f5f5f5;
+      padding: 12px 15px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.3s ease;
+      font-size: 0.9em;
+    }
+
+    body.dark-mode .status-card {
+      background: #2a2a3e;
+    }
+
+    .status-indicator {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ef5350;
+      animation: pulse 2s infinite;
+    }
+
+    .status-indicator.connected {
+      background: #4caf50;
+    }
+
+    @keyframes pulse {
+      0%,
+      100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .status-text {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .status-text strong {
+      color: #333;
+    }
+
+    .status-text small {
+      color: #999;
+      font-size: 0.9em;
+    }
+
+    body.dark-mode .status-text strong {
+      color: #e0e0e0;
+    }
+
+    body.dark-mode .status-text small {
+      color: #a0a0a0;
+    }
+
+    #nickToggleContainer {
+      transition: background 0.3s ease;
+    }
+
+    body.dark-mode #nickToggleContainer {
+      background: #1a1a2a;
+    }
+
+    body.dark-mode #nickToggleContainer label {
+      color: #000 !important;
+    }
+
+    .speed-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      height: 8px;
+      border-radius: 5px;
+      background: linear-gradient(to right, #667eea, #764ba2);
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      border: 3px solid #667eea;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      border: 3px solid #667eea;
+    }
+
+    .speed-value {
+      font-size: 1.3em;
+      font-weight: 600;
+      color: #667eea;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    .speed-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85em;
+      color: #999;
+      margin-top: 8px;
+    }
+
+    .comments-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .comments-list {
+      flex: 1;
+      overflow-y: auto;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 8px;
+      background: #fafafa;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: background 0.3s ease, border-color 0.3s ease;
+      min-height: 0;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .comments-list::-webkit-scrollbar {
+      display: none;
+    }
+
+    body.dark-mode .comments-list {
+      background: #2a2a3e;
+      border-color: #444;
+    }
+
+    .comment-item {
+      background: white;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border-left: 3px solid #667eea;
+      animation: slideIn 0.3s ease-out;
+      transition: background 0.3s ease;
+      font-size: 0.85em;
+    }
+
+    body.dark-mode .comment-item {
+      background: #000;
+      color: #00FF00;
+    }
+
+    body.dark-mode .comment-item strong {
+      color: #FFFFFF;
+      text-shadow: none;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .comment-item.new {
+      background: #e3f2fd;
+      border-left-color: #2196f3;
+    }
+
+    .comment-text {
+      font-size: 0.95em;
+      color: #333;
+      word-break: break-word;
+    }
+
+    body.dark-mode .comment-text {
+      color: #00FF00 !important;
+    }
+
+    .comments-empty {
+      color: #999;
+      text-align: center;
+      padding: 30px 15px;
+      font-style: italic;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      max-width: 400px;
+    }
+
+    .modal-content h3 {
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .modal-content p {
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .error {
+      background: #ffebee;
+      color: #c62828;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .error.show {
+      display: block;
+      animation: slideIn 0.3s ease-out;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <h1>🎙️ VoltVoice</h1>
+        <p>Lector de Chat para TikTok Live</p>
+      </div>
+      <button class="header-btn" onclick="toggleDarkMode()">🌙</button>
+    </div>
+
+    <div class="content">
+      <!-- Sección de conexión -->
+      <div class="section">
+        <h2>Conexión</h2>
+        <select id="platformSelect" onchange="changePlatform()" style="padding: 10px 12px; border-radius: 8px; border: 2px solid #e0e0e0; font-size: 0.9em; background: white;">
+          <option value="tiktok">TikTok Live</option>
+          <option value="youtube">YouTube Live</option>
+        </select>
+        <input
+          type="text"
+          id="username"
+          placeholder="Tu usuario de TikTok (sin @)"
+          maxlength="200"
+        />
+        <div class="button-group">
+          <button class="btn-primary" id="connectBtn" onclick="connect()">
+            Conectar
+          </button>
+          <button class="btn-danger" id="disconnectBtn" onclick="disconnect()" disabled>
+            Desconectar
+          </button>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-primary" id="skipBtn" onclick="skipQueue()" disabled style="flex: 1;">
+            ⏭️ Saltar Cola
+          </button>
+          <button class="btn-danger" id="muteBtn" onclick="toggleMute()" style="flex: 1;">
+            🔇 Mutear
+          </button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; background: #f0f4ff; border-radius: 8px;">
+          <h2 style="font-size: 0.9em; margin: 0;">🎤 Genera tu Mensaje</h2>
+          <input
+            type="text"
+            id="customMessage"
+            placeholder="Escribe un mensaje personalizado..."
+            maxlength="200"
+            style="padding: 10px 12px; font-size: 0.9em;"
+          />
+          <button class="btn-primary" onclick="sendCustomMessage()" style="width: 100%;">
+            📢 Enviar a Cola
+          </button>
+        </div>
+
+        <div id="nickToggleContainer" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: #f5f5f5; border-radius: 8px; font-size: 0.9em;">
+          <input type="checkbox" id="readUsernamesToggle" checked onchange="toggleReadUsernames()" style="width: 16px; height: 16px; cursor: pointer;">
+          <label for="readUsernamesToggle" style="cursor: pointer; margin: 0; flex: 1; color: #333;">Leer nicks completos</label>
+        </div>
+
+        <div class="status-card">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <div class="status-indicator" id="statusIndicator"></div>
+            <div class="status-text">
+              <strong id="statusLabel">Desconectado</strong>
+              <small id="statusChannel">Esperando conexión</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="status-card" id="apiKeyCard" style="display: none; background: #fff3cd; border-left: 4px solid #ffc107;">
+          <div style="flex: 1;">
+            <strong style="color: #856404;">🔑 API Key</strong>
+            <div id="apiKeyInfo" style="font-size: 0.85em; color: #856404; margin-top: 4px;">
+              Usando clave <strong id="currentKeyNum">-</strong>/<strong id="totalKeys">-</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="error" id="errorMsg"></div>
+
+        <!-- Sección de voz -->
+        <div class="speed-section">
+          <h2>Tipo de Voz</h2>
+          <select id="voiceSelect" onchange="changeVoice()" style="padding: 10px; border-radius: 8px; border: 2px solid #e0e0e0; font-size: 0.95em;">
+            <option value="">Voz por defecto</option>
+          </select>
+        </div>
+
+        <!-- Sección de velocidad -->
+        <div class="speed-section">
+          <h2>Velocidad de Voz</h2>
+          <div class="speed-control">
+            <span style="color: #999; font-size: 0.9em">🐢</span>
+            <input
+              type="range"
+              id="speedSlider"
+              min="80"
+              max="300"
+              value="150"
+              step="10"
+              onchange="changeSpeed()"
+            />
+            <span style="color: #999; font-size: 0.9em">🐇</span>
+            <div class="speed-value" id="speedValue">150</div>
+          </div>
+          <div class="speed-labels">
+            <span>Lenta</span>
+            <span>Normal</span>
+            <span>Rápida</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección de comentarios -->
+      <div class="section">
+        <h2>Comentarios en Vivo</h2>
+        <div class="comments-list" id="commentsList">
+          <div class="comments-empty">Esperando comentarios...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="loadingModal">
+    <div class="modal-content">
+      <h3>Conectando...</h3>
+      <p>Aguarda mientras nos conectamos a tu canal de TikTok Live.</p>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:3000";
+
+    function changePlatform() {
+      const platform = document.getElementById("platformSelect").value;
+      const input = document.getElementById("username");
+
+      if (platform === "youtube") {
+        input.placeholder = "URL del stream o ID del canal (youtube.com/live/...)";
+      } else {
+        input.placeholder = "Tu usuario de TikTok (sin @)";
+      }
+      input.value = "";
+    }
+
+    // Modo oscuro
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+      const isDark = document.body.classList.contains("dark-mode");
+      localStorage.setItem("voltvoice-dark-mode", isDark ? "true" : "false");
+    }
+
+    // Cargar preferencia de modo oscuro
+    window.addEventListener("DOMContentLoaded", () => {
+      const isDark = localStorage.getItem("voltvoice-dark-mode") === "true";
+      if (isDark) {
+        document.body.classList.add("dark-mode");
+      }
+    });
+
+    async function connect() {
+      const platform = document.getElementById("platformSelect").value;
+      const username = document.getElementById("username").value.trim();
+
+      if (!username) {
+        const msg = platform === "youtube" ? "Por favor ingresa la URL del stream" : "Por favor ingresa tu usuario de TikTok";
+        showError(msg);
+        return;
+      }
+
+      document.getElementById("loadingModal").classList.add("active");
+      document.getElementById("errorMsg").classList.remove("show");
+
+      try {
+        const res = await fetch(`${API_BASE}/connect`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, platform }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Error al conectar");
+        }
+
+        const data = await res.json();
+        // Si es YouTube, mostrar info de key
+        if (platform === "youtube") {
+          updateStatus(true, username, platform, data.keyNumber || 1, data.totalKeys || 4);
+        } else {
+          updateStatus(true, username, platform);
+        }
+        document.getElementById("connectBtn").disabled = true;
+        document.getElementById("disconnectBtn").disabled = false;
+        document.getElementById("skipBtn").disabled = false;
+        document.getElementById("username").disabled = true;
+        document.getElementById("commentsList").innerHTML =
+          '<div class="comments-empty">Leyendo comentarios en vivo...</div>';
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        setTimeout(() => {
+          const modal = document.getElementById("loadingModal");
+          modal.classList.remove("active");
+          modal.style.display = "none";
+        }, 100);
+      }
+    }
+
+    async function disconnect() {
+      try {
+        await fetch(`${API_BASE}/disconnect`, { method: "POST" });
+        updateStatus(false, null);
+        document.getElementById("connectBtn").disabled = false;
+        document.getElementById("disconnectBtn").disabled = true;
+        document.getElementById("skipBtn").disabled = true;
+        document.getElementById("username").disabled = false;
+        document.getElementById("commentsList").innerHTML =
+          '<div class="comments-empty">Esperando comentarios...</div>';
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    async function skipQueue() {
+      try {
+        const res = await fetch(`${API_BASE}/skip`, { method: "POST" });
+        const data = await res.json();
+        console.log("Cola vaciada:", data);
+        showError("⏭️ Cola vaciada - saltando al siguiente comentario");
+      } catch (err) {
+        showError("Error al saltar: " + err.message);
+      }
+    }
+
+    async function toggleMute() {
+      try {
+        const res = await fetch(`${API_BASE}/mute`, { method: "POST" });
+        const data = await res.json();
+        const btn = document.getElementById("muteBtn");
+        if (data.muted) {
+          btn.textContent = "🔊 Desmutear";
+          btn.style.background = "#e53935";
+        } else {
+          btn.textContent = "🔇 Mutear";
+          btn.style.background = "";
+        }
+      } catch (err) {
+        showError("Error al mutear: " + err.message);
+      }
+    }
+
+    async function changeVoice() {
+      const voice = document.getElementById("voiceSelect").value;
+      try {
+        await fetch(`${API_BASE}/voice`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ voice }),
+        });
+      } catch (err) {
+        console.error("Error al cambiar voz:", err);
+      }
+    }
+
+    async function loadVoices() {
+      try {
+        const res = await fetch(`${API_BASE}/voices`);
+        const data = await res.json();
+        const select = document.getElementById("voiceSelect");
+
+        if (data.voices && data.voices.length > 0) {
+          data.voices.forEach(voice => {
+            const option = document.createElement("option");
+            option.value = voice.name;
+            option.textContent = `${voice.name} (${voice.culture})`;
+            select.appendChild(option);
+          });
+        }
+      } catch (err) {
+        console.error("Error al cargar voces:", err);
+      }
+    }
+
+    async function changeSpeed() {
+      const speed = parseInt(document.getElementById("speedSlider").value);
+      document.getElementById("speedValue").textContent = speed;
+
+      try {
+        await fetch(`${API_BASE}/speed`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ speed }),
+        });
+      } catch (err) {
+        console.error("Error al cambiar velocidad:", err);
+      }
+    }
+
+    async function toggleReadUsernames() {
+      const readUsernames = document.getElementById("readUsernamesToggle").checked;
+      try {
+        await fetch(`${API_BASE}/read-usernames`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ readUsernames }),
+        });
+      } catch (err) {
+        console.error("Error al cambiar configuración:", err);
+      }
+    }
+
+    async function sendCustomMessage() {
+      const message = document.getElementById("customMessage").value.trim();
+      const username = document.getElementById("username").value.trim();
+
+      if (!message) {
+        showError("Por favor escribe un mensaje");
+        return;
+      }
+
+      if (!username) {
+        showError("Por favor ingresa un usuario");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/custom-message`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: message, username }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Error al enviar mensaje");
+        }
+
+        showError("✅ Mensaje agregado a la cola");
+        document.getElementById("customMessage").value = "";
+      } catch (err) {
+        showError("Error: " + err.message);
+      }
+    }
+
+    // Cargar voces al iniciar
+    loadVoices();
+
+    function updateStatus(connected, channel, platform = null, keyNum = null, totalKeys = null) {
+      const indicator = document.getElementById("statusIndicator");
+      const label = document.getElementById("statusLabel");
+      const channelText = document.getElementById("statusChannel");
+      const apiKeyCard = document.getElementById("apiKeyCard");
+
+      if (connected) {
+        indicator.classList.add("connected");
+        label.textContent = "En Vivo 🔴";
+        channelText.textContent = `Canal: @${channel}`;
+
+        // Mostrar card de API key solo si es YouTube
+        if (platform === "youtube" && keyNum !== null && totalKeys !== null) {
+          apiKeyCard.style.display = "block";
+          document.getElementById("currentKeyNum").textContent = keyNum;
+          document.getElementById("totalKeys").textContent = totalKeys;
+        } else {
+          apiKeyCard.style.display = "none";
+        }
+      } else {
+        indicator.classList.remove("connected");
+        label.textContent = "Desconectado";
+        channelText.textContent = "Esperando conexión";
+        apiKeyCard.style.display = "none";
+      }
+    }
+
+    function showError(msg) {
+      const errorEl = document.getElementById("errorMsg");
+      errorEl.textContent = msg;
+      errorEl.classList.add("show");
+      setTimeout(() => errorEl.classList.remove("show"), 5000);
+    }
+
+    function addComment(text) {
+      const list = document.getElementById("commentsList");
+      const empty = list.querySelector(".comments-empty");
+      if (empty) empty.remove();
+
+      const item = document.createElement("div");
+      item.className = "comment-item new";
+
+      // Agregar emoji según tipo de comentario
+      let emoji = "💬"; // Por defecto, chat
+      if (text.includes("envió")) {
+        emoji = "🎁"; // Regalo
+      }
+
+      // Censurar palabras fuertes
+      const cleanText = censorBadWords(text);
+
+      // Separar username del mensaje
+      const colonIndex = cleanText.indexOf(":");
+      let displayText = cleanText;
+      if (colonIndex > 0) {
+        const username = cleanText.substring(0, colonIndex);
+        const message = cleanText.substring(colonIndex + 1).trim();
+        displayText = `<strong>${username}</strong>: ${message}`;
+      }
+
+      // Usar innerHTML con el username en negrita
+      const textDiv = document.createElement("div");
+      textDiv.className = "comment-text";
+      textDiv.innerHTML = `${emoji} ${displayText}`;
+
+      item.appendChild(textDiv);
+      list.insertBefore(item, list.firstChild);
+
+      // Limitar a 50 comentarios
+      while (list.children.length > 50) {
+        list.removeChild(list.lastChild);
+      }
+
+      // Remover animación después de 2 segundos
+      setTimeout(() => item.classList.remove("new"), 2000);
+    }
+
+    // Lista de palabras fuertes a censurar
+    const badWords = [
+      "mierda", "puta", "pendejo", "cabrón", "jodido", "culo", "coño",
+      "carajo", "puto", "puta", "bastardo", "maldito", "hijo de", "culero",
+      "mamada", "verga", "chingada", "chingado", "culada", "maricon",
+      "marica", "pájaro", "boludo", "chamaco", "pelotudo"
+    ];
+
+    function censorBadWords(text) {
+      let result = text;
+      badWords.forEach(word => {
+        const regex = new RegExp(`\\b${word}\\b`, "gi");
+        result = result.replace(regex, "*".repeat(word.length));
+      });
+      return result;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Polling del status cada 2 segundos
+    setInterval(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/status`);
+        const data = await res.json();
+        if (data.connected && !document.getElementById("connectBtn").disabled) {
+          // Ya estamos conectados
+          updateStatus(true, data.channel, data.platform, data.keyNumber, data.totalKeys);
+          document.getElementById("connectBtn").disabled = true;
+          document.getElementById("disconnectBtn").disabled = false;
+          document.getElementById("username").disabled = true;
+        }
+      } catch (err) {
+        console.error("Error al verificar status:", err);
+      }
+    }, 2000);
+
+    // Server-Sent Events para comentarios en tiempo real
+    const eventSource = new EventSource(`${API_BASE}/events`);
+    eventSource.onmessage = (event) => {
+      try {
+        const comment = JSON.parse(event.data);
+        addComment(comment.text);
+      } catch (err) {
+        console.error("Error procesando comentario:", err);
+      }
+    };
+    eventSource.onerror = () => {
+      console.error("Conexión SSE cerrada");
+      eventSource.close();
+    };
+  </script>
+</body>
+</html>
