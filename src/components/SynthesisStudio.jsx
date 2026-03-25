@@ -35,21 +35,25 @@ export function SynthesisStudio() {
   const [newChatMessage, setNewChatMessage] = useState('')
   const [currentChatUser, setCurrentChatUser] = useState('viewer123')
 
-  // Cargar voces disponibles de ElevenLabs
+  // Cargar voces disponibles de Inworld AI + Google TTS + Voces locales
   useEffect(() => {
     const allVoices = [
-      { id: "es-ES", name: "Voz en español - Alto rendimiento", category: "google", engine: "google" },
-      { id: "es-MX", name: "Voz mexicana - Alto rendimiento", category: "google", engine: "google" },
-      { id: "CwhRBWXzGAHq8TQ4Fs17", name: "Roger - Casual (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
-      { id: "EXAVITQu4vr4xnSDxMaL", name: "Sarah - Profesional (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
-      { id: "JBFqnCBsd6RMkjVDRZzb", name: "George - Narrador (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
-      { id: "cgSgspJ2msm6clMCkdW9", name: "Jessica - Juvenil (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
-      { id: "cjVigY5qzO86Huf0OWal", name: "Eric - Confiable (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
-      { id: "XrExE9yKIg1WjnnlVkGX", name: "Matilda - Profesional (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
-      { id: "nPczCjzI2devNBz1zQrb", name: "Brian - Voz profunda (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
-      { id: "hpp4J3VqNfWAUOO0d1Us", name: "Bella - Cálida (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
-      { id: "onwK4e9ZLuTAKqWW03F9", name: "Daniel - Locutor (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
-      { id: "en-US", name: "Voz en inglés - Alto rendimiento", category: "google", engine: "google" },
+      // === GOOGLE TTS (Gratis, Alto rendimiento) ===
+      { id: "es-ES", name: "🔊 Español - Google TTS", category: "google", engine: "google" },
+      { id: "es-MX", name: "🔊 Mexicano - Google TTS", category: "google", engine: "google" },
+      { id: "en-US", name: "🔊 English - Google TTS", category: "google", engine: "google" },
+
+      // === INWORLD AI (Voces predefinidas) ===
+      { id: "default-spanish", name: "🎙️ Spanish Default - Inworld AI", category: "inworld", engine: "inworld" },
+      { id: "default-english", name: "🎙️ English Default - Inworld AI", category: "inworld", engine: "inworld" },
+
+      // === INWORLD AI (Voces clonadas del usuario) ===
+      { id: "default-cfjnp8x4nt-owd7yg-1xsw__garret", name: "👤 Garret - Voz Clonada (Inworld AI)", category: "inworld-cloned", engine: "inworld" },
+      { id: "default-cfjnp8x4nt-owd7yg-1xsw__connor", name: "👤 Connor - Voz Clonada (Inworld AI)", category: "inworld-cloned", engine: "inworld" },
+
+      // === VOCES LOCALES DEL SISTEMA (Gratis, Sin latencia) ===
+      { id: "web-speech-es", name: "🖥️ Voz Sistema Local (PC) - Español", category: "system", engine: "webspeech" },
+      { id: "web-speech-en", name: "🖥️ System Voice (PC) - English", category: "system", engine: "webspeech" },
     ]
     setVoices(allVoices)
     setSelectedVoice(allVoices[0]?.id || "")
@@ -73,39 +77,79 @@ export function SynthesisStudio() {
 
     try {
       const selectedVoiceObj = voices.find(v => v.id === selectedVoice)
-      const isElevenLabs = selectedVoiceObj && selectedVoiceObj.engine === "elevenlabs"
+      const isInworld = selectedVoiceObj && selectedVoiceObj.engine === "inworld"
+      const isGoogle = selectedVoiceObj && selectedVoiceObj.engine === "google"
+      const isWebSpeech = selectedVoiceObj && selectedVoiceObj.engine === "webspeech"
 
-      let url, body
-      if (isElevenLabs) {
-        url = "/api/tts"
-        body = JSON.stringify({ text, voiceId: selectedVoice, modelId: "eleven_flash_v2_5" })
-      } else {
-        url = "https://voltvoice-backend.onrender.com/api/synthesis/synthesize"
-        body = JSON.stringify({ text, voiceId: selectedVoice })
-      }
+      if (isWebSpeech) {
+        // Usar Web Speech API (voces locales del sistema operativo)
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.rate = 1.0
+        utterance.pitch = 1.0
+        utterance.volume = 1.0
 
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": userId
-        },
-        body: body
-      })
+        // Seleccionar idioma según voiceId
+        if (selectedVoice === "web-speech-es") {
+          utterance.lang = "es-ES"
+        } else if (selectedVoice === "web-speech-en") {
+          utterance.lang = "en-US"
+        }
 
-      const data = await response.json()
+        // Usar primera voz disponible del sistema
+        const voices = window.speechSynthesis.getVoices()
+        if (voices.length > 0) {
+          utterance.voice = voices[0]
+        }
 
-      if (response.ok && (data.audio || data.success)) {
-        setAudioUrl(data.audio || data.audioUrl)
-        const estTokens = Math.ceil(text.length / 100)
-        setTokensUsed(data.tokensUsed || estTokens)
-        setTokens(prev => data.remainingTokens || prev - estTokens)
-        setTotalTokensUsed(prev => prev + (data.tokensUsed || estTokens))
-        setSynthesisCount(prev => prev + 1)
+        // Feedback visual
         setSuccess(true)
         setTimeout(() => setSuccess(false), 3000)
+
+        // Reproducir
+        window.speechSynthesis.cancel() // Cancelar cualquier reproducción anterior
+        window.speechSynthesis.speak(utterance)
+
+        // Simular tokens (Web Speech es gratis)
+        setTokensUsed(0)
+        setSynthesisCount(prev => prev + 1)
       } else {
-        setError(data.error || "Error al sintetizar la voz")
+        // Usar Inworld AI o Google TTS (requiere servidor)
+        let url, body
+        if (isInworld) {
+          // Usar Inworld AI ($5 por millón de caracteres - 8x más barato que ElevenLabs)
+          url = "/api/inworld-tts"
+          body = JSON.stringify({ text, voiceId: selectedVoice })
+        } else if (isGoogle) {
+          // Usar Google TTS (gratis, alto rendimiento)
+          url = "https://voltvoice-backend.onrender.com/api/synthesis/synthesize"
+          body = JSON.stringify({ text, voiceId: selectedVoice })
+        } else {
+          throw new Error("Engine no soportado")
+        }
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": userId
+          },
+          body: body
+        })
+
+        const data = await response.json()
+
+        if (response.ok && (data.audio || data.success)) {
+          setAudioUrl(data.audio || data.audioUrl)
+          const estTokens = Math.ceil(text.length / 100)
+          setTokensUsed(data.tokensUsed || estTokens)
+          setTokens(prev => data.remainingTokens || prev - estTokens)
+          setTotalTokensUsed(prev => prev + (data.tokensUsed || estTokens))
+          setSynthesisCount(prev => prev + 1)
+          setSuccess(true)
+          setTimeout(() => setSuccess(false), 3000)
+        } else {
+          setError(data.error || "Error al sintetizar la voz")
+        }
       }
     } catch (err) {
       setError("Error de conexión. Verifica tu conexión a internet.")
