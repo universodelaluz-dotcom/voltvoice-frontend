@@ -37,7 +37,7 @@ export function SynthesisStudio() {
   useEffect(() => {
     const fetchVoices = async () => {
       try {
-        const response = await fetch('https://voltvoice-backend-production.up.railway.app/api/synthesis/voices', {
+        const response = await fetch('https://voltvoice-backend.onrender.com/api/synthesis/voices', {
           headers: {
             'x-user-id': userId
           }
@@ -72,7 +72,7 @@ export function SynthesisStudio() {
     setAudioUrl(null)
 
     try {
-      const response = await fetch('https://voltvoice-backend-production.up.railway.app/api/synthesis/synthesize', {
+      const response = await fetch('https://voltvoice-backend.onrender.com/api/synthesis/synthesize', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
