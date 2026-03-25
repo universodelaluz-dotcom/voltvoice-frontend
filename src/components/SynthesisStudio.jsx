@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react'
+import VoiceCloningPanel from './VoiceCloningPanel'
+import TikTokLivePanel from './TikTokLivePanel'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock } from 'lucide-react'
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
 export function SynthesisStudio() {
   // User Config
   const [userId, setUserId] = useState('1')
   const [streamChannel, setStreamChannel] = useState('mi_canal')
   const [isStreamActive, setIsStreamActive] = useState(false)
-  const [isTikTokMode, setIsTikTokMode] = useState(false)
-  const [tiktokConnecting, setTikTokConnecting] = useState(false)
-  const [tiktokError, setTikTokError] = useState(null)
 
   // Voices
   const [voices, setVoices] = useState([])
@@ -38,26 +35,24 @@ export function SynthesisStudio() {
   const [newChatMessage, setNewChatMessage] = useState('')
   const [currentChatUser, setCurrentChatUser] = useState('viewer123')
 
-  // Cargar voces disponibles
+  // Cargar voces disponibles de ElevenLabs
   useEffect(() => {
-    const fetchVoices = async () => {
-      try {
-        const response = await fetch(`${API_URL}/api/synthesis/voices`, {
-          headers: {
-            'x-user-id': userId
-          }
-        })
-        const data = await response.json()
-        if (data.voices) {
-          setVoices(data.voices)
-          setSelectedVoice(data.voices[0]?.id || '')
-        }
-      } catch (err) {
-        setError('No se pudieron cargar las voces disponibles')
-        console.error(err)
-      }
-    }
-    fetchVoices()
+    const allVoices = [
+      { id: "es-ES", name: "Voz en español - Alto rendimiento", category: "google", engine: "google" },
+      { id: "es-MX", name: "Voz mexicana - Alto rendimiento", category: "google", engine: "google" },
+      { id: "CwhRBWXzGAHq8TQ4Fs17", name: "Roger - Casual (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "EXAVITQu4vr4xnSDxMaL", name: "Sarah - Profesional (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "JBFqnCBsd6RMkjVDRZzb", name: "George - Narrador (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "cgSgspJ2msm6clMCkdW9", name: "Jessica - Juvenil (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "cjVigY5qzO86Huf0OWal", name: "Eric - Confiable (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "XrExE9yKIg1WjnnlVkGX", name: "Matilda - Profesional (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "nPczCjzI2devNBz1zQrb", name: "Brian - Voz profunda (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "hpp4J3VqNfWAUOO0d1Us", name: "Bella - Cálida (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "onwK4e9ZLuTAKqWW03F9", name: "Daniel - Locutor (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "en-US", name: "Voz en inglés - Alto rendimiento", category: "google", engine: "google" },
+    ]
+    setVoices(allVoices)
+    setSelectedVoice(allVoices[0]?.id || "")
   }, [userId])
 
   const handleSynthesize = async () => {
@@ -77,36 +72,43 @@ export function SynthesisStudio() {
     setAudioUrl(null)
 
     try {
-      const response = await fetch(`${API_URL}/api/synthesis/synthesize`, {
-        method: 'POST',
+      const selectedVoiceObj = voices.find(v => v.id === selectedVoice)
+      const isElevenLabs = selectedVoiceObj && selectedVoiceObj.engine === "elevenlabs"
+
+      let url, body
+      if (isElevenLabs) {
+        url = "/api/tts"
+        body = JSON.stringify({ text, voiceId: selectedVoice, modelId: "eleven_flash_v2_5" })
+      } else {
+        url = "https://voltvoice-backend.onrender.com/api/synthesis/synthesize"
+        body = JSON.stringify({ text, voiceId: selectedVoice })
+      }
+
+      const response = await fetch(url, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId
+          "Content-Type": "application/json",
+          "x-user-id": userId
         },
-        body: JSON.stringify({
-          text: text,
-          voiceId: selectedVoice,
-          modelId: 'eleven_flash_v2_5'
-        })
+        body: body
       })
 
       const data = await response.json()
 
-      if (response.ok && data.success && data.audio) {
-        setAudioUrl(data.audio)
-        // ElevenLabs proxy no retorna tokens, así que estimamos
-        const estimatedTokens = Math.ceil(text.length / 100)
-        setTokensUsed(estimatedTokens)
-        setTokens(prev => prev - estimatedTokens)
-        setTotalTokensUsed(prev => prev + estimatedTokens)
+      if (response.ok && (data.audio || data.success)) {
+        setAudioUrl(data.audio || data.audioUrl)
+        const estTokens = Math.ceil(text.length / 100)
+        setTokensUsed(data.tokensUsed || estTokens)
+        setTokens(prev => data.remainingTokens || prev - estTokens)
+        setTotalTokensUsed(prev => prev + (data.tokensUsed || estTokens))
         setSynthesisCount(prev => prev + 1)
         setSuccess(true)
         setTimeout(() => setSuccess(false), 3000)
       } else {
-        setError(data.error || data.detail?.message || 'Error al sintetizar la voz')
+        setError(data.error || "Error al sintetizar la voz")
       }
     } catch (err) {
-      setError('Error de conexión. Verifica tu conexión a internet.')
+      setError("Error de conexión. Verifica tu conexión a internet.")
       console.error(err)
     } finally {
       setLoading(false)
@@ -130,64 +132,6 @@ export function SynthesisStudio() {
 
   const handleSynthesizeFromChat = (message) => {
     setText(message)
-  }
-
-  const handleConnectTikTok = async () => {
-    if (!streamChannel.trim()) {
-      setTikTokError('Por favor ingresa un nombre de usuario de TikTok')
-      return
-    }
-
-    setTikTokConnecting(true)
-    setTikTokError(null)
-
-    try {
-      const response = await fetch(`${API_URL}/api/tiktok/connect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId
-        },
-        body: JSON.stringify({
-          username: streamChannel
-        })
-      })
-
-      const data = await response.json()
-
-      if (response.ok && data.success) {
-        setIsStreamActive(true)
-        setChatMessages([]) // Limpiar mensajes simulados
-        setTikTokError(null)
-      } else {
-        setTikTokError(data.error || 'Error conectando a TikTok')
-        setIsStreamActive(false)
-      }
-    } catch (err) {
-      setTikTokError('Error de conexión. Intenta de nuevo.')
-      console.error(err)
-      setIsStreamActive(false)
-    } finally {
-      setTikTokConnecting(false)
-    }
-  }
-
-  const handleDisconnectTikTok = async () => {
-    try {
-      await fetch(`${API_URL}/api/tiktok/disconnect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId
-        },
-        body: JSON.stringify({
-          username: streamChannel
-        })
-      })
-      setIsStreamActive(false)
-    } catch (err) {
-      console.error('Error desconectando:', err)
-    }
   }
 
   const charCount = text.length
@@ -224,6 +168,12 @@ export function SynthesisStudio() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Voice Cloning Section */}
+        <VoiceCloningPanel onCloneSuccess={() => window.location.reload()} />
+        {/* TikTok Live Section */}
+        <TikTokLivePanel />
+
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Column - Chat */}
           <div className="lg:col-span-1 space-y-4 flex flex-col h-full">
@@ -241,87 +191,26 @@ export function SynthesisStudio() {
                 />
               </div>
 
-              {/* Mode Selector */}
               <div className="space-y-2">
-                <label className="text-xs text-gray-400">Modo</label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setIsTikTokMode(false)}
-                    className={`flex-1 py-2 rounded text-xs font-bold transition-all ${
-                      !isTikTokMode
-                        ? 'bg-cyan-600 text-white'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    }`}
-                  >
-                    Simular
-                  </button>
-                  <button
-                    onClick={() => setIsTikTokMode(true)}
-                    className={`flex-1 py-2 rounded text-xs font-bold transition-all ${
-                      isTikTokMode
-                        ? 'bg-cyan-600 text-white'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    }`}
-                  >
-                    TikTok LIVE
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs text-gray-400">
-                  {isTikTokMode ? 'Usuario TikTok' : 'Canal/Nombre'}
-                </label>
+                <label className="text-xs text-gray-400">Canal/Streamer</label>
                 <input
                   type="text"
                   value={streamChannel}
                   onChange={(e) => setStreamChannel(e.target.value)}
-                  placeholder={isTikTokMode ? 'Sin @ (ejemplo: nombre_usuario)' : 'mi_canal'}
                   className="w-full bg-gray-800 border border-cyan-500/30 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
-              {isTikTokMode ? (
-                <button
-                  onClick={() => isStreamActive ? handleDisconnectTikTok() : handleConnectTikTok()}
-                  disabled={tiktokConnecting}
-                  className={`w-full py-2 rounded font-bold text-sm transition-all flex items-center justify-center gap-2 ${
-                    tiktokConnecting
-                      ? 'bg-gray-600 cursor-not-allowed'
-                      : isStreamActive
-                      ? 'bg-red-600 hover:bg-red-700'
-                      : 'bg-green-600 hover:bg-green-700'
-                  }`}
-                >
-                  {tiktokConnecting ? (
-                    <>
-                      <Loader className="w-4 h-4 animate-spin" />
-                      Conectando...
-                    </>
-                  ) : isStreamActive ? (
-                    'Desconectar TikTok'
-                  ) : (
-                    'Conectar TikTok LIVE'
-                  )}
-                </button>
-              ) : (
-                <button
-                  onClick={() => setIsStreamActive(!isStreamActive)}
-                  className={`w-full py-2 rounded font-bold text-sm transition-all ${
-                    isStreamActive
-                      ? 'bg-red-600 hover:bg-red-700'
-                      : 'bg-green-600 hover:bg-green-700'
-                  }`}
-                >
-                  {isStreamActive ? 'Detener Simulación' : 'Iniciar Simulación'}
-                </button>
-              )}
-
-              {tiktokError && (
-                <div className="p-2 bg-red-500/10 border border-red-500/30 rounded text-xs text-red-400">
-                  {tiktokError}
-                </div>
-              )}
+              <button
+                onClick={() => setIsStreamActive(!isStreamActive)}
+                className={`w-full py-2 rounded font-bold text-sm transition-all ${
+                  isStreamActive
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                {isStreamActive ? 'Detener Stream' : 'Iniciar Stream'}
+              </button>
             </div>
 
             {/* Chat Area */}

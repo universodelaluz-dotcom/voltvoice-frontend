@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 
+const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+
 const packages = [
   { tokens: 500, price: 4.99, priceId: 'price_1' },
   { tokens: 1000, price: 8.99, priceId: 'price_2', popular: true },
@@ -14,8 +16,7 @@ export function StripePayment({ isOpen, onClose, onSuccess }) {
   const handlePayment = async (pkg) => {
     setLoading(true)
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'https://voltvoice-backend.onrender.com'
-      const response = await fetch(`${apiUrl}/api/mercadopago/create-preference`, {
+      const response = await fetch(`${API_URL}/api/mercadopago/create-preference`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
