@@ -1,10 +1,21 @@
 import { useState } from 'react'
 import { StripePayment } from './components/StripePayment'
+import { SynthesisStudio } from './components/SynthesisStudio'
 import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield } from 'lucide-react'
 
 export function App() {
+  const [currentPage, setCurrentPage] = useState('landing') // 'landing' or 'studio'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [tokens, setTokens] = useState(100)
+
+  // Si estamos en la página del studio, mostrar solo eso
+  if (currentPage === 'studio') {
+    return (
+      <div>
+        <SynthesisStudio />
+      </div>
+    )
+  }
 
   const benefits = [
     {
@@ -117,10 +128,10 @@ export function App() {
             </h1>
           </div>
           <button
-            onClick={() => setIsPaymentOpen(true)}
+            onClick={() => setCurrentPage('studio')}
             className="px-6 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all"
           >
-            Comenzar Ahora
+            Studio
           </button>
         </div>
       </nav>
@@ -148,13 +159,16 @@ export function App() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <button
-              onClick={() => setIsPaymentOpen(true)}
+              onClick={() => setCurrentPage('studio')}
               className="px-8 py-4 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-lg text-white hover:shadow-xl hover:shadow-cyan-400/50 transition-all flex items-center justify-center gap-2"
             >
-              Comprar Tokens <ChevronRight className="w-5 h-5" />
+              Ir al Studio <ChevronRight className="w-5 h-5" />
             </button>
-            <button className="px-8 py-4 border-2 border-cyan-400/50 rounded-lg font-bold text-lg text-cyan-400 hover:bg-cyan-400/10 transition-all">
-              Ver Demo
+            <button
+              onClick={() => setIsPaymentOpen(true)}
+              className="px-8 py-4 border-2 border-cyan-400/50 rounded-lg font-bold text-lg text-cyan-400 hover:bg-cyan-400/10 transition-all"
+            >
+              Comprar Tokens
             </button>
           </div>
 
@@ -328,12 +342,20 @@ export function App() {
             <p className="text-xl text-gray-300 mb-8">
               Únete a miles de creadores que ya están usando VoltVoice
             </p>
-            <button
-              onClick={() => setIsPaymentOpen(true)}
-              className="px-8 py-4 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-lg text-white hover:shadow-xl hover:shadow-cyan-400/50 transition-all inline-flex items-center gap-2"
-            >
-              Comenzar Ahora Gratis <ChevronRight className="w-5 h-5" />
-            </button>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={() => setCurrentPage('studio')}
+                className="px-8 py-4 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-lg text-white hover:shadow-xl hover:shadow-cyan-400/50 transition-all inline-flex items-center gap-2"
+              >
+                Ir al Studio <ChevronRight className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setIsPaymentOpen(true)}
+                className="px-8 py-4 border-2 border-cyan-400 text-cyan-400 rounded-lg font-bold text-lg hover:bg-cyan-400/10 transition-all inline-flex items-center gap-2"
+              >
+                Ver Planes
+              </button>
+            </div>
           </div>
         </div>
       </section>
