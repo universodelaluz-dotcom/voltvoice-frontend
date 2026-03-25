@@ -1,183 +1,183 @@
 import { useState } from 'react'
-import { Mic2, Upload, AlertCircle, CheckCircle, Loader } from 'lucide-react'
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+import { Upload, Zap, AlertCircle, CheckCircle, Loader } from 'lucide-react'
 
 export default function VoiceCloningPanel({ onCloneSuccess }) {
   const [voiceName, setVoiceName] = useState('')
   const [audioFile, setAudioFile] = useState(null)
-  const [isCloning, setIsCloning] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState(null)
   const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(null)
-  const [userId, setUserId] = useState('1')
 
-  const handleFileSelect = (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files?.[0]
-    if (!file) return
-
-    // Validate file
-    if (!['audio/mpeg', 'audio/wav', 'audio/mp3'].includes(file.type)) {
-      setError('Solo se aceptan archivos MP3 o WAV')
-      return
+    if (file) {
+      if (!['audio/mpeg', 'audio/wav'].includes(file.type)) {
+        setError('Solo se aceptan archivos MP3 o WAV')
+        return
+      }
+      if (file.size > 10 * 1024 * 1024) { // 10MB max
+        setError('El archivo no debe exceder 10MB')
+        return
+      }
+      setAudioFile(file)
+      setError(null)
     }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setError('El archivo no puede ser mayor a 10MB')
-      return
-    }
-
-    setAudioFile(file)
-    setError(null)
   }
 
-  const handleCloneVoice = async () => {
+  const handleCloneVoice = async (e) => {
+    e.preventDefault()
+
     if (!voiceName.trim()) {
-      setError('Por favor ingresa un nombre para la voz')
+      setError('Ingresa un nombre para la voz')
       return
     }
 
     if (!audioFile) {
-      setError('Por favor selecciona un archivo de audio')
+      setError('Selecciona un archivo de audio')
       return
     }
 
-    setIsCloning(true)
+    setLoading(true)
+    setMessage(null)
     setError(null)
-    setSuccess(null)
 
     try {
-      // Convert file to base64
+      // Convertir archivo a base64
       const reader = new FileReader()
-      reader.onload = async (e) => {
-        const base64Audio = e.target.result?.toString().split(',')[1]
+      reader.onload = async (event) => {
+        const base64 = event.target.result.split(',')[1]
 
-        try {
-          const response = await fetch(`${API_URL}/api/clone-voice`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-user-id': userId
-            },
-            body: JSON.stringify({
-              voiceName: voiceName,
-              base64Audio: base64Audio
-            })
+        const response = await fetch('/api/clone-voice', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            voiceName: voiceName.trim(),
+            base64Audio: base64,
+            audioFormat: audioFile.type
           })
+        })
 
-          const data = await response.json()
+        const data = await response.json()
 
-          if (response.ok && data.success) {
-            setSuccess(`¡Voz clonada exitosamente! ID: ${data.voiceId}`)
-            setVoiceName('')
-            setAudioFile(null)
-            setTimeout(() => {
-              onCloneSuccess?.()
-            }, 2000)
-          } else {
-            setError(data.error || 'Error al clonar la voz')
+        if (response.ok) {
+          setMessage(`✅ Voz "${voiceName}" clonada exitosamente!`)
+          setVoiceName('')
+          setAudioFile(null)
+          if (onCloneSuccess) {
+            onCloneSuccess(data.voiceId, voiceName)
           }
-        } catch (err) {
-          setError('Error de conexión. Intenta de nuevo.')
-          console.error(err)
-        } finally {
-          setIsCloning(false)
+        } else {
+          setError(data.error || 'Error al clonar la voz')
         }
       }
       reader.readAsDataURL(audioFile)
     } catch (err) {
-      setError('Error procesando el archivo')
-      setIsCloning(false)
+      setError(`Error: ${err.message}`)
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div className="bg-gray-900/50 border border-cyan-500/20 rounded-lg p-6 mb-8">
+    <div className="bg-gray-900 border border-cyan-500/30 rounded-lg p-6 mb-6">
       <div className="flex items-center gap-3 mb-4">
-        <Mic2 className="w-6 h-6 text-cyan-400" />
-        <h2 className="text-xl font-bold text-cyan-400">Clonar Voz</h2>
+        <Zap className="w-6 h-6 text-cyan-400" />
+        <h2 className="text-xl font-bold text-white">Clonar Voz</h2>
       </div>
 
-      <div className="space-y-4">
-        {/* Voice Name Input */}
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-300">Nombre de la voz</label>
+      <div className="mb-4 p-3 bg-amber-900/20 border border-amber-500/30 rounded flex gap-2">
+        <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+        <div className="text-sm text-amber-200">
+          <p className="font-semibold">Plan Starter ($5/mes) requerido</p>
+          <p>Clona voces personalizadas con tu propia voz</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleCloneVoice} className="space-y-4">
+        {/* Nombre de la voz */}
+        <div>
+          <label className="block text-sm font-medium text-cyan-300 mb-2">
+            Nombre de la voz
+          </label>
           <input
             type="text"
             value={voiceName}
             onChange={(e) => setVoiceName(e.target.value)}
-            placeholder="Mi voz personalizada"
-            disabled={isCloning}
-            className="w-full bg-gray-800 border border-cyan-500/30 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 disabled:opacity-50"
+            placeholder="Ej: Mi voz, Voz profesional..."
+            className="w-full bg-gray-800 border border-cyan-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500"
+            disabled={loading}
           />
         </div>
 
-        {/* File Upload */}
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-300">Archivo de audio</label>
+        {/* File upload */}
+        <div>
+          <label className="block text-sm font-medium text-cyan-300 mb-2">
+            Archivo de audio (MP3 o WAV, máx 10MB)
+          </label>
           <div className="relative">
             <input
               type="file"
-              accept="audio/mpeg,audio/wav,.mp3,.wav"
-              onChange={handleFileSelect}
-              disabled={isCloning}
+              accept="audio/mpeg,audio/wav"
+              onChange={handleFileChange}
+              disabled={loading}
               className="hidden"
-              id="voice-upload"
+              id="audio-input"
             />
             <label
-              htmlFor="voice-upload"
-              className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-cyan-500/30 rounded cursor-pointer hover:border-cyan-500/60 transition-all disabled:opacity-50"
+              htmlFor="audio-input"
+              className="flex items-center justify-center gap-2 w-full bg-gray-800 border-2 border-dashed border-cyan-500/30 rounded-lg p-4 cursor-pointer hover:border-cyan-500 transition"
             >
               <Upload className="w-5 h-5 text-cyan-400" />
-              <div className="text-center">
-                <p className="text-sm font-semibold text-white">
-                  {audioFile ? audioFile.name : 'Arrastra o haz clic para seleccionar'}
-                </p>
-                <p className="text-xs text-gray-400">MP3 o WAV, máx 10MB</p>
-              </div>
+              <span className="text-gray-300">
+                {audioFile ? audioFile.name : 'Clic para seleccionar archivo'}
+              </span>
             </label>
           </div>
         </div>
 
-        {/* Requirements */}
-        <div className="bg-cyan-500/10 border border-cyan-500/30 rounded p-3 text-xs text-cyan-300">
-          <p className="font-semibold mb-2">Requisitos para mejor calidad:</p>
-          <ul className="space-y-1 list-disc list-inside">
-            <li>Duración: 30 segundos a 2 minutos</li>
-            <li>Audio claro sin ruido de fondo</li>
-            <li>Mínimo 44.1 kHz de calidad</li>
-            <li>Una sola persona hablando</li>
-          </ul>
+        {/* Requerimientos */}
+        <div className="text-xs text-gray-400 space-y-1">
+          <p>✓ Duración: 30 segundos - 2 minutos</p>
+          <p>✓ Claridad: Audio claro sin ruido de fondo</p>
+          <p>✓ Formato: MP3 o WAV a 44.1kHz o superior</p>
         </div>
 
-        {/* Alerts */}
-        {error && (
-          <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded text-sm text-red-400">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/30 rounded text-sm text-green-400">
-            <CheckCircle className="w-4 h-4 flex-shrink-0" />
-            {success}
-          </div>
-        )}
-
-        {/* Clone Button */}
+        {/* Submit button */}
         <button
-          onClick={handleCloneVoice}
-          disabled={isCloning || !voiceName.trim() || !audioFile}
-          className={`w-full py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2 ${
-            isCloning || !voiceName.trim() || !audioFile
-              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-              : 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-400 hover:to-purple-500'
-          }`}
+          type="submit"
+          disabled={loading || !voiceName || !audioFile}
+          className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
         >
-          {isCloning && <Loader className="w-5 h-5 animate-spin" />}
-          {isCloning ? 'Clonando voz...' : 'Clonar voz'}
+          {loading ? (
+            <>
+              <Loader className="w-5 h-5 animate-spin" />
+              Clonando voz...
+            </>
+          ) : (
+            <>
+              <Zap className="w-5 h-5" />
+              Clonar voz
+            </>
+          )}
         </button>
-      </div>
+
+        {/* Messages */}
+        {message && (
+          <div className="p-3 bg-green-900/20 border border-green-500/30 rounded flex gap-2">
+            <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+            <p className="text-green-200">{message}</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="p-3 bg-red-900/20 border border-red-500/30 rounded flex gap-2">
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <p className="text-red-200">{error}</p>
+          </div>
+        )}
+      </form>
     </div>
   )
 }
