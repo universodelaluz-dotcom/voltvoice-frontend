@@ -38,12 +38,16 @@ export function SynthesisStudio() {
     const allVoices = [
       { id: "es-ES", name: "Voz en español - Alto rendimiento", category: "google", engine: "google" },
       { id: "es-MX", name: "Voz mexicana - Alto rendimiento", category: "google", engine: "google" },
+      { id: "CwhRBWXzGAHq8TQ4Fs17", name: "Roger - Casual (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "EXAVITQu4vr4xnSDxMaL", name: "Sarah - Profesional (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "JBFqnCBsd6RMkjVDRZzb", name: "George - Narrador (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "cgSgspJ2msm6clMCkdW9", name: "Jessica - Juvenil (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "cjVigY5qzO86Huf0OWal", name: "Eric - Confiable (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "XrExE9yKIg1WjnnlVkGX", name: "Matilda - Profesional (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "nPczCjzI2devNBz1zQrb", name: "Brian - Voz profunda (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "hpp4J3VqNfWAUOO0d1Us", name: "Bella - Cálida (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "onwK4e9ZLuTAKqWW03F9", name: "Daniel - Locutor (ElevenLabs)", category: "elevenlabs", engine: "elevenlabs" },
       { id: "en-US", name: "Voz en inglés - Alto rendimiento", category: "google", engine: "google" },
-      { id: "en-GB", name: "Voz británica - Alto rendimiento", category: "google", engine: "google" },
-      { id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel - ElevenLabs", category: "elevenlabs", engine: "elevenlabs" },
-      { id: "AZnzlk1uvptSRtMUZeKw", name: "Domi - ElevenLabs", category: "elevenlabs", engine: "elevenlabs" },
-      { id: "EL1QtFI7ePme4xLqrPzT", name: "Elli - ElevenLabs", category: "elevenlabs", engine: "elevenlabs" },
-      { id: "MF3mGyEYCl7XYWbV7PLe", name: "Gigi - ElevenLabs", category: "elevenlabs", engine: "elevenlabs" },
     ]
     setVoices(allVoices)
     setSelectedVoice(allVoices[0]?.id || "")
