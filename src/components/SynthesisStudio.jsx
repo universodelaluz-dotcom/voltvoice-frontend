@@ -117,7 +117,7 @@ export function SynthesisStudio() {
         let url, body
         if (isInworld) {
           // Usar Inworld AI ($5 por millón de caracteres - 8x más barato que ElevenLabs)
-          url = "/api/inworld-tts"
+          url = "https://voltvoice-backend.onrender.com/api/inworld/tts"
           body = JSON.stringify({ text, voiceId: selectedVoice })
         } else if (isGoogle) {
           // Usar Google TTS (gratis, alto rendimiento)
