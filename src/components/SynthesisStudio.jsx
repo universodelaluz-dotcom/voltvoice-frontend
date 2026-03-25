@@ -52,21 +52,6 @@ export function SynthesisStudio() {
       }
     }
     fetchVoices()
-      try {
-        // Voces de ElevenLabs Flash/Turbo (Plan Free)
-        const elevenLabsVoices = [
-          { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', category: 'premade' },
-          { id: 'AZnzlk1uvptSRtMUZeKw', name: 'Domi', category: 'premade' },
-          { id: 'EL1QtFI7ePme4xLqrPzT', name: 'Elli', category: 'premade' },
-          { id: 'MF3mGyEYCl7XYWbV7PLe', name: 'Gigi', category: 'premade' },
-        ]
-        setVoices(elevenLabsVoices)
-        setSelectedVoice(elevenLabsVoices[0]?.id || '')
-        setError('No se pudieron cargar las voces disponibles')
-        console.error(err)
-      }
-    }
-    fetchVoices()
   }, [userId])
 
   const handleSynthesize = async () => {
