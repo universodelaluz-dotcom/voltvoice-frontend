@@ -33,9 +33,25 @@ export function SynthesisStudio() {
   const [newChatMessage, setNewChatMessage] = useState('')
   const [currentChatUser, setCurrentChatUser] = useState('viewer123')
 
-  // Cargar voces disponibles
+  // Cargar voces disponibles de ElevenLabs
   useEffect(() => {
     const fetchVoices = async () => {
+      try {
+        // Voces de ElevenLabs Flash/Turbo (Plan Free)
+        const elevenLabsVoices = [
+          { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel - English', category: 'premade' },
+          { id: 'AZnzlk1uvptSRtMUZeKw', name: 'Domi - English', category: 'premade' },
+          { id: 'EL1QtFI7ePme4xLqrPzT', name: 'Elli - English', category: 'premade' },
+          { id: 'MF3mGyEYCl7XYWbV7PLe', name: 'Gigi - English', category: 'premade' },
+        ]
+        setVoices(elevenLabsVoices)
+        setSelectedVoice(elevenLabsVoices[0]?.id || '')
+      } catch (err) {
+        setError('No se pudieron cargar las voces disponibles')
+        console.error(err)
+      }
+    }
+    fetchVoices()
       try {
         const response = await fetch('https://voltvoice-backend.onrender.com/api/synthesis/voices', {
           headers: {
