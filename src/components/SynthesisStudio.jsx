@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import VoiceCloningPanel from './VoiceCloningPanel'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock } from 'lucide-react'
 
 export function SynthesisStudio() {
@@ -166,6 +167,9 @@ export function SynthesisStudio() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Voice Cloning Section */}
+        <VoiceCloningPanel onCloneSuccess={() => window.location.reload()} />
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Column - Chat */}
           <div className="lg:col-span-1 space-y-4 flex flex-col h-full">
