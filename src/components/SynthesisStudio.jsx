@@ -35,23 +35,18 @@ export function SynthesisStudio() {
 
   // Cargar voces disponibles de ElevenLabs
   useEffect(() => {
-    const fetchVoices = async () => {
-      try {
-        // Voces de ElevenLabs Flash/Turbo (Plan Free)
-        const elevenLabsVoices = [
-          { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel - English', category: 'premade' },
-          { id: 'AZnzlk1uvptSRtMUZeKw', name: 'Domi - English', category: 'premade' },
-          { id: 'EL1QtFI7ePme4xLqrPzT', name: 'Elli - English', category: 'premade' },
-          { id: 'MF3mGyEYCl7XYWbV7PLe', name: 'Gigi - English', category: 'premade' },
-        ]
-        setVoices(elevenLabsVoices)
-        setSelectedVoice(elevenLabsVoices[0]?.id || '')
-      } catch (err) {
-        setError('No se pudieron cargar las voces disponibles')
-        console.error(err)
-      }
-    }
-    fetchVoices()
+    const allVoices = [
+      { id: "es-ES", name: "Voz en español - Alto rendimiento", category: "google", engine: "google" },
+      { id: "es-MX", name: "Voz mexicana - Alto rendimiento", category: "google", engine: "google" },
+      { id: "en-US", name: "Voz en inglés - Alto rendimiento", category: "google", engine: "google" },
+      { id: "en-GB", name: "Voz británica - Alto rendimiento", category: "google", engine: "google" },
+      { id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel - ElevenLabs", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "AZnzlk1uvptSRtMUZeKw", name: "Domi - ElevenLabs", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "EL1QtFI7ePme4xLqrPzT", name: "Elli - ElevenLabs", category: "elevenlabs", engine: "elevenlabs" },
+      { id: "MF3mGyEYCl7XYWbV7PLe", name: "Gigi - ElevenLabs", category: "elevenlabs", engine: "elevenlabs" },
+    ]
+    setVoices(allVoices)
+    setSelectedVoice(allVoices[0]?.id || "")
   }, [userId])
 
   const handleSynthesize = async () => {
@@ -71,33 +66,43 @@ export function SynthesisStudio() {
     setAudioUrl(null)
 
     try {
-      const response = await fetch('/api/tts', {
-        method: 'POST',
+      const selectedVoiceObj = voices.find(v => v.id === selectedVoice)
+      const isElevenLabs = selectedVoiceObj && selectedVoiceObj.engine === "elevenlabs"
+
+      let url, body
+      if (isElevenLabs) {
+        url = "/api/tts"
+        body = JSON.stringify({ text, voiceId: selectedVoice, modelId: "eleven_flash_v2_5" })
+      } else {
+        url = "https://voltvoice-backend.onrender.com/api/synthesis/synthesize"
+        body = JSON.stringify({ text, voiceId: selectedVoice })
+      }
+
+      const response = await fetch(url, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId
+          "Content-Type": "application/json",
+          "x-user-id": userId
         },
-        body: JSON.stringify({
-          text: text,
-          voiceId: selectedVoice
-        })
+        body: body
       })
 
       const data = await response.json()
 
-      if (response.ok && data.audio) {
-        setAudioUrl(data.audio)
-        setTokensUsed(data.tokensUsed)
-        setTokens(data.remainingTokens)
-        setTotalTokensUsed(prev => prev + data.tokensUsed)
+      if (response.ok && (data.audio || data.success)) {
+        setAudioUrl(data.audio || data.audioUrl)
+        const estTokens = Math.ceil(text.length / 100)
+        setTokensUsed(data.tokensUsed || estTokens)
+        setTokens(prev => data.remainingTokens || prev - estTokens)
+        setTotalTokensUsed(prev => prev + (data.tokensUsed || estTokens))
         setSynthesisCount(prev => prev + 1)
         setSuccess(true)
         setTimeout(() => setSuccess(false), 3000)
       } else {
-        setError(data.error || 'Error al sintetizar la voz')
+        setError(data.error || "Error al sintetizar la voz")
       }
     } catch (err) {
-      setError('Error de conexión. Verifica tu conexión a internet.')
+      setError("Error de conexión. Verifica tu conexión a internet.")
       console.error(err)
     } finally {
       setLoading(false)
