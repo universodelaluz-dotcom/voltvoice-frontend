@@ -72,7 +72,7 @@ export function SynthesisStudio() {
     setAudioUrl(null)
 
     try {
-      const response = await fetch('https://voltvoice-backend.onrender.com/api/synthesis/synthesize', {
+      const response = await fetch('/api/tts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
