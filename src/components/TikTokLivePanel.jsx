@@ -4,6 +4,15 @@ import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2 } from 'lucid
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
 export default function TikTokLivePanel() {
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
+
+  useEffect(() => {
+    const sync = () => setDarkMode(localStorage.getItem('voltvoice-theme') !== 'light')
+    sync()
+    const interval = setInterval(sync, 500)
+    return () => clearInterval(interval)
+  }, [])
+
   const [tiktokUser, setTiktokUser] = useState('')
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
@@ -231,10 +240,10 @@ export default function TikTokLivePanel() {
   }
 
   return (
-    <div className="bg-gray-900 border border-cyan-500/30 rounded-lg p-6 mb-6">
+    <div className={darkMode ? "bg-gray-900 border border-cyan-500/30 rounded-lg p-6 mb-6" : "bg-white border border-indigo-200 rounded-lg p-6 mb-6 shadow-sm"}>
       <div className="flex items-center gap-3 mb-4">
         <MessageCircle className="w-6 h-6 text-cyan-400" />
-        <h2 className="text-xl font-bold text-white">TikTok LIVE en Tiempo Real</h2>
+        <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>TikTok LIVE en Tiempo Real</h2>
         <span
           className={`ml-auto px-3 py-1 rounded-full text-xs font-semibold ${
             isConnected
@@ -254,7 +263,7 @@ export default function TikTokLivePanel() {
               value={tiktokUser}
               onChange={(e) => setTiktokUser(e.target.value)}
               placeholder="Usuario de TikTok (sin @)"
-              className="flex-1 bg-gray-800 border border-cyan-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500"
+              className={darkMode ? "flex-1 bg-gray-800 border border-cyan-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500" : "flex-1 bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
               disabled={isConnecting}
             />
             <button
@@ -308,7 +317,7 @@ export default function TikTokLivePanel() {
             </button>
           </div>
 
-          <div className="bg-gray-800/50 border border-cyan-500/20 rounded-lg p-4 h-64 overflow-y-auto space-y-2">
+          <div className={darkMode ? "bg-gray-800/50 border border-cyan-500/20 rounded-lg p-4 h-64 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-64 overflow-y-auto space-y-2"}>
             {messages.length === 0 ? (
               <div className="text-center text-gray-400 py-8">
                 <Loader className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
@@ -323,7 +332,7 @@ export default function TikTokLivePanel() {
                       <Volume2 className="w-3 h-3 text-green-400 animate-pulse" />
                     )}
                   </div>
-                  <p className="text-gray-300">{msg.text}</p>
+                  <p className={darkMode ? "text-gray-300" : "text-gray-700"}>{msg.text}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     {msg.status === 'received' && '⏳ Procesando...'}
                     {msg.status === 'playing' && '🔊 Reproduciendo'}
