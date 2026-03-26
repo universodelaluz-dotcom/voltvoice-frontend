@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import VoiceCloningPanel from './VoiceCloningPanel'
 import TikTokLivePanel from './TikTokLivePanel'
-import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock } from 'lucide-react'
+import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon } from 'lucide-react'
 
 export function SynthesisStudio() {
   // User Config
@@ -15,6 +15,13 @@ export function SynthesisStudio() {
     const interval = setInterval(sync, 500)
     return () => { window.removeEventListener('storage', sync); clearInterval(interval) }
   }, [])
+
+  const toggleTheme = () => {
+    const newMode = darkMode ? 'light' : 'dark'
+    localStorage.setItem('voltvoice-theme', newMode)
+    document.documentElement.classList.toggle('dark', newMode === 'dark')
+    setDarkMode(newMode === 'dark')
+  }
 
     const [userId, setUserId] = useState('1')
   const [streamChannel, setStreamChannel] = useState('mi_canal')
@@ -219,6 +226,13 @@ export function SynthesisStudio() {
               <Zap className="w-4 h-4 text-cyan-400" />
               <span className="text-sm font-semibold text-cyan-400">{tokens} tokens</span>
             </div>
+            <button
+              onClick={toggleTheme}
+              className={darkMode ? "p-2 rounded-lg bg-gray-800 border border-cyan-500/30 hover:bg-gray-700 transition-colors" : "p-2 rounded-lg bg-white border border-indigo-200 hover:bg-indigo-50 transition-colors shadow-sm"}
+              title={darkMode ? 'Modo claro' : 'Modo oscuro'}
+            >
+              {darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-indigo-600" />}
+            </button>
           </div>
         </div>
       </div>
