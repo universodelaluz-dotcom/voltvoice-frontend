@@ -5,19 +5,6 @@ import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Cloc
 
 export function SynthesisStudio() {
   // User Config
-    const [darkMode, setDarkMode] = useState(false)
-
-  useEffect(() => {
-    const theme = localStorage.getItem("voltvoice-theme")
-    setDarkMode(theme !== "light")
-    const handleStorageChange = () => {
-      const newTheme = localStorage.getItem("voltvoice-theme")
-      setDarkMode(newTheme !== "light")
-    }
-    window.addEventListener("storage", handleStorageChange)
-    return () => window.removeEventListener("storage", handleStorageChange)
-  }, [])
-
   const [userId, setUserId] = useState('1')
   const [streamChannel, setStreamChannel] = useState('mi_canal')
   const [isStreamActive, setIsStreamActive] = useState(false)
