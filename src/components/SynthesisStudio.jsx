@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import VoiceCloningPanel from './VoiceCloningPanel'
 import TikTokLivePanel from './TikTokLivePanel'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock } from 'lucide-react'
@@ -17,6 +17,7 @@ export function SynthesisStudio() {
   const [text, setText] = useState('Hola, este es VoltVoice. Tu plataforma para síntesis de voz profesional.')
   const [loading, setLoading] = useState(false)
   const [audioUrl, setAudioUrl] = useState(null)
+  const audioRef = useRef(null)
   const [tokensUsed, setTokensUsed] = useState(0)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
@@ -288,12 +289,12 @@ export function SynthesisStudio() {
               {loading ? (
                 <>
                   <Loader className="w-5 h-5 animate-spin" />
-                  Sintetizando...
+                  Probando...
                 </>
               ) : (
                 <>
                   <Mic2 className="w-5 h-5" />
-                  Sintetizar voz
+                  Probar voz
                 </>
               )}
             </button>
@@ -307,27 +308,21 @@ export function SynthesisStudio() {
 
           {/* Right Column - Stats & Audio */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Audio Player */}
-            <div className="space-y-2 bg-gray-900/50 border border-cyan-500/20 rounded-xl p-4 backdrop-blur-sm">
-              <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-wide flex items-center gap-2">
-                <Volume2 className="w-4 h-4" /> Reproducción
-              </h3>
-              <div className="bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/30 rounded-lg p-4 flex items-center justify-center min-h-40">
-                {audioUrl ? (
-                  <div className="w-full space-y-3">
-                    <audio src={audioUrl} controls className="w-full accent-cyan-500" autoPlay />
-                    <p className="text-xs text-gray-400 text-center">
-                      Tokens usados: <span className="text-cyan-400 font-bold">{tokensUsed}</span>
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-center text-gray-500">
-                    <Volume2 className="w-10 h-10 mx-auto mb-2 opacity-50 animate-pulse" />
-                    <p className="text-xs">Aquí aparecerá el audio</p>
-                  </div>
-                )}
+            {/* Audio Player - Simple Button */}
+            {audioUrl && (
+              <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/20 rounded-lg">
+                <audio ref={(el) => el && audioUrl && (audioRef.current = el)} src={audioUrl} className="hidden" />
+                <button
+                  onClick={() => audioRef.current && audioRef.current.play()}
+                  className="p-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full hover:shadow-lg hover:shadow-cyan-500/50 transition-all flex-shrink-0"
+                >
+                  <Volume2 className="w-5 h-5 text-white" />
+                </button>
+                <div className="text-xs text-gray-400">
+                  <span className="text-cyan-400 font-bold">{tokensUsed}</span> tokens usados
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Tokens Dashboard */}
             <div className="bg-gray-900/50 border border-cyan-500/20 rounded-xl p-5 backdrop-blur-sm">
