@@ -34,8 +34,10 @@ export function StripePayment({ isOpen, onClose }) {
   const paypalContainerRef = useRef(null)
   const paypalButtonsRef = useRef(null)
   const selectedPkgRef = useRef(selectedPackage)
+  const onCloseRef = useRef(onClose)
 
   useEffect(() => { selectedPkgRef.current = selectedPackage }, [selectedPackage])
+  useEffect(() => { onCloseRef.current = onClose }, [onClose])
 
   useEffect(() => {
     const sync = () => setDarkMode(localStorage.getItem('voltvoice-theme') !== 'light')
@@ -82,7 +84,7 @@ export function StripePayment({ isOpen, onClose }) {
           const result = await res.json()
           if (result.success) {
             setPaymentSuccess(true)
-            setTimeout(() => { setPaymentSuccess(false); onClose() }, 3000)
+            setTimeout(() => { setPaymentSuccess(false); onCloseRef.current() }, 3000)
           }
         },
         onError: (err) => {
@@ -105,7 +107,7 @@ export function StripePayment({ isOpen, onClose }) {
         paypalButtonsRef.current = null
       }
     }
-  }, [paypalClientId, isOpen, onClose])
+  }, [paypalClientId, isOpen])
 
   const handleMercadoPago = async () => {
     setLoading('mercadopago')
