@@ -12,6 +12,8 @@ export default function TikTokLivePanel() {
   const [stats, setStats] = useState({ count: 0, uptime: 0 })
   const wsRef = useRef(null)
   const statusIntervalRef = useRef(null)
+  const speakQueueRef = useRef([])
+  const isProcessingRef = useRef(false)
 
   // Conectar a WebSocket cuando el usuario se conecte a TikTok
   useEffect(() => {
@@ -51,7 +53,7 @@ export default function TikTokLivePanel() {
             }
           ])
 
-          synthesizeAndPlay(msg.text, msg.username)
+          queueMessage(msg.text, msg.username)
         } else if (data.type === 'status') {
           if (data.data) {
             setStats({
@@ -111,34 +113,68 @@ export default function TikTokLivePanel() {
     }
   }, [isConnected, tiktokUser])
 
-  const synthesizeAndPlay = async (text, username) => {
-    try {
-      const response = await fetch(`${API_URL}/api/tiktok/message`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: tiktokUser,
-          messageUsername: username,
-          messageText: text,
-          voiceId: 'es-ES'
+  // Cola de audio - procesa UN mensaje a la vez (igual que el local)
+  const queueMessage = (text, username) => {
+    speakQueueRef.current.push({ text, username })
+    console.log(`[TikTok] Agregado a cola (${speakQueueRef.current.length} pendientes)`)
+    processQueue()
+  }
+
+  const processQueue = async () => {
+    if (isProcessingRef.current) return
+    if (speakQueueRef.current.length === 0) return
+
+    isProcessingRef.current = true
+
+    while (speakQueueRef.current.length > 0) {
+      const { text, username } = speakQueueRef.current.shift()
+      const remaining = speakQueueRef.current.length
+      console.log(`[TikTok] REPRODUCIENDO: "${text.substring(0, 50)}" (pendientes: ${remaining})`)
+
+      try {
+        const response = await fetch(`${API_URL}/api/tiktok/message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: tiktokUser,
+            messageUsername: username,
+            messageText: text,
+            voiceId: 'es-ES'
+          })
         })
-      })
 
-      const data = await response.json()
+        const data = await response.json()
 
-      if (data.audio) {
-        const audio = new Audio(data.audio)
-        audio.play().catch((err) => console.error('[TikTok] Error reproduciendo:', err))
-
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.text === text ? { ...msg, status: 'playing' } : msg
+        if (data.audio) {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.text === text ? { ...msg, status: 'playing' } : msg
+            )
           )
-        )
+
+          // Esperar a que termine el audio antes del siguiente
+          await new Promise((resolve) => {
+            const audio = new Audio(data.audio)
+            audio.onended = () => {
+              console.log(`[TikTok] Audio terminado`)
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.text === text ? { ...msg, status: 'done' } : msg
+                )
+              )
+              resolve()
+            }
+            audio.onerror = () => resolve()
+            audio.play().catch(() => resolve())
+          })
+        }
+      } catch (err) {
+        console.error('[TikTok] Error sintetizando:', err)
+        await new Promise((r) => setTimeout(r, 500))
       }
-    } catch (err) {
-      console.error('[TikTok] Error sintetizando:', err)
     }
+
+    isProcessingRef.current = false
   }
 
   const handleConnect = async (e) => {
