@@ -40,7 +40,6 @@ export function SynthesisStudio() {
     const allVoices = [
       // === GOOGLE TTS (Rápido, económico) ===
       { id: "es-ES", name: "⚡ Español Rápido (Google)", category: "google", engine: "google" },
-      { id: "es-MX", name: "⚡ Mexicano Rápido (Google)", category: "google", engine: "google" },
       { id: "en-US", name: "⚡ English Rápido (Google)", category: "google", engine: "google" },
 
       // === INWORLD AI (Voces Premium - Naturales) ===
