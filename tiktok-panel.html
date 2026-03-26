@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoltVoice - TikTok Panel</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: 50px auto; }
+        input, button, select { padding: 10px; font-size: 16px; margin: 5px; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #messages { border: 1px solid #ccc; height: 300px; overflow-y: auto; padding: 10px; margin: 20px 0; }
+        .message { padding: 5px; border-bottom: 1px solid #eee; }
+        .status { padding: 10px; background: #f0f0f0; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🎤 VoltVoice - TikTok LIVE</h1>
+
+    <div>
+        <input type="text" id="username" placeholder="Usuario TikTok (sin @)" />
+        <button onclick="connect()">Conectar</button>
+        <select id="speed">
+            <option value="100">Lento (100)</option>
+            <option value="150" selected>Normal (150)</option>
+            <option value="200">Rápido (200)</option>
+        </select>
+    </div>
+
+    <div class="status">
+        Estado: <span id="status">Desconectado</span>
+    </div>
+
+    <div id="messages"></div>
+
+    <script>
+        const BACKEND = 'https://voltvoice-backend.onrender.com';
+        let ws = null;
+        let isConnected = false;
+
+        async function connect() {
+            const username = document.getElementById('username').value;
+            if (!username) {
+                alert('Ingresa usuario TikTok');
+                return;
+            }
+
+            try {
+                // Conectar a TikTok via backend
+                const res = await fetch(`${BACKEND}/api/tiktok/connect`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    isConnected = true;
+                    document.getElementById('status').textContent = `✅ Conectado a @${username}`;
+
+                    // Abrir WebSocket
+                    openWebSocket();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                alert('Error conectando: ' + err.message);
+            }
+        }
+
+        function openWebSocket() {
+            const wsUrl = BACKEND.replace('https://', 'wss://') + '/api/tiktok/ws';
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                console.log('WebSocket abierto');
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'chat') {
+                    const msg = `${data.user}: ${data.message}`;
+                    addMessage(msg);
+                    speakMessage(msg);
+                }
+            };
+
+            ws.onerror = (err) => {
+                console.error('WebSocket error:', err);
+                document.getElementById('status').textContent = '❌ Error WebSocket';
+            };
+        }
+
+        async function speakMessage(text) {
+            try {
+                const speed = parseInt(document.getElementById('speed').value);
+
+                const res = await fetch(`${BACKEND}/api/tts/say`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, rate: speed })
+                });
+
+                const data = await res.json();
+                if (data.success && data.audio) {
+                    // Reproducir audio
+                    const audio = new Audio(data.audio);
+                    audio.play().catch(err => {
+                        console.error('Error reproduciendo audio:', err);
+                    });
+                }
+            } catch (err) {
+                console.error('Error en TTS:', err);
+            }
+        }
+
+        function addMessage(msg) {
+            const messagesDiv = document.getElementById('messages');
+            const msgElement = document.createElement('div');
+            msgElement.className = 'message';
+            msgElement.textContent = msg;
+            messagesDiv.appendChild(msgElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    </script>
+</body>
+</html>
