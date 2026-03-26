@@ -20,6 +20,7 @@
     <div>
         <input type="text" id="username" placeholder="Usuario TikTok (sin @)" />
         <button onclick="connect()">Conectar</button>
+        <button onclick="enableAudio()">🔊 Habilitar Audio</button>
         <select id="speed">
             <option value="100">Lento (100)</option>
             <option value="150" selected>Normal (150)</option>
@@ -69,19 +70,29 @@
         }
 
         function openWebSocket() {
+            const username = document.getElementById('username').value;
             const wsUrl = BACKEND.replace('https://', 'wss://') + '/api/tiktok/ws';
             ws = new WebSocket(wsUrl);
 
             ws.onopen = () => {
-                console.log('WebSocket abierto');
+                console.log('WebSocket abierto, suscribiendo a', username);
+                // Suscribirse al stream
+                ws.send(JSON.stringify({
+                    type: 'subscribe',
+                    username: username
+                }));
             };
 
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-                if (data.type === 'chat') {
-                    const msg = `${data.user}: ${data.message}`;
+                console.log('Mensaje recibido:', data);
+
+                if (data.type === 'message' && data.data) {
+                    const msg = `${data.data.username}: ${data.data.text}`;
                     addMessage(msg);
                     speakMessage(msg);
+                } else if (data.type === 'subscribed') {
+                    console.log('✓ Suscrito a', data.username);
                 }
             };
 
@@ -121,6 +132,19 @@
             msgElement.textContent = msg;
             messagesDiv.appendChild(msgElement);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function enableAudio() {
+            // Play a silent audio to unlock autoplay policy
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.001);
+            alert('✅ Audio habilitado!');
         }
     </script>
 </body>
