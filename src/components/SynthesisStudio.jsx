@@ -38,22 +38,24 @@ export function SynthesisStudio() {
   // Cargar voces disponibles de Inworld AI + Google TTS + Voces locales
   useEffect(() => {
     const allVoices = [
-      // === GOOGLE TTS (Gratis, Alto rendimiento) ===
-      { id: "es-ES", name: "🔊 Español - Google TTS", category: "google", engine: "google" },
-      { id: "es-MX", name: "🔊 Mexicano - Google TTS", category: "google", engine: "google" },
-      { id: "en-US", name: "🔊 English - Google TTS", category: "google", engine: "google" },
+      // === GOOGLE TTS (Rápido, económico) ===
+      { id: "es-ES", name: "⚡ Español Rápido (Google)", category: "google", engine: "google" },
+      { id: "es-MX", name: "⚡ Mexicano Rápido (Google)", category: "google", engine: "google" },
+      { id: "en-US", name: "⚡ English Rápido (Google)", category: "google", engine: "google" },
 
-      // === INWORLD AI (Voces predefinidas) ===
-      { id: "default-spanish", name: "🎙️ Spanish Default - Inworld AI", category: "inworld", engine: "inworld" },
-      { id: "default-english", name: "🎙️ English Default - Inworld AI", category: "inworld", engine: "inworld" },
+      // === INWORLD AI (Voces Premium - Naturales) ===
+      { id: "Diego", name: "🎙️ Diego - Premium (Inworld)", category: "inworld", engine: "inworld" },
+      { id: "Lupita", name: "🎙️ Lupita - Premium (Inworld)", category: "inworld", engine: "inworld" },
+      { id: "Miguel", name: "🎙️ Miguel - Premium (Inworld)", category: "inworld", engine: "inworld" },
+      { id: "Rafael", name: "🎙️ Rafael - Premium (Inworld)", category: "inworld", engine: "inworld" },
 
-      // === INWORLD AI (Voces clonadas del usuario) ===
-      { id: "default-cfjnp8x4nt-owd7yg-1xsw__garret", name: "👤 Garret - Voz Clonada (Inworld AI)", category: "inworld-cloned", engine: "inworld" },
-      { id: "default-cfjnp8x4nt-owd7yg-1xsw__connor", name: "👤 Connor - Voz Clonada (Inworld AI)", category: "inworld-cloned", engine: "inworld" },
+      // === INWORLD AI (Tu Voz Clonada) ===
+      { id: "default-cfjnp8x4nt-owd7yg-1xsw__garret", name: "👤 Garret (Tu Voz Clonada)", category: "inworld-cloned", engine: "inworld" },
+      { id: "default-cfjnp8x4nt-owd7yg-1xsw__connor", name: "👤 Connor (Tu Voz Clonada)", category: "inworld-cloned", engine: "inworld" },
 
-      // === VOCES LOCALES DEL SISTEMA (Gratis, Sin latencia) ===
-      { id: "web-speech-es", name: "🖥️ Voz Sistema Local (PC) - Español", category: "system", engine: "webspeech" },
-      { id: "web-speech-en", name: "🖥️ System Voice (PC) - English", category: "system", engine: "webspeech" },
+      // === SISTEMA LOCAL (Gratis, sin latencia) ===
+      { id: "web-speech-es", name: "🖥️ Sistema - Español", category: "system", engine: "webspeech" },
+      { id: "web-speech-en", name: "🖥️ Sistema - English", category: "system", engine: "webspeech" },
     ]
     setVoices(allVoices)
     setSelectedVoice(allVoices[0]?.id || "")
