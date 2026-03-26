@@ -52,15 +52,15 @@ export function App() {
 
   const pricing = [
     {
-      name: 'Starter',
+      name: 'Plan Básico',
       price: '$5',
       priceUsd: '$5 USD',
       priceMxn: '90 MXN',
-      tokens: '252K',
-      tokensPerMonth: '252,000 tokens/mes',
-      hours: '~3 horas/semana',
-      description: 'Perfecto para comenzar',
-      features: ['252,000 tokens/mes', 'Voces básicas ilimitadas', 'Soporte por email']
+      tokens: '168K',
+      tokensPerMonth: '168,000 tokens/mes',
+      hours: '~2 horas/semana',
+      description: 'Perfecto para probar',
+      features: ['~2 horas de voces naturales o clonadas', 'Voces básicas ilimitadas', 'Soporte por email']
     },
     {
       name: 'Professional',
@@ -72,18 +72,18 @@ export function App() {
       hours: '~10 horas/semana',
       popular: true,
       description: 'Más popular',
-      features: ['840,000 tokens/mes', 'Voces básicas ilimitadas', 'Soporte prioritario', 'Estadísticas']
+      features: ['~10 horas de voces naturales o clonadas', 'Voces básicas ilimitadas', 'Soporte prioritario', 'Estadísticas']
     },
     {
       name: 'Premium',
       price: '$49',
       priceUsd: '$49 USD',
       priceMxn: '882 MXN',
-      tokens: '1.76M',
-      tokensPerMonth: '1,760,000 tokens/mes',
-      hours: '~21 horas/semana',
+      tokens: '2.5M',
+      tokensPerMonth: '2,500,000 tokens/mes',
+      hours: '~30 horas/semana',
       description: 'Para streamers profesionales',
-      features: ['1,760,000 tokens/mes', 'Voces básicas ilimitadas', 'Soporte 24/7', 'Streams ilimitados', 'Estadísticas avanzadas']
+      features: ['~30 horas de voces naturales o clonadas', 'Voces básicas ilimitadas', 'Soporte 24/7', 'Streams ilimitados', 'Estadísticas avanzadas']
     }
   ]
 
