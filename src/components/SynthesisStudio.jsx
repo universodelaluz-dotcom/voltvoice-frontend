@@ -5,6 +5,19 @@ import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Cloc
 
 export function SynthesisStudio() {
   // User Config
+    const [darkMode, setDarkMode] = useState(false)
+
+  useEffect(() => {
+    const theme = localStorage.getItem("voltvoice-theme")
+    setDarkMode(theme !== "light")
+    const handleStorageChange = () => {
+      const newTheme = localStorage.getItem("voltvoice-theme")
+      setDarkMode(newTheme !== "light")
+    }
+    window.addEventListener("storage", handleStorageChange)
+    return () => window.removeEventListener("storage", handleStorageChange)
+  }, [])
+
   const [userId, setUserId] = useState('1')
   const [streamChannel, setStreamChannel] = useState('mi_canal')
   const [isStreamActive, setIsStreamActive] = useState(false)
@@ -184,7 +197,7 @@ export function SynthesisStudio() {
   const estimatedTokens = Math.ceil(charCount / 100)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950 text-white">
+    <div className={darkMode ? "min-h-screen bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950 text-white" : "min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-900"}>
       {/* Header */}
       <div className="border-b border-cyan-500/20 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -277,27 +290,42 @@ export function SynthesisStudio() {
             )}
 
             {/* Synthesize Button */}
-            <button
-              onClick={handleSynthesize}
-              disabled={loading || estimatedTokens > tokens}
-              className={`w-full py-4 rounded-lg font-bold uppercase tracking-wide transition-all duration-300 flex items-center justify-center gap-2 ${
-                loading || estimatedTokens > tokens
-                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-400 hover:to-purple-500 shadow-lg shadow-cyan-500/50 hover:shadow-cyan-500/75'
-              }`}
-            >
-              {loading ? (
+            <div className="flex gap-3">
+              <button
+                onClick={handleSynthesize}
+                disabled={loading || estimatedTokens > tokens}
+                className={`flex-1 py-4 rounded-lg font-bold uppercase tracking-wide transition-all duration-300 flex items-center justify-center gap-2 ${
+                  loading || estimatedTokens > tokens
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-400 hover:to-purple-500 shadow-lg shadow-cyan-500/50 hover:shadow-cyan-500/75'
+                }`}
+              >
+                {loading ? (
+                  <>
+                    <Loader className="w-5 h-5 animate-spin" />
+                    Probando...
+                  </>
+                ) : (
+                  <>
+                    <Mic2 className="w-5 h-5" />
+                    Probar voz
+                  </>
+                )}
+              </button>
+              {audioUrl && (
                 <>
-                  <Loader className="w-5 h-5 animate-spin" />
-                  Probando...
-                </>
-              ) : (
-                <>
-                  <Mic2 className="w-5 h-5" />
-                  Probar voz
+                  <audio ref={audioRef} src={audioUrl} className="hidden" />
+                  <button
+                    onClick={() => audioRef.current && audioRef.current.play()}
+                    className="px-6 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-lg text-white hover:from-cyan-400 hover:to-purple-500 shadow-lg shadow-cyan-500/50 hover:shadow-cyan-500/75 transition-all duration-300 flex items-center justify-center gap-2 font-bold"
+                    title="Reproducir audio"
+                  >
+                    <Volume2 className="w-5 h-5" />
+                    Reproducir
+                  </button>
                 </>
               )}
-            </button>
+            </div>
 
             {estimatedTokens > tokens && (
               <p className="text-sm text-yellow-400 text-center bg-yellow-500/10 p-3 rounded border border-yellow-500/30">
