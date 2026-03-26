@@ -50,11 +50,29 @@ export function StripePayment({ isOpen, onClose }) {
         body: JSON.stringify({ tokensPackage: selectedPackage.tokens }),
       })
       const data = await res.json()
-      if (data.approvalUrl) window.location.href = data.approvalUrl
-      else alert('Error PayPal: ' + (data.error || 'desconocido'))
+      if (data.approvalUrl) {
+        // Abrir ventanita popup centrada
+        const w = 500, h = 650
+        const left = (screen.width - w) / 2
+        const top = (screen.height - h) / 2
+        const popup = window.open(
+          data.approvalUrl,
+          'PayPalCheckout',
+          'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top + ',scrollbars=yes,resizable=yes'
+        )
+        // Detectar cuando el popup se cierra
+        const check = setInterval(() => {
+          if (!popup || popup.closed) {
+            clearInterval(check)
+            setLoading(null)
+          }
+        }, 500)
+      } else {
+        alert('Error PayPal: ' + (data.error || 'desconocido'))
+        setLoading(null)
+      }
     } catch (e) {
       alert('Error: ' + e.message)
-    } finally {
       setLoading(null)
     }
   }
