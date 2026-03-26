@@ -266,53 +266,136 @@ export function App() {
       </section>
 
       {/* Additional Packages Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-cyan-500/5 to-purple-500/5">
-        <div className="max-w-7xl mx-auto">
-          <h3 className="text-4xl font-black text-center mb-4">
-            Compra <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Tokens Adicionales</span>
-          </h3>
-          <p className="text-center text-gray-400 mb-16">Carga más tokens cuando los necesites</p>
+      <section className={"py-24 px-4 relative overflow-hidden " + (darkMode ? "bg-[#0a0a1a]" : "bg-gray-50")}>
+        {/* Background glow */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-cyan-500/5 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/4 w-[300px] h-[300px] bg-purple-500/5 rounded-full blur-3xl" />
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {additionalPackages.map((pkg, idx) => (
+        <div className="max-w-6xl mx-auto relative">
+          <div className="text-center mb-16">
+            <span className={"text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 inline-block " + (darkMode ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "bg-cyan-50 text-cyan-600 border border-cyan-200")}>
+              ⚡ Recarga cuando quieras
+            </span>
+            <h3 className="text-5xl font-black mt-4 mb-4">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500">
+                Tokens Adicionales
+              </span>
+            </h3>
+            <p className={"text-lg " + (darkMode ? "text-gray-400" : "text-gray-500")}>Sin suscripción. Paga solo lo que usas.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              {
+                size: 'Pequeño',
+                tokens: '100K', tokensNum: '100,000',
+                price: '$3', priceSub: 'USD',
+                icon: '🔋',
+                gradient: 'from-cyan-500 to-blue-500',
+                glowColor: 'cyan',
+                badge: null,
+                profit: '$2.00', margin: '3x',
+                popular: false,
+              },
+              {
+                size: 'Mediano',
+                tokens: '250K', tokensNum: '250,000',
+                price: '$7', priceSub: 'USD',
+                icon: '⚡',
+                gradient: 'from-blue-500 to-purple-500',
+                glowColor: 'blue',
+                badge: '🔥 MÁS POPULAR',
+                profit: '$4.50', margin: '2.8x',
+                popular: true,
+              },
+              {
+                size: 'Grande',
+                tokens: '500K', tokensNum: '500,000',
+                price: '$12', priceSub: 'USD',
+                icon: '🚀',
+                gradient: 'from-purple-500 to-pink-500',
+                glowColor: 'purple',
+                badge: null,
+                profit: '$7.00', margin: '2.4x',
+                popular: false,
+              },
+              {
+                size: 'Máximo',
+                tokens: '1M', tokensNum: '1,000,000',
+                price: '$20', priceSub: 'USD',
+                icon: '💎',
+                gradient: 'from-yellow-400 to-orange-500',
+                glowColor: 'yellow',
+                badge: '💰 MEJOR VALOR',
+                profit: '$10.00', margin: '2x',
+                popular: false,
+              },
+            ].map((pkg, idx) => (
               <div
                 key={idx}
-                className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-cyan-400/50 transition-all hover:bg-white/10"
+                className={"relative group rounded-2xl p-px transition-all duration-300 cursor-pointer " + (pkg.popular ? "scale-105 shadow-2xl shadow-blue-500/20" : "hover:scale-102 hover:shadow-xl")}
+                style={{ background: pkg.popular ? 'linear-gradient(135deg, #06b6d4, #8b5cf6)' : undefined }}
+                onClick={() => setIsPaymentOpen(true)}
               >
-                <h4 className="text-xl font-black mb-4 text-cyan-400">{pkg.size}</h4>
-                
-                <div className="mb-4">
-                  <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-                    {pkg.price}
-                  </div>
-                  <div className="text-sm text-gray-400 mt-1">{pkg.priceMxn}</div>
-                  <div className="text-sm text-gray-500 mt-2">{pkg.tokens} tokens</div>
-                </div>
+                {/* Card inner */}
+                <div className={"rounded-2xl p-6 h-full flex flex-col " + (darkMode ? "bg-[#0f0f23]" : "bg-white") + " " + (!pkg.popular ? ("border " + (darkMode ? "border-white/10 hover:border-" + pkg.glowColor + "-400/40" : "border-gray-200 hover:border-" + pkg.glowColor + "-300")) : "")}>
 
-                <button
-                  onClick={() => setIsPaymentOpen(true)}
-                  className="w-full py-2 border border-cyan-400/50 text-cyan-400 rounded-lg font-bold text-sm hover:bg-cyan-400/10 transition-all mb-4"
-                >
-                  Comprar
-                </button>
+                  {/* Badge */}
+                  {pkg.badge && (
+                    <div className={"text-[10px] font-black tracking-wider mb-4 px-3 py-1 rounded-full text-center w-full bg-gradient-to-r " + pkg.gradient + " text-white"}>
+                      {pkg.badge}
+                    </div>
+                  )}
+                  {!pkg.badge && <div className="mb-4 h-6" />}
 
-                <div className="space-y-2 text-xs text-gray-400 border-t border-white/10 pt-4">
-                  <div className="flex justify-between">
-                    <span>Tu costo:</span>
-                    <span className="text-gray-300">{pkg.cost}</span>
+                  {/* Icon + Size */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-2xl">{pkg.icon}</span>
+                    <span className={"font-black text-lg " + (darkMode ? "text-white" : "text-gray-800")}>{pkg.size}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Tu ganancia:</span>
-                    <span className="text-cyan-400 font-bold">{pkg.profit}</span>
+
+                  {/* Price */}
+                  <div className="mb-4">
+                    <div className={"text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r " + pkg.gradient}>
+                      {pkg.price}
+                    </div>
+                    <div className={"text-sm font-semibold " + (darkMode ? "text-gray-400" : "text-gray-500")}>{pkg.priceSub}</div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Margen:</span>
-                    <span className="text-purple-400">{pkg.margin}</span>
+
+                  {/* Tokens count */}
+                  <div className={"rounded-xl px-3 py-2 mb-5 " + (darkMode ? "bg-white/5" : "bg-gray-50")}>
+                    <div className={"text-xs " + (darkMode ? "text-gray-500" : "text-gray-400")}>Tokens incluidos</div>
+                    <div className={"font-black text-lg text-transparent bg-clip-text bg-gradient-to-r " + pkg.gradient}>{pkg.tokens}</div>
+                    <div className={"text-[10px] " + (darkMode ? "text-gray-600" : "text-gray-400")}>{pkg.tokensNum} caracteres</div>
+                  </div>
+
+                  {/* CTA Button */}
+                  <button className={"w-full py-3 rounded-xl font-black text-sm mb-5 text-white bg-gradient-to-r transition-all " + pkg.gradient + " hover:opacity-90 hover:shadow-lg"}>
+                    Comprar ahora →
+                  </button>
+
+                  {/* Stats */}
+                  <div className={"mt-auto space-y-1.5 pt-4 border-t " + (darkMode ? "border-white/5" : "border-gray-100")}>
+                    <div className={"flex justify-between text-xs " + (darkMode ? "text-gray-500" : "text-gray-400")}>
+                      <span>Tu ganancia:</span>
+                      <span className={"font-bold text-transparent bg-clip-text bg-gradient-to-r " + pkg.gradient}>{pkg.profit}</span>
+                    </div>
+                    <div className={"flex justify-between text-xs " + (darkMode ? "text-gray-500" : "text-gray-400")}>
+                      <span>Margen:</span>
+                      <span className={"font-bold " + (darkMode ? "text-white" : "text-gray-700")}>{pkg.margin}</span>
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
+
+          {/* Bottom note */}
+          <p className={"text-center text-xs mt-10 " + (darkMode ? "text-gray-600" : "text-gray-400")}>
+            🔒 Pagos seguros · Los tokens no expiran · Se acumulan con tu plan
+          </p>
         </div>
       </section>
 
