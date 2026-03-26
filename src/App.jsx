@@ -53,25 +53,37 @@ export function App() {
   const pricing = [
     {
       name: 'Starter',
-      price: '$4.99',
-      tokens: '500',
-      description: 'Perfecto para probar',
-      features: ['500 tokens', 'Soporte por email', '1 stream']
+      price: '$5',
+      priceUsd: '$5 USD',
+      priceMxn: '90 MXN',
+      tokens: '252K',
+      tokensPerMonth: '252,000 tokens/mes',
+      hours: '~3 horas/semana',
+      description: 'Perfecto para comenzar',
+      features: ['252,000 tokens/mes', 'Voces básicas ilimitadas', 'Soporte por email']
     },
     {
-      name: 'Creator',
-      price: '$8.99',
-      tokens: '1000',
+      name: 'Professional',
+      price: '$20',
+      priceUsd: '$20 USD',
+      priceMxn: '360 MXN',
+      tokens: '840K',
+      tokensPerMonth: '840,000 tokens/mes',
+      hours: '~10 horas/semana',
       popular: true,
       description: 'Más popular',
-      features: ['1000 tokens', 'Soporte prioritario', '3 streams', 'Estadísticas']
+      features: ['840,000 tokens/mes', 'Voces básicas ilimitadas', 'Soporte prioritario', 'Estadísticas']
     },
     {
-      name: 'Pro',
-      price: '$39.99',
-      tokens: '5000',
+      name: 'Premium',
+      price: '$49',
+      priceUsd: '$49 USD',
+      priceMxn: '882 MXN',
+      tokens: '1.76M',
+      tokensPerMonth: '1,760,000 tokens/mes',
+      hours: '~21 horas/semana',
       description: 'Para streamers profesionales',
-      features: ['5000 tokens', 'Soporte 24/7', 'Streams ilimitados', 'Estadísticas avanzadas', 'API access']
+      features: ['1,760,000 tokens/mes', 'Voces básicas ilimitadas', 'Soporte 24/7', 'Streams ilimitados', 'Estadísticas avanzadas']
     }
   ]
 
@@ -246,7 +258,7 @@ export function App() {
           <h3 className="text-4xl font-black text-center mb-4">
             Planes <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Accesibles</span>
           </h3>
-          <p className="text-center text-gray-400 mb-16">Elige el plan perfecto para ti</p>
+          <p className="text-center text-gray-400 mb-16">Elige el plan perfecto para ti. Horas aproximadas basadas en 10 msg/min y 35 caracteres promedio por mensaje.</p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {pricing.map((plan, idx) => (
@@ -270,9 +282,11 @@ export function App() {
 
                   <div className="mb-6">
                     <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-                      {plan.price}
+                      {plan.priceUsd}
                     </div>
-                    <div className="text-sm text-gray-400 mt-1">{plan.tokens} tokens</div>
+                    <div className="text-sm text-gray-400 mt-1">{plan.priceMxn}</div>
+                    <div className="text-sm text-gray-500 mt-2">{plan.tokensPerMonth}</div>
+                    <div className="text-sm text-cyan-400 mt-1 font-semibold">{plan.hours}</div>
                   </div>
 
                   <button
