@@ -87,6 +87,45 @@ export function App() {
     }
   ]
 
+  const additionalPackages = [
+    {
+      size: 'Pequeño',
+      tokens: '100K',
+      price: '$3 USD',
+      priceMxn: '54 MXN',
+      cost: '$1.00',
+      profit: '$2.00',
+      margin: '3x'
+    },
+    {
+      size: 'Mediano',
+      tokens: '250K',
+      price: '$7 USD',
+      priceMxn: '126 MXN',
+      cost: '$2.50',
+      profit: '$4.50',
+      margin: '2.8x'
+    },
+    {
+      size: 'Grande',
+      tokens: '500K',
+      price: '$12 USD',
+      priceMxn: '216 MXN',
+      cost: '$5.00',
+      profit: '$7.00',
+      margin: '2.4x'
+    },
+    {
+      size: 'Máximo',
+      tokens: '1M',
+      price: '$20 USD',
+      priceMxn: '360 MXN',
+      cost: '$10.00',
+      profit: '$10.00',
+      margin: '2x'
+    }
+  ]
+
   const howItWorks = [
     {
       step: '1',
@@ -201,6 +240,58 @@ export function App() {
           </div>
         </div>
       </section>
+
+      {/* Additional Packages Section */}
+      <section className="py-20 px-4 bg-gradient-to-r from-cyan-500/5 to-purple-500/5">
+        <div className="max-w-7xl mx-auto">
+          <h3 className="text-4xl font-black text-center mb-4">
+            Compra <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Tokens Adicionales</span>
+          </h3>
+          <p className="text-center text-gray-400 mb-16">Carga más tokens cuando los necesites</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {additionalPackages.map((pkg, idx) => (
+              <div
+                key={idx}
+                className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-cyan-400/50 transition-all hover:bg-white/10"
+              >
+                <h4 className="text-xl font-black mb-4 text-cyan-400">{pkg.size}</h4>
+                
+                <div className="mb-4">
+                  <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
+                    {pkg.price}
+                  </div>
+                  <div className="text-sm text-gray-400 mt-1">{pkg.priceMxn}</div>
+                  <div className="text-sm text-gray-500 mt-2">{pkg.tokens} tokens</div>
+                </div>
+
+                <button
+                  onClick={() => setIsPaymentOpen(true)}
+                  className="w-full py-2 border border-cyan-400/50 text-cyan-400 rounded-lg font-bold text-sm hover:bg-cyan-400/10 transition-all mb-4"
+                >
+                  Comprar
+                </button>
+
+                <div className="space-y-2 text-xs text-gray-400 border-t border-white/10 pt-4">
+                  <div className="flex justify-between">
+                    <span>Tu costo:</span>
+                    <span className="text-gray-300">{pkg.cost}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Tu ganancia:</span>
+                    <span className="text-cyan-400 font-bold">{pkg.profit}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Margen:</span>
+                    <span className="text-purple-400">{pkg.margin}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
 
       {/* Benefits Section */}
       <section className="py-20 px-4">
