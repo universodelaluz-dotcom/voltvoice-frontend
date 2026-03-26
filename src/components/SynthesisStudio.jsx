@@ -220,9 +220,6 @@ export function SynthesisStudio() {
 
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left Column - Chat */}
-          <div className="lg:col-span-1 space-y-4 flex flex-col h-full">
-            {/* User Configuration */}
             <div className="space-y-3 bg-gray-900/50 border border-cyan-500/20 rounded-lg p-4">
               <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-wide">Configuración</h3>
 
