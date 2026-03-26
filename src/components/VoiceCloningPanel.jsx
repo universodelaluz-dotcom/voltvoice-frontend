@@ -1,8 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Upload, Zap, AlertCircle, CheckCircle, Loader } from 'lucide-react'
 
 export default function VoiceCloningPanel({ onCloneSuccess }) {
-  const [voiceName, setVoiceName] = useState('')
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
+
+  useEffect(() => {
+    const sync = () => setDarkMode(localStorage.getItem('voltvoice-theme') !== 'light')
+    sync()
+    const interval = setInterval(sync, 500)
+    return () => clearInterval(interval)
+  }, [])
+
+    const [voiceName, setVoiceName] = useState('')
   const [audioFile, setAudioFile] = useState(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState(null)
