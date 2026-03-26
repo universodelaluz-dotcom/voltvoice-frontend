@@ -1,12 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { StripePayment } from './components/StripePayment'
 import { SynthesisStudio } from './components/SynthesisStudio'
-import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield } from 'lucide-react'
+import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon } from 'lucide-react'
 
 export function App() {
   const [currentPage, setCurrentPage] = useState('landing') // 'landing' or 'studio'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [tokens, setTokens] = useState(100)
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('voltvoice-theme') !== 'light'
+    }
+    return true
+  })
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark')
+      localStorage.setItem('voltvoice-theme', 'dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+      localStorage.setItem('voltvoice-theme', 'light')
+    }
+  }, [darkMode])
 
   // Si estamos en la página del studio, mostrar solo eso
   if (currentPage === 'studio') {
@@ -166,9 +182,9 @@ export function App() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white overflow-hidden">
+    <div className={"min-h-screen overflow-hidden transition-colors duration-300 " + (darkMode ? "bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "bg-gradient-to-b from-gray-50 via-white to-gray-100 text-gray-900") + ""}>
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-[#0f0f23]/80 backdrop-blur-md border-b border-cyan-500/20 z-50">
+      <nav className={"fixed top-0 w-full backdrop-blur-md z-50 transition-colors duration-300 " + (darkMode ? "bg-[#0f0f23]/80 border-b border-cyan-500/20" : "bg-white/80 border-b border-gray-200 shadow-sm") + ""}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-purple-500 rounded-lg flex items-center justify-center">
@@ -178,12 +194,20 @@ export function App() {
               VoltVoice
             </h1>
           </div>
-          <button
-            onClick={() => setCurrentPage('studio')}
-            className="px-6 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all"
-          >
-            Studio
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className={"p-2 rounded-lg transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-yellow-400" : "bg-gray-200 hover:bg-gray-300 text-gray-700")}
+            >
+              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+            <button
+              onClick={() => setCurrentPage('studio')}
+              className="px-6 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all"
+            >
+              Studio
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -204,7 +228,7 @@ export function App() {
             </span>
           </h2>
 
-          <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto">
+          <p className={"text-xl md:text-2xl mb-8 max-w-2xl mx-auto " + (darkMode ? "text-gray-300" : "text-gray-600")}>
             Transforma los mensajes de chat en voz natural para tus streams de TikTok y YouTube. Aumenta la interacción con tus seguidores al instante.
           </p>
 
@@ -225,17 +249,17 @@ export function App() {
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
-            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+            <div className={(darkMode ? "bg-white/5 border border-white/10" : "bg-white border border-gray-200 shadow-sm") + " rounded-lg p-4"}>
               <div className="text-3xl font-black text-cyan-400">10K+</div>
-              <div className="text-sm text-gray-400">Usuarios activos</div>
+              <div className={darkMode ? "text-sm text-gray-400" : "text-sm text-gray-500"}>Usuarios activos</div>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+            <div className={(darkMode ? "bg-white/5 border border-white/10" : "bg-white border border-gray-200 shadow-sm") + " rounded-lg p-4"}>
               <div className="text-3xl font-black text-purple-400">1M+</div>
-              <div className="text-sm text-gray-400">Mensajes leídos</div>
+              <div className={darkMode ? "text-sm text-gray-400" : "text-sm text-gray-500"}>Mensajes leídos</div>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+            <div className={(darkMode ? "bg-white/5 border border-white/10" : "bg-white border border-gray-200 shadow-sm") + " rounded-lg p-4"}>
               <div className="text-3xl font-black text-cyan-400">99%</div>
-              <div className="text-sm text-gray-400">Satisfacción</div>
+              <div className={darkMode ? "text-sm text-gray-400" : "text-sm text-gray-500"}>Satisfacción</div>
             </div>
           </div>
         </div>
@@ -304,11 +328,11 @@ export function App() {
             {benefits.map((benefit, idx) => (
               <div
                 key={idx}
-                className="group bg-gradient-to-br from-white/5 to-white/0 border border-white/10 rounded-xl p-8 hover:border-cyan-400/50 transition-all hover:bg-white/10"
+                className={"group rounded-xl p-8 transition-all " + (darkMode ? "bg-gradient-to-br from-white/5 to-white/0 border border-white/10 hover:border-cyan-400/50 hover:bg-white/10" : "bg-white border border-gray-200 shadow-md hover:shadow-lg hover:border-cyan-400")}
               >
                 <div className="text-4xl mb-4">{benefit.icon}</div>
                 <h4 className="text-xl font-bold mb-3">{benefit.title}</h4>
-                <p className="text-gray-400">{benefit.description}</p>
+                <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{benefit.description}</p>
               </div>
             ))}
           </div>
@@ -466,7 +490,7 @@ export function App() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-12 px-4 bg-[#0f0f23]/50">
+      <footer className={"py-12 px-4 transition-colors " + (darkMode ? "border-t border-white/10 bg-[#0f0f23]/50" : "border-t border-gray-200 bg-gray-50")}>
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
