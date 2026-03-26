@@ -5,7 +5,18 @@ import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Cloc
 
 export function SynthesisStudio() {
   // User Config
-  const [userId, setUserId] = useState('1')
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
+
+  useEffect(() => {
+    const sync = () => setDarkMode(localStorage.getItem('voltvoice-theme') !== 'light')
+    sync()
+    window.addEventListener('storage', sync)
+    // Poll cada 500ms por si el toggle es en la misma tab
+    const interval = setInterval(sync, 500)
+    return () => { window.removeEventListener('storage', sync); clearInterval(interval) }
+  }, [])
+
+    const [userId, setUserId] = useState('1')
   const [streamChannel, setStreamChannel] = useState('mi_canal')
   const [isStreamActive, setIsStreamActive] = useState(false)
 
@@ -184,9 +195,9 @@ export function SynthesisStudio() {
   const estimatedTokens = Math.ceil(charCount / 100)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950 text-white">
+    <div className={`${darkMode ? "min-h-screen bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950 text-white" : "min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 text-gray-900"}`}>
       {/* Header */}
-      <div className="border-b border-cyan-500/20 backdrop-blur-sm sticky top-0 z-50">
+      <div className={`${darkMode ? "border-b border-cyan-500/20 backdrop-blur-sm sticky top-0 z-50 bg-gray-950/80" : "border-b border-indigo-200 backdrop-blur-sm sticky top-0 z-50 bg-white/90 shadow-sm"}`}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-lg">
@@ -196,7 +207,7 @@ export function SynthesisStudio() {
               <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                 VoltVoice Studio
               </h1>
-              <p className="text-xs text-gray-400">Canal: {streamChannel}</p>
+              <p className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>Canal: {streamChannel}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -224,7 +235,7 @@ export function SynthesisStudio() {
           {/* Center Column - Synthesis */}
           <div className="lg:col-span-2 space-y-6">
             {/* Voice Selection */}
-            <div className="space-y-2 bg-gray-900/50 border border-cyan-500/20 rounded-lg p-4">
+            <div className={`${darkMode ? "space-y-2 bg-gray-900/50 border border-cyan-500/20 rounded-lg p-4" : "space-y-2 bg-white border border-indigo-200 rounded-lg p-4 shadow-sm"}`}>
               <label className="text-sm font-semibold text-cyan-400 uppercase tracking-wide">
                 Selecciona una voz
               </label>
@@ -232,7 +243,7 @@ export function SynthesisStudio() {
                 <select
                   value={selectedVoice}
                   onChange={(e) => setSelectedVoice(e.target.value)}
-                  className="w-full bg-gray-800 border border-cyan-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500 appearance-none cursor-pointer pr-10"
+                  className={`${darkMode ? "w-full bg-gray-800 border border-cyan-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500 appearance-none cursor-pointer pr-10" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 appearance-none cursor-pointer pr-10"}`}
                 >
                   {voices.map((voice) => (
                     <option key={voice.id} value={voice.id}>
@@ -245,7 +256,7 @@ export function SynthesisStudio() {
             </div>
 
             {/* Text Input */}
-            <div className="space-y-2 bg-gray-900/50 border border-cyan-500/20 rounded-lg p-4">
+            <div className={`${darkMode ? "space-y-2 bg-gray-900/50 border border-cyan-500/20 rounded-lg p-4" : "space-y-2 bg-white border border-indigo-200 rounded-lg p-4 shadow-sm"}`}>
               <label className="text-sm font-semibold text-cyan-400 uppercase tracking-wide">
                 Texto a sintetizar
               </label>
@@ -253,9 +264,9 @@ export function SynthesisStudio() {
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Escribe el texto que deseas convertir en voz..."
-                className="w-full h-32 bg-gray-800 border border-cyan-500/30 rounded p-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 resize-none font-mono text-sm"
+                className={`${darkMode ? "w-full h-32 bg-gray-800 border border-cyan-500/30 rounded p-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 resize-none font-mono text-sm" : "w-full h-32 bg-gray-50 border border-indigo-300 rounded p-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 resize-none font-mono text-sm"}`}
               />
-              <div className="flex justify-between text-xs text-gray-400">
+              <div className={`${darkMode ? "flex justify-between text-xs text-gray-400" : "flex justify-between text-xs text-gray-500"}`}>
                 <span>{charCount} caracteres</span>
                 <span>≈ {estimatedTokens} tokens</span>
               </div>
@@ -333,14 +344,14 @@ export function SynthesisStudio() {
                 >
                   <Volume2 className="w-5 h-5 text-white" />
                 </button>
-                <div className="text-xs text-gray-400">
+                <div className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>
                   <span className="text-cyan-400 font-bold">{tokensUsed}</span> tokens usados
                 </div>
               </div>
             )}
 
             {/* Tokens Dashboard */}
-            <div className="bg-gray-900/50 border border-cyan-500/20 rounded-xl p-5 backdrop-blur-sm">
+            <div className={`${darkMode ? "bg-gray-900/50 border border-cyan-500/20 rounded-xl p-5 backdrop-blur-sm" : "bg-white border border-indigo-200 rounded-xl p-5 shadow-sm"}`}>
               <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-wide mb-4">Tokens</h3>
               <div className="flex justify-center mb-4">
                 <div className="relative w-32 h-32">
@@ -357,35 +368,35 @@ export function SynthesisStudio() {
                     </defs>
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-black text-white">{tokens}</span>
-                    <span className="text-[10px] text-gray-400 uppercase">restantes</span>
+                    <span className={`${darkMode ? "text-2xl font-black text-white" : "text-2xl font-black text-gray-900"}`}>{tokens}</span>
+                    <span className={`${darkMode ? "text-[10px] text-gray-400 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>restantes</span>
                   </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 rounded-lg p-3 text-center">
                   <div className="text-lg font-black text-green-400">{tokens}</div>
-                  <div className="text-[10px] text-gray-400 uppercase">Disponibles</div>
+                  <div className={`${darkMode ? "text-[10px] text-gray-400 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Disponibles</div>
                 </div>
                 <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 rounded-lg p-3 text-center">
                   <div className="text-lg font-black text-purple-400">{totalTokensUsed}</div>
-                  <div className="text-[10px] text-gray-400 uppercase">Usados</div>
+                  <div className={`${darkMode ? "text-[10px] text-gray-400 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Usados</div>
                 </div>
                 <div className="bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 border border-cyan-500/20 rounded-lg p-3 text-center">
                   <div className="text-lg font-black text-cyan-400">{synthesisCount}</div>
-                  <div className="text-[10px] text-gray-400 uppercase">Síntesis</div>
+                  <div className={`${darkMode ? "text-[10px] text-gray-400 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Síntesis</div>
                 </div>
                 <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20 rounded-lg p-3 text-center">
                   <div className="text-lg font-black text-yellow-400">{synthesisCount > 0 ? (totalTokensUsed / synthesisCount).toFixed(0) : 0}</div>
-                  <div className="text-[10px] text-gray-400 uppercase">Promedio</div>
+                  <div className={`${darkMode ? "text-[10px] text-gray-400 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Promedio</div>
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between text-xs text-gray-400">
+                <div className={`${darkMode ? "flex justify-between text-xs text-gray-400" : "flex justify-between text-xs text-gray-500"}`}>
                   <span>Uso de tokens</span>
                   <span className="text-cyan-400 font-bold">{Math.min(100, Math.round((totalTokensUsed / (totalTokensUsed + tokens || 1)) * 100))}%</span>
                 </div>
-                <div className="bg-gray-800 rounded-full h-3 overflow-hidden relative">
+                <div className={`${darkMode ? "bg-gray-800 rounded-full h-3 overflow-hidden relative" : "bg-indigo-100 rounded-full h-3 overflow-hidden relative"}`}>
                   <div className="bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden"
                     style={{ width: `${Math.min(100, (totalTokensUsed / (totalTokensUsed + tokens || 1)) * 100)}%` }}>
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
@@ -398,41 +409,41 @@ export function SynthesisStudio() {
             </div>
 
             {/* Activity History */}
-            <div className="bg-gray-900/50 border border-cyan-500/20 rounded-xl p-5 backdrop-blur-sm">
+            <div className={`${darkMode ? "bg-gray-900/50 border border-cyan-500/20 rounded-xl p-5 backdrop-blur-sm" : "bg-white border border-indigo-200 rounded-xl p-5 shadow-sm"}`}>
               <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-wide flex items-center gap-2 mb-4">
                 <Clock className="w-4 h-4" /> Actividad
               </h3>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 p-2 rounded-lg bg-cyan-500/5 border border-cyan-500/10">
+                <div className={`${darkMode ? "flex items-center gap-3 p-2 rounded-lg bg-cyan-500/5 border border-cyan-500/10" : "flex items-center gap-3 p-2 rounded-lg bg-cyan-50 border border-cyan-200"}`}>
                   <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
                     <Mic2 className="w-4 h-4 text-cyan-400" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-bold text-white">Síntesis completadas</p>
+                    <p className={`${darkMode ? "text-xs font-bold text-white" : "text-xs font-bold text-gray-800"}`}>Síntesis completadas</p>
                     <div className="w-full bg-gray-800 rounded-full h-1.5 mt-1">
                       <div className="bg-cyan-400 h-1.5 rounded-full transition-all duration-700" style={{ width: `${Math.min(100, synthesisCount * 10)}%` }}></div>
                     </div>
                   </div>
                   <span className="text-sm font-black text-cyan-400">{synthesisCount}</span>
                 </div>
-                <div className="flex items-center gap-3 p-2 rounded-lg bg-purple-500/5 border border-purple-500/10">
+                <div className={`${darkMode ? "flex items-center gap-3 p-2 rounded-lg bg-purple-500/5 border border-purple-500/10" : "flex items-center gap-3 p-2 rounded-lg bg-purple-50 border border-purple-200"}`}>
                   <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
                     <Zap className="w-4 h-4 text-purple-400" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-bold text-white">Tokens gastados</p>
+                    <p className={`${darkMode ? "text-xs font-bold text-white" : "text-xs font-bold text-gray-800"}`}>Tokens gastados</p>
                     <div className="w-full bg-gray-800 rounded-full h-1.5 mt-1">
                       <div className="bg-purple-400 h-1.5 rounded-full transition-all duration-700" style={{ width: `${Math.min(100, (totalTokensUsed / (totalTokensUsed + tokens || 1)) * 100)}%` }}></div>
                     </div>
                   </div>
                   <span className="text-sm font-black text-purple-400">{totalTokensUsed}</span>
                 </div>
-                <div className="flex items-center gap-3 p-2 rounded-lg bg-yellow-500/5 border border-yellow-500/10">
+                <div className={`${darkMode ? "flex items-center gap-3 p-2 rounded-lg bg-yellow-500/5 border border-yellow-500/10" : "flex items-center gap-3 p-2 rounded-lg bg-yellow-50 border border-yellow-200"}`}>
                   <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
                     <Clock className="w-4 h-4 text-yellow-400" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-bold text-white">Promedio por síntesis</p>
+                    <p className={`${darkMode ? "text-xs font-bold text-white" : "text-xs font-bold text-gray-800"}`}>Promedio por síntesis</p>
                     <div className="w-full bg-gray-800 rounded-full h-1.5 mt-1">
                       <div className="bg-yellow-400 h-1.5 rounded-full transition-all duration-700" style={{ width: `${Math.min(100, synthesisCount > 0 ? (totalTokensUsed / synthesisCount) : 0)}%` }}></div>
                     </div>
