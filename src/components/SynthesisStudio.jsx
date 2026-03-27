@@ -46,9 +46,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
 
   // Control Panel
   const [showControlPanel, setShowControlPanel] = useState(false)
-  const [readingSpeed, setReadingSpeed] = useState(0) // palabras por minuto
-  const [synthesisLatency, setSynthesisLatency] = useState(0) // ms
-  const [audioQuality, setAudioQuality] = useState(100) // 0-100%
+  const [audioSpeed, setAudioSpeed] = useState(1.0) // 0.5x a 2.0x
 
   // Chat simulation
   const [chatMessages, setChatMessages] = useState([
@@ -511,110 +509,77 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
 
             {/* Content */}
             <div className="p-6 space-y-6">
-              {/* Velocímetro de Lectura */}
+              {/* Velocidad de Audio */}
               <div>
-                <label className="text-sm font-semibold text-cyan-400 uppercase tracking-wide block mb-3">
-                  📊 Velocímetro de Lectura
-                </label>
-                <div className={`p-4 rounded-lg ${darkMode ? "bg-gray-800/50 border border-cyan-500/20" : "bg-indigo-50 border border-indigo-200"}`}>
-                  {/* Gauge Visual */}
-                  <div className="relative h-32 flex items-center justify-center mb-4">
-                    <svg viewBox="0 0 200 120" className="w-full max-w-xs">
-                      {/* Fondo del medidor */}
-                      <path
-                        d="M 30 100 A 70 70 0 0 1 170 100"
-                        fill="none"
-                        stroke={darkMode ? "#374151" : "#e0e7ff"}
-                        strokeWidth="8"
-                      />
-                      {/* Indicador coloreado */}
-                      <path
-                        d="M 30 100 A 70 70 0 0 1 170 100"
-                        fill="none"
-                        stroke="#06b6d4"
-                        strokeWidth="8"
-                        strokeDasharray={`${(readingSpeed / 300) * 220} 220`}
-                      />
-                      {/* Aguja */}
-                      <line
-                        x1="100"
-                        y1="100"
-                        x2={100 + 60 * Math.sin((readingSpeed / 300) * Math.PI)}
-                        y2={100 - 60 * Math.cos((readingSpeed / 300) * Math.PI)}
-                        stroke="#06b6d4"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                      />
-                      {/* Centro */}
-                      <circle cx="100" cy="100" r="5" fill="#06b6d4" />
-                      {/* Texto */}
-                      <text
-                        x="100"
-                        y="115"
-                        textAnchor="middle"
-                        className="text-sm font-bold"
-                        fill={darkMode ? "#e5e7eb" : "#111827"}
-                      >
-                        {readingSpeed} PPM
-                      </text>
-                    </svg>
-                  </div>
-                  <p className={`text-xs text-center ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-                    Palabras por Minuto estimadas
-                  </p>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-semibold text-cyan-400 uppercase tracking-wide">
+                    🎚️ Velocidad de Voz
+                  </label>
+                  <span className="text-lg font-black text-cyan-400">{audioSpeed.toFixed(1)}x</span>
                 </div>
-              </div>
 
-              {/* Latencia */}
-              <div>
-                <label className="text-sm font-semibold text-cyan-400 uppercase tracking-wide block mb-2">
-                  ⚡ Latencia
-                </label>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <div className={`h-2 rounded-full ${darkMode ? "bg-gray-700" : "bg-gray-300"}`}>
-                      <div
-                        className="h-2 rounded-full bg-green-400 transition-all duration-500"
-                        style={{ width: `${Math.max(0, 100 - synthesisLatency / 2)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <span className="text-sm font-bold text-white">{synthesisLatency}ms</span>
+                {/* Slider */}
+                <input
+                  type="range"
+                  min="0.5"
+                  max="2.0"
+                  step="0.1"
+                  value={audioSpeed}
+                  onChange={(e) => setAudioSpeed(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, #06b6d4 0%, #06b6d4 ${((audioSpeed - 0.5) / 1.5) * 100}%, #374151 ${((audioSpeed - 0.5) / 1.5) * 100}%, #374151 100%)`
+                  }}
+                />
+
+                {/* Botones rápidos */}
+                <div className="grid grid-cols-4 gap-2 mt-4">
+                  <button
+                    onClick={() => setAudioSpeed(0.5)}
+                    className={`py-2 rounded-lg font-semibold text-sm transition-all ${
+                      audioSpeed === 0.5
+                        ? 'bg-cyan-500 text-white'
+                        : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                    }`}
+                  >
+                    0.5x
+                  </button>
+                  <button
+                    onClick={() => setAudioSpeed(1.0)}
+                    className={`py-2 rounded-lg font-semibold text-sm transition-all ${
+                      audioSpeed === 1.0
+                        ? 'bg-cyan-500 text-white'
+                        : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                    }`}
+                  >
+                    1x
+                  </button>
+                  <button
+                    onClick={() => setAudioSpeed(1.5)}
+                    className={`py-2 rounded-lg font-semibold text-sm transition-all ${
+                      audioSpeed === 1.5
+                        ? 'bg-cyan-500 text-white'
+                        : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                    }`}
+                  >
+                    1.5x
+                  </button>
+                  <button
+                    onClick={() => setAudioSpeed(2.0)}
+                    className={`py-2 rounded-lg font-semibold text-sm transition-all ${
+                      audioSpeed === 2.0
+                        ? 'bg-cyan-500 text-white'
+                        : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                    }`}
+                  >
+                    2x
+                  </button>
                 </div>
-                <p className={`text-xs mt-1 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-                  {synthesisLatency < 500 ? "Excelente" : synthesisLatency < 1000 ? "Bueno" : "Normal"}
+
+                <p className={`text-xs text-center mt-3 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+                  {audioSpeed < 1 ? "🐢 Más lento" : audioSpeed > 1 ? "🐇 Más rápido" : "✅ Velocidad normal"}
                 </p>
               </div>
-
-              {/* Calidad de Audio */}
-              <div>
-                <label className="text-sm font-semibold text-cyan-400 uppercase tracking-wide block mb-2">
-                  🎵 Calidad de Audio
-                </label>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <div className={`h-2 rounded-full ${darkMode ? "bg-gray-700" : "bg-gray-300"}`}>
-                      <div
-                        className="h-2 rounded-full bg-purple-400 transition-all duration-500"
-                        style={{ width: `${audioQuality}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <span className="text-sm font-bold text-white">{audioQuality}%</span>
-                </div>
-              </div>
-
-              {/* Botón de simulación */}
-              <button
-                onClick={() => {
-                  setReadingSpeed(Math.floor(Math.random() * 200) + 100)
-                  setSynthesisLatency(Math.floor(Math.random() * 800) + 200)
-                  setAudioQuality(Math.floor(Math.random() * 30) + 70)
-                }}
-                className="w-full py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg font-semibold text-white hover:shadow-lg hover:shadow-cyan-500/50 transition-all text-sm"
-              >
-                Simular Lectura
-              </button>
             </div>
           </div>
         </div>
