@@ -16,12 +16,6 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
     return () => { window.removeEventListener('storage', sync); clearInterval(interval) }
   }, [])
 
-  // Mostrar Control Panel
-  const [showControlPanel, setShowControlPanel] = useState(false)
-  if (showControlPanel) {
-    return <ControlPanel onClose={() => setShowControlPanel(false)} darkMode={darkMode} audioSpeed={audioSpeed} setAudioSpeed={setAudioSpeed} />
-  }
-
   const toggleTheme = () => {
     const newMode = darkMode ? 'light' : 'dark'
     localStorage.setItem('voltvoice-theme', newMode)
@@ -54,6 +48,11 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
   // Control Panel
   const [showControlPanel, setShowControlPanel] = useState(false)
   const [audioSpeed, setAudioSpeed] = useState(1.0) // 0.5x a 2.0x
+
+  // Mostrar Control Panel si está activo
+  if (showControlPanel) {
+    return <ControlPanel onClose={() => setShowControlPanel(false)} darkMode={darkMode} audioSpeed={audioSpeed} setAudioSpeed={setAudioSpeed} />
+  }
 
   // Chat simulation
   const [chatMessages, setChatMessages] = useState([
