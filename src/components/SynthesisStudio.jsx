@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import TikTokLivePanel from './TikTokLivePanel'
-import { ControlPanel } from './ControlPanel'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings } from 'lucide-react'
 
-export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel }) {
   // User Config
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
@@ -46,13 +45,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
   const [synthesisCount, setSynthesisCount] = useState(0)
 
   // Control Panel
-  const [showControlPanel, setShowControlPanel] = useState(false)
   const [audioSpeed, setAudioSpeed] = useState(1.0) // 0.5x a 2.0x
-
-  // Mostrar Control Panel si está activo
-  if (showControlPanel) {
-    return <ControlPanel onClose={() => setShowControlPanel(false)} darkMode={darkMode} audioSpeed={audioSpeed} setAudioSpeed={setAudioSpeed} />
-  }
 
   // Chat simulation
   const [chatMessages, setChatMessages] = useState([
@@ -242,7 +235,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
               <span className="text-sm font-semibold text-cyan-400">{tokens} tokens</span>
             </div>
             <button
-              onClick={() => setShowControlPanel(!showControlPanel)}
+              onClick={onGoControlPanel}
               className={darkMode ? "p-2 rounded-lg bg-gray-800 border border-cyan-500/30 hover:bg-gray-700 transition-colors" : "p-2 rounded-lg bg-white border border-indigo-200 hover:bg-indigo-50 transition-colors shadow-sm"}
               title="Panel de control"
             >

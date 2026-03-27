@@ -4,10 +4,11 @@ import { SynthesisStudio } from './components/SynthesisStudio'
 import VoiceCloningPanel from './components/VoiceCloningPanel'
 import { PricingPage } from './components/PricingPage'
 import { PricingCards } from './components/PricingCards'
+import { ControlPanel } from './components/ControlPanel'
 import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft } from 'lucide-react'
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-cloning', or 'pricing'
+  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-cloning', 'pricing', or 'control-panel'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [tokens, setTokens] = useState(100)
   const [darkMode, setDarkMode] = useState(() => {
@@ -30,6 +31,11 @@ export function App() {
   // Pricing Page
   if (currentPage === 'pricing') {
     return <PricingPage onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} />
+  }
+
+  // Control Panel Page
+  if (currentPage === 'control-panel') {
+    return <ControlPanel onClose={() => setCurrentPage('studio')} darkMode={darkMode} audioSpeed={0} setAudioSpeed={() => {}} />
   }
 
   // Voice Cloning Page
@@ -80,7 +86,7 @@ export function App() {
   if (currentPage === 'studio') {
     return (
       <div>
-        <SynthesisStudio onGoHome={() => setCurrentPage('landing')} onGoVoiceCloning={() => setCurrentPage('voice-cloning')} />
+        <SynthesisStudio onGoHome={() => setCurrentPage('landing')} onGoVoiceCloning={() => setCurrentPage('voice-cloning')} onGoControlPanel={() => setCurrentPage('control-panel')} />
       </div>
     )
   }
