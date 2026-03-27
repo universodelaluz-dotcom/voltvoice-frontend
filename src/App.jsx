@@ -28,7 +28,7 @@ export function App() {
   if (currentPage === 'studio') {
     return (
       <div>
-        <SynthesisStudio />
+        <SynthesisStudio onGoHome={() => setCurrentPage('landing')} />
       </div>
     )
   }
