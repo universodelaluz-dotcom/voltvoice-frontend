@@ -57,6 +57,13 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
   const [newChatMessage, setNewChatMessage] = useState('')
   const [currentChatUser, setCurrentChatUser] = useState('viewer123')
 
+  // Aplicar velocidad al audio cuando cambie
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = audioSpeed
+    }
+  }, [audioSpeed, audioUrl])
+
   // Cargar voces disponibles de Inworld AI + Google TTS + Voces locales
   useEffect(() => {
     const allVoices = [
@@ -107,7 +114,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
       if (isWebSpeech) {
         // Usar Web Speech API (voces locales del sistema operativo)
         const utterance = new SpeechSynthesisUtterance(text)
-        utterance.rate = 1.0
+        utterance.rate = audioSpeed
         utterance.pitch = 1.0
         utterance.volume = 1.0
 
