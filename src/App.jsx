@@ -549,7 +549,7 @@ export function App() {
                 Ir al Studio <ChevronRight className="w-5 h-5" />
               </button>
               <button
-                onClick={() => setIsPaymentOpen(true)}
+                onClick={() => setCurrentPage('pricing')}
                 className="px-8 py-4 border-2 border-cyan-400 text-cyan-400 rounded-lg font-bold text-lg hover:bg-cyan-400/10 transition-all inline-flex items-center gap-2"
               >
                 Ver Planes
