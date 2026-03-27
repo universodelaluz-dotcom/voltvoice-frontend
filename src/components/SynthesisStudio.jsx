@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import TikTokLivePanel from './TikTokLivePanel'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings } from 'lucide-react'
 
-export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, audioSpeed, setAudioSpeed, readOnlyMessage, setReadOnlyMessage, skipRepeated, setSkipRepeated, onlyDonors, setOnlyDonors, onlyQuestions, setOnlyQuestions }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, config, updateConfig }) {
+  const audioSpeed = config.audioSpeed || 1.0
   // User Config
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
@@ -197,12 +198,10 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   }
 
   const handleSynthesizeFromChat = (messageObj) => {
-    // messageObj puede ser { user, message } o solo un string
     if (typeof messageObj === 'string') {
       setText(messageObj)
     } else {
-      // Si readOnlyMessage es true, solo leer el mensaje sin el nombre
-      const fullText = readOnlyMessage ? messageObj.message : `${messageObj.user}: ${messageObj.message}`
+      const fullText = config.readOnlyMessage ? messageObj.message : `${messageObj.user}: ${messageObj.message}`
       setText(fullText)
     }
   }
@@ -267,7 +266,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* TikTok Live Section */}
-        <TikTokLivePanel onlyDonors={onlyDonors} readOnlyMessage={readOnlyMessage} skipRepeated={skipRepeated} onlyQuestions={onlyQuestions} />
+        <TikTokLivePanel config={config} />
 
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -11,11 +11,37 @@ export function App() {
   const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-cloning', 'pricing', or 'control-panel'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [tokens, setTokens] = useState(100)
-  const [audioSpeed, setAudioSpeed] = useState(1.0)
-  const [readOnlyMessage, setReadOnlyMessage] = useState(false)
-  const [skipRepeated, setSkipRepeated] = useState(false)
-  const [onlyDonors, setOnlyDonors] = useState(false)
-  const [onlyQuestions, setOnlyQuestions] = useState(false)
+
+  // Config centralizado para todas las opciones
+  const [config, setConfig] = useState({
+    audioSpeed: 1.0,
+    readOnlyMessage: false,
+    skipRepeated: false,
+    onlyDonors: false,
+    onlyQuestions: false,
+    announceFollowers: false,
+    announceGifts: false,
+    ignoreLinks: false,
+    ignoreExcessiveEmojis: false,
+    onlyModerators: false,
+    announceViewers: false,
+    announceLikes: false,
+    announceShares: false,
+    announceBattles: false,
+    announcePolls: false,
+    announceGoals: false,
+    donorCharLimitEnabled: false,
+    donorCharLimit: 200,
+    minMessageLengthEnabled: false,
+    minMessageLength: 3,
+    maxQueueEnabled: false,
+    maxQueueSize: 20,
+    donorVoiceEnabled: false,
+    donorVoiceId: 'Diego',
+  })
+
+  const updateConfig = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
+
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('voltvoice-theme') !== 'light'
@@ -40,7 +66,7 @@ export function App() {
 
   // Control Panel Page
   if (currentPage === 'control-panel') {
-    return <ControlPanel onClose={() => setCurrentPage('studio')} darkMode={darkMode} audioSpeed={audioSpeed} setAudioSpeed={setAudioSpeed} readOnlyMessage={readOnlyMessage} setReadOnlyMessage={setReadOnlyMessage} skipRepeated={skipRepeated} setSkipRepeated={setSkipRepeated} onlyDonors={onlyDonors} setOnlyDonors={setOnlyDonors} onlyQuestions={onlyQuestions} setOnlyQuestions={setOnlyQuestions} />
+    return <ControlPanel onClose={() => setCurrentPage('studio')} darkMode={darkMode} config={config} updateConfig={updateConfig} />
   }
 
   // Voice Cloning Page
@@ -95,16 +121,8 @@ export function App() {
           onGoHome={() => setCurrentPage('landing')}
           onGoVoiceCloning={() => setCurrentPage('voice-cloning')}
           onGoControlPanel={() => setCurrentPage('control-panel')}
-          audioSpeed={audioSpeed}
-          setAudioSpeed={setAudioSpeed}
-          readOnlyMessage={readOnlyMessage}
-          setReadOnlyMessage={setReadOnlyMessage}
-          skipRepeated={skipRepeated}
-          setSkipRepeated={setSkipRepeated}
-          onlyDonors={onlyDonors}
-          setOnlyDonors={setOnlyDonors}
-          onlyQuestions={onlyQuestions}
-          setOnlyQuestions={setOnlyQuestions}
+          config={config}
+          updateConfig={updateConfig}
         />
       </div>
     )

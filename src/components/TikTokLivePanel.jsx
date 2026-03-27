@@ -10,7 +10,16 @@ const isQuestion = (text) => {
   return questionWords.test(trimmed)
 }
 
-export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = false, skipRepeated = false, onlyQuestions = false }) {
+const hasExcessiveEmojis = (text) => {
+  const emojiRegex = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu
+  const emojis = text.match(emojiRegex) || []
+  const nonEmoji = text.replace(emojiRegex, '').trim()
+  return emojis.length > 5 || (emojis.length > 0 && nonEmoji.length === 0)
+}
+
+const hasLinks = (text) => /https?:\/\/|www\.|\.com|\.net|\.org|bit\.ly/i.test(text)
+
+export default function TikTokLivePanel({ config = {} }) {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
   useEffect(() => {
@@ -36,12 +45,15 @@ export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = 
   const speakQueueRef = useRef([])
   const isProcessingRef = useRef(false)
   const lastMessageRef = useRef('')
+  const configRef = useRef(config)
+
+  // Mantener config actualizado en ref para acceso en callbacks
+  useEffect(() => { configRef.current = config }, [config])
 
   // Conectar a WebSocket cuando el usuario se conecte a TikTok
   useEffect(() => {
     if (!isConnected || !tiktokUser) return
 
-    // Iniciar conexión WebSocket
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const wsURL = `${protocol}//${API_URL.replace(/^https?:\/\//, '')}/api/tiktok/ws`
 
@@ -57,43 +69,94 @@ export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = 
     ws.onmessage = async (event) => {
       try {
         const data = JSON.parse(event.data)
+        const c = configRef.current
 
         if (data.type === 'subscribed') {
           console.log('[TikTok] Suscrito a:', data.username)
+
+        // === EVENTOS DE NOTIFICACIÓN ===
         } else if (data.data && data.data.type === 'gift') {
-          // Registrar donador
           const giftData = data.data
           console.log(`[TikTok] 🎁 Regalo de @${giftData.username}: ${giftData.giftName}`)
           setDonors(prev => new Set([...prev, giftData.username]))
+          // Anunciar regalo
+          if (c.announceGifts) {
+            const text = `${giftData.username} envió ${giftData.giftName}`
+            queueMessage(text, giftData.username)
+          }
+
+        } else if (data.data && data.data.type === 'follow') {
+          if (c.announceFollowers) {
+            const text = `Nuevo seguidor: ${data.data.username}`
+            queueMessage(text, data.data.username)
+          }
+
+        } else if (data.data && data.data.type === 'like') {
+          if (c.announceLikes && data.data.totalLikeCount) {
+            const text = `Ya tienes ${data.data.totalLikeCount} likes`
+            queueMessage(text, 'sistema')
+          }
+
+        } else if (data.data && data.data.type === 'share') {
+          if (c.announceShares) {
+            const text = `${data.data.username} compartió tu stream`
+            queueMessage(text, data.data.username)
+          }
+
+        } else if (data.data && data.data.type === 'viewer_count') {
+          if (c.announceViewers) {
+            const text = `Hay ${data.data.viewerCount} personas viéndote`
+            queueMessage(text, 'sistema')
+          }
+
+        } else if (data.data && data.data.type === 'battle') {
+          if (c.announceBattles) {
+            queueMessage('Batalla iniciada', 'sistema')
+          }
+
+        } else if (data.data && data.data.type === 'poll') {
+          if (c.announcePolls) {
+            const text = data.data.text || 'Nueva encuesta'
+            queueMessage(text, 'sistema')
+          }
+
+        } else if (data.data && data.data.type === 'goal') {
+          if (c.announceGoals) {
+            const text = data.data.text || 'Avance en meta'
+            queueMessage(text, 'sistema')
+          }
+
+        // === MENSAJES DE CHAT ===
         } else if (data.type === 'message') {
           const msg = data.data
           console.log('[TikTok] Nuevo mensaje:', msg.username, msg.text)
 
           // Filtro: usuarios baneados
-          if (bannedUsers.has(msg.username)) {
-            console.log(`[TikTok] Saltado (baneado): @${msg.username}`)
-            return
-          }
+          if (bannedUsers.has(msg.username)) return
 
           // Filtro: solo donadores
-          if (onlyDonors && !msg.isDonor && !donors.has(msg.username)) {
-            console.log(`[TikTok] Saltado (no es donador): @${msg.username}`)
-            return
-          }
+          if (c.onlyDonors && !msg.isDonor && !donors.has(msg.username)) return
+
+          // Filtro: solo moderadores
+          if (c.onlyModerators && !msg.isModerator) return
 
           // Filtro: solo preguntas
-          if (onlyQuestions && !isQuestion(msg.text)) {
-            console.log(`[TikTok] Saltado (no es pregunta): ${msg.text}`)
-            return
-          }
+          if (c.onlyQuestions && !isQuestion(msg.text)) return
 
           // Filtro: saltar repetidos
-          if (skipRepeated && msg.text === lastMessageRef.current) {
-            console.log(`[TikTok] Saltado (repetido): ${msg.text}`)
-            return
-          }
+          if (c.skipRepeated && msg.text === lastMessageRef.current) return
           lastMessageRef.current = msg.text
 
+          // Filtro: ignorar enlaces
+          if (c.ignoreLinks && hasLinks(msg.text)) return
+
+          // Filtro: ignorar emojis excesivos
+          if (c.ignoreExcessiveEmojis && hasExcessiveEmojis(msg.text)) return
+
+          // Filtro: largo mínimo
+          if (c.minMessageLengthEnabled && msg.text.trim().length < c.minMessageLength) return
+
+          // Agregar mensaje a la lista visual
           setMessages((prev) => [
             ...prev,
             {
@@ -106,10 +169,24 @@ export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = 
             }
           ])
 
-          // Aplicar opción de leer solo mensaje
+          // Limitar cola máxima
+          if (c.maxQueueEnabled && speakQueueRef.current.length >= c.maxQueueSize) {
+            console.log(`[TikTok] Cola llena (${c.maxQueueSize}), descartando mensaje`)
+            return
+          }
+
+          // Limitar caracteres para donadores
+          let textToSpeak = msg.text
+          if (c.donorCharLimitEnabled && (msg.isDonor || donors.has(msg.username))) {
+            textToSpeak = msg.text.substring(0, c.donorCharLimit)
+          }
+
+          // Construir texto final
           const displayName = nickOverrides[msg.username] || msg.username
-          const textToRead = readOnlyMessage ? msg.text : `${displayName}: ${msg.text}`
-          queueMessage(textToRead, msg.username)
+          const finalText = c.readOnlyMessage ? textToSpeak : `${displayName}: ${textToSpeak}`
+
+          queueMessage(finalText, msg.username)
+
         } else if (data.type === 'status') {
           if (data.data) {
             setStats({
@@ -169,7 +246,7 @@ export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = 
     }
   }, [isConnected, tiktokUser])
 
-  // Cola de audio - procesa UN mensaje a la vez (igual que el local)
+  // Cola de audio
   const queueMessage = (text, username) => {
     speakQueueRef.current.push({ text, username })
     console.log(`[TikTok] Agregado a cola (${speakQueueRef.current.length} pendientes)`)
@@ -187,6 +264,11 @@ export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = 
       const remaining = speakQueueRef.current.length
       console.log(`[TikTok] REPRODUCIENDO: "${text.substring(0, 50)}" (pendientes: ${remaining})`)
 
+      // Determinar voz: si es donador y voz diferente está habilitada
+      const c = configRef.current
+      const isDonor = donors.has(username)
+      const voiceId = (c.donorVoiceEnabled && isDonor) ? c.donorVoiceId : 'es-ES'
+
       try {
         const response = await fetch(`${API_URL}/api/tiktok/message`, {
           method: 'POST',
@@ -195,7 +277,7 @@ export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = 
             username: tiktokUser,
             messageUsername: username,
             messageText: text,
-            voiceId: 'es-ES'
+            voiceId
           })
         })
 
@@ -208,9 +290,9 @@ export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = 
             )
           )
 
-          // Esperar a que termine el audio antes del siguiente
           await new Promise((resolve) => {
             const audio = new Audio(data.audio)
+            audio.playbackRate = c.audioSpeed || 1.0
             audio.onended = () => {
               console.log(`[TikTok] Audio terminado`)
               setMessages((prev) =>
