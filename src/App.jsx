@@ -268,6 +268,121 @@ export function App() {
         </div>
       </section>
 
+      {/* Benefits Section */}
+      <section className="py-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          <h3 className="text-4xl font-black text-center mb-16">
+            ¿Por qué elegir <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">VoltVoice</span>?
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {benefits.map((benefit, idx) => (
+              <div
+                key={idx}
+                className={"group rounded-xl p-8 transition-all " + (darkMode ? "bg-gradient-to-br from-white/5 to-white/0 border border-white/10 hover:border-cyan-400/50 hover:bg-white/10" : "bg-white border border-gray-200 shadow-md hover:shadow-lg hover:border-cyan-400")}
+              >
+                <div className="text-4xl mb-4">{benefit.icon}</div>
+                <h4 className="text-xl font-bold mb-3">{benefit.title}</h4>
+                <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{benefit.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-20 px-4 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 border-y border-white/10">
+        <div className="max-w-7xl mx-auto">
+          <h3 className="text-4xl font-black text-center mb-16">
+            Así de <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">fácil</span> es empezar
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {howItWorks.map((item, idx) => (
+              <div key={idx} className="relative">
+                <div className="bg-gradient-to-br from-cyan-400/20 to-purple-500/20 border border-cyan-400/30 rounded-xl p-8 text-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-4">
+                    {item.step}
+                  </div>
+                  <h4 className="text-xl font-bold mb-3">{item.title}</h4>
+                  <p className="text-gray-400">{item.description}</p>
+                </div>
+                {idx < howItWorks.length - 1 && (
+                  <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2">
+                    <ChevronRight className="w-8 h-8 text-cyan-400/50" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          <h3 className="text-4xl font-black text-center mb-4">
+            Planes <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Accesibles</span>
+          </h3>
+          <p className="text-center text-gray-400 mb-16">Elige el plan perfecto para ti. Horas aproximadas basadas en 10 msg/min y 35 caracteres promedio por mensaje.</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {pricing.map((plan, idx) => (
+              <div
+                key={idx}
+                className={`rounded-xl overflow-hidden transition-all ${
+                  plan.popular
+                    ? 'ring-2 ring-cyan-400 transform md:scale-105'
+                    : 'border border-white/10'
+                } ${plan.popular ? 'bg-gradient-to-br from-cyan-500/10 to-purple-500/10' : 'bg-white/5'}`}
+              >
+                {plan.popular && (
+                  <div className="bg-gradient-to-r from-cyan-400 to-purple-500 text-white text-center py-2 font-bold text-sm">
+                    MÁS POPULAR
+                  </div>
+                )}
+
+                <div className="p-8">
+                  <h4 className="text-2xl font-black mb-2">{plan.name}</h4>
+                  <p className="text-gray-400 text-sm mb-6">{plan.description}</p>
+
+                  <div className="mb-6">
+                    <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
+                      {plan.priceUsd}
+                    </div>
+                    <div className="text-sm text-gray-400 mt-1">{plan.priceMxn}</div>
+                    <div className="text-sm text-gray-500 mt-2">{plan.tokensPerMonth}</div>
+                    <div className="text-sm text-cyan-400 mt-1 font-semibold">{plan.hours}</div>
+                  </div>
+
+                  <button
+                    onClick={() => setIsPaymentOpen(true)}
+                    className={`w-full py-3 rounded-lg font-bold transition-all mb-6 ${
+                      plan.popular
+                        ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white hover:shadow-lg hover:shadow-cyan-400/50'
+                        : 'border border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/10'
+                    }`}
+                  >
+                    Comprar
+                  </button>
+
+                  <ul className="space-y-3">
+                    {plan.features.map((feature, fidx) => (
+                      <li key={fidx} className="flex items-center gap-3 text-sm text-gray-300">
+                        <div className="w-5 h-5 rounded-full bg-cyan-400/20 flex items-center justify-center">
+                          <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
+                        </div>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Additional Packages Section */}
       <section className={"py-24 px-4 relative overflow-hidden " + (darkMode ? "bg-[#0a0a1a]" : "bg-gray-50")}>
         {/* Background glow */}
@@ -399,122 +514,6 @@ export function App() {
           <p className={"text-center text-xs mt-10 " + (darkMode ? "text-gray-600" : "text-gray-400")}>
             🔒 Pagos seguros · Los tokens no expiran · Se acumulan con tu plan
           </p>
-        </div>
-      </section>
-
-
-      {/* Benefits Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h3 className="text-4xl font-black text-center mb-16">
-            ¿Por qué elegir <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">VoltVoice</span>?
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {benefits.map((benefit, idx) => (
-              <div
-                key={idx}
-                className={"group rounded-xl p-8 transition-all " + (darkMode ? "bg-gradient-to-br from-white/5 to-white/0 border border-white/10 hover:border-cyan-400/50 hover:bg-white/10" : "bg-white border border-gray-200 shadow-md hover:shadow-lg hover:border-cyan-400")}
-              >
-                <div className="text-4xl mb-4">{benefit.icon}</div>
-                <h4 className="text-xl font-bold mb-3">{benefit.title}</h4>
-                <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{benefit.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-20 px-4 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 border-y border-white/10">
-        <div className="max-w-7xl mx-auto">
-          <h3 className="text-4xl font-black text-center mb-16">
-            Así de <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">fácil</span> es empezar
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {howItWorks.map((item, idx) => (
-              <div key={idx} className="relative">
-                <div className="bg-gradient-to-br from-cyan-400/20 to-purple-500/20 border border-cyan-400/30 rounded-xl p-8 text-center">
-                  <div className="w-16 h-16 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-4">
-                    {item.step}
-                  </div>
-                  <h4 className="text-xl font-bold mb-3">{item.title}</h4>
-                  <p className="text-gray-400">{item.description}</p>
-                </div>
-                {idx < howItWorks.length - 1 && (
-                  <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2">
-                    <ChevronRight className="w-8 h-8 text-cyan-400/50" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h3 className="text-4xl font-black text-center mb-4">
-            Planes <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Accesibles</span>
-          </h3>
-          <p className="text-center text-gray-400 mb-16">Elige el plan perfecto para ti. Horas aproximadas basadas en 10 msg/min y 35 caracteres promedio por mensaje.</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricing.map((plan, idx) => (
-              <div
-                key={idx}
-                className={`rounded-xl overflow-hidden transition-all ${
-                  plan.popular
-                    ? 'ring-2 ring-cyan-400 transform md:scale-105'
-                    : 'border border-white/10'
-                } ${plan.popular ? 'bg-gradient-to-br from-cyan-500/10 to-purple-500/10' : 'bg-white/5'}`}
-              >
-                {plan.popular && (
-                  <div className="bg-gradient-to-r from-cyan-400 to-purple-500 text-white text-center py-2 font-bold text-sm">
-                    MÁS POPULAR
-                  </div>
-                )}
-
-                <div className="p-8">
-                  <h4 className="text-2xl font-black mb-2">{plan.name}</h4>
-                  <p className="text-gray-400 text-sm mb-6">{plan.description}</p>
-
-                  <div className="mb-6">
-                    <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-                      {plan.priceUsd}
-                    </div>
-                    <div className="text-sm text-gray-400 mt-1">{plan.priceMxn}</div>
-                    <div className="text-sm text-gray-500 mt-2">{plan.tokensPerMonth}</div>
-                    <div className="text-sm text-cyan-400 mt-1 font-semibold">{plan.hours}</div>
-                  </div>
-
-                  <button
-                    onClick={() => setIsPaymentOpen(true)}
-                    className={`w-full py-3 rounded-lg font-bold transition-all mb-6 ${
-                      plan.popular
-                        ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white hover:shadow-lg hover:shadow-cyan-400/50'
-                        : 'border border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/10'
-                    }`}
-                  >
-                    Comprar
-                  </button>
-
-                  <ul className="space-y-3">
-                    {plan.features.map((feature, fidx) => (
-                      <li key={fidx} className="flex items-center gap-3 text-sm text-gray-300">
-                        <div className="w-5 h-5 rounded-full bg-cyan-400/20 flex items-center justify-center">
-                          <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
-                        </div>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
