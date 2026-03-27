@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import VoiceCloningPanel from './VoiceCloningPanel'
 import TikTokLivePanel from './TikTokLivePanel'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon } from 'lucide-react'
 
-export function SynthesisStudio({ onGoHome }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
   // User Config
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
@@ -236,14 +235,20 @@ export function SynthesisStudio({ onGoHome }) {
             >
               {darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-indigo-600" />}
             </button>
+            {onGoVoiceCloning && (
+              <button
+                onClick={onGoVoiceCloning}
+                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-semibold text-white hover:shadow-lg hover:shadow-purple-500/50 transition-all text-sm"
+              >
+                Preparar Voces
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Voice Cloning Section */}
-        <VoiceCloningPanel onCloneSuccess={() => window.location.reload()} />
         {/* TikTok Live Section */}
         <TikTokLivePanel />
 
@@ -275,7 +280,7 @@ export function SynthesisStudio({ onGoHome }) {
             {/* Text Input */}
             <div className={`${darkMode ? "space-y-2 bg-gray-900/50 border border-cyan-500/20 rounded-lg p-4" : "space-y-2 bg-white border border-indigo-200 rounded-lg p-4 shadow-sm"}`}>
               <label className="text-sm font-semibold text-cyan-400 uppercase tracking-wide">
-                Texto a sintetizar
+                Texto a probar
               </label>
               <textarea
                 value={text}

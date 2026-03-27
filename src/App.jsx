@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { StripePayment } from './components/StripePayment'
 import { SynthesisStudio } from './components/SynthesisStudio'
-import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon } from 'lucide-react'
+import VoiceCloningPanel from './components/VoiceCloningPanel'
+import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft } from 'lucide-react'
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState('landing') // 'landing' or 'studio'
+  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', or 'voice-cloning'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [tokens, setTokens] = useState(100)
   const [darkMode, setDarkMode] = useState(() => {
@@ -24,11 +25,55 @@ export function App() {
     }
   }, [darkMode])
 
-  // Si estamos en la página del studio, mostrar solo eso
+  // Voice Cloning Page
+  if (currentPage === 'voice-cloning') {
+    return (
+      <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 text-gray-900"}>
+        {/* Header */}
+        <nav className={`fixed top-0 w-full backdrop-blur-md z-50 transition-colors duration-300 ${darkMode ? 'bg-[#0f0f23]/80 border-b border-cyan-500/20' : 'bg-white/80 border-b border-gray-200 shadow-sm'}`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+            <button
+              onClick={() => setCurrentPage('landing')}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+            >
+              <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-purple-500 rounded-lg flex items-center justify-center">
+                <span className="text-xl font-black">⚡</span>
+              </div>
+              <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
+                VoltVoice
+              </h1>
+            </button>
+            <button
+              onClick={() => setCurrentPage('studio')}
+              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Volver al Studio
+            </button>
+          </div>
+        </nav>
+
+        {/* Voice Cloning Content */}
+        <div className="pt-32 pb-20 px-4">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-4xl font-black mb-4">
+              Preparativos <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">de Voces</span>
+            </h2>
+            <p className={`text-lg mb-12 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+              Aquí puedes clonar y preparar tus voces personalizadas antes de usarlas en el Studio.
+            </p>
+            <VoiceCloningPanel onCloneSuccess={() => window.location.reload()} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Studio Page
   if (currentPage === 'studio') {
     return (
       <div>
-        <SynthesisStudio onGoHome={() => setCurrentPage('landing')} />
+        <SynthesisStudio onGoHome={() => setCurrentPage('landing')} onGoVoiceCloning={() => setCurrentPage('voice-cloning')} />
       </div>
     )
   }
