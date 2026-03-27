@@ -14,12 +14,11 @@ export function PricingPage({ onGoHome, darkMode }) {
       popular: false,
       features: [
         { text: '100 Créditos/mes', included: true },
-        { text: 'Voces básicas', included: true },
-        { text: 'Calidad estándar (720p)', included: true },
-        { text: 'Almacenamiento 7 días', included: true },
-        { text: 'Soporte comunitario', included: true },
-        { text: 'API acceso', included: false },
-        { text: 'Voces premium', included: false },
+        { text: '5 Voces', included: true },
+        { text: 'Síntesis básica', included: true },
+        { text: 'Integración TikTok', included: false },
+        { text: 'Integración YouTube', included: false },
+        { text: 'Soporte prioritario', included: false },
       ]
     },
     {
@@ -34,12 +33,11 @@ export function PricingPage({ onGoHome, darkMode }) {
       badge: 'Save 38%',
       features: [
         { text: '5,000 Créditos/mes', included: true },
-        { text: 'Todas las voces', included: true },
-        { text: 'Calidad HD (1080p)', included: true },
-        { text: 'Almacenamiento 30 días', included: true },
-        { text: 'Soporte email', included: true },
-        { text: 'API acceso básico', included: true },
-        { text: 'Voces premium ilimitadas', included: false },
+        { text: '50+ Voces', included: true },
+        { text: 'Síntesis HD', included: true },
+        { text: 'Integración TikTok', included: true },
+        { text: 'Integración YouTube', included: false },
+        { text: 'API acceso', included: false },
       ]
     },
     {
@@ -54,12 +52,12 @@ export function PricingPage({ onGoHome, darkMode }) {
       badge: 'Save 50%',
       features: [
         { text: '25,000 Créditos/mes', included: true },
-        { text: 'Todas las voces', included: true },
-        { text: 'Calidad 4K', included: true },
-        { text: 'Almacenamiento 90 días', included: true },
-        { text: 'Soporte prioritario 24/7', included: true },
-        { text: 'API acceso avanzado', included: true },
-        { text: 'Voces premium ilimitadas', included: true },
+        { text: '100+ Voces', included: true },
+        { text: 'Síntesis premium', included: true },
+        { text: 'Integración TikTok', included: true },
+        { text: 'Integración YouTube', included: true },
+        { text: 'Soporte prioritario', included: true },
+        { text: 'API acceso completo', included: true },
       ]
     },
     {
@@ -74,12 +72,12 @@ export function PricingPage({ onGoHome, darkMode }) {
       badge: 'Save 17%',
       features: [
         { text: '100,000 Créditos/mes', included: true },
-        { text: 'Todas las voces ilimitadas', included: true },
-        { text: 'Calidad 4K + HDR', included: true },
-        { text: 'Almacenamiento ilimitado', included: true },
-        { text: 'Soporte VIP dedicado', included: true },
-        { text: 'API acceso premium', included: true },
-        { text: 'Integraciones personalizadas', included: true },
+        { text: 'Voces ilimitadas', included: true },
+        { text: 'Síntesis máxima calidad', included: true },
+        { text: 'Integración TikTok', included: true },
+        { text: 'Integración YouTube', included: true },
+        { text: 'Soporte VIP 24/7', included: true },
+        { text: 'API acceso ilimitado', included: true },
       ]
     }
   ]
