@@ -67,9 +67,9 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
   // Cargar voces disponibles de Inworld AI + Google TTS + Voces locales
   useEffect(() => {
     const allVoices = [
-      // === GOOGLE TTS (Rápido, económico) ===
-      { id: "es-ES", name: "⚡ Español Rápido (Google)", category: "google", engine: "google" },
-      { id: "en-US", name: "⚡ English Rápido (Google)", category: "google", engine: "google" },
+      // === GOOGLE TTS (Sin tokens) ===
+      { id: "es-ES", name: "Español sin tokens", category: "google", engine: "google" },
+      { id: "en-US", name: "Ingles sin tokens", category: "google", engine: "google" },
 
       // === INWORLD AI (Voces Premium - Naturales) ===
       { id: "Diego", name: "🎙️ Diego - Premium (Inworld)", category: "inworld", engine: "inworld" },
@@ -80,10 +80,6 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
       // === INWORLD AI (Tu Voz Clonada) ===
       { id: "default-cfjnp8x4nt-owd7yg-1xsw__garret", name: "👤 Garret (Tu Voz Clonada)", category: "inworld-cloned", engine: "inworld" },
       { id: "default-cfjnp8x4nt-owd7yg-1xsw__connor", name: "👤 Connor (Tu Voz Clonada)", category: "inworld-cloned", engine: "inworld" },
-
-      // === SISTEMA LOCAL (Gratis, sin latencia) ===
-      { id: "web-speech-es", name: "🖥️ Sistema - Español", category: "system", engine: "webspeech" },
-      { id: "web-speech-en", name: "🖥️ Sistema - English", category: "system", engine: "webspeech" },
     ]
     setVoices(allVoices)
     setSelectedVoice(allVoices[0]?.id || "")
