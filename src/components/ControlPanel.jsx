@@ -1,6 +1,6 @@
 import { ArrowLeft, Check } from 'lucide-react'
 
-export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed, readOnlyMessage, setReadOnlyMessage }) {
+export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed, readOnlyMessage, setReadOnlyMessage, skipRepeated, setSkipRepeated }) {
   const speed = audioSpeed || 1.0
 
   return (
@@ -69,7 +69,7 @@ export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed, rea
               </div>
             </div>
 
-            {/* Leer solo mensaje */}
+            {/* Leer solo mensajes */}
             <div className={`p-4 ${darkMode ? "border-b border-gray-800" : "border-b border-gray-200"}`}>
               <button
                 onClick={() => setReadOnlyMessage(!readOnlyMessage)}
@@ -84,7 +84,26 @@ export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed, rea
                 }`}>
                   {readOnlyMessage && <Check className="w-4 h-4 text-cyan-400" />}
                 </div>
-                <span className="text-sm">Leer solo mensaje (sin nombre)</span>
+                <span className="text-sm">Leer solo mensajes (sin nombre)</span>
+              </button>
+            </div>
+
+            {/* Saltar mensajes repetidos */}
+            <div className={`p-4 ${darkMode ? "border-b border-gray-800" : "border-b border-gray-200"}`}>
+              <button
+                onClick={() => setSkipRepeated(!skipRepeated)}
+                className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity"
+              >
+                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                  skipRepeated
+                    ? 'bg-cyan-500/20 border-cyan-400'
+                    : darkMode
+                      ? 'border-gray-600'
+                      : 'border-gray-300'
+                }`}>
+                  {skipRepeated && <Check className="w-4 h-4 text-cyan-400" />}
+                </div>
+                <span className="text-sm">Saltar mensajes repetidos</span>
               </button>
             </div>
           </div>

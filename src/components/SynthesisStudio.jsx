@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import TikTokLivePanel from './TikTokLivePanel'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings } from 'lucide-react'
 
-export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, audioSpeed, setAudioSpeed, readOnlyMessage, setReadOnlyMessage }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, audioSpeed, setAudioSpeed, readOnlyMessage, setReadOnlyMessage, skipRepeated, setSkipRepeated }) {
   // User Config
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
