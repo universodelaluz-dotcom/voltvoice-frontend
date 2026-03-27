@@ -243,14 +243,6 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             >
               {darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-indigo-600" />}
             </button>
-            {onGoVoiceCloning && (
-              <button
-                onClick={onGoVoiceCloning}
-                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-semibold text-white hover:shadow-lg hover:shadow-purple-500/50 transition-all text-sm"
-              >
-                Preparar Voces
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -260,18 +252,29 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
         {/* TikTok Live Section */}
         <TikTokLivePanel config={config} />
 
-        {/* Botón de configuración prominente */}
-        <button
-          onClick={onGoControlPanel}
-          className={`w-full mb-6 flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
-            darkMode
-              ? 'bg-gray-800/80 border border-cyan-500/30 hover:bg-gray-700 hover:border-cyan-400 text-cyan-400'
-              : 'bg-white border border-indigo-200 hover:bg-indigo-50 hover:border-indigo-400 text-indigo-600 shadow-sm'
-          }`}
-        >
-          <Settings className="w-5 h-5" />
-          <span>Configuración de lectura y voces</span>
-        </button>
+        {/* Botones de configuración y preparar voces */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <button
+            onClick={onGoControlPanel}
+            className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
+              darkMode
+                ? 'bg-gray-800/80 border border-cyan-500/30 hover:bg-gray-700 hover:border-cyan-400 text-cyan-400'
+                : 'bg-white border border-indigo-200 hover:bg-indigo-50 hover:border-indigo-400 text-indigo-600 shadow-sm'
+            }`}
+          >
+            <Settings className="w-5 h-5" />
+            <span>Configuración de lectura y voces</span>
+          </button>
+          {onGoVoiceCloning && (
+            <button
+              onClick={onGoVoiceCloning}
+              className="flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white hover:shadow-lg hover:shadow-purple-500/30"
+            >
+              <Mic2 className="w-5 h-5" />
+              <span>Preparar Voces</span>
+            </button>
+          )}
+        </div>
 
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
