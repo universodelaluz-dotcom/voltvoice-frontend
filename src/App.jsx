@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react'
 import { StripePayment } from './components/StripePayment'
 import { SynthesisStudio } from './components/SynthesisStudio'
 import VoiceCloningPanel from './components/VoiceCloningPanel'
+import { PricingPage } from './components/PricingPage'
 import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft } from 'lucide-react'
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', or 'voice-cloning'
+  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-cloning', or 'pricing'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [tokens, setTokens] = useState(100)
   const [darkMode, setDarkMode] = useState(() => {
@@ -24,6 +25,11 @@ export function App() {
       localStorage.setItem('voltvoice-theme', 'light')
     }
   }, [darkMode])
+
+  // Pricing Page
+  if (currentPage === 'pricing') {
+    return <PricingPage onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} />
+  }
 
   // Voice Cloning Page
   if (currentPage === 'voice-cloning') {
@@ -288,10 +294,10 @@ export function App() {
               Ir al Studio <ChevronRight className="w-5 h-5" />
             </button>
             <button
-              onClick={() => setIsPaymentOpen(true)}
+              onClick={() => setCurrentPage('pricing')}
               className="px-8 py-4 border-2 border-cyan-400/50 rounded-lg font-bold text-lg text-cyan-400 hover:bg-cyan-400/10 transition-all"
             >
-              Comprar Tokens
+              Ver Planes
             </button>
           </div>
 
