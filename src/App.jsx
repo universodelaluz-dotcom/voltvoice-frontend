@@ -305,6 +305,30 @@ export function App() {
         </div>
       </section>
 
+      {/* Showcase Section */}
+      <section className="py-20 px-4 bg-gradient-to-b from-cyan-500/5 to-transparent">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            {/* Banner 1 */}
+            <div className={`rounded-xl overflow-hidden shadow-2xl border ${darkMode ? "border-cyan-500/30" : "border-cyan-400/30"}`}>
+              <img
+                src="/images/streamvoicer1.png"
+                alt="StreamVoicer Banner"
+                className="w-full h-auto object-cover hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+            {/* Banner 2 */}
+            <div className={`rounded-xl overflow-hidden shadow-2xl border ${darkMode ? "border-purple-500/30" : "border-purple-400/30"}`}>
+              <img
+                src="/images/streamvoicer2.png"
+                alt="StreamVoicer Features"
+                className="w-full h-auto object-cover hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Benefits Section */}
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
@@ -555,6 +579,19 @@ export function App() {
                 Ver Planes
               </button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Promo Banner */}
+      <section className="py-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className={`rounded-2xl overflow-hidden shadow-2xl border ${darkMode ? "border-cyan-500/20" : "border-cyan-300"}`}>
+            <img
+              src="/images/streamvoicer3.png"
+              alt="StreamVoicer Premium"
+              className="w-full h-auto object-cover"
+            />
           </div>
         </div>
       </section>
