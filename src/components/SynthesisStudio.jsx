@@ -29,7 +29,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
   // Voices
   const [voices, setVoices] = useState([])
-  const [selectedVoice, setSelectedVoice] = useState('')
+  const selectedVoice = config.generalVoiceId || 'es-ES'
 
   // Synthesis
   const [text, setText] = useState('Hola, este es StreamVoicer. Tu plataforma para síntesis de voz profesional.')
@@ -79,7 +79,6 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       { id: "default-cfjnp8x4nt-owd7yg-1xsw__connor", name: "👤 Connor (Tu Voz Clonada)", category: "inworld-cloned", engine: "inworld" },
     ]
     setVoices(allVoices)
-    setSelectedVoice(allVoices[0]?.id || "")
   }, [userId])
 
   const handleSynthesize = async () => {
@@ -280,7 +279,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               <div className="relative">
                 <select
                   value={selectedVoice}
-                  onChange={(e) => setSelectedVoice(e.target.value)}
+                  onChange={(e) => updateConfig('generalVoiceId', e.target.value)}
                   className={`${darkMode ? "w-full bg-gray-800 border border-cyan-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500 appearance-none cursor-pointer pr-10" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 appearance-none cursor-pointer pr-10"}`}
                 >
                   {voices.map((voice) => (
