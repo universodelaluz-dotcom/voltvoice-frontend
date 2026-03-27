@@ -23,9 +23,9 @@ export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed }) {
       </nav>
 
       {/* Content */}
-      <div className="pt-32 pb-20 px-4">
-        <div className="max-w-2xl mx-auto">
-          <div className="space-y-1">
+      <div className="pt-32 pb-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="space-y-1 max-w-md">
             {/* Velocidad de Voz */}
             <div className={`p-4 ${darkMode ? "border-b border-gray-800" : "border-b border-gray-200"}`}>
               <div className="flex items-center justify-between mb-3">
