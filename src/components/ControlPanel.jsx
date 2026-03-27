@@ -1,33 +1,21 @@
-import { X } from 'lucide-react'
-
 export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed }) {
   const speed = audioSpeed || 1.0
 
   return (
-    <div className={darkMode ? "min-h-screen bg-gray-950 text-white" : "min-h-screen bg-white text-gray-900"}>
-      {/* Header */}
-      <div className={`${darkMode ? "bg-gray-900/50 border-b border-cyan-500/10" : "bg-gray-50 border-b border-gray-200"} sticky top-0 z-50`}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-lg font-semibold">Panel de Control</h1>
-          <button
-            onClick={onClose}
-            className={`p-2 rounded-lg transition-all ${
-              darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
-            }`}
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="space-y-3 max-w-sm">
-          {/* Velocidad de Voz */}
-          <div>
+    <div
+      className={`fixed inset-0 z-50 ${darkMode ? "bg-black/50" : "bg-white/50"} backdrop-blur-sm flex items-end justify-center`}
+      onClick={onClose}
+    >
+      <div
+        className={`w-full max-w-md ${darkMode ? "bg-gray-900/95 border-t border-cyan-500/20" : "bg-white/95 border-t border-gray-200"} rounded-t-2xl`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-6 py-6 space-y-4">
+          {/* Velocidad de Voz - Línea horizontal */}
+          <div className={`pb-4 border-b ${darkMode ? "border-gray-800" : "border-gray-200"}`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs">Velocidad de Voz</span>
-              <span className="text-xs text-cyan-400 font-semibold">
+              <span className="text-sm">Velocidad de Voz</span>
+              <span className="text-sm text-cyan-400 font-semibold">
                 {speed.toFixed(1)}x
               </span>
             </div>
@@ -39,7 +27,7 @@ export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed }) {
               step="0.1"
               value={speed}
               onChange={(e) => setAudioSpeed(parseFloat(e.target.value))}
-              className="w-full h-1 rounded-full appearance-none cursor-pointer accent-cyan-400 mb-1"
+              className="w-full h-1 rounded-full appearance-none cursor-pointer accent-cyan-400 mb-2"
               style={{
                 background: darkMode
                   ? `linear-gradient(to right, #06b6d4 0%, #06b6d4 ${((speed - 0.5) / 1.5) * 100}%, #374151 ${((speed - 0.5) / 1.5) * 100}%, #374151 100%)`
@@ -47,12 +35,12 @@ export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed }) {
               }}
             />
 
-            <div className="flex gap-1 text-xs mt-1">
+            <div className="flex gap-2 text-xs">
               {[0.5, 1.0, 1.5, 2.0].map((btn) => (
                 <button
                   key={btn}
                   onClick={() => setAudioSpeed(btn)}
-                  className={`text-xs transition-colors ${
+                  className={`transition-colors ${
                     Math.abs(speed - btn) < 0.01
                       ? 'text-cyan-400'
                       : darkMode
@@ -67,7 +55,7 @@ export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed }) {
           </div>
 
           {/* Más opciones próximamente */}
-          <div className="text-xs opacity-30">
+          <div className="text-xs opacity-30 text-center pb-2">
             ⚙️ Más opciones próximamente
           </div>
         </div>
