@@ -5,12 +5,64 @@ import VoiceCloningPanel from './components/VoiceCloningPanel'
 import { PricingPage } from './components/PricingPage'
 import { PricingCards } from './components/PricingCards'
 import { ControlPanel } from './components/ControlPanel'
-import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft } from 'lucide-react'
+import { AuthPage } from './components/AuthPage'
+import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft, LogOut } from 'lucide-react'
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-cloning', 'pricing', or 'control-panel'
+  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-cloning', 'pricing', 'control-panel', 'auth'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
+
+  // Auth state
+  const [user, setUser] = useState(null)
+  const [authToken, setAuthToken] = useState(null)
   const [tokens, setTokens] = useState(100)
+
+  // Restaurar sesión al cargar
+  useEffect(() => {
+    const savedToken = localStorage.getItem('sv-token')
+    const savedUser = localStorage.getItem('sv-user')
+    if (savedToken && savedUser) {
+      try {
+        const userData = JSON.parse(savedUser)
+        setUser(userData)
+        setAuthToken(savedToken)
+        setTokens(userData.tokens || 100)
+        // Verificar que el token sigue siendo válido
+        fetch(`${API_URL}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${savedToken}` }
+        }).then(r => r.json()).then(data => {
+          if (data.success) {
+            setUser(data.user)
+            setTokens(data.user.tokens || 100)
+            localStorage.setItem('sv-user', JSON.stringify(data.user))
+          } else {
+            // Token expirado, limpiar
+            handleLogout()
+          }
+        }).catch(() => {})
+      } catch {
+        localStorage.removeItem('sv-token')
+        localStorage.removeItem('sv-user')
+      }
+    }
+  }, [])
+
+  const handleLogin = (userData, token) => {
+    setUser(userData)
+    setAuthToken(token)
+    setTokens(userData.tokens || 100)
+    setCurrentPage('studio')
+  }
+
+  const handleLogout = () => {
+    setUser(null)
+    setAuthToken(null)
+    localStorage.removeItem('sv-token')
+    localStorage.removeItem('sv-user')
+    setCurrentPage('landing')
+  }
 
   // Config centralizado para todas las opciones
   const [config, setConfig] = useState({
@@ -63,6 +115,11 @@ export function App() {
       localStorage.setItem('voltvoice-theme', 'light')
     }
   }, [darkMode])
+
+  // Auth Page
+  if (currentPage === 'auth') {
+    return <AuthPage onLogin={handleLogin} onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} />
+  }
 
   // Pricing Page
   if (currentPage === 'pricing') {
@@ -283,7 +340,7 @@ export function App() {
 
   return (
     <div className={"min-h-screen overflow-hidden transition-colors duration-300 " + (darkMode ? "bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "bg-gradient-to-b from-gray-50 via-white to-gray-100 text-gray-900") + ""}>
-      {/* Botones Esquina Superior Izquierda */}
+      {/* Botones Esquina Superior */}
       <div className="fixed top-4 left-4 z-40 flex items-center gap-3">
         <button
           onClick={() => setDarkMode(!darkMode)}
@@ -292,11 +349,32 @@ export function App() {
           {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
         <button
-          onClick={() => setCurrentPage('studio')}
+          onClick={() => user ? setCurrentPage('studio') : setCurrentPage('auth')}
           className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all text-sm"
         >
           Studio
         </button>
+      </div>
+      <div className="fixed top-4 right-4 z-40 flex items-center gap-3">
+        {user ? (
+          <>
+            <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user.email}</span>
+            <button
+              onClick={handleLogout}
+              className={"p-2 rounded-lg transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-red-400" : "bg-white/90 hover:bg-white text-red-500 shadow-md")}
+              title="Cerrar sesión"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => setCurrentPage('auth')}
+            className={"px-4 py-2 rounded-lg font-semibold text-sm transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-white border border-white/20" : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm")}
+          >
+            Iniciar Sesión
+          </button>
+        )}
       </div>
 
       {/* Hero Section */}
@@ -331,10 +409,10 @@ export function App() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => setCurrentPage('studio')}
+              onClick={() => user ? setCurrentPage('studio') : setCurrentPage('auth')}
               className="px-8 py-4 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-lg text-white hover:shadow-xl hover:shadow-cyan-400/50 transition-all flex items-center justify-center gap-2"
             >
-              Ir al Studio <ChevronRight className="w-5 h-5" />
+              {user ? 'Ir al Studio' : 'Comenzar Gratis'} <ChevronRight className="w-5 h-5" />
             </button>
             <button
               onClick={() => setCurrentPage('pricing')}
@@ -585,10 +663,10 @@ export function App() {
             </p>
             <div className="flex gap-4 justify-center">
               <button
-                onClick={() => setCurrentPage('studio')}
+                onClick={() => user ? setCurrentPage('studio') : setCurrentPage('auth')}
                 className="px-8 py-4 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-lg text-white hover:shadow-xl hover:shadow-cyan-400/50 transition-all inline-flex items-center gap-2"
               >
-                Ir al Studio <ChevronRight className="w-5 h-5" />
+                {user ? 'Ir al Studio' : 'Comenzar Gratis'} <ChevronRight className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setCurrentPage('pricing')}
