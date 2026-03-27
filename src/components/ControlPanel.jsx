@@ -200,7 +200,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig }) {
             <CheckOption label="Ignorar emojis excesivos" checked={config.ignoreExcessiveEmojis} onChange={() => updateConfig('ignoreExcessiveEmojis', !config.ignoreExcessiveEmojis)} darkMode={darkMode} />
 
             <CheckWithInput
-              label="Largo mínimo de mensaje"
+              label="Ignorar mensajes muy cortos (mínimo de caracteres)"
               checked={config.minMessageLengthEnabled}
               onToggle={() => updateConfig('minMessageLengthEnabled', !config.minMessageLengthEnabled)}
               value={config.minMessageLength}
