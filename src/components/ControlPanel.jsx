@@ -9,7 +9,7 @@ function CheckOption({ label, checked, onChange, darkMode }) {
         }`}>
           {checked && <Check className="w-4 h-4 text-cyan-400" />}
         </div>
-        <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'} ${checked ? 'font-medium' : ''}`}>{label}</span>
+        <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${checked ? 'font-semibold' : 'font-medium'}`}>{label}</span>
       </button>
     </div>
   )
@@ -24,7 +24,7 @@ function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeh
         }`}>
           {checked && <Check className="w-4 h-4 text-cyan-400" />}
         </div>
-        <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'} ${checked ? 'font-medium' : ''}`}>{label}</span>
+        <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${checked ? 'font-semibold' : 'font-medium'}`}>{label}</span>
       </button>
       {checked && (
         <div className="mt-2 ml-8">
@@ -79,7 +79,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig }) {
             {/* === VELOCIDAD === */}
             <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
               <div className="flex items-center justify-between mb-3">
-                <span className={`text-sm font-medium ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Velocidad de Voz</span>
+                <span className={`text-[15px] font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Velocidad de Voz</span>
                 <span className="text-sm text-cyan-400 font-semibold">{speed.toFixed(1)}x</span>
               </div>
               <input
@@ -124,7 +124,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig }) {
                 }`}>
                   {config.donorVoiceEnabled && <Check className="w-4 h-4 text-cyan-400" />}
                 </div>
-                <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'} ${config.donorVoiceEnabled ? 'font-medium' : ''}`}>Voz diferente para donadores</span>
+                <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${config.donorVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz diferente para donadores</span>
               </button>
               {config.donorVoiceEnabled && (
                 <div className="mt-2 ml-8">
