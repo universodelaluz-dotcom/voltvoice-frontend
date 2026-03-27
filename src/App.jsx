@@ -3,6 +3,7 @@ import { StripePayment } from './components/StripePayment'
 import { SynthesisStudio } from './components/SynthesisStudio'
 import VoiceCloningPanel from './components/VoiceCloningPanel'
 import { PricingPage } from './components/PricingPage'
+import { PricingCards } from './components/PricingCards'
 import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft } from 'lucide-react'
 
 export function App() {
@@ -351,6 +352,19 @@ export function App() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h3 className="text-4xl font-black mb-4">
+              Planes <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Accesibles</span>
+            </h3>
+            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>Elige el plan perfecto para tu stream</p>
+          </div>
+          <PricingCards darkMode={darkMode} showToggle={true} />
         </div>
       </section>
 
