@@ -1,8 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Upload, Zap, AlertCircle, CheckCircle, Loader } from 'lucide-react'
 
 export default function VoiceCloningPanel({ onCloneSuccess }) {
-  const [voiceName, setVoiceName] = useState('')
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
+
+  useEffect(() => {
+    const sync = () => setDarkMode(localStorage.getItem('voltvoice-theme') !== 'light')
+    sync()
+    const interval = setInterval(sync, 500)
+    return () => clearInterval(interval)
+  }, [])
+
+    const [voiceName, setVoiceName] = useState('')
   const [audioFile, setAudioFile] = useState(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState(null)
@@ -81,10 +90,10 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
   }
 
   return (
-    <div className="bg-gray-900 border border-cyan-500/30 rounded-lg p-6 mb-6">
+    <div className={darkMode ? "bg-gray-900 border border-cyan-500/30 rounded-lg p-6 mb-6" : "bg-white border border-indigo-200 rounded-lg p-6 mb-6 shadow-sm"}>
       <div className="flex items-center gap-3 mb-4">
         <Zap className="w-6 h-6 text-cyan-400" />
-        <h2 className="text-xl font-bold text-white">Clonar Voz</h2>
+        <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Clonar Voz</h2>
       </div>
 
       <div className="mb-4 p-3 bg-amber-900/20 border border-amber-500/30 rounded flex gap-2">
@@ -98,7 +107,7 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
       <form onSubmit={handleCloneVoice} className="space-y-4">
         {/* Nombre de la voz */}
         <div>
-          <label className="block text-sm font-medium text-cyan-300 mb-2">
+          <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
             Nombre de la voz
           </label>
           <input
@@ -106,14 +115,14 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
             value={voiceName}
             onChange={(e) => setVoiceName(e.target.value)}
             placeholder="Ej: Mi voz, Voz profesional..."
-            className="w-full bg-gray-800 border border-cyan-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500"
+            className={darkMode ? "w-full bg-gray-800 border border-cyan-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
             disabled={loading}
           />
         </div>
 
         {/* File upload */}
         <div>
-          <label className="block text-sm font-medium text-cyan-300 mb-2">
+          <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
             Archivo de audio (MP3 o WAV, máx 10MB)
           </label>
           <div className="relative">
@@ -127,10 +136,10 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
             />
             <label
               htmlFor="audio-input"
-              className="flex items-center justify-center gap-2 w-full bg-gray-800 border-2 border-dashed border-cyan-500/30 rounded-lg p-4 cursor-pointer hover:border-cyan-500 transition"
+              className={darkMode ? "flex items-center justify-center gap-2 w-full bg-gray-800 border-2 border-dashed border-cyan-500/30 rounded-lg p-4 cursor-pointer hover:border-cyan-500 transition" : "flex items-center justify-center gap-2 w-full bg-gray-50 border-2 border-dashed border-indigo-300 rounded-lg p-4 cursor-pointer hover:border-indigo-500 transition"}
             >
               <Upload className="w-5 h-5 text-cyan-400" />
-              <span className="text-gray-300">
+              <span className={darkMode ? "text-gray-300" : "text-gray-600"}>
                 {audioFile ? audioFile.name : 'Clic para seleccionar archivo'}
               </span>
             </label>
@@ -138,7 +147,7 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
         </div>
 
         {/* Requerimientos */}
-        <div className="text-xs text-gray-400 space-y-1">
+        <div className={darkMode ? "text-xs text-gray-400 space-y-1" : "text-xs text-gray-500 space-y-1"}>
           <p>✓ Duración: 30 segundos - 2 minutos</p>
           <p>✓ Claridad: Audio claro sin ruido de fondo</p>
           <p>✓ Formato: MP3 o WAV a 44.1kHz o superior</p>
