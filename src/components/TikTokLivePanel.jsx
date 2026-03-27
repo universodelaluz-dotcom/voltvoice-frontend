@@ -361,18 +361,31 @@ export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = 
               </div>
             ) : (
               messages.map((msg, idx) => (
-                <div key={idx} className="text-sm border-l border-cyan-500/30 pl-3 py-1">
+                <div
+                  key={idx}
+                  className={`text-sm pl-3 py-2 rounded-r transition-all duration-300 ${
+                    msg.status === 'playing'
+                      ? darkMode
+                        ? 'border-l-2 border-cyan-400 bg-cyan-500/10'
+                        : 'border-l-2 border-cyan-500 bg-cyan-50'
+                      : msg.status === 'done'
+                        ? 'border-l border-gray-600/30 pl-3 opacity-40'
+                        : 'border-l border-cyan-500/30'
+                  }`}
+                >
                   <div className="flex items-center justify-between">
-                    <p className="text-cyan-300 font-semibold">{msg.user}</p>
+                    <p className={`font-semibold ${
+                      msg.status === 'playing' ? 'text-cyan-400' : 'text-cyan-300'
+                    }`}>{msg.user}</p>
                     {msg.status === 'playing' && (
-                      <Volume2 className="w-3 h-3 text-green-400 animate-pulse" />
+                      <Volume2 className="w-4 h-4 text-cyan-400 animate-pulse" />
                     )}
                   </div>
-                  <p className={darkMode ? "text-gray-300" : "text-gray-700"}>{msg.text}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {msg.status === 'received' && '⏳ Procesando...'}
-                    {msg.status === 'playing' && '🔊 Reproduciendo'}
-                  </p>
+                  <p className={
+                    msg.status === 'playing'
+                      ? darkMode ? "text-white font-medium" : "text-gray-900 font-medium"
+                      : darkMode ? "text-gray-300" : "text-gray-700"
+                  }>{msg.text}</p>
                 </div>
               ))
             )}
