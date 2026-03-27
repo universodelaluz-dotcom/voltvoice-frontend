@@ -10,7 +10,7 @@ export function PricingPage({ onGoHome, darkMode }) {
       monthlyPrice: 0,
       annualPrice: 0,
       description: 'Para probar VoltVoice',
-      cta: 'Get Started',
+      cta: 'Adquirir Ahora',
       popular: false,
       features: [
         { text: '100 Créditos/mes', included: true },
@@ -28,7 +28,7 @@ export function PricingPage({ onGoHome, darkMode }) {
       oldMonthlyPrice: 14.99,
       oldAnnualPrice: 179.88,
       description: 'Para streamers ocasionales',
-      cta: 'Subscribe',
+      cta: 'Suscribir',
       popular: false,
       badge: 'Save 38%',
       features: [
@@ -47,7 +47,7 @@ export function PricingPage({ onGoHome, darkMode }) {
       oldMonthlyPrice: 39.99,
       oldAnnualPrice: 479.88,
       description: 'Para streamers activos',
-      cta: 'Subscribe',
+      cta: 'Suscribir',
       popular: true,
       badge: 'Save 50%',
       features: [
@@ -67,7 +67,7 @@ export function PricingPage({ onGoHome, darkMode }) {
       oldMonthlyPrice: 99.99,
       oldAnnualPrice: 1199.88,
       description: 'Para profesionales',
-      cta: 'Subscribe',
+      cta: 'Suscribir',
       popular: false,
       badge: 'Save 17%',
       features: [
