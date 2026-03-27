@@ -96,11 +96,11 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
         <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Clonar Voz</h2>
       </div>
 
-      <div className="mb-4 p-3 bg-amber-900/20 border border-amber-500/30 rounded flex gap-2">
-        <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-amber-200">
-          <p className="font-semibold">Plan Starter ($5/mes) requerido</p>
-          <p>Clona voces personalizadas con tu propia voz</p>
+      <div className="mb-4 p-4 bg-gradient-to-r from-orange-500/30 to-amber-500/30 border-2 border-orange-400 rounded-lg flex gap-3">
+        <AlertCircle className="w-5 h-5 text-orange-300 flex-shrink-0 mt-0.5 font-bold" />
+        <div className="text-sm">
+          <p className="font-bold text-white">Plan Starter ($5/mes) requerido</p>
+          <p className="text-orange-50">Clona voces personalizadas con tu propia voz</p>
         </div>
       </div>
 
@@ -174,16 +174,16 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
 
         {/* Messages */}
         {message && (
-          <div className="p-3 bg-green-900/20 border border-green-500/30 rounded flex gap-2">
-            <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-            <p className="text-green-200">{message}</p>
+          <div className="p-4 bg-gradient-to-r from-green-500/30 to-emerald-500/30 border-2 border-green-400 rounded-lg flex gap-3">
+            <CheckCircle className="w-5 h-5 text-green-300 flex-shrink-0 mt-0.5 font-bold" />
+            <p className="text-green-50 font-semibold">{message}</p>
           </div>
         )}
 
         {error && (
-          <div className="p-3 bg-red-900/20 border border-red-500/30 rounded flex gap-2">
-            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="text-red-200">{error}</p>
+          <div className="p-4 bg-gradient-to-r from-red-500/30 to-rose-500/30 border-2 border-red-400 rounded-lg flex gap-3">
+            <AlertCircle className="w-5 h-5 text-red-300 flex-shrink-0 mt-0.5 font-bold" />
+            <p className="text-red-50 font-semibold">{error}</p>
           </div>
         )}
       </form>
