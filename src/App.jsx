@@ -235,20 +235,26 @@ export function App() {
 
   return (
     <div className={"min-h-screen overflow-hidden transition-colors duration-300 " + (darkMode ? "bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "bg-gradient-to-b from-gray-50 via-white to-gray-100 text-gray-900") + ""}>
-      {/* Navigation */}
-      <nav className={"fixed top-0 w-full backdrop-blur-md z-50 transition-colors duration-300 " + (darkMode ? "bg-[#0f0f23]/80 border-b border-cyan-500/20" : "bg-white/80 border-b border-gray-200 shadow-sm") + ""}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <button
-            onClick={() => setCurrentPage('landing')}
-            className="hover:opacity-90 transition-opacity cursor-pointer"
-          >
+      {/* Hero Section */}
+      <section className="pt-8 pb-8 px-4 relative">
+        <div className="max-w-7xl mx-auto text-center">
+          {/* Background glow */}
+          <div className="absolute inset-0 -z-10">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-gradient-to-b from-cyan-500/20 to-transparent rounded-full blur-3xl"></div>
+            <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-gradient-to-b from-purple-500/20 to-transparent rounded-full blur-3xl"></div>
+          </div>
+
+          {/* Logo Grande */}
+          <div className="mb-8 flex justify-center">
             <img
               src="/images/streamvoicer1.png"
-              alt="StreamVoicer Logo"
-              className="h-12 object-contain"
+              alt="StreamVoicer"
+              className="h-40 md:h-52 object-contain drop-shadow-2xl"
             />
-          </button>
-          <div className="flex items-center gap-3">
+          </div>
+
+          {/* Botones de tema y Studio */}
+          <div className="flex items-center justify-center gap-4 mb-8">
             <button
               onClick={() => setDarkMode(!darkMode)}
               className={"p-2 rounded-lg transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-yellow-400" : "bg-gray-200 hover:bg-gray-300 text-gray-700")}
@@ -261,17 +267,6 @@ export function App() {
             >
               Studio
             </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 relative">
-        <div className="max-w-7xl mx-auto text-center">
-          {/* Background glow */}
-          <div className="absolute inset-0 -z-10">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-gradient-to-b from-cyan-500/20 to-transparent rounded-full blur-3xl"></div>
-            <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-gradient-to-b from-purple-500/20 to-transparent rounded-full blur-3xl"></div>
           </div>
 
           <h2 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
