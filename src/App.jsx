@@ -235,8 +235,24 @@ export function App() {
 
   return (
     <div className={"min-h-screen overflow-hidden transition-colors duration-300 " + (darkMode ? "bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "bg-gradient-to-b from-gray-50 via-white to-gray-100 text-gray-900") + ""}>
+      {/* Botones Esquina Superior Izquierda */}
+      <div className="fixed top-4 left-4 z-40 flex items-center gap-3">
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          className={"p-2 rounded-lg transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-yellow-400" : "bg-white/90 hover:bg-white text-gray-700 shadow-md")}
+        >
+          {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </button>
+        <button
+          onClick={() => setCurrentPage('studio')}
+          className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all text-sm"
+        >
+          Studio
+        </button>
+      </div>
+
       {/* Hero Section */}
-      <section className="pt-8 pb-8 px-4 relative">
+      <section className="pt-8 pb-16 px-4 relative">
         <div className="max-w-7xl mx-auto text-center">
           {/* Background glow */}
           <div className="absolute inset-0 -z-10">
@@ -244,29 +260,13 @@ export function App() {
             <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-gradient-to-b from-purple-500/20 to-transparent rounded-full blur-3xl"></div>
           </div>
 
-          {/* Logo Grande */}
-          <div className="mb-8 flex justify-center">
+          {/* Logo Grande - Ancho Completo */}
+          <div className="mb-12 flex justify-center">
             <img
-              src="/images/streamvoicer1.png"
+              src="/images/streamvoicer5.png"
               alt="StreamVoicer"
-              className="h-40 md:h-52 object-contain drop-shadow-2xl"
+              className="w-full max-w-7xl h-auto object-contain drop-shadow-2xl rounded-xl"
             />
-          </div>
-
-          {/* Botones de tema y Studio */}
-          <div className="flex items-center justify-center gap-4 mb-8">
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className={"p-2 rounded-lg transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-yellow-400" : "bg-gray-200 hover:bg-gray-300 text-gray-700")}
-            >
-              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-            <button
-              onClick={() => setCurrentPage('studio')}
-              className="px-6 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all"
-            >
-              Studio
-            </button>
           </div>
 
           <h2 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
