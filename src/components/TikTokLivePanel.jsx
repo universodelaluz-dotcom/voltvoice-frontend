@@ -27,6 +27,9 @@ export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = 
   const [error, setError] = useState(null)
   const [stats, setStats] = useState({ count: 0, uptime: 0 })
   const [donors, setDonors] = useState(new Set())
+  const [nickOverrides, setNickOverrides] = useState({})
+  const [editingNick, setEditingNick] = useState(null)
+  const [editingValue, setEditingValue] = useState('')
   const wsRef = useRef(null)
   const statusIntervalRef = useRef(null)
   const speakQueueRef = useRef([])
@@ -97,7 +100,8 @@ export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = 
           ])
 
           // Aplicar opción de leer solo mensaje
-          const textToRead = readOnlyMessage ? msg.text : `${msg.username}: ${msg.text}`
+          const displayName = nickOverrides[msg.username] || msg.username
+          const textToRead = readOnlyMessage ? msg.text : `${displayName}: ${msg.text}`
           queueMessage(textToRead, msg.username)
         } else if (data.type === 'status') {
           if (data.data) {
@@ -374,9 +378,44 @@ export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = 
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <p className={`font-semibold ${
-                      msg.status === 'playing' ? 'text-cyan-400' : 'text-cyan-300'
-                    }`}>{msg.user}</p>
+                    {editingNick === msg.user ? (
+                      <input
+                        autoFocus
+                        value={editingValue}
+                        onChange={(e) => setEditingValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            if (editingValue.trim()) {
+                              setNickOverrides(prev => ({ ...prev, [msg.user]: editingValue.trim() }))
+                            }
+                            setEditingNick(null)
+                          }
+                          if (e.key === 'Escape') setEditingNick(null)
+                        }}
+                        onBlur={() => {
+                          if (editingValue.trim()) {
+                            setNickOverrides(prev => ({ ...prev, [msg.user]: editingValue.trim() }))
+                          }
+                          setEditingNick(null)
+                        }}
+                        className={`text-sm font-semibold px-1 py-0 rounded outline-none w-32 ${
+                          darkMode ? 'bg-gray-700 text-cyan-300 border border-cyan-500/50' : 'bg-white text-cyan-600 border border-cyan-300'
+                        }`}
+                      />
+                    ) : (
+                      <p
+                        onClick={() => {
+                          setEditingNick(msg.user)
+                          setEditingValue(nickOverrides[msg.user] || msg.user)
+                        }}
+                        className={`font-semibold cursor-pointer hover:underline ${
+                          msg.status === 'playing' ? 'text-cyan-400' : 'text-cyan-300'
+                        }`}
+                        title="Click para cambiar nick"
+                      >
+                        {nickOverrides[msg.user] || msg.user}
+                      </p>
+                    )}
                     {msg.status === 'playing' && (
                       <Volume2 className="w-4 h-4 text-cyan-400 animate-pulse" />
                     )}
