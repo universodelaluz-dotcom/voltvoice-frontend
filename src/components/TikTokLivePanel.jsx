@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2 } from 'lucide-react'
+import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, Ban } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
@@ -30,6 +30,7 @@ export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = 
   const [nickOverrides, setNickOverrides] = useState({})
   const [editingNick, setEditingNick] = useState(null)
   const [editingValue, setEditingValue] = useState('')
+  const [bannedUsers, setBannedUsers] = useState(new Set())
   const wsRef = useRef(null)
   const statusIntervalRef = useRef(null)
   const speakQueueRef = useRef([])
@@ -67,6 +68,12 @@ export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = 
         } else if (data.type === 'message') {
           const msg = data.data
           console.log('[TikTok] Nuevo mensaje:', msg.username, msg.text)
+
+          // Filtro: usuarios baneados
+          if (bannedUsers.has(msg.username)) {
+            console.log(`[TikTok] Saltado (baneado): @${msg.username}`)
+            return
+          }
 
           // Filtro: solo donadores
           if (onlyDonors && !msg.isDonor && !donors.has(msg.username)) {
@@ -403,18 +410,27 @@ export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = 
                         }`}
                       />
                     ) : (
-                      <p
-                        onClick={() => {
-                          setEditingNick(msg.user)
-                          setEditingValue(nickOverrides[msg.user] || msg.user)
-                        }}
-                        className={`font-semibold cursor-pointer hover:underline ${
-                          msg.status === 'playing' ? 'text-cyan-400' : 'text-cyan-300'
-                        }`}
-                        title="Click para cambiar nick"
-                      >
-                        {nickOverrides[msg.user] || msg.user}
-                      </p>
+                      <div className="flex items-center gap-1 group">
+                        <p
+                          onClick={() => {
+                            setEditingNick(msg.user)
+                            setEditingValue(nickOverrides[msg.user] || msg.user)
+                          }}
+                          className={`font-semibold cursor-pointer hover:underline ${
+                            msg.status === 'playing' ? 'text-cyan-400' : 'text-cyan-300'
+                          }`}
+                          title="Click para cambiar nick"
+                        >
+                          {nickOverrides[msg.user] || msg.user}
+                        </p>
+                        <button
+                          onClick={() => setBannedUsers(prev => new Set([...prev, msg.user]))}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Silenciar usuario"
+                        >
+                          <Ban className="w-3 h-3 text-red-400 hover:text-red-300" />
+                        </button>
+                      </div>
                     )}
                     {msg.status === 'playing' && (
                       <Volume2 className="w-4 h-4 text-cyan-400 animate-pulse" />
