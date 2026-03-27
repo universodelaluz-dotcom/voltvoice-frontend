@@ -11,6 +11,8 @@ export function App() {
   const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-cloning', 'pricing', or 'control-panel'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [tokens, setTokens] = useState(100)
+  const [audioSpeed, setAudioSpeed] = useState(1.0)
+  const [readOnlyMessage, setReadOnlyMessage] = useState(false)
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('voltvoice-theme') !== 'light'
@@ -35,7 +37,7 @@ export function App() {
 
   // Control Panel Page
   if (currentPage === 'control-panel') {
-    return <ControlPanel onClose={() => setCurrentPage('studio')} darkMode={darkMode} audioSpeed={0} setAudioSpeed={() => {}} />
+    return <ControlPanel onClose={() => setCurrentPage('studio')} darkMode={darkMode} audioSpeed={audioSpeed} setAudioSpeed={setAudioSpeed} readOnlyMessage={readOnlyMessage} setReadOnlyMessage={setReadOnlyMessage} />
   }
 
   // Voice Cloning Page
@@ -86,7 +88,15 @@ export function App() {
   if (currentPage === 'studio') {
     return (
       <div>
-        <SynthesisStudio onGoHome={() => setCurrentPage('landing')} onGoVoiceCloning={() => setCurrentPage('voice-cloning')} onGoControlPanel={() => setCurrentPage('control-panel')} />
+        <SynthesisStudio
+          onGoHome={() => setCurrentPage('landing')}
+          onGoVoiceCloning={() => setCurrentPage('voice-cloning')}
+          onGoControlPanel={() => setCurrentPage('control-panel')}
+          audioSpeed={audioSpeed}
+          setAudioSpeed={setAudioSpeed}
+          readOnlyMessage={readOnlyMessage}
+          setReadOnlyMessage={setReadOnlyMessage}
+        />
       </div>
     )
   }

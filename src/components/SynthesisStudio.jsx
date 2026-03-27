@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import TikTokLivePanel from './TikTokLivePanel'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings } from 'lucide-react'
 
-export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, audioSpeed, setAudioSpeed, readOnlyMessage, setReadOnlyMessage }) {
   // User Config
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
@@ -43,9 +43,6 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel }
   const [tokens, setTokens] = useState(1000)
   const [totalTokensUsed, setTotalTokensUsed] = useState(0)
   const [synthesisCount, setSynthesisCount] = useState(0)
-
-  // Control Panel
-  const [audioSpeed, setAudioSpeed] = useState(1.0) // 0.5x a 2.0x
 
   // Chat simulation
   const [chatMessages, setChatMessages] = useState([
@@ -199,8 +196,15 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel }
     }
   }
 
-  const handleSynthesizeFromChat = (message) => {
-    setText(message)
+  const handleSynthesizeFromChat = (messageObj) => {
+    // messageObj puede ser { user, message } o solo un string
+    if (typeof messageObj === 'string') {
+      setText(messageObj)
+    } else {
+      // Si readOnlyMessage es true, solo leer el mensaje sin el nombre
+      const fullText = readOnlyMessage ? messageObj.message : `${messageObj.user}: ${messageObj.message}`
+      setText(fullText)
+    }
   }
 
   const charCount = text.length
