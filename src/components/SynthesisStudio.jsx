@@ -267,6 +267,19 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
         {/* TikTok Live Section */}
         <TikTokLivePanel config={config} />
 
+        {/* Botón de configuración prominente */}
+        <button
+          onClick={onGoControlPanel}
+          className={`w-full mb-6 flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
+            darkMode
+              ? 'bg-gray-800/80 border border-cyan-500/30 hover:bg-gray-700 hover:border-cyan-400 text-cyan-400'
+              : 'bg-white border border-indigo-200 hover:bg-indigo-50 hover:border-indigo-400 text-indigo-600 shadow-sm'
+          }`}
+        >
+          <Settings className="w-5 h-5" />
+          <span>Configuración de lectura y voces</span>
+        </button>
+
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Center Column - Synthesis */}
