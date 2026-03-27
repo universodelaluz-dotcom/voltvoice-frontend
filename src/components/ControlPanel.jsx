@@ -2,14 +2,14 @@ import { ArrowLeft, Check } from 'lucide-react'
 
 function CheckOption({ label, checked, onChange, darkMode }) {
   return (
-    <div className={`p-4 ${darkMode ? "border-b border-gray-800" : "border-b border-gray-200"}`}>
+    <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
       <button onClick={onChange} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
-        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-          checked ? 'bg-cyan-500/20 border-cyan-400' : darkMode ? 'border-gray-600' : 'border-gray-300'
+        <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+          checked ? 'bg-cyan-500/30 border-cyan-400' : darkMode ? 'border-gray-500' : 'border-gray-400'
         }`}>
           {checked && <Check className="w-4 h-4 text-cyan-400" />}
         </div>
-        <span className="text-sm">{label}</span>
+        <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'} ${checked ? 'font-medium' : ''}`}>{label}</span>
       </button>
     </div>
   )
@@ -17,14 +17,14 @@ function CheckOption({ label, checked, onChange, darkMode }) {
 
 function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeholder, darkMode }) {
   return (
-    <div className={`p-4 ${darkMode ? "border-b border-gray-800" : "border-b border-gray-200"}`}>
+    <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
       <button onClick={onToggle} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
-        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-          checked ? 'bg-cyan-500/20 border-cyan-400' : darkMode ? 'border-gray-600' : 'border-gray-300'
+        <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+          checked ? 'bg-cyan-500/30 border-cyan-400' : darkMode ? 'border-gray-500' : 'border-gray-400'
         }`}>
           {checked && <Check className="w-4 h-4 text-cyan-400" />}
         </div>
-        <span className="text-sm">{label}</span>
+        <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'} ${checked ? 'font-medium' : ''}`}>{label}</span>
       </button>
       {checked && (
         <div className="mt-2 ml-8">
@@ -33,8 +33,8 @@ function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeh
             value={value}
             onChange={(e) => onValueChange(parseInt(e.target.value) || 0)}
             placeholder={placeholder}
-            className={`w-24 px-2 py-1 text-sm rounded border ${
-              darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'
+            className={`w-24 px-3 py-1.5 text-sm rounded-lg border ${
+              darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
             }`}
           />
         </div>
@@ -77,9 +77,9 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig }) {
           <div className="space-y-1 max-w-md">
 
             {/* === VELOCIDAD === */}
-            <div className={`p-4 ${darkMode ? "border-b border-gray-800" : "border-b border-gray-200"}`}>
+            <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium">Velocidad de Voz</span>
+                <span className={`text-sm font-medium ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Velocidad de Voz</span>
                 <span className="text-sm text-cyan-400 font-semibold">{speed.toFixed(1)}x</span>
               </div>
               <input
@@ -102,8 +102,8 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig }) {
             </div>
 
             {/* === SECCIÓN: LECTURA === */}
-            <div className={`px-4 pt-6 pb-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-              <span className="text-xs font-semibold uppercase tracking-wider">Lectura</span>
+            <div className={`px-4 pt-8 pb-2 ${darkMode ? 'text-cyan-400/70' : 'text-cyan-600'}`}>
+              <span className="text-xs font-bold uppercase tracking-widest">Lectura</span>
             </div>
 
             <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => updateConfig('readOnlyMessage', !config.readOnlyMessage)} darkMode={darkMode} />
@@ -113,26 +113,26 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig }) {
             <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} />
 
             {/* === SECCIÓN: VOZ DONADORES === */}
-            <div className={`px-4 pt-6 pb-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-              <span className="text-xs font-semibold uppercase tracking-wider">Voz para Donadores</span>
+            <div className={`px-4 pt-8 pb-2 ${darkMode ? 'text-cyan-400/70' : 'text-cyan-600'}`}>
+              <span className="text-xs font-bold uppercase tracking-widest">Voz para Donadores</span>
             </div>
 
-            <div className={`p-4 ${darkMode ? "border-b border-gray-800" : "border-b border-gray-200"}`}>
+            <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
               <button onClick={() => updateConfig('donorVoiceEnabled', !config.donorVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
-                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                  config.donorVoiceEnabled ? 'bg-cyan-500/20 border-cyan-400' : darkMode ? 'border-gray-600' : 'border-gray-300'
+                <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                  config.donorVoiceEnabled ? 'bg-cyan-500/30 border-cyan-400' : darkMode ? 'border-gray-500' : 'border-gray-400'
                 }`}>
                   {config.donorVoiceEnabled && <Check className="w-4 h-4 text-cyan-400" />}
                 </div>
-                <span className="text-sm">Voz diferente para donadores</span>
+                <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'} ${config.donorVoiceEnabled ? 'font-medium' : ''}`}>Voz diferente para donadores</span>
               </button>
               {config.donorVoiceEnabled && (
                 <div className="mt-2 ml-8">
                   <select
                     value={config.donorVoiceId}
                     onChange={(e) => updateConfig('donorVoiceId', e.target.value)}
-                    className={`w-full px-2 py-1 text-sm rounded border ${
-                      darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'
+                    className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                      darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
                     }`}
                   >
                     {voiceOptions.map(v => (
@@ -144,8 +144,8 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig }) {
             </div>
 
             {/* === SECCIÓN: FILTROS === */}
-            <div className={`px-4 pt-6 pb-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-              <span className="text-xs font-semibold uppercase tracking-wider">Filtros</span>
+            <div className={`px-4 pt-8 pb-2 ${darkMode ? 'text-cyan-400/70' : 'text-cyan-600'}`}>
+              <span className="text-xs font-bold uppercase tracking-widest">Filtros</span>
             </div>
 
             <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} />
@@ -182,8 +182,8 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig }) {
             />
 
             {/* === SECCIÓN: NOTIFICACIONES === */}
-            <div className={`px-4 pt-6 pb-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-              <span className="text-xs font-semibold uppercase tracking-wider">Notificaciones en Vivo</span>
+            <div className={`px-4 pt-8 pb-2 ${darkMode ? 'text-cyan-400/70' : 'text-cyan-600'}`}>
+              <span className="text-xs font-bold uppercase tracking-widest">Notificaciones en Vivo</span>
             </div>
 
             <CheckOption label="Anunciar nuevos seguidores" checked={config.announceFollowers} onChange={() => updateConfig('announceFollowers', !config.announceFollowers)} darkMode={darkMode} />
