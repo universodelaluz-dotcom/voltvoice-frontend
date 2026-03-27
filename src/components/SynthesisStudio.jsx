@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import TikTokLivePanel from './TikTokLivePanel'
-import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, X } from 'lucide-react'
+import { ControlPanel } from './ControlPanel'
+import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings } from 'lucide-react'
 
 export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
   // User Config
@@ -14,6 +15,12 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
     const interval = setInterval(sync, 500)
     return () => { window.removeEventListener('storage', sync); clearInterval(interval) }
   }, [])
+
+  // Mostrar Control Panel
+  const [showControlPanel, setShowControlPanel] = useState(false)
+  if (showControlPanel) {
+    return <ControlPanel onClose={() => setShowControlPanel(false)} darkMode={darkMode} audioSpeed={audioSpeed} setAudioSpeed={setAudioSpeed} />
+  }
 
   const toggleTheme = () => {
     const newMode = darkMode ? 'light' : 'dark'
@@ -492,101 +499,6 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
         </div>
       </div>
 
-      {/* Control Panel Modal */}
-      {showControlPanel && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center p-4">
-          <div className={`${darkMode ? "bg-gray-900 border border-cyan-500/30" : "bg-white border border-indigo-300"} rounded-xl max-w-md w-full shadow-2xl`}>
-            {/* Header */}
-            <div className={`flex items-center justify-between p-6 border-b ${darkMode ? "border-cyan-500/20" : "border-indigo-200"}`}>
-              <h2 className="text-xl font-bold text-cyan-400 flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Panel de Control
-              </h2>
-              <button
-                onClick={() => setShowControlPanel(false)}
-                className="p-1 hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-6">
-              {/* Velocidad de Audio */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-semibold text-cyan-400 uppercase tracking-wide">
-                    🎚️ Velocidad de Voz
-                  </label>
-                  <span className="text-lg font-black text-cyan-400">{audioSpeed.toFixed(1)}x</span>
-                </div>
-
-                {/* Slider */}
-                <input
-                  type="range"
-                  min="0.5"
-                  max="2.0"
-                  step="0.1"
-                  value={audioSpeed}
-                  onChange={(e) => setAudioSpeed(parseFloat(e.target.value))}
-                  className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to right, #06b6d4 0%, #06b6d4 ${((audioSpeed - 0.5) / 1.5) * 100}%, #374151 ${((audioSpeed - 0.5) / 1.5) * 100}%, #374151 100%)`
-                  }}
-                />
-
-                {/* Botones rápidos */}
-                <div className="grid grid-cols-4 gap-2 mt-4">
-                  <button
-                    onClick={() => setAudioSpeed(0.5)}
-                    className={`py-2 rounded-lg font-semibold text-sm transition-all ${
-                      audioSpeed === 0.5
-                        ? 'bg-cyan-500 text-white'
-                        : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                    }`}
-                  >
-                    0.5x
-                  </button>
-                  <button
-                    onClick={() => setAudioSpeed(1.0)}
-                    className={`py-2 rounded-lg font-semibold text-sm transition-all ${
-                      audioSpeed === 1.0
-                        ? 'bg-cyan-500 text-white'
-                        : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                    }`}
-                  >
-                    1x
-                  </button>
-                  <button
-                    onClick={() => setAudioSpeed(1.5)}
-                    className={`py-2 rounded-lg font-semibold text-sm transition-all ${
-                      audioSpeed === 1.5
-                        ? 'bg-cyan-500 text-white'
-                        : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                    }`}
-                  >
-                    1.5x
-                  </button>
-                  <button
-                    onClick={() => setAudioSpeed(2.0)}
-                    className={`py-2 rounded-lg font-semibold text-sm transition-all ${
-                      audioSpeed === 2.0
-                        ? 'bg-cyan-500 text-white'
-                        : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                    }`}
-                  >
-                    2x
-                  </button>
-                </div>
-
-                <p className={`text-xs text-center mt-3 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-                  {audioSpeed < 1 ? "🐢 Más lento" : audioSpeed > 1 ? "🐇 Más rápido" : "✅ Velocidad normal"}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
