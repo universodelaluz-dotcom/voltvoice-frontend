@@ -237,13 +237,6 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               <span className="text-sm font-semibold text-cyan-400">{tokens} tokens</span>
             </div>
             <button
-              onClick={onGoControlPanel}
-              className={darkMode ? "p-2 rounded-lg bg-gray-800 border border-cyan-500/30 hover:bg-gray-700 transition-colors" : "p-2 rounded-lg bg-white border border-indigo-200 hover:bg-indigo-50 transition-colors shadow-sm"}
-              title="Panel de control"
-            >
-              <Settings className="w-5 h-5 text-cyan-400" />
-            </button>
-            <button
               onClick={toggleTheme}
               className={darkMode ? "p-2 rounded-lg bg-gray-800 border border-cyan-500/30 hover:bg-gray-700 transition-colors" : "p-2 rounded-lg bg-white border border-indigo-200 hover:bg-indigo-50 transition-colors shadow-sm"}
               title={darkMode ? 'Modo claro' : 'Modo oscuro'}
