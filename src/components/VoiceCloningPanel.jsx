@@ -96,14 +96,6 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
         <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Clonar Voz</h2>
       </div>
 
-      <div className="mb-4 p-4 bg-gradient-to-r from-orange-500/30 to-amber-500/30 border-2 border-orange-400 rounded-lg flex gap-3">
-        <AlertCircle className="w-5 h-5 text-orange-300 flex-shrink-0 mt-0.5 font-bold" />
-        <div className="text-sm">
-          <p className="font-bold text-white">Plan Starter ($5/mes) requerido</p>
-          <p className="text-orange-50">Clona voces personalizadas con tu propia voz</p>
-        </div>
-      </div>
-
       <form onSubmit={handleCloneVoice} className="space-y-4">
         {/* Nombre de la voz */}
         <div>
