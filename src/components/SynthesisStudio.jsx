@@ -3,7 +3,7 @@ import VoiceCloningPanel from './VoiceCloningPanel'
 import TikTokLivePanel from './TikTokLivePanel'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock } from 'lucide-react'
 
-export function SynthesisStudio() {
+export function SynthesisStudio({ onGoHome }) {
   // User Config
   const [userId, setUserId] = useState('1')
   const [streamChannel, setStreamChannel] = useState('mi_canal')
@@ -186,7 +186,10 @@ export function SynthesisStudio() {
       {/* Header */}
       <div className="border-b border-cyan-500/20 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <button
+            onClick={onGoHome}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+          >
             <div className="p-2 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-lg">
               <Mic2 className="w-6 h-6 text-white" />
             </div>
@@ -196,7 +199,7 @@ export function SynthesisStudio() {
               </h1>
               <p className="text-xs text-gray-400">Canal: {streamChannel}</p>
             </div>
-          </div>
+          </button>
           <div className="flex items-center gap-4">
             <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${isStreamActive ? 'bg-red-500/20 border border-red-500/50' : 'bg-gray-700/50 border border-gray-600/50'}`}>
               <div className={`w-2 h-2 rounded-full ${isStreamActive ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></div>
