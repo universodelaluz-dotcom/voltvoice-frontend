@@ -22,12 +22,12 @@ export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed }) {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="space-y-8 max-w-md">
+        <div className="space-y-3 max-w-sm">
           {/* Velocidad de Voz */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-semibold">Velocidad de Voz</span>
-              <span className="text-lg font-black bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs">Velocidad de Voz</span>
+              <span className="text-xs text-cyan-400 font-semibold">
                 {speed.toFixed(1)}x
               </span>
             </div>
@@ -39,7 +39,7 @@ export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed }) {
               step="0.1"
               value={speed}
               onChange={(e) => setAudioSpeed(parseFloat(e.target.value))}
-              className="w-full h-1 rounded-full appearance-none cursor-pointer accent-cyan-400 mb-3"
+              className="w-full h-1 rounded-full appearance-none cursor-pointer accent-cyan-400 mb-1"
               style={{
                 background: darkMode
                   ? `linear-gradient(to right, #06b6d4 0%, #06b6d4 ${((speed - 0.5) / 1.5) * 100}%, #374151 ${((speed - 0.5) / 1.5) * 100}%, #374151 100%)`
@@ -47,12 +47,12 @@ export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed }) {
               }}
             />
 
-            <div className="grid grid-cols-4 gap-2">
+            <div className="flex gap-1 text-xs mt-1">
               {[0.5, 1.0, 1.5, 2.0].map((btn) => (
                 <button
                   key={btn}
                   onClick={() => setAudioSpeed(btn)}
-                  className={`py-1 text-xs font-semibold transition-colors ${
+                  className={`text-xs transition-colors ${
                     Math.abs(speed - btn) < 0.01
                       ? 'text-cyan-400'
                       : darkMode
