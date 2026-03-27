@@ -243,6 +243,35 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig }) {
             <CheckOption label="Anunciar encuestas" checked={config.announcePolls} onChange={() => updateConfig('announcePolls', !config.announcePolls)} darkMode={darkMode} />
             <CheckOption label="Anunciar metas/goals" checked={config.announceGoals} onChange={() => updateConfig('announceGoals', !config.announceGoals)} darkMode={darkMode} />
 
+            {/* Voz para notificaciones */}
+            <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
+              <button onClick={() => updateConfig('notifVoiceEnabled', !config.notifVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+                <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                  config.notifVoiceEnabled ? 'bg-cyan-500/30 border-cyan-400' : darkMode ? 'border-gray-500' : 'border-gray-400'
+                }`}>
+                  {config.notifVoiceEnabled && <Check className="w-4 h-4 text-cyan-400" />}
+                </div>
+                <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${config.notifVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz diferente para notificaciones</span>
+              </button>
+              {config.notifVoiceEnabled && (
+                <div className="mt-2 ml-8">
+                  <select
+                    value={config.notifVoiceId || 'Lupita'}
+                    onChange={(e) => updateConfig('notifVoiceId', e.target.value)}
+                    className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                      darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
+                    }`}
+                  >
+                    <option value="es-ES">Español sin tokens</option>
+                    <option value="en-US">Inglés sin tokens</option>
+                    {voiceOptions.map(v => (
+                      <option key={v.id} value={v.id}>{v.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </div>

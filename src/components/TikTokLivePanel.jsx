@@ -82,48 +82,48 @@ export default function TikTokLivePanel({ config = {} }) {
           // Anunciar regalo
           if (c.announceGifts) {
             const text = `${giftData.username} envió ${giftData.giftName}`
-            queueMessage(text, giftData.username)
+            queueMessage(text, giftData.username, { isNotification: true })
           }
 
         } else if (data.data && data.data.type === 'follow') {
           if (c.announceFollowers) {
             const text = `Nuevo seguidor: ${data.data.username}`
-            queueMessage(text, data.data.username)
+            queueMessage(text, data.data.username, { isNotification: true })
           }
 
         } else if (data.data && data.data.type === 'like') {
           if (c.announceLikes && data.data.totalLikeCount) {
             const text = `Ya tienes ${data.data.totalLikeCount} likes`
-            queueMessage(text, 'sistema')
+            queueMessage(text, 'sistema', { isNotification: true })
           }
 
         } else if (data.data && data.data.type === 'share') {
           if (c.announceShares) {
             const text = `${data.data.username} compartió tu stream`
-            queueMessage(text, data.data.username)
+            queueMessage(text, data.data.username, { isNotification: true })
           }
 
         } else if (data.data && data.data.type === 'viewer_count') {
           if (c.announceViewers) {
             const text = `Hay ${data.data.viewerCount} personas viéndote`
-            queueMessage(text, 'sistema')
+            queueMessage(text, 'sistema', { isNotification: true })
           }
 
         } else if (data.data && data.data.type === 'battle') {
           if (c.announceBattles) {
-            queueMessage('Batalla iniciada', 'sistema')
+            queueMessage('Batalla iniciada', 'sistema', { isNotification: true })
           }
 
         } else if (data.data && data.data.type === 'poll') {
           if (c.announcePolls) {
             const text = data.data.text || 'Nueva encuesta'
-            queueMessage(text, 'sistema')
+            queueMessage(text, 'sistema', { isNotification: true })
           }
 
         } else if (data.data && data.data.type === 'goal') {
           if (c.announceGoals) {
             const text = data.data.text || 'Avance en meta'
-            queueMessage(text, 'sistema')
+            queueMessage(text, 'sistema', { isNotification: true })
           }
 
         // === MENSAJES DE CHAT ===
@@ -266,11 +266,12 @@ export default function TikTokLivePanel({ config = {} }) {
       const remaining = speakQueueRef.current.length
       console.log(`[TikTok] REPRODUCIENDO: "${text.substring(0, 50)}" (pendientes: ${remaining})`)
 
-      // Determinar voz: prioridad moderador > donador > general
+      // Determinar voz: notificación > moderador > donador > general
       const c = configRef.current
       let voiceId = c.generalVoiceId || 'es-ES'
       if (c.donorVoiceEnabled && (item.isDonor || donors.has(username))) voiceId = c.donorVoiceId || 'Diego'
       if (c.modVoiceEnabled && item.isModerator) voiceId = c.modVoiceId || 'Lupita'
+      if (c.notifVoiceEnabled && item.isNotification) voiceId = c.notifVoiceId || 'Lupita'
 
       try {
         const response = await fetch(`${API_URL}/api/tiktok/message`, {

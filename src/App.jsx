@@ -41,6 +41,8 @@ export function App() {
     modVoiceEnabled: false,
     modVoiceId: 'Lupita',
     generalVoiceId: 'es-ES',
+    notifVoiceEnabled: false,
+    notifVoiceId: 'Lupita',
   })
 
   const updateConfig = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
