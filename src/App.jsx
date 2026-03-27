@@ -263,9 +263,9 @@ export function App() {
           {/* Logo Grande - Ancho Completo */}
           <div className="mb-12 flex justify-center">
             <img
-              src="/images/streamvoicer5.png"
+              src="/images/streamvoicer6.png"
               alt="StreamVoicer"
-              className="w-full max-w-7xl h-auto object-contain drop-shadow-2xl rounded-xl"
+              className="w-full max-w-7xl h-auto object-contain"
             />
           </div>
 
