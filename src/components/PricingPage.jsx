@@ -15,7 +15,7 @@ export function PricingPage({ onGoHome, darkMode }) {
             <span>Volver</span>
           </button>
           <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-            VoltVoice
+            StreamVoicer
           </h1>
           <div className="w-20"></div>
         </div>

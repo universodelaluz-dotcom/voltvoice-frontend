@@ -47,7 +47,7 @@ export function App() {
                 <span className="text-xl font-black">⚡</span>
               </div>
               <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-                VoltVoice
+                StreamVoicer
               </h1>
             </button>
             <button
@@ -202,7 +202,7 @@ export function App() {
     },
     {
       step: '2',
-      title: 'Activa VoltVoice',
+      title: 'Activa StreamVoicer',
       description: 'Inicia la lectura de mensajes de chat en tiempo real'
     },
     {
@@ -216,7 +216,7 @@ export function App() {
     {
       name: 'María García',
       role: 'TikToker - 500K followers',
-      text: 'VoltVoice cambió mi stream. Mis seguidores aman que sus mensajes se lean en voz. ¡Imprescindible!',
+      text: 'StreamVoicer cambió mi stream. Mis seguidores aman que sus mensajes se lean en voz. ¡Imprescindible!',
       avatar: '👩'
     },
     {
@@ -228,7 +228,7 @@ export function App() {
     {
       name: 'Sofia Rodríguez',
       role: 'Youtuber - Lifestyle',
-      text: 'Mis viewers interactúan más ahora. VoltVoice es un game changer para creadores.',
+      text: 'Mis viewers interactúan más ahora. StreamVoicer es un game changer para creadores.',
       avatar: '👩‍🦱'
     }
   ]
@@ -246,7 +246,7 @@ export function App() {
               <span className="text-xl font-black">⚡</span>
             </div>
             <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-              VoltVoice
+              StreamVoicer
             </h1>
           </button>
           <div className="flex items-center gap-3">
@@ -309,7 +309,7 @@ export function App() {
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <h3 className="text-4xl font-black text-center mb-16">
-            ¿Por qué elegir <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">VoltVoice</span>?
+            ¿Por qué elegir <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">StreamVoicer</span>?
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -539,7 +539,7 @@ export function App() {
               Listo para revolucionar tus streams?
             </h3>
             <p className="text-xl text-gray-300 mb-8">
-              Únete a miles de creadores que ya están usando VoltVoice
+              Únete a miles de creadores que ya están usando StreamVoicer
             </p>
             <div className="flex gap-4 justify-center">
               <button
@@ -564,7 +564,7 @@ export function App() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h4 className="font-bold mb-4">VoltVoice</h4>
+              <h4 className="font-bold mb-4">StreamVoicer</h4>
               <p className="text-sm text-gray-400">La mejor solución para leer chats en vivo</p>
             </div>
             <div>
@@ -591,7 +591,7 @@ export function App() {
           </div>
 
           <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2026 VoltVoice. Todos los derechos reservados.</p>
+            <p>&copy; 2026 StreamVoicer. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>

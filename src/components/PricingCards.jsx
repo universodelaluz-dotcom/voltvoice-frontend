@@ -9,7 +9,7 @@ export function PricingCards({ darkMode, showToggle = true }) {
       name: 'Free',
       monthlyPrice: 0,
       annualPrice: 0,
-      description: 'Para probar VoltVoice',
+      description: 'Para probar StreamVoicer',
       cta: 'Adquirir Ahora',
       popular: false,
       features: [

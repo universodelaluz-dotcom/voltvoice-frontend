@@ -31,7 +31,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
   const [selectedVoice, setSelectedVoice] = useState('')
 
   // Synthesis
-  const [text, setText] = useState('Hola, este es VoltVoice. Tu plataforma para síntesis de voz profesional.')
+  const [text, setText] = useState('Hola, este es StreamVoicer. Tu plataforma para síntesis de voz profesional.')
   const [loading, setLoading] = useState(false)
   const [audioUrl, setAudioUrl] = useState(null)
   const audioRef = useRef(null)
@@ -214,7 +214,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning }) {
             </div>
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                VoltVoice Studio
+                StreamVoicer Studio
               </h1>
               <p className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>Canal: {streamChannel}</p>
             </div>
