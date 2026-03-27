@@ -220,7 +220,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig }) {
             />
 
             <CheckWithInput
-              label="Cola máxima de mensajes"
+              label="Límite de mensajes en espera (descarta nuevos si se llena)"
               checked={config.maxQueueEnabled}
               onToggle={() => updateConfig('maxQueueEnabled', !config.maxQueueEnabled)}
               value={config.maxQueueSize}
