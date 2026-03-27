@@ -30,7 +30,7 @@ export function PricingPage({ onGoHome, darkMode }) {
       description: 'Para streamers ocasionales',
       cta: 'Suscribir',
       popular: false,
-      badge: 'Save 38%',
+      badge: 'Ahorra 38%',
       features: [
         { text: '5,000 Créditos/mes', included: true },
         { text: '50+ Voces', included: true },
@@ -49,7 +49,7 @@ export function PricingPage({ onGoHome, darkMode }) {
       description: 'Para streamers activos',
       cta: 'Suscribir',
       popular: true,
-      badge: 'Save 50%',
+      badge: 'Ahorra 50%',
       features: [
         { text: '25,000 Créditos/mes', included: true },
         { text: '100+ Voces', included: true },
@@ -69,7 +69,7 @@ export function PricingPage({ onGoHome, darkMode }) {
       description: 'Para profesionales',
       cta: 'Suscribir',
       popular: false,
-      badge: 'Save 17%',
+      badge: 'Ahorra 17%',
       features: [
         { text: '100,000 Créditos/mes', included: true },
         { text: 'Voces ilimitadas', included: true },
@@ -100,9 +100,9 @@ export function PricingPage({ onGoHome, darkMode }) {
 
   const getBillingText = (plan) => {
     if (billingCycle === 'monthly') {
-      return `$${(plan.monthlyPrice * 12).toFixed(2)} billed yearly as $${(plan.monthlyPrice * 12).toFixed(2)}/year`
+      return `$${(plan.monthlyPrice * 12).toFixed(2)} facturado anualmente como $${(plan.monthlyPrice * 12).toFixed(2)}/año`
     } else {
-      return `Billed yearly as $${plan.annualPrice.toFixed(2)}`
+      return `Facturado anualmente como $${plan.annualPrice.toFixed(2)}`
     }
   }
 
@@ -181,7 +181,7 @@ export function PricingPage({ onGoHome, darkMode }) {
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <div className="bg-gradient-to-r from-green-400 to-green-500 text-black px-4 py-1 rounded-full text-sm font-bold">
-                      Most Popular
+                      Más Popular
                     </div>
                   </div>
                 )}
@@ -199,7 +199,7 @@ export function PricingPage({ onGoHome, darkMode }) {
                       ${getDisplayPrice(plan)}
                     </span>
                     <span className={`text-lg ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      /month
+                      /mes
                     </span>
                   </div>
 
@@ -239,7 +239,7 @@ export function PricingPage({ onGoHome, darkMode }) {
                 {/* Features */}
                 <div className={`border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} pt-6`}>
                   <p className={`text-xs font-bold mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    FEATURES
+                    CARACTERÍSTICAS
                   </p>
                   <div className="space-y-3">
                     {plan.features.map((feature, idx) => (
