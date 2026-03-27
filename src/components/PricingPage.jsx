@@ -233,7 +233,7 @@ export function PricingPage({ onGoHome, darkMode }) {
                         : 'border border-cyan-400 text-cyan-400 hover:bg-cyan-400/10'
                   }`}
                 >
-                  {plan.cta}
+                  {plan.name === 'Free' ? 'Adquirir Ahora' : billingCycle === 'monthly' ? 'Adquirir Ahora' : 'Suscribir'}
                 </button>
 
                 {/* Features */}
