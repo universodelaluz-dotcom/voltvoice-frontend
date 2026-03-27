@@ -1,6 +1,6 @@
 import { ArrowLeft, Check } from 'lucide-react'
 
-export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed, readOnlyMessage, setReadOnlyMessage, skipRepeated, setSkipRepeated, onlyDonors, setOnlyDonors }) {
+export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed, readOnlyMessage, setReadOnlyMessage, skipRepeated, setSkipRepeated, onlyDonors, setOnlyDonors, onlyQuestions, setOnlyQuestions }) {
   const speed = audioSpeed || 1.0
 
   return (
@@ -123,6 +123,25 @@ export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed, rea
                   {onlyDonors && <Check className="w-4 h-4 text-cyan-400" />}
                 </div>
                 <span className="text-sm">Leer solo donadores</span>
+              </button>
+            </div>
+
+            {/* Leer solo preguntas */}
+            <div className={`p-4 ${darkMode ? "border-b border-gray-800" : "border-b border-gray-200"}`}>
+              <button
+                onClick={() => setOnlyQuestions(!onlyQuestions)}
+                className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity"
+              >
+                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                  onlyQuestions
+                    ? 'bg-cyan-500/20 border-cyan-400'
+                    : darkMode
+                      ? 'border-gray-600'
+                      : 'border-gray-300'
+                }`}>
+                  {onlyQuestions && <Check className="w-4 h-4 text-cyan-400" />}
+                </div>
+                <span className="text-sm">Leer solo preguntas</span>
               </button>
             </div>
           </div>

@@ -3,7 +3,14 @@ import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2 } from 'lucid
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
-export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = false, skipRepeated = false }) {
+const isQuestion = (text) => {
+  const trimmed = text.trim().toLowerCase()
+  if (trimmed.includes('?')) return true
+  const questionWords = /^(qué|que|cómo|como|cuándo|cuando|dónde|donde|por\s?qué|por\s?que|cuál|cual|quién|quien|cuánto|cuanto|what|how|when|where|why|who|which|is|are|do|does|can|will|would)\b/i
+  return questionWords.test(trimmed)
+}
+
+export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = false, skipRepeated = false, onlyQuestions = false }) {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
   useEffect(() => {
@@ -61,6 +68,12 @@ export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = 
           // Filtro: solo donadores
           if (onlyDonors && !msg.isDonor && !donors.has(msg.username)) {
             console.log(`[TikTok] Saltado (no es donador): @${msg.username}`)
+            return
+          }
+
+          // Filtro: solo preguntas
+          if (onlyQuestions && !isQuestion(msg.text)) {
+            console.log(`[TikTok] Saltado (no es pregunta): ${msg.text}`)
             return
           }
 

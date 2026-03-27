@@ -15,6 +15,7 @@ export function App() {
   const [readOnlyMessage, setReadOnlyMessage] = useState(false)
   const [skipRepeated, setSkipRepeated] = useState(false)
   const [onlyDonors, setOnlyDonors] = useState(false)
+  const [onlyQuestions, setOnlyQuestions] = useState(false)
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('voltvoice-theme') !== 'light'
@@ -39,7 +40,7 @@ export function App() {
 
   // Control Panel Page
   if (currentPage === 'control-panel') {
-    return <ControlPanel onClose={() => setCurrentPage('studio')} darkMode={darkMode} audioSpeed={audioSpeed} setAudioSpeed={setAudioSpeed} readOnlyMessage={readOnlyMessage} setReadOnlyMessage={setReadOnlyMessage} skipRepeated={skipRepeated} setSkipRepeated={setSkipRepeated} onlyDonors={onlyDonors} setOnlyDonors={setOnlyDonors} />
+    return <ControlPanel onClose={() => setCurrentPage('studio')} darkMode={darkMode} audioSpeed={audioSpeed} setAudioSpeed={setAudioSpeed} readOnlyMessage={readOnlyMessage} setReadOnlyMessage={setReadOnlyMessage} skipRepeated={skipRepeated} setSkipRepeated={setSkipRepeated} onlyDonors={onlyDonors} setOnlyDonors={setOnlyDonors} onlyQuestions={onlyQuestions} setOnlyQuestions={setOnlyQuestions} />
   }
 
   // Voice Cloning Page
@@ -102,6 +103,8 @@ export function App() {
           setSkipRepeated={setSkipRepeated}
           onlyDonors={onlyDonors}
           setOnlyDonors={setOnlyDonors}
+          onlyQuestions={onlyQuestions}
+          setOnlyQuestions={setOnlyQuestions}
         />
       </div>
     )
