@@ -38,6 +38,9 @@ export function App() {
     maxQueueSize: 20,
     donorVoiceEnabled: false,
     donorVoiceId: 'Diego',
+    modVoiceEnabled: false,
+    modVoiceId: 'Lupita',
+    generalVoiceId: 'es-ES',
   })
 
   const updateConfig = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))

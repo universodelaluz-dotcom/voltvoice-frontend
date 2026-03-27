@@ -165,7 +165,8 @@ export default function TikTokLivePanel({ config = {} }) {
               text: msg.text,
               status: 'received',
               timestamp: new Date(),
-              isDonor: msg.isDonor || donors.has(msg.username)
+              isDonor: msg.isDonor || donors.has(msg.username),
+              isModerator: msg.isModerator || false
             }
           ])
 
@@ -185,7 +186,7 @@ export default function TikTokLivePanel({ config = {} }) {
           const displayName = nickOverrides[msg.username] || msg.username
           const finalText = c.readOnlyMessage ? textToSpeak : `${displayName}: ${textToSpeak}`
 
-          queueMessage(finalText, msg.username)
+          queueMessage(finalText, msg.username, { isDonor: msg.isDonor || donors.has(msg.username), isModerator: msg.isModerator })
 
         } else if (data.type === 'status') {
           if (data.data) {
@@ -247,8 +248,8 @@ export default function TikTokLivePanel({ config = {} }) {
   }, [isConnected, tiktokUser])
 
   // Cola de audio
-  const queueMessage = (text, username) => {
-    speakQueueRef.current.push({ text, username })
+  const queueMessage = (text, username, extra = {}) => {
+    speakQueueRef.current.push({ text, username, ...extra })
     console.log(`[TikTok] Agregado a cola (${speakQueueRef.current.length} pendientes)`)
     processQueue()
   }
@@ -260,14 +261,16 @@ export default function TikTokLivePanel({ config = {} }) {
     isProcessingRef.current = true
 
     while (speakQueueRef.current.length > 0) {
-      const { text, username } = speakQueueRef.current.shift()
+      const item = speakQueueRef.current.shift()
+      const { text, username } = item
       const remaining = speakQueueRef.current.length
       console.log(`[TikTok] REPRODUCIENDO: "${text.substring(0, 50)}" (pendientes: ${remaining})`)
 
-      // Determinar voz: si es donador y voz diferente está habilitada
+      // Determinar voz: prioridad moderador > donador > general
       const c = configRef.current
-      const isDonor = donors.has(username)
-      const voiceId = (c.donorVoiceEnabled && isDonor) ? c.donorVoiceId : 'es-ES'
+      let voiceId = c.generalVoiceId || 'es-ES'
+      if (c.donorVoiceEnabled && (item.isDonor || donors.has(username))) voiceId = c.donorVoiceId || 'Diego'
+      if (c.modVoiceEnabled && item.isModerator) voiceId = c.modVoiceId || 'Lupita'
 
       try {
         const response = await fetch(`${API_URL}/api/tiktok/message`, {

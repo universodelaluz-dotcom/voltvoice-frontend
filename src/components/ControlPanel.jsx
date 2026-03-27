@@ -112,11 +112,32 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig }) {
             <CheckOption label="Leer solo donadores" checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} />
             <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} />
 
-            {/* === SECCIÓN: VOZ DONADORES === */}
+            {/* === SECCIÓN: VOCES === */}
             <div className={`px-4 pt-8 pb-2 ${darkMode ? 'text-cyan-400/70' : 'text-cyan-600'}`}>
-              <span className="text-xs font-bold uppercase tracking-widest">Voz para Donadores</span>
+              <span className="text-xs font-bold uppercase tracking-widest">Voces</span>
             </div>
 
+            {/* Voz general */}
+            <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className={`text-[15px] font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>Voz general</span>
+              </div>
+              <select
+                value={config.generalVoiceId || 'es-ES'}
+                onChange={(e) => updateConfig('generalVoiceId', e.target.value)}
+                className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                  darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
+                }`}
+              >
+                <option value="es-ES">Español sin tokens</option>
+                <option value="en-US">Inglés sin tokens</option>
+                {voiceOptions.map(v => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Voz donadores */}
             <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
               <button onClick={() => updateConfig('donorVoiceEnabled', !config.donorVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                 <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
@@ -131,6 +152,33 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig }) {
                   <select
                     value={config.donorVoiceId}
                     onChange={(e) => updateConfig('donorVoiceId', e.target.value)}
+                    className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                      darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
+                    }`}
+                  >
+                    {voiceOptions.map(v => (
+                      <option key={v.id} value={v.id}>{v.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Voz moderadores */}
+            <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
+              <button onClick={() => updateConfig('modVoiceEnabled', !config.modVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+                <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                  config.modVoiceEnabled ? 'bg-cyan-500/30 border-cyan-400' : darkMode ? 'border-gray-500' : 'border-gray-400'
+                }`}>
+                  {config.modVoiceEnabled && <Check className="w-4 h-4 text-cyan-400" />}
+                </div>
+                <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${config.modVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz diferente para moderadores</span>
+              </button>
+              {config.modVoiceEnabled && (
+                <div className="mt-2 ml-8">
+                  <select
+                    value={config.modVoiceId || 'Lupita'}
+                    onChange={(e) => updateConfig('modVoiceId', e.target.value)}
                     className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
                       darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
                     }`}
