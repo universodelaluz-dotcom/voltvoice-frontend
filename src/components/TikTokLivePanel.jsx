@@ -3,7 +3,7 @@ import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2 } from 'lucid
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
-export default function TikTokLivePanel() {
+export default function TikTokLivePanel({ onlyDonors = false, readOnlyMessage = false, skipRepeated = false }) {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
   useEffect(() => {
@@ -19,10 +19,12 @@ export default function TikTokLivePanel() {
   const [messages, setMessages] = useState([])
   const [error, setError] = useState(null)
   const [stats, setStats] = useState({ count: 0, uptime: 0 })
+  const [donors, setDonors] = useState(new Set())
   const wsRef = useRef(null)
   const statusIntervalRef = useRef(null)
   const speakQueueRef = useRef([])
   const isProcessingRef = useRef(false)
+  const lastMessageRef = useRef('')
 
   // Conectar a WebSocket cuando el usuario se conecte a TikTok
   useEffect(() => {
@@ -47,9 +49,27 @@ export default function TikTokLivePanel() {
 
         if (data.type === 'subscribed') {
           console.log('[TikTok] Suscrito a:', data.username)
+        } else if (data.data && data.data.type === 'gift') {
+          // Registrar donador
+          const giftData = data.data
+          console.log(`[TikTok] 🎁 Regalo de @${giftData.username}: ${giftData.giftName}`)
+          setDonors(prev => new Set([...prev, giftData.username]))
         } else if (data.type === 'message') {
           const msg = data.data
           console.log('[TikTok] Nuevo mensaje:', msg.username, msg.text)
+
+          // Filtro: solo donadores
+          if (onlyDonors && !msg.isDonor && !donors.has(msg.username)) {
+            console.log(`[TikTok] Saltado (no es donador): @${msg.username}`)
+            return
+          }
+
+          // Filtro: saltar repetidos
+          if (skipRepeated && msg.text === lastMessageRef.current) {
+            console.log(`[TikTok] Saltado (repetido): ${msg.text}`)
+            return
+          }
+          lastMessageRef.current = msg.text
 
           setMessages((prev) => [
             ...prev,
@@ -58,11 +78,14 @@ export default function TikTokLivePanel() {
               user: msg.username,
               text: msg.text,
               status: 'received',
-              timestamp: new Date()
+              timestamp: new Date(),
+              isDonor: msg.isDonor || donors.has(msg.username)
             }
           ])
 
-          queueMessage(msg.text, msg.username)
+          // Aplicar opción de leer solo mensaje
+          const textToRead = readOnlyMessage ? msg.text : `${msg.username}: ${msg.text}`
+          queueMessage(textToRead, msg.username)
         } else if (data.type === 'status') {
           if (data.data) {
             setStats({

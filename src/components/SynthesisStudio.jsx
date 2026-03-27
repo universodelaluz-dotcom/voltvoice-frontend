@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import TikTokLivePanel from './TikTokLivePanel'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings } from 'lucide-react'
 
-export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, audioSpeed, setAudioSpeed, readOnlyMessage, setReadOnlyMessage, skipRepeated, setSkipRepeated }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, audioSpeed, setAudioSpeed, readOnlyMessage, setReadOnlyMessage, skipRepeated, setSkipRepeated, onlyDonors, setOnlyDonors }) {
   // User Config
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
@@ -267,7 +267,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* TikTok Live Section */}
-        <TikTokLivePanel />
+        <TikTokLivePanel onlyDonors={onlyDonors} readOnlyMessage={readOnlyMessage} skipRepeated={skipRepeated} />
 
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

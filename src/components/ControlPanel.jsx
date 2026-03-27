@@ -1,6 +1,6 @@
 import { ArrowLeft, Check } from 'lucide-react'
 
-export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed, readOnlyMessage, setReadOnlyMessage, skipRepeated, setSkipRepeated }) {
+export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed, readOnlyMessage, setReadOnlyMessage, skipRepeated, setSkipRepeated, onlyDonors, setOnlyDonors }) {
   const speed = audioSpeed || 1.0
 
   return (
@@ -104,6 +104,25 @@ export function ControlPanel({ onClose, darkMode, audioSpeed, setAudioSpeed, rea
                   {skipRepeated && <Check className="w-4 h-4 text-cyan-400" />}
                 </div>
                 <span className="text-sm">Saltar mensajes repetidos</span>
+              </button>
+            </div>
+
+            {/* Leer solo donadores */}
+            <div className={`p-4 ${darkMode ? "border-b border-gray-800" : "border-b border-gray-200"}`}>
+              <button
+                onClick={() => setOnlyDonors(!onlyDonors)}
+                className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity"
+              >
+                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                  onlyDonors
+                    ? 'bg-cyan-500/20 border-cyan-400'
+                    : darkMode
+                      ? 'border-gray-600'
+                      : 'border-gray-300'
+                }`}>
+                  {onlyDonors && <Check className="w-4 h-4 text-cyan-400" />}
+                </div>
+                <span className="text-sm">Leer solo donadores</span>
               </button>
             </div>
           </div>
