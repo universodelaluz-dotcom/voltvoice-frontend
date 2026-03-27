@@ -295,21 +295,6 @@ export function App() {
             </button>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
-            <div className={(darkMode ? "bg-white/5 border border-white/10" : "bg-white border border-gray-200 shadow-sm") + " rounded-lg p-4"}>
-              <div className="text-3xl font-black text-cyan-400">10K+</div>
-              <div className={darkMode ? "text-sm text-gray-400" : "text-sm text-gray-500"}>Usuarios activos</div>
-            </div>
-            <div className={(darkMode ? "bg-white/5 border border-white/10" : "bg-white border border-gray-200 shadow-sm") + " rounded-lg p-4"}>
-              <div className="text-3xl font-black text-purple-400">1M+</div>
-              <div className={darkMode ? "text-sm text-gray-400" : "text-sm text-gray-500"}>Mensajes leídos</div>
-            </div>
-            <div className={(darkMode ? "bg-white/5 border border-white/10" : "bg-white border border-gray-200 shadow-sm") + " rounded-lg p-4"}>
-              <div className="text-3xl font-black text-cyan-400">99%</div>
-              <div className={darkMode ? "text-sm text-gray-400" : "text-sm text-gray-500"}>Satisfacción</div>
-            </div>
-          </div>
         </div>
       </section>
 
