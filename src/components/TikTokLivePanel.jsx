@@ -49,6 +49,7 @@ export default function TikTokLivePanel({ config = {} }) {
   const currentAudioRef = useRef(null)
   const disconnectedRef = useRef(false)
   const chatContainerRef = useRef(null)
+  const bannedRef = useRef(new Set())
   const configRef = useRef(config)
   const volumeRef = useRef(0.8)
 
@@ -59,9 +60,10 @@ export default function TikTokLivePanel({ config = {} }) {
     }
   }, [messages])
 
-  // Mantener config y volumen actualizado en refs para acceso en callbacks
+  // Mantener refs actualizados para acceso en callbacks del WebSocket
   useEffect(() => { configRef.current = config }, [config])
   useEffect(() => { volumeRef.current = volume }, [volume])
+  useEffect(() => { bannedRef.current = bannedUsers }, [bannedUsers])
 
   // Conectar a WebSocket cuando el usuario se conecte a TikTok
   useEffect(() => {
@@ -145,7 +147,7 @@ export default function TikTokLivePanel({ config = {} }) {
           console.log('[TikTok] Nuevo mensaje:', msg.username, msg.text)
 
           // Filtro: usuarios baneados
-          if (bannedUsers.has(msg.username)) return
+          if (bannedRef.current.has(msg.username)) return
 
           // Filtro: solo donadores
           if (c.onlyDonors && !msg.isDonor && !donors.has(msg.username)) return
@@ -526,7 +528,7 @@ export default function TikTokLivePanel({ config = {} }) {
                         }`}
                       />
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 group/ban">
                         <p
                           onClick={() => {
                             setEditingNick(msg.user)
@@ -544,10 +546,10 @@ export default function TikTokLivePanel({ config = {} }) {
                             e.stopPropagation()
                             setBannedUsers(prev => new Set([...prev, msg.user]))
                           }}
-                          className="p-1 rounded hover:bg-red-500/20 transition-colors"
+                          className="p-1 rounded hover:bg-red-500/20 opacity-0 group-hover/ban:opacity-100 transition-all"
                           title="Silenciar usuario"
                         >
-                          <Ban className="w-3.5 h-3.5 text-red-400/60 hover:text-red-300" />
+                          <Ban className="w-3 h-3 text-red-400 hover:text-red-300" />
                         </button>
                       </div>
                     )}
