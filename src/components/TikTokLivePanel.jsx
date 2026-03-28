@@ -91,6 +91,9 @@ export default function TikTokLivePanel({ config = {} }) {
         const data = JSON.parse(event.data)
         const c = configRef.current
 
+        // Si está pausado, ignorar todo excepto el ping de subscribed/status
+        if (isPausedRef.current && data.type !== 'subscribed' && data.type !== 'status') return
+
         if (data.type === 'subscribed') {
           console.log('[TikTok] Suscrito a:', data.username)
 
