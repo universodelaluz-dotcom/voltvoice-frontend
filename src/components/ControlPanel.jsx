@@ -54,10 +54,10 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
   const premiumVoiceOptions = [
     { id: 'es-ES', name: 'Voz Básica Español (ilimitada)' },
     { id: 'en-US', name: 'Voz Básica Inglés (ilimitada)' },
-    { id: 'Diego', name: 'Diego - Premium' },
-    { id: 'Lupita', name: 'Lupita - Premium' },
-    { id: 'Miguel', name: 'Miguel - Premium' },
-    { id: 'Rafael', name: 'Rafael - Premium' },
+    { id: 'Diego', name: 'Voz natural de Luis - Premium' },
+    { id: 'Lupita', name: 'Voz natural de Sofia - Premium' },
+    { id: 'Miguel', name: 'Voz natural de Gustavo - Premium' },
+    { id: 'Rafael', name: 'Voz natural de Leonel - Premium' },
     ...personalVoices.filter(v => user?.email === v.owner),
   ]
 

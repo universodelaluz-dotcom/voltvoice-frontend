@@ -57,13 +57,13 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       { id: "es-ES", name: "Voz Básica Español (ilimitada)", category: "google", engine: "google" },
       { id: "en-US", name: "Voz Básica Inglés (ilimitada)", category: "google", engine: "google" },
 
-      // === INWORLD AI (Voces Premium - Naturales) ===
-      { id: "Diego", name: "🎙️ Diego - Premium (Inworld)", category: "inworld", engine: "inworld" },
-      { id: "Lupita", name: "🎙️ Lupita - Premium (Inworld)", category: "inworld", engine: "inworld" },
-      { id: "Miguel", name: "🎙️ Miguel - Premium (Inworld)", category: "inworld", engine: "inworld" },
-      { id: "Rafael", name: "🎙️ Rafael - Premium (Inworld)", category: "inworld", engine: "inworld" },
+      // === Voces Premium - Naturales ===
+      { id: "Diego", name: "🎙️ Voz natural de Luis - Premium", category: "premium", engine: "inworld" },
+      { id: "Lupita", name: "🎙️ Voz natural de Sofia - Premium", category: "premium", engine: "inworld" },
+      { id: "Miguel", name: "🎙️ Voz natural de Gustavo - Premium", category: "premium", engine: "inworld" },
+      { id: "Rafael", name: "🎙️ Voz natural de Leonel - Premium", category: "premium", engine: "inworld" },
 
-      // === INWORLD AI (Voces Clonadas personales) ===
+      // === Voces Clonadas personales ===
       ...(user?.email === 'alainsh@gmail.com' ? [
         { id: "default-cfjnp8x4nt-owd7yg-1xsw__garret", name: "👤 Garret (Tu Voz Clonada)", category: "inworld-cloned", engine: "inworld" },
         { id: "default-cfjnp8x4nt-owd7yg-1xsw__connor", name: "👤 Connor (Tu Voz Clonada)", category: "inworld-cloned", engine: "inworld" },
