@@ -233,7 +233,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
               </div>
 
               <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} />
-              <CheckOption label="No leer emojis en nick" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} />
+              <CheckOption label="Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} />
               <CheckWithInput
                 label="Ignorar emojis excesivos — cantidad máxima permitida:"
                 checked={config.ignoreExcessiveEmojis}
