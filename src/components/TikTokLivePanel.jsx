@@ -163,6 +163,7 @@ export default function TikTokLivePanel({ config = {} }) {
   const [highlightMode, setHighlightMode] = useState(false)
   const [selectedColor, setSelectedColor] = useState('#06b6d4')
   const [showHighlightPanel, setShowHighlightPanel] = useState(false)
+  const [chatFontSize, setChatFontSize] = useState(14)
   const [highlightRules, setHighlightRules] = useState({
     moderators: { enabled: false, color: '#a855f7' },
     donors: { enabled: false, color: '#f59e0b' },
@@ -727,7 +728,8 @@ export default function TikTokLivePanel({ config = {} }) {
                 <div
                   key={idx}
                   data-playing={msg.status === 'playing' ? 'true' : undefined}
-                  className={`text-sm pl-3 py-2 rounded-r transition-all duration-300 relative ${
+                  style={{ fontSize: `${chatFontSize}px`, ...(hlColor ? { backgroundColor: `${hlColor}40`, borderLeftColor: hlColor, borderLeftWidth: '4px' } : {}) }}
+                  className={`pl-3 py-2 rounded-r transition-all duration-300 relative ${
                     msg.status === 'playing'
                       ? darkMode
                         ? 'border-l-2 border-cyan-400 bg-cyan-500/10'
@@ -736,7 +738,6 @@ export default function TikTokLivePanel({ config = {} }) {
                         ? 'border-l border-gray-600/30 pl-3 opacity-40'
                         : 'border-l border-cyan-500/30'
                   }`}
-                  style={hlColor ? { backgroundColor: `${hlColor}40`, borderLeftColor: hlColor, borderLeftWidth: '4px' } : undefined}
                 >
                   <div className="flex items-center justify-between">
                     {editingNick === msg.id ? (
@@ -894,6 +895,26 @@ export default function TikTokLivePanel({ config = {} }) {
               >
                 <Highlighter className="w-3.5 h-3.5" /> Remarcar
               </button>
+              {/* Control de tamaño de letra */}
+              <div className={`flex items-center gap-0.5 rounded-lg px-1.5 py-1 ${
+                darkMode ? 'bg-gray-700/80 border border-gray-600' : 'bg-gray-200 border border-gray-300'
+              }`}>
+                <button
+                  onClick={() => setChatFontSize(s => Math.max(10, s - 1))}
+                  className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-colors ${
+                    darkMode ? 'hover:bg-gray-600 text-gray-300' : 'hover:bg-gray-300 text-gray-600'
+                  }`}
+                  title="Reducir texto"
+                >A-</button>
+                <span className={`text-[10px] font-mono min-w-[24px] text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{chatFontSize}</span>
+                <button
+                  onClick={() => setChatFontSize(s => Math.min(24, s + 1))}
+                  className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-colors ${
+                    darkMode ? 'hover:bg-gray-600 text-gray-300' : 'hover:bg-gray-300 text-gray-600'
+                  }`}
+                  title="Aumentar texto"
+                >A+</button>
+              </div>
             </div>
             <div className="flex items-center gap-1.5">
               <button
