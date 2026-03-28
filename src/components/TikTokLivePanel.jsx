@@ -50,6 +50,7 @@ export default function TikTokLivePanel({ config = {} }) {
   const disconnectedRef = useRef(false)
   const chatContainerRef = useRef(null)
   const bannedRef = useRef(new Set())
+  const nickOverridesRef = useRef({})
   const configRef = useRef(config)
   const volumeRef = useRef(0.8)
 
@@ -64,6 +65,7 @@ export default function TikTokLivePanel({ config = {} }) {
   useEffect(() => { configRef.current = config }, [config])
   useEffect(() => { volumeRef.current = volume }, [volume])
   useEffect(() => { bannedRef.current = bannedUsers }, [bannedUsers])
+  useEffect(() => { nickOverridesRef.current = nickOverrides }, [nickOverrides])
 
   // Conectar a WebSocket cuando el usuario se conecte a TikTok
   useEffect(() => {
@@ -202,7 +204,7 @@ export default function TikTokLivePanel({ config = {} }) {
           }
 
           // Construir texto final (usar nickname para lectura, no el username técnico)
-          const displayName = nickOverrides[msg.username] || msg.nickname || msg.username
+          const displayName = nickOverridesRef.current[msg.username] || msg.nickname || msg.username
           const finalText = c.readOnlyMessage ? textToSpeak : `${displayName}: ${textToSpeak}`
 
           queueMessage(finalText, msg.username, { isDonor: msg.isDonor || donors.has(msg.username), isModerator: msg.isModerator })
