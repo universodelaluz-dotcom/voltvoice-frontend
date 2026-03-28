@@ -1023,10 +1023,36 @@ export default function TikTokLivePanel({ config = {} }) {
                       onClick={() => setHighlightedUsers({})}
                       className="text-[10px] text-gray-400 hover:text-red-400 ml-auto"
                     >
-                      Limpiar
+                      Limpiar todo
                     </button>
                   )}
                 </div>
+                {/* Lista de usuarios remarcados con botón individual para quitar */}
+                {Object.keys(highlightedUsers).length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {Object.entries(highlightedUsers).map(([user, color]) => (
+                      <span
+                        key={user}
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium"
+                        style={{ backgroundColor: `${color}30`, color: color, border: `1px solid ${color}50` }}
+                      >
+                        <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+                        {user}
+                        <button
+                          onClick={() => setHighlightedUsers(prev => {
+                            const next = { ...prev }
+                            delete next[user]
+                            return next
+                          })}
+                          className="hover:text-red-400 transition-colors ml-0.5"
+                          title={`Quitar remarque de ${user}`}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
