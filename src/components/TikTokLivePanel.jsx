@@ -146,8 +146,26 @@ export default function TikTokLivePanel({ config = {} }) {
           const msg = data.data
           console.log('[TikTok] Nuevo mensaje:', msg.username, msg.text)
 
-          // Filtro: usuarios baneados
-          if (bannedRef.current.has(msg.username)) return
+          const isBanned = bannedRef.current.has(msg.username)
+
+          // Siempre mostrar el mensaje en el chat visual
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: msg.id,
+              user: msg.username,
+              nickname: msg.nickname || msg.username,
+              text: msg.text,
+              status: 'received',
+              timestamp: new Date(),
+              isDonor: msg.isDonor || donors.has(msg.username),
+              isModerator: msg.isModerator || false,
+              isBanned
+            }
+          ])
+
+          // Si está baneado, no leer en voz
+          if (isBanned) return
 
           // Filtro: solo donadores
           if (c.onlyDonors && !msg.isDonor && !donors.has(msg.username)) return
@@ -170,21 +188,6 @@ export default function TikTokLivePanel({ config = {} }) {
 
           // Filtro: largo mínimo
           if (c.minMessageLengthEnabled && msg.text.trim().length < c.minMessageLength) return
-
-          // Agregar mensaje a la lista visual
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: msg.id,
-              user: msg.username,
-              nickname: msg.nickname || msg.username,
-              text: msg.text,
-              status: 'received',
-              timestamp: new Date(),
-              isDonor: msg.isDonor || donors.has(msg.username),
-              isModerator: msg.isModerator || false
-            }
-          ])
 
           // Limitar cola máxima
           if (c.maxQueueEnabled && speakQueueRef.current.length >= c.maxQueueSize) {
