@@ -382,7 +382,7 @@ export default function TikTokLivePanel({ config = {} }) {
 
           const finalText = c.readOnlyMessage ? textToSpeak : `${displayName}: ${textToSpeak}`
 
-          queueMessage(finalText, msg.username, { isDonor: msg.isDonor || donors.has(msg.username), isModerator: msg.isModerator })
+          queueMessage(finalText, msg.username, { id: msg.id, isDonor: msg.isDonor || donors.has(msg.username), isModerator: msg.isModerator })
 
         } else if (data.type === 'status') {
           // Stats manejados localmente (timer + contador de mensajes)
@@ -468,7 +468,7 @@ export default function TikTokLivePanel({ config = {} }) {
         if (data.audio) {
           setMessages((prev) =>
             prev.map((msg) =>
-              msg.text === text ? { ...msg, status: 'playing' } : msg
+              msg.id === item.id ? { ...msg, status: 'playing' } : msg
             )
           )
 
@@ -483,7 +483,7 @@ export default function TikTokLivePanel({ config = {} }) {
               console.log(`[TikTok] Audio terminado`)
               setMessages((prev) =>
                 prev.map((msg) =>
-                  msg.text === text ? { ...msg, status: 'done' } : msg
+                  msg.id === item.id ? { ...msg, status: 'done' } : msg
                 )
               )
               resolve()

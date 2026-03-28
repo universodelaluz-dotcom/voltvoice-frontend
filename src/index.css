@@ -38,3 +38,16 @@ body {
     @apply px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg font-bold transition-colors;
   }
 }
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.pulse-indicator {
+  animation: pulse-dot 1s infinite;
+}
