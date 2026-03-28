@@ -503,7 +503,7 @@ export default function TikTokLivePanel({ config = {} }) {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    {editingNick === msg.user ? (
+                    {editingNick === msg.id ? (
                       <input
                         autoFocus
                         value={editingValue}
@@ -528,10 +528,10 @@ export default function TikTokLivePanel({ config = {} }) {
                         }`}
                       />
                     ) : (
-                      <div className="flex items-center gap-1 group/ban">
+                      <div className="flex items-center gap-1">
                         <p
                           onClick={() => {
-                            setEditingNick(msg.user)
+                            setEditingNick(msg.id)
                             setEditingValue(nickOverrides[msg.user] || msg.nickname || msg.user)
                           }}
                           className={`font-semibold cursor-pointer hover:underline ${
@@ -542,14 +542,20 @@ export default function TikTokLivePanel({ config = {} }) {
                           {nickOverrides[msg.user] || msg.nickname || msg.user}
                         </p>
                         <button
-                          onClick={(e) => {
+                          onMouseDown={(e) => {
+                            e.preventDefault()
                             e.stopPropagation()
-                            setBannedUsers(prev => new Set([...prev, msg.user]))
+                            setBannedUsers(prev => {
+                              const next = new Set([...prev, msg.user])
+                              bannedRef.current = next
+                              return next
+                            })
+                            setMessages(prev => prev.filter(m => m.user !== msg.user))
                           }}
-                          className="p-1 rounded hover:bg-red-500/20 opacity-0 group-hover/ban:opacity-100 transition-all"
+                          className="p-1.5 rounded hover:bg-red-500/20 transition-colors"
                           title="Silenciar usuario"
                         >
-                          <Ban className="w-3 h-3 text-red-400 hover:text-red-300" />
+                          <Ban className="w-3 h-3 text-red-400/40 hover:text-red-300" />
                         </button>
                       </div>
                     )}
