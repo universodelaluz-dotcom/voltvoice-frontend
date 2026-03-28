@@ -234,6 +234,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
 
               <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} />
               <CheckOption label="Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} />
+              <CheckOption label="No leer emojis en chat" checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} />
               <CheckWithInput
                 label="Ignorar emojis excesivos del chat — cantidad máxima permitida:"
                 checked={config.ignoreExcessiveEmojis}

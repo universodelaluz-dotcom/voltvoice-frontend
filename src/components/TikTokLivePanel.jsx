@@ -327,11 +327,16 @@ export default function TikTokLivePanel({ config = {} }) {
           // Filtro: ignorar enlaces
           if (c.ignoreLinks && hasLinks(msg.text)) return
 
-          // Filtro: limpiar emojis excesivos del texto (no ignorar el mensaje)
+          // Filtro: no leer emojis en chat (quitar todos los emojis del texto)
           let textToProcess = msg.text
-          if (c.ignoreExcessiveEmojis && hasExcessiveEmojis(msg.text, parseInt(c.maxEmojisAllowed) || 3)) {
-            textToProcess = removeEmojis(msg.text)
-            // Si después de remover emojis el mensaje queda vacío, ignorar
+          if (c.stripChatEmojis) {
+            textToProcess = removeEmojis(textToProcess)
+            if (!textToProcess.trim()) return
+          }
+
+          // Filtro: limpiar emojis excesivos del texto (no ignorar el mensaje)
+          if (c.ignoreExcessiveEmojis && hasExcessiveEmojis(textToProcess, parseInt(c.maxEmojisAllowed) || 3)) {
+            textToProcess = removeEmojis(textToProcess)
             if (!textToProcess.trim()) return
           }
 
