@@ -47,7 +47,7 @@ export default function TikTokLivePanel({ config = {} }) {
   const statusIntervalRef = useRef(null)
   const speakQueueRef = useRef([])
   const isProcessingRef = useRef(false)
-  const lastMessageRef = useRef('')
+  const lastMessageRef = useRef({}) // { username: lastText }
   const currentAudioRef = useRef(null)
   const disconnectedRef = useRef(false)
   const chatContainerRef = useRef(null)
@@ -193,9 +193,10 @@ export default function TikTokLivePanel({ config = {} }) {
           // Filtro: solo preguntas
           if (c.onlyQuestions && !isQuestion(msg.text)) return
 
-          // Filtro: saltar repetidos
-          if (c.skipRepeated && msg.text === lastMessageRef.current) return
-          lastMessageRef.current = msg.text
+          // Filtro: saltar repetidos (por usuario, no global)
+          const normalizedText = msg.text.trim().toLowerCase()
+          if (c.skipRepeated && normalizedText === lastMessageRef.current[msg.username]) return
+          lastMessageRef.current[msg.username] = normalizedText
 
           // Filtro: ignorar enlaces
           if (c.ignoreLinks && hasLinks(msg.text)) return
