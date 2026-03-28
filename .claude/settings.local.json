@@ -74,7 +74,14 @@
       "Bash(ls -la \"C:/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE/.git/modules/\"*/index.lock)",
       "Bash(GIT_INDEX_FILE=\"C:/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE/.git/index\" git -C \"C:/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE\" status)",
       "Bash(git -C \"C:/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE\" add backend frontend tiktok_chat_reader.js .claude/settings.local.json)",
-      "Bash(git -C:*)"
+      "Bash(git -C:*)",
+      "Bash(node -c src/services/banService.js)",
+      "Bash(node -c src/services/nickService.js)",
+      "Bash(node -c src/routes/bans.js)",
+      "Bash(node -c src/routes/nicks.js)",
+      "Bash(node -c server.js)",
+      "Bash(npx eslint:*)",
+      "Bash(node -c src/components/TikTokLivePanel.jsx)"
     ]
   }
 }
