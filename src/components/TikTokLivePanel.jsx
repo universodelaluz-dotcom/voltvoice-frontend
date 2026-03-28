@@ -704,6 +704,23 @@ export default function TikTokLivePanel({ config = {} }) {
                   : (highlightRules.banned.enabled && bannedUsers.has(msg.user)) ? highlightRules.banned.color
                   : null
                 const hlColor = highlightedUsers[msg.user] || autoColor
+                // DEBUG: Log para test messages
+                if (msg.user?.startsWith('test_')) {
+                  console.log(`[RENDER DEBUG] ${msg.user}:`, {
+                    isModerator: msg.isModerator,
+                    isDonor: msg.isDonor,
+                    isSubscriber: msg.isSubscriber,
+                    isTopGifter: msg.isTopGifter,
+                    rules: {
+                      modEnabled: highlightRules.moderators.enabled,
+                      donorEnabled: highlightRules.donors.enabled,
+                      subEnabled: highlightRules.subscribers.enabled,
+                      topEnabled: highlightRules.topFans.enabled,
+                    },
+                    autoColor,
+                    hlColor
+                  })
+                }
                 // Tipo de badge para mostrar
                 const badgeLabel = msg.isModerator ? '⚔️ MOD' : msg.isTopGifter ? '🏆 TOP' : msg.isDonor ? '🎁 DONOR' : msg.isSubscriber ? '⭐ SUB' : null
                 return (
