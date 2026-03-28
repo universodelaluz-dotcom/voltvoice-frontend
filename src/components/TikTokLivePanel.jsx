@@ -167,6 +167,9 @@ export default function TikTokLivePanel({ config = {} }) {
     moderators: { enabled: false, color: '#a855f7' },
     donors: { enabled: false, color: '#f59e0b' },
     banned: { enabled: false, color: '#ef4444' },
+    subscribers: { enabled: false, color: '#ec4899' },
+    newViewers: { enabled: false, color: '#22c55e' },
+    topFans: { enabled: false, color: '#06b6d4' },
   })
   const isPausedRef = useRef(false)
   const wsRef = useRef(null)
@@ -310,6 +313,9 @@ export default function TikTokLivePanel({ config = {} }) {
               timestamp: new Date(),
               isDonor: msg.isDonor || donors.has(msg.username),
               isModerator: msg.isModerator || false,
+              isSubscriber: msg.isSubscriber || false,
+              isNewGifter: msg.isNewGifter || false,
+              isTopGifter: msg.topGifterRank > 0,
               isBanned
             }
           ])
@@ -688,7 +694,10 @@ export default function TikTokLivePanel({ config = {} }) {
               messages.map((msg, idx) => {
                 // Color: primero reglas por tipo, luego override manual
                 const autoColor = (highlightRules.moderators.enabled && msg.isModerator) ? highlightRules.moderators.color
+                  : (highlightRules.topFans.enabled && msg.isTopGifter) ? highlightRules.topFans.color
                   : (highlightRules.donors.enabled && msg.isDonor) ? highlightRules.donors.color
+                  : (highlightRules.subscribers.enabled && msg.isSubscriber) ? highlightRules.subscribers.color
+                  : (highlightRules.newViewers.enabled && msg.isNewGifter) ? highlightRules.newViewers.color
                   : (highlightRules.banned.enabled && msg.isBanned) ? highlightRules.banned.color
                   : null
                 const hlColor = highlightedUsers[msg.user] || autoColor
@@ -817,7 +826,7 @@ export default function TikTokLivePanel({ config = {} }) {
             <div className="flex items-center gap-1.5">
               <button
                 onClick={handlePause}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold tracking-wide transition-all ${
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold tracking-wide transition-all ${
                   isPaused
                     ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-300'
                     : darkMode
@@ -827,24 +836,24 @@ export default function TikTokLivePanel({ config = {} }) {
                 title={isPaused ? 'Reanudar lectura' : 'Pausar lectura'}
               >
                 {isPaused
-                  ? <><Play className="w-3 h-3" /> Reanudar</>
-                  : <><Pause className="w-3 h-3" /> Pausar</>
+                  ? <><Play className="w-3.5 h-3.5" /> Reanudar</>
+                  : <><Pause className="w-3.5 h-3.5" /> Pausar</>
                 }
               </button>
               <button
                 onClick={handleRefresh}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold tracking-wide transition-all ${
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold tracking-wide transition-all ${
                   darkMode
                     ? 'bg-cyan-600 text-white hover:bg-cyan-500'
                     : 'bg-cyan-500 text-white hover:bg-cyan-400'
                 }`}
                 title="Saltar cola y continuar desde el próximo mensaje"
               >
-                <RotateCcw className="w-3 h-3" /> Refrescar
+                <RotateCcw className="w-3.5 h-3.5" /> Refrescar
               </button>
               <button
                 onClick={() => setShowHighlightPanel(!showHighlightPanel)}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold tracking-wide transition-all ${
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold tracking-wide transition-all ${
                   showHighlightPanel || highlightMode
                     ? 'bg-amber-400 text-gray-900 hover:bg-amber-300'
                     : darkMode
@@ -853,7 +862,7 @@ export default function TikTokLivePanel({ config = {} }) {
                 }`}
                 title="Remarcar usuarios con color"
               >
-                <Highlighter className="w-3 h-3" /> Remarcar
+                <Highlighter className="w-3.5 h-3.5" /> Remarcar
               </button>
             </div>
             <div className="flex items-center gap-1.5">
@@ -893,7 +902,10 @@ export default function TikTokLivePanel({ config = {} }) {
               {[
                 { key: 'moderators', label: 'Moderadores' },
                 { key: 'donors', label: 'Donadores' },
-                { key: 'banned', label: 'Baneados' },
+                { key: 'subscribers', label: 'Suscriptores' },
+                { key: 'topFans', label: 'Top Fans / Gifters' },
+                { key: 'newViewers', label: 'Nuevos Gifters' },
+                { key: 'banned', label: 'Baneados (silenciados)' },
               ].map(({ key, label }) => (
                 <div key={key} className="flex items-center gap-2">
                   <button
