@@ -19,16 +19,16 @@ const hasExcessiveEmojis = (text, maxAllowed = 3) => {
 
 const hasLinks = (text) => /https?:\/\/|www\.|\.com|\.net|\.org|bit\.ly/i.test(text)
 
-const hasNonPlainNick = (nickname) => {
-  // Detectar emojis y caracteres especiales en el nickname
+const getPlainNick = (nickname) => {
+  // Eliminar emojis del nickname
   const emojiRegex = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu
-  const hasEmoji = emojiRegex.test(nickname)
+  let cleanNick = nickname.replace(emojiRegex, '')
 
-  // Detectar caracteres especiales (no letras, números, guiones, guiones bajos, espacios)
-  const plainRegex = /^[a-zA-Z0-9\u00C0-\u00FF_\- ]*$/
-  const isPlain = plainRegex.test(nickname)
+  // Eliminar caracteres especiales, mantener solo letras, números, guiones, guiones bajos y espacios
+  cleanNick = cleanNick.replace(/[^a-zA-Z0-9\u00C0-\u00FF_\- ]/g, '')
 
-  return hasEmoji || !isPlain
+  // Limpiar espacios múltiples y espacios al inicio/final
+  return cleanNick.trim().replace(/\s+/g, ' ')
 }
 
 export default function TikTokLivePanel({ config = {} }) {
@@ -219,9 +219,6 @@ export default function TikTokLivePanel({ config = {} }) {
           // Filtro: ignorar emojis excesivos
           if (c.ignoreExcessiveEmojis && hasExcessiveEmojis(msg.text, parseInt(c.maxEmojisAllowed) || 3)) return
 
-          // Filtro: solo nicks de texto simple (sin emojis ni caracteres especiales)
-          if (c.onlyPlainNicks && hasNonPlainNick(msg.nickname || msg.username)) return
-
           // Filtro: largo mínimo
           if (c.minMessageLengthEnabled && msg.text.trim().length < c.minMessageLength) return
 
@@ -238,7 +235,13 @@ export default function TikTokLivePanel({ config = {} }) {
           }
 
           // Construir texto final (usar nickname para lectura, no el username técnico)
-          const displayName = nickOverridesRef.current[msg.username] || msg.nickname || msg.username
+          let displayName = nickOverridesRef.current[msg.username] || msg.nickname || msg.username
+
+          // Si está activado, eliminar emojis y caracteres especiales del nickname
+          if (c.onlyPlainNicks && !nickOverridesRef.current[msg.username]) {
+            displayName = getPlainNick(displayName)
+          }
+
           const finalText = c.readOnlyMessage ? textToSpeak : `${displayName}: ${textToSpeak}`
 
           queueMessage(finalText, msg.username, { isDonor: msg.isDonor || donors.has(msg.username), isModerator: msg.isModerator })
