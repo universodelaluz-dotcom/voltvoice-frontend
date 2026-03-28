@@ -135,7 +135,7 @@ const apiNicks = {
   }
 }
 
-export default function TikTokLivePanel({ config = {} }) {
+export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
   useEffect(() => {
@@ -163,14 +163,39 @@ export default function TikTokLivePanel({ config = {} }) {
   const [highlightMode, setHighlightMode] = useState(false)
   const [selectedColor, setSelectedColor] = useState('#06b6d4')
   const [showHighlightPanel, setShowHighlightPanel] = useState(false)
-  const [chatFontSize, setChatFontSize] = useState(14)
-  const [highlightRules, setHighlightRules] = useState({
+  const [chatFontSize, setChatFontSize] = useState(config.chatFontSize || 14)
+  const [chatNickColor, setChatNickColor] = useState(config.chatNickColor || '#22d3ee')
+  const [chatMsgColor, setChatMsgColor] = useState(config.chatMsgColor || '#d1d5db')
+  const [showFontPanel, setShowFontPanel] = useState(false)
+  const [highlightRules, setHighlightRules] = useState(config.highlightRules || {
     moderators: { enabled: false, color: '#a855f7' },
     donors: { enabled: false, color: '#f59e0b' },
     banned: { enabled: false, color: '#ef4444' },
     subscribers: { enabled: false, color: '#ec4899' },
     topFans: { enabled: false, color: '#06b6d4' },
   })
+
+  // Sincronizar cambios de estilo y remarcar al config del usuario (auto-save)
+  useEffect(() => {
+    if (updateConfig) {
+      updateConfig('chatFontSize', chatFontSize)
+    }
+  }, [chatFontSize])
+  useEffect(() => {
+    if (updateConfig) {
+      updateConfig('chatNickColor', chatNickColor)
+    }
+  }, [chatNickColor])
+  useEffect(() => {
+    if (updateConfig) {
+      updateConfig('chatMsgColor', chatMsgColor)
+    }
+  }, [chatMsgColor])
+  useEffect(() => {
+    if (updateConfig) {
+      updateConfig('highlightRules', highlightRules)
+    }
+  }, [highlightRules])
   const isPausedRef = useRef(false)
   const wsRef = useRef(null)
   const statusIntervalRef = useRef(null)
@@ -735,7 +760,7 @@ export default function TikTokLivePanel({ config = {} }) {
                         ? 'border-l-2 border-cyan-400 bg-cyan-500/10'
                         : 'border-l-2 border-cyan-500 bg-cyan-50'
                       : msg.status === 'done'
-                        ? 'border-l border-gray-600/30 pl-3 opacity-40'
+                        ? 'border-l border-gray-600/30 pl-3'
                         : 'border-l border-cyan-500/30'
                   }`}
                 >
@@ -819,10 +844,9 @@ export default function TikTokLivePanel({ config = {} }) {
                           className={`font-semibold cursor-pointer select-none px-1 rounded transition-colors ${
                             bannedUsers.has(msg.user)
                               ? 'text-red-400 bg-red-500/15 line-through'
-                              : msg.status === 'playing'
-                                ? 'text-cyan-400 hover:underline'
-                                : 'text-cyan-300 hover:underline'
+                              : 'hover:underline'
                           }`}
+                          style={!bannedUsers.has(msg.user) ? { color: chatNickColor } : undefined}
                           title={highlightMode ? "Click para remarcar/desmarcar este usuario" : bannedUsers.has(msg.user) ? "Click derecho para desbloquear" : "Click para editar · Click derecho para silenciar"}
                         >
                           {hlColor && <span className="inline-block w-2.5 h-2.5 rounded-full mr-1 ring-1 ring-white/30" style={{ backgroundColor: hlColor }} />}
@@ -841,11 +865,9 @@ export default function TikTokLivePanel({ config = {} }) {
                       </span>
                     )}
                   </div>
-                  <p className={
-                    msg.status === 'playing'
-                      ? darkMode ? "text-white font-medium" : "text-gray-900 font-medium"
-                      : darkMode ? "text-gray-300" : "text-gray-700"
-                  }>{msg.text}</p>
+                  <p className={msg.status === 'playing' ? "font-medium" : ""}
+                    style={{ color: msg.status === 'playing' ? '#fff' : chatMsgColor }}
+                  >{msg.text}</p>
                 </div>
                 )
               })
@@ -895,26 +917,20 @@ export default function TikTokLivePanel({ config = {} }) {
               >
                 <Highlighter className="w-3.5 h-3.5" /> Remarcar
               </button>
-              {/* Control de tamaño de letra */}
-              <div className={`flex items-center gap-0.5 rounded-lg px-1.5 py-1 ${
-                darkMode ? 'bg-gray-700/80 border border-gray-600' : 'bg-gray-200 border border-gray-300'
-              }`}>
-                <button
-                  onClick={() => setChatFontSize(s => Math.max(10, s - 1))}
-                  className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-colors ${
-                    darkMode ? 'hover:bg-gray-600 text-gray-300' : 'hover:bg-gray-300 text-gray-600'
-                  }`}
-                  title="Reducir texto"
-                >A-</button>
-                <span className={`text-[10px] font-mono min-w-[24px] text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{chatFontSize}</span>
-                <button
-                  onClick={() => setChatFontSize(s => Math.min(24, s + 1))}
-                  className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-colors ${
-                    darkMode ? 'hover:bg-gray-600 text-gray-300' : 'hover:bg-gray-300 text-gray-600'
-                  }`}
-                  title="Aumentar texto"
-                >A+</button>
-              </div>
+              {/* Botón para abrir panel de estilo del chat */}
+              <button
+                onClick={() => setShowFontPanel(!showFontPanel)}
+                className={`flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-bold tracking-wide transition-all ${
+                  showFontPanel
+                    ? 'bg-cyan-400 text-gray-900 hover:bg-cyan-300'
+                    : darkMode
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600'
+                      : 'bg-gray-200 text-gray-600 hover:bg-gray-300 border border-gray-300'
+                }`}
+                title="Tamaño y colores del chat"
+              >
+                <span style={{ fontSize: '13px' }}>Aa</span>
+              </button>
             </div>
             <div className="flex items-center gap-1.5">
               <button
@@ -936,6 +952,78 @@ export default function TikTokLivePanel({ config = {} }) {
               />
             </div>
           </div>
+
+          {/* Panel Estilo del Chat */}
+          {showFontPanel && (
+            <div className={`rounded-lg border p-3 space-y-3 ${
+              darkMode ? 'bg-gray-900/80 border-cyan-500/30' : 'bg-cyan-50 border-cyan-200'
+            }`}>
+              <div className="flex items-center justify-between">
+                <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/80' : 'text-cyan-600'}`}>
+                  Estilo del Chat
+                </span>
+                <button onClick={() => setShowFontPanel(false)} className="text-gray-400 hover:text-gray-200"><X className="w-3.5 h-3.5" /></button>
+              </div>
+
+              {/* Tamaño de letra */}
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-medium w-20 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Tamaño</span>
+                <button
+                  onClick={() => setChatFontSize(s => Math.max(10, s - 1))}
+                  className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-colors ${
+                    darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
+                  }`}
+                >A-</button>
+                <span className={`text-xs font-mono min-w-[28px] text-center font-bold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{chatFontSize}px</span>
+                <button
+                  onClick={() => setChatFontSize(s => Math.min(24, s + 1))}
+                  className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-colors ${
+                    darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
+                  }`}
+                >A+</button>
+              </div>
+
+              {/* Color de Nick */}
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-medium w-20 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Nick</span>
+                <div className="flex gap-1.5">
+                  {['#22d3ee', '#a855f7', '#f59e0b', '#ef4444', '#22c55e', '#3b82f6', '#ec4899', '#f97316', '#ffffff'].map(c => (
+                    <button
+                      key={c}
+                      onClick={() => setChatNickColor(c)}
+                      className={`w-5 h-5 rounded-full transition-transform ${
+                        chatNickColor === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-110'
+                      }`}
+                      style={{ backgroundColor: c, border: c === '#ffffff' ? '1px solid #666' : 'none' }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Color de Mensaje */}
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-medium w-20 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Mensaje</span>
+                <div className="flex gap-1.5">
+                  {['#d1d5db', '#ffffff', '#22d3ee', '#a855f7', '#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#94a3b8'].map(c => (
+                    <button
+                      key={c}
+                      onClick={() => setChatMsgColor(c)}
+                      className={`w-5 h-5 rounded-full transition-transform ${
+                        chatMsgColor === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-110'
+                      }`}
+                      style={{ backgroundColor: c, border: c === '#ffffff' ? '1px solid #666' : 'none' }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div className={`rounded p-2 text-xs ${darkMode ? 'bg-gray-800/80' : 'bg-white'}`} style={{ fontSize: `${chatFontSize}px` }}>
+                <span style={{ color: chatNickColor }} className="font-semibold">NickDeEjemplo:</span>
+                <span style={{ color: chatMsgColor }} className="ml-1">Este es un mensaje de prueba</span>
+              </div>
+            </div>
+          )}
 
           {/* Panel Remarcar */}
           {showHighlightPanel && (

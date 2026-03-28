@@ -58,6 +58,16 @@ export function App() {
     followCooldown: 10,
     shareCooldown: 15,
     giftCooldown: 5,
+    chatFontSize: 14,
+    chatNickColor: '#22d3ee',
+    chatMsgColor: '#d1d5db',
+    highlightRules: {
+      moderators: { enabled: false, color: '#a855f7' },
+      donors: { enabled: false, color: '#f59e0b' },
+      banned: { enabled: false, color: '#ef4444' },
+      subscribers: { enabled: false, color: '#ec4899' },
+      topFans: { enabled: false, color: '#06b6d4' },
+    },
   })
 
   const updateConfig = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
