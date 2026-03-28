@@ -2,19 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import TikTokLivePanel from './TikTokLivePanel'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3 } from 'lucide-react'
 
-export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, config, updateConfig, user }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, darkMode, setDarkMode, config, updateConfig, user }) {
   const audioSpeed = config.audioSpeed || 1.0
-  // User Config
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
-
-  useEffect(() => {
-    const sync = () => setDarkMode(localStorage.getItem('voltvoice-theme') !== 'light')
-    sync()
-    window.addEventListener('storage', sync)
-    // Poll cada 500ms por si el toggle es en la misma tab
-    const interval = setInterval(sync, 500)
-    return () => { window.removeEventListener('storage', sync); clearInterval(interval) }
-  }, [])
 
   const toggleTheme = () => {
     const newMode = darkMode ? 'light' : 'dark'

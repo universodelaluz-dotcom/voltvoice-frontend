@@ -255,6 +255,8 @@ export function App() {
             onGoVoiceCloning={() => setCurrentPage('voice-cloning')}
             onGoControlPanel={() => setCurrentPage('control-panel')}
             onGoStatistics={() => setCurrentPage('statistics')}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
             config={config}
             updateConfig={updateConfig}
             user={user}
