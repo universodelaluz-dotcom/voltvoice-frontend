@@ -536,16 +536,15 @@ export default function TikTokLivePanel({ config = {} }) {
             )}
           </div>
 
-          {/* Barra de volumen */}
-          <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${darkMode ? 'bg-[#0f0f23]/80 border border-cyan-400/15' : 'bg-gray-50 border border-gray-200'}`}>
+          {/* Volumen */}
+          <div className="flex items-center gap-2 justify-end">
             <button
               onClick={() => setVolume(v => v > 0 ? 0 : 0.8)}
-              className="flex-shrink-0 hover:opacity-80 transition-opacity"
-              title={volume === 0 ? 'Activar sonido' : 'Silenciar'}
+              className="hover:opacity-80 transition-opacity"
             >
               {volume === 0
-                ? <VolumeX className="w-4 h-4 text-red-400" />
-                : <Volume2 className="w-4 h-4 text-cyan-400" />
+                ? <VolumeX className="w-3.5 h-3.5 text-red-400" />
+                : <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
               }
             </button>
             <input
@@ -555,14 +554,11 @@ export default function TikTokLivePanel({ config = {} }) {
               step="0.01"
               value={volume}
               onChange={(e) => setVolume(parseFloat(e.target.value))}
-              className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer accent-cyan-400"
+              className="w-24 h-1 rounded-full appearance-none cursor-pointer accent-cyan-400"
               style={{
                 background: `linear-gradient(to right, #22d3ee ${volume * 100}%, ${darkMode ? '#1e293b' : '#d1d5db'} ${volume * 100}%)`
               }}
             />
-            <span className={`text-xs font-mono w-8 text-right ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              {Math.round(volume * 100)}
-            </span>
           </div>
         </div>
       )}
