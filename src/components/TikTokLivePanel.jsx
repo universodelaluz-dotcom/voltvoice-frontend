@@ -717,9 +717,6 @@ export default function TikTokLivePanel({ config = {} }) {
                   }`}
                   style={hlColor ? { backgroundColor: `${hlColor}20`, borderLeftColor: hlColor, borderLeftWidth: '3px' } : undefined}
                 >
-                  {msg.status === 'playing' && (
-                    <span className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
-                  )}
                   <div className="flex items-center justify-between">
                     {editingNick === msg.id ? (
                       <input
@@ -812,7 +809,13 @@ export default function TikTokLivePanel({ config = {} }) {
                       </div>
                     )}
                     {msg.status === 'playing' && (
-                      <Volume2 className="w-4 h-4 text-cyan-400 animate-pulse" />
+                      <span className="flex items-center gap-1">
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400" />
+                        </span>
+                        <Volume2 className="w-4 h-4 text-cyan-400 animate-pulse" />
+                      </span>
                     )}
                   </div>
                   <p className={
