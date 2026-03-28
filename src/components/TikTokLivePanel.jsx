@@ -216,9 +216,9 @@ export default function TikTokLivePanel({ config = {} }) {
             return
           }
 
-          // Limitar caracteres para donadores
+          // Limitar caracteres en todos los mensajes
           let textToSpeak = msg.text
-          if (c.donorCharLimitEnabled && (msg.isDonor || donors.has(msg.username))) {
+          if (c.donorCharLimitEnabled) {
             textToSpeak = msg.text.substring(0, c.donorCharLimit)
           }
 

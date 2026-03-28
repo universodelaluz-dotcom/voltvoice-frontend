@@ -241,7 +241,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
             />
 
             <CheckWithInput
-              label="Cortar mensajes largos de donadores (máximo caracteres)"
+              label="Límite de caracteres en todos los mensajes (máximo)"
               checked={config.donorCharLimitEnabled}
               onToggle={() => updateConfig('donorCharLimitEnabled', !config.donorCharLimitEnabled)}
               value={config.donorCharLimit}
