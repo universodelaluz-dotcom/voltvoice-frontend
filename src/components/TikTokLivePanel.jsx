@@ -531,23 +531,17 @@ export default function TikTokLivePanel({ config = {} }) {
                         }`}
                       />
                     ) : (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 group/nick">
+                        {/* Nick: click izquierdo = editar, click derecho = ban toggle */}
                         <p
                           onClick={() => {
-                            setEditingNick(msg.id)
-                            setEditingValue(nickOverrides[msg.user] || msg.nickname || msg.user)
+                            if (!bannedUsers.has(msg.user)) {
+                              setEditingNick(msg.id)
+                              setEditingValue(nickOverrides[msg.user] || msg.nickname || msg.user)
+                            }
                           }}
-                          className={`font-semibold cursor-pointer hover:underline ${
-                            msg.status === 'playing' ? 'text-cyan-400' : 'text-cyan-300'
-                          }`}
-                          title="Click para cambiar nick"
-                        >
-                          {nickOverrides[msg.user] || msg.nickname || msg.user}
-                        </p>
-                        <button
-                          onMouseDown={(e) => {
+                          onContextMenu={(e) => {
                             e.preventDefault()
-                            e.stopPropagation()
                             setBannedUsers(prev => {
                               const next = new Set(prev)
                               if (next.has(msg.user)) next.delete(msg.user)
@@ -556,11 +550,17 @@ export default function TikTokLivePanel({ config = {} }) {
                               return next
                             })
                           }}
-                          className="p-1.5 rounded hover:bg-red-500/20 transition-colors"
-                          title={bannedUsers.has(msg.user) ? "Silenciado (click para quitar)" : "Silenciar usuario"}
+                          className={`font-semibold cursor-pointer select-none px-1 rounded transition-colors ${
+                            bannedUsers.has(msg.user)
+                              ? 'text-red-400 bg-red-500/15 line-through'
+                              : msg.status === 'playing'
+                                ? 'text-cyan-400 hover:underline'
+                                : 'text-cyan-300 hover:underline'
+                          }`}
+                          title={bannedUsers.has(msg.user) ? "Click derecho para desbloquear" : "Click para editar · Click derecho para silenciar"}
                         >
-                          <Ban className={`w-3 h-3 transition-colors ${bannedUsers.has(msg.user) ? 'text-red-400' : 'text-red-400/30 hover:text-red-300'}`} />
-                        </button>
+                          {nickOverrides[msg.user] || msg.nickname || msg.user}
+                        </p>
                       </div>
                     )}
                     {msg.status === 'playing' && (
