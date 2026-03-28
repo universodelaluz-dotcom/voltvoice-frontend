@@ -38,7 +38,7 @@ const removeEmojis = (text) => {
 }
 
 // Obtener token del localStorage
-const getAuthToken = () => localStorage.getItem('voltvoice-token') || ''
+const getAuthToken = () => localStorage.getItem('sv-token') || ''
 
 // Funciones para interactuar con API de bans y nicks
 const apiBans = {
