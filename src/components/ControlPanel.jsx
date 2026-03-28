@@ -2,7 +2,7 @@ import { ArrowLeft, Check } from 'lucide-react'
 
 function CheckOption({ label, checked, onChange, darkMode }) {
   return (
-    <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
+    <div className={`px-4 py-2 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
       <button onClick={onChange} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
         <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
           checked ? 'bg-cyan-500/30 border-cyan-400' : darkMode ? 'border-gray-500' : 'border-gray-400'
@@ -17,7 +17,7 @@ function CheckOption({ label, checked, onChange, darkMode }) {
 
 function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeholder, darkMode }) {
   return (
-    <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
+    <div className={`px-4 py-2 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
       <button onClick={onToggle} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
         <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
           checked ? 'bg-cyan-500/30 border-cyan-400' : darkMode ? 'border-gray-500' : 'border-gray-400'
@@ -27,7 +27,7 @@ function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeh
         <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${checked ? 'font-semibold' : 'font-medium'}`}>{label}</span>
       </button>
       {checked && (
-        <div className="mt-2 ml-8">
+        <div className="mt-1 ml-8">
           <input
             type="number"
             value={value}
@@ -80,20 +80,20 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
       {/* Content */}
       <div className="pt-28 pb-20 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
             {/* LEFT COLUMN */}
-            <div className={`space-y-1 rounded-xl border p-6 ${darkMode ? 'bg-[#1a1a2e]/60 border-cyan-500/20' : 'bg-indigo-50/40 border-indigo-200/50'}`}>
+            <div className={`space-y-0 rounded-xl border p-4 ${darkMode ? 'bg-[#1a1a2e]/60 border-cyan-500/20' : 'bg-indigo-50/40 border-indigo-200/50'}`}>
               {/* === VELOCIDAD === */}
-              <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
-                <div className="flex items-center justify-between mb-3">
+              <div className={`px-4 py-2 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
+                <div className="flex items-center justify-between mb-2">
                   <span className={`text-[15px] font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Velocidad de Voz</span>
                   <span className="text-sm text-cyan-400 font-semibold">{speed.toFixed(1)}x</span>
                 </div>
                 <input
                   type="range" min="0.5" max="2.0" step="0.1" value={speed}
                   onChange={(e) => updateConfig('audioSpeed', parseFloat(e.target.value))}
-                  className="w-full h-1 rounded-full appearance-none cursor-pointer accent-cyan-400 mb-3"
+                  className="w-full h-1 rounded-full appearance-none cursor-pointer accent-cyan-400 mb-2"
                   style={{
                     background: darkMode
                       ? `linear-gradient(to right, #06b6d4 0%, #06b6d4 ${((speed - 0.5) / 1.5) * 100}%, #374151 ${((speed - 0.5) / 1.5) * 100}%, #374151 100%)`
@@ -110,7 +110,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
               </div>
 
               {/* === SECCIÓN: LECTURA === */}
-              <div className={`px-4 pt-8 pb-3 mt-4 border-t ${darkMode ? 'border-cyan-500/20 text-cyan-400/70' : 'border-indigo-200 text-cyan-600'}`}>
+              <div className={`px-4 pt-4 pb-2 mt-2 border-t ${darkMode ? 'border-cyan-500/20 text-cyan-400/70' : 'border-indigo-200 text-cyan-600'}`}>
                 <span className="text-xs font-bold uppercase tracking-widest">📖 Lectura</span>
               </div>
 
@@ -121,12 +121,12 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
               <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} />
 
               {/* === SECCIÓN: VOCES === */}
-              <div className={`px-4 pt-8 pb-3 mt-4 border-t ${darkMode ? 'border-cyan-500/20 text-cyan-400/70' : 'border-indigo-200 text-cyan-600'}`}>
+              <div className={`px-4 pt-4 pb-2 mt-2 border-t ${darkMode ? 'border-cyan-500/20 text-cyan-400/70' : 'border-indigo-200 text-cyan-600'}`}>
                 <span className="text-xs font-bold uppercase tracking-widest">🎤 Voces</span>
               </div>
 
               {/* Voz general */}
-              <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
+              <div className={`px-4 py-2 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-[15px] font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>Voz general</span>
                 </div>
@@ -226,7 +226,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
             </div>
 
             {/* RIGHT COLUMN */}
-            <div className={`space-y-1 rounded-xl border p-6 ${darkMode ? 'bg-[#1a1a2e]/60 border-purple-500/20' : 'bg-purple-50/40 border-purple-200/50'}`}>
+            <div className={`space-y-0 rounded-xl border p-4 ${darkMode ? 'bg-[#1a1a2e]/60 border-purple-500/20' : 'bg-purple-50/40 border-purple-200/50'}`}>
               {/* === SECCIÓN: FILTROS === */}
               <div className={`px-4 pt-0 pb-3 border-t ${darkMode ? 'border-purple-500/20 text-purple-400/70' : 'border-purple-200 text-purple-600'}`}>
                 <span className="text-xs font-bold uppercase tracking-widest">🔍 Filtros</span>
