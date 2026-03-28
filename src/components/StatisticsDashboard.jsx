@@ -121,7 +121,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
         darkMode ? 'bg-[#0f0f23]/80 border-b border-cyan-500/20' : 'bg-white/80 border-b border-indigo-200'
       }`}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <button onClick={onGoHome} className={`flex items-center gap-2 transition-colors ${
+          <button onClick={onGoStudio} className={`flex items-center gap-2 transition-colors ${
             darkMode ? 'text-cyan-400 hover:text-cyan-300' : 'text-indigo-600 hover:text-indigo-700'
           }`}>
             <ArrowLeft className="w-5 h-5" /> Volver
