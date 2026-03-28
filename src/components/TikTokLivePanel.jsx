@@ -168,7 +168,6 @@ export default function TikTokLivePanel({ config = {} }) {
     donors: { enabled: false, color: '#f59e0b' },
     banned: { enabled: false, color: '#ef4444' },
     subscribers: { enabled: false, color: '#ec4899' },
-    newViewers: { enabled: false, color: '#22c55e' },
     topFans: { enabled: false, color: '#06b6d4' },
   })
   const isPausedRef = useRef(false)
@@ -314,7 +313,6 @@ export default function TikTokLivePanel({ config = {} }) {
               isDonor: msg.isDonor || donors.has(msg.username),
               isModerator: msg.isModerator || false,
               isSubscriber: msg.isSubscriber || false,
-              isNewGifter: msg.isNewGifter || false,
               isTopGifter: msg.topGifterRank > 0,
               isBanned
             }
@@ -697,7 +695,6 @@ export default function TikTokLivePanel({ config = {} }) {
                   : (highlightRules.topFans.enabled && msg.isTopGifter) ? highlightRules.topFans.color
                   : (highlightRules.donors.enabled && msg.isDonor) ? highlightRules.donors.color
                   : (highlightRules.subscribers.enabled && msg.isSubscriber) ? highlightRules.subscribers.color
-                  : (highlightRules.newViewers.enabled && msg.isNewGifter) ? highlightRules.newViewers.color
                   : (highlightRules.banned.enabled && msg.isBanned) ? highlightRules.banned.color
                   : null
                 const hlColor = highlightedUsers[msg.user] || autoColor
@@ -904,7 +901,6 @@ export default function TikTokLivePanel({ config = {} }) {
                 { key: 'donors', label: 'Donadores' },
                 { key: 'subscribers', label: 'Suscriptores' },
                 { key: 'topFans', label: 'Top Fans / Gifters' },
-                { key: 'newViewers', label: 'Nuevos Gifters' },
                 { key: 'banned', label: 'Baneados (silenciados)' },
               ].map(({ key, label }) => (
                 <div key={key} className="flex items-center gap-2">
