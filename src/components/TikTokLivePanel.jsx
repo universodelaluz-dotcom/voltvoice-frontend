@@ -10,11 +10,11 @@ const isQuestion = (text) => {
   return questionWords.test(trimmed)
 }
 
-const hasExcessiveEmojis = (text) => {
+const hasExcessiveEmojis = (text, maxAllowed = 3) => {
   const emojiRegex = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu
   const emojis = text.match(emojiRegex) || []
   const nonEmoji = text.replace(emojiRegex, '').trim()
-  return emojis.length > 5 || (emojis.length > 0 && nonEmoji.length === 0)
+  return emojis.length > maxAllowed || (emojis.length > 0 && nonEmoji.length === 0)
 }
 
 const hasLinks = (text) => /https?:\/\/|www\.|\.com|\.net|\.org|bit\.ly/i.test(text)
@@ -205,7 +205,7 @@ export default function TikTokLivePanel({ config = {} }) {
           if (c.ignoreLinks && hasLinks(msg.text)) return
 
           // Filtro: ignorar emojis excesivos
-          if (c.ignoreExcessiveEmojis && hasExcessiveEmojis(msg.text)) return
+          if (c.ignoreExcessiveEmojis && hasExcessiveEmojis(msg.text, parseInt(c.maxEmojisAllowed) || 3)) return
 
           // Filtro: largo mínimo
           if (c.minMessageLengthEnabled && msg.text.trim().length < c.minMessageLength) return

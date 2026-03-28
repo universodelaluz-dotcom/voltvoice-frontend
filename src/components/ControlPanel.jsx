@@ -228,7 +228,15 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
             </div>
 
             <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} />
-            <CheckOption label="Ignorar emojis excesivos" checked={config.ignoreExcessiveEmojis} onChange={() => updateConfig('ignoreExcessiveEmojis', !config.ignoreExcessiveEmojis)} darkMode={darkMode} />
+            <CheckWithInput
+              label="Ignorar emojis excesivos — cantidad máxima permitida:"
+              checked={config.ignoreExcessiveEmojis}
+              onToggle={() => updateConfig('ignoreExcessiveEmojis', !config.ignoreExcessiveEmojis)}
+              value={config.maxEmojisAllowed}
+              onValueChange={(v) => updateConfig('maxEmojisAllowed', v)}
+              placeholder="3"
+              darkMode={darkMode}
+            />
 
             <CheckWithInput
               label="Ignorar mensajes muy cortos (mínimo de caracteres)"
