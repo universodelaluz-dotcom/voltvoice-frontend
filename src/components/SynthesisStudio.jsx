@@ -206,9 +206,9 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
             onClick={onGoHome}
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
           >
-            <img src="/images/streamvoicer1.png" alt="StreamVoicer" className="h-10 w-auto" />
+            <img src="/images/Sin%20t%C3%ADtulo%20(200%20x%2060%20px)%20(250%20x%2060%20px).png" alt="StreamVoicer" className="h-12 w-auto" />
             <div>
               {user && <p className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>{user.email}</p>}
             </div>
