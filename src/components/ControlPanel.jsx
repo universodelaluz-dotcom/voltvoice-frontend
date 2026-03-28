@@ -135,8 +135,6 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                   darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
                 }`}
               >
-                <option value="es-ES">Español sin tokens</option>
-                <option value="en-US">Inglés sin tokens</option>
                 {premiumVoiceOptions.map(v => (
                   <option key={v.id} value={v.id}>{v.name}</option>
                 ))}
@@ -216,8 +214,6 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                       darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
                     }`}
                   >
-                    <option value="es-ES">Español sin tokens</option>
-                    <option value="en-US">Inglés sin tokens</option>
                     {premiumVoiceOptions.map(v => (
                       <option key={v.id} value={v.id}>{v.name}</option>
                     ))}
