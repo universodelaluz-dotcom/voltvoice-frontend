@@ -947,6 +947,26 @@ export default function TikTokLivePanel({ config = {} }) {
                 </div>
               ))}
 
+              {/* Botón de prueba para verificar resaltado */}
+              <div className={`pt-2 border-t ${darkMode ? 'border-gray-700' : 'border-amber-200'}`}>
+                <button
+                  onClick={() => {
+                    const testMessages = [
+                      { id: `test-mod-${Date.now()}`, user: 'test_moderador', nickname: 'Moderador Test', text: '🧪 Soy moderador de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: true, isSubscriber: false, isTopGifter: false, isBanned: false },
+                      { id: `test-donor-${Date.now()}`, user: 'test_donador', nickname: 'Donador Test', text: '🧪 Soy donador de prueba', status: 'received', timestamp: new Date(), isDonor: true, isModerator: false, isSubscriber: false, isTopGifter: false, isBanned: false },
+                      { id: `test-sub-${Date.now()}`, user: 'test_suscriptor', nickname: 'Suscriptor Test', text: '🧪 Soy suscriptor de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: true, isTopGifter: false, isBanned: false },
+                      { id: `test-topfan-${Date.now()}`, user: 'test_topfan', nickname: 'Top Fan Test', text: '🧪 Soy top fan de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: false, isTopGifter: true, isBanned: false },
+                    ]
+                    setMessages(prev => [...prev, ...testMessages])
+                  }}
+                  className={`w-full text-xs py-1.5 rounded font-medium transition-colors ${
+                    darkMode ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30' : 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300'
+                  }`}
+                >
+                  🧪 Probar resaltado (mensajes de prueba)
+                </button>
+              </div>
+
               {/* Remarcar manual */}
               <div className={`pt-2 border-t ${darkMode ? 'border-gray-700' : 'border-amber-200'}`}>
                 <div className="flex items-center justify-between mb-2">
