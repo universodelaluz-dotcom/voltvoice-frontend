@@ -80,10 +80,10 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
       {/* Content */}
       <div className="pt-28 pb-20 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             {/* LEFT COLUMN */}
-            <div className="space-y-1">
+            <div className={`space-y-1 rounded-xl border p-6 ${darkMode ? 'bg-[#1a1a2e]/60 border-cyan-500/20' : 'bg-indigo-50/40 border-indigo-200/50'}`}>
               {/* === VELOCIDAD === */}
               <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
                 <div className="flex items-center justify-between mb-3">
@@ -110,8 +110,8 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
               </div>
 
               {/* === SECCIÓN: LECTURA === */}
-              <div className={`px-4 pt-6 pb-2 ${darkMode ? 'text-cyan-400/70' : 'text-cyan-600'}`}>
-                <span className="text-xs font-bold uppercase tracking-widest">Lectura</span>
+              <div className={`px-4 pt-8 pb-3 mt-4 border-t ${darkMode ? 'border-cyan-500/20 text-cyan-400/70' : 'border-indigo-200 text-cyan-600'}`}>
+                <span className="text-xs font-bold uppercase tracking-widest">📖 Lectura</span>
               </div>
 
               <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => updateConfig('readOnlyMessage', !config.readOnlyMessage)} darkMode={darkMode} />
@@ -121,8 +121,8 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
               <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} />
 
               {/* === SECCIÓN: VOCES === */}
-              <div className={`px-4 pt-6 pb-2 ${darkMode ? 'text-cyan-400/70' : 'text-cyan-600'}`}>
-                <span className="text-xs font-bold uppercase tracking-widest">Voces</span>
+              <div className={`px-4 pt-8 pb-3 mt-4 border-t ${darkMode ? 'border-cyan-500/20 text-cyan-400/70' : 'border-indigo-200 text-cyan-600'}`}>
+                <span className="text-xs font-bold uppercase tracking-widest">🎤 Voces</span>
               </div>
 
               {/* Voz general */}
@@ -226,10 +226,10 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
             </div>
 
             {/* RIGHT COLUMN */}
-            <div className="space-y-1">
+            <div className={`space-y-1 rounded-xl border p-6 ${darkMode ? 'bg-[#1a1a2e]/60 border-purple-500/20' : 'bg-purple-50/40 border-purple-200/50'}`}>
               {/* === SECCIÓN: FILTROS === */}
-              <div className={`px-4 pt-0 pb-2 ${darkMode ? 'text-cyan-400/70' : 'text-cyan-600'}`}>
-                <span className="text-xs font-bold uppercase tracking-widest">Filtros</span>
+              <div className={`px-4 pt-0 pb-3 border-t ${darkMode ? 'border-purple-500/20 text-purple-400/70' : 'border-purple-200 text-purple-600'}`}>
+                <span className="text-xs font-bold uppercase tracking-widest">🔍 Filtros</span>
               </div>
 
               <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} />
@@ -274,8 +274,8 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
               />
 
               {/* === SECCIÓN: NOTIFICACIONES === */}
-              <div className={`px-4 pt-6 pb-2 ${darkMode ? 'text-cyan-400/70' : 'text-cyan-600'}`}>
-                <span className="text-xs font-bold uppercase tracking-widest">Notificaciones en Vivo</span>
+              <div className={`px-4 pt-8 pb-3 mt-4 border-t ${darkMode ? 'border-purple-500/20 text-purple-400/70' : 'border-purple-200 text-purple-600'}`}>
+                <span className="text-xs font-bold uppercase tracking-widest">🔔 Notificaciones en Vivo</span>
               </div>
 
               <CheckWithInput label="Anunciar nuevos seguidores — cada (seg)" checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} />
