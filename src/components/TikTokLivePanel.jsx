@@ -37,6 +37,104 @@ const removeEmojis = (text) => {
   return text.replace(emojiRegex, '').trim()
 }
 
+// Obtener token del localStorage
+const getAuthToken = () => localStorage.getItem('voltvoice-token') || ''
+
+// Funciones para interactuar con API de bans y nicks
+const apiBans = {
+  async getAll() {
+    try {
+      const res = await fetch(`${API_URL}/api/bans`, {
+        headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return await res.json()
+    } catch (err) {
+      console.error('[API] Error getting bans:', err.message)
+      return []
+    }
+  },
+
+  async add(username) {
+    try {
+      const res = await fetch(`${API_URL}/api/bans`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${getAuthToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, reason: 'Banned from chat' })
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return await res.json()
+    } catch (err) {
+      console.error('[API] Error adding ban:', err.message)
+      return null
+    }
+  },
+
+  async remove(username) {
+    try {
+      const res = await fetch(`${API_URL}/api/bans/${username}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return await res.json()
+    } catch (err) {
+      console.error('[API] Error removing ban:', err.message)
+      return null
+    }
+  }
+}
+
+const apiNicks = {
+  async getAll() {
+    try {
+      const res = await fetch(`${API_URL}/api/nicks`, {
+        headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return await res.json()
+    } catch (err) {
+      console.error('[API] Error getting nicks:', err.message)
+      return {}
+    }
+  },
+
+  async set(username, newNickname) {
+    try {
+      const res = await fetch(`${API_URL}/api/nicks`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${getAuthToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, newNickname })
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return await res.json()
+    } catch (err) {
+      console.error('[API] Error setting nick:', err.message)
+      return null
+    }
+  },
+
+  async remove(username) {
+    try {
+      const res = await fetch(`${API_URL}/api/nicks/${username}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return await res.json()
+    } catch (err) {
+      console.error('[API] Error removing nick:', err.message)
+      return null
+    }
+  }
+}
+
 export default function TikTokLivePanel({ config = {} }) {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
@@ -102,9 +200,16 @@ export default function TikTokLivePanel({ config = {} }) {
 
     const ws = new WebSocket(wsURL)
 
-    ws.onopen = () => {
+    ws.onopen = async () => {
       console.log('[TikTok] WebSocket conectado')
       ws.send(JSON.stringify({ type: 'subscribe', username: tiktokUser }))
+
+      // Cargar bans y nicks desde BD
+      const bans = await apiBans.getAll()
+      const nicks = await apiNicks.getAll()
+
+      setBannedUsers(new Set(bans.map(b => b.banned_username)))
+      setNickOverrides(nicks)
     }
 
     ws.onmessage = async (event) => {
@@ -585,18 +690,23 @@ export default function TikTokLivePanel({ config = {} }) {
                         autoFocus
                         value={editingValue}
                         onChange={(e) => setEditingValue(e.target.value)}
-                        onKeyDown={(e) => {
+                        onKeyDown={async (e) => {
                           if (e.key === 'Enter') {
                             if (editingValue.trim()) {
+                              await apiNicks.set(msg.user, editingValue.trim())
                               setNickOverrides(prev => ({ ...prev, [msg.user]: editingValue.trim() }))
                             }
                             setEditingNick(null)
                           }
                           if (e.key === 'Escape') setEditingNick(null)
                         }}
-                        onBlur={() => {
+                        onBlur={async () => {
                           if (editingValue.trim()) {
+                            await apiNicks.set(msg.user, editingValue.trim())
                             setNickOverrides(prev => ({ ...prev, [msg.user]: editingValue.trim() }))
+                          } else {
+                            // Si queda vacío, remover del override
+                            await apiNicks.remove(msg.user)
                           }
                           setEditingNick(null)
                         }}
@@ -614,15 +724,29 @@ export default function TikTokLivePanel({ config = {} }) {
                               setEditingValue(nickOverrides[msg.user] || msg.nickname || msg.user)
                             }
                           }}
-                          onContextMenu={(e) => {
+                          onContextMenu={async (e) => {
                             e.preventDefault()
-                            setBannedUsers(prev => {
-                              const next = new Set(prev)
-                              if (next.has(msg.user)) next.delete(msg.user)
-                              else next.add(msg.user)
-                              bannedRef.current = next
-                              return next
-                            })
+                            const isBanned = bannedUsers.has(msg.user)
+
+                            if (isBanned) {
+                              // Desbanear
+                              await apiBans.remove(msg.user)
+                              setBannedUsers(prev => {
+                                const next = new Set(prev)
+                                next.delete(msg.user)
+                                bannedRef.current = next
+                                return next
+                              })
+                            } else {
+                              // Banear
+                              await apiBans.add(msg.user)
+                              setBannedUsers(prev => {
+                                const next = new Set(prev)
+                                next.add(msg.user)
+                                bannedRef.current = next
+                                return next
+                              })
+                            }
                           }}
                           className={`font-semibold cursor-pointer select-none px-1 rounded transition-colors ${
                             bannedUsers.has(msg.user)
