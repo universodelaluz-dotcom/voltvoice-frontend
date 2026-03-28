@@ -46,22 +46,16 @@ function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeh
 export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) {
   const speed = config.audioSpeed || 1.0
 
-  const baseVoiceOptions = [
-    { id: 'es-ES', name: 'Voz Básica Español (ilimitada)' },
-    { id: 'en-US', name: 'Voz Básica Inglés (ilimitada)' },
-    { id: 'Diego', name: 'Diego - Premium' },
-    { id: 'Lupita', name: 'Lupita - Premium' },
-    { id: 'Miguel', name: 'Miguel - Premium' },
-    { id: 'Rafael', name: 'Rafael - Premium' },
-  ]
-
   const personalVoices = [
     { id: 'default-cfjnp8x4nt-owd7yg-1xsw__garret', name: 'Garret - Clonada', owner: 'alainsh@gmail.com' },
     { id: 'default-cfjnp8x4nt-owd7yg-1xsw__connor', name: 'Connor - Clonada', owner: 'alainsh@gmail.com' },
   ]
 
-  const voiceOptions = [
-    ...baseVoiceOptions,
+  const premiumVoiceOptions = [
+    { id: 'Diego', name: 'Diego - Premium' },
+    { id: 'Lupita', name: 'Lupita - Premium' },
+    { id: 'Miguel', name: 'Miguel - Premium' },
+    { id: 'Rafael', name: 'Rafael - Premium' },
     ...personalVoices.filter(v => user?.email === v.owner),
   ]
 
@@ -141,7 +135,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
               >
                 <option value="es-ES">Español sin tokens</option>
                 <option value="en-US">Inglés sin tokens</option>
-                {voiceOptions.map(v => (
+                {premiumVoiceOptions.map(v => (
                   <option key={v.id} value={v.id}>{v.name}</option>
                 ))}
               </select>
@@ -166,7 +160,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                       darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
                     }`}
                   >
-                    {voiceOptions.map(v => (
+                    {premiumVoiceOptions.map(v => (
                       <option key={v.id} value={v.id}>{v.name}</option>
                     ))}
                   </select>
@@ -193,7 +187,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                       darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
                     }`}
                   >
-                    {voiceOptions.map(v => (
+                    {premiumVoiceOptions.map(v => (
                       <option key={v.id} value={v.id}>{v.name}</option>
                     ))}
                   </select>
@@ -222,7 +216,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                   >
                     <option value="es-ES">Español sin tokens</option>
                     <option value="en-US">Inglés sin tokens</option>
-                    {voiceOptions.map(v => (
+                    {premiumVoiceOptions.map(v => (
                       <option key={v.id} value={v.id}>{v.name}</option>
                     ))}
                   </select>
