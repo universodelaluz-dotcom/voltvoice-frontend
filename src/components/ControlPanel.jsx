@@ -1,6 +1,17 @@
-import { ArrowLeft, Check } from 'lucide-react'
+import { ArrowLeft, Check, HelpCircle } from 'lucide-react'
 
-function CheckOption({ label, checked, onChange, darkMode }) {
+function Hint({ text, darkMode }) {
+  return (
+    <span className="relative group ml-1 inline-flex">
+      <HelpCircle className={`w-3.5 h-3.5 cursor-help ${darkMode ? 'text-gray-500 hover:text-cyan-400' : 'text-gray-400 hover:text-cyan-600'} transition-colors`} />
+      <span className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 ${
+        darkMode ? 'bg-gray-800 text-gray-200 border border-cyan-500/30' : 'bg-gray-900 text-white'
+      } shadow-lg`}>{text}</span>
+    </span>
+  )
+}
+
+function CheckOption({ label, checked, onChange, darkMode, hint }) {
   return (
     <div className={`px-4 py-2 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
       <button onClick={onChange} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
@@ -9,13 +20,16 @@ function CheckOption({ label, checked, onChange, darkMode }) {
         }`}>
           {checked && <Check className="w-4 h-4 text-cyan-400" />}
         </div>
-        <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${checked ? 'font-semibold' : 'font-medium'}`}>{label}</span>
+        <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${checked ? 'font-semibold' : 'font-medium'}`}>
+          {label}
+          {hint && <Hint text={hint} darkMode={darkMode} />}
+        </span>
       </button>
     </div>
   )
 }
 
-function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeholder, darkMode }) {
+function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeholder, darkMode, hint }) {
   return (
     <div className={`px-4 py-2 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
       <button onClick={onToggle} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
@@ -24,7 +38,10 @@ function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeh
         }`}>
           {checked && <Check className="w-4 h-4 text-cyan-400" />}
         </div>
-        <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${checked ? 'font-semibold' : 'font-medium'}`}>{label}</span>
+        <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${checked ? 'font-semibold' : 'font-medium'}`}>
+          {label}
+          {hint && <Hint text={hint} darkMode={darkMode} />}
+        </span>
       </button>
       {checked && (
         <div className="mt-1 ml-8">
@@ -114,11 +131,11 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                 <span className="text-xs font-bold uppercase tracking-widest">📖 Lectura</span>
               </div>
 
-              <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => updateConfig('readOnlyMessage', !config.readOnlyMessage)} darkMode={darkMode} />
-              <CheckOption label="Saltar mensajes repetidos" checked={config.skipRepeated} onChange={() => updateConfig('skipRepeated', !config.skipRepeated)} darkMode={darkMode} />
-              <CheckOption label="Leer solo preguntas" checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} />
-              <CheckOption label="Leer solo donadores" checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} />
-              <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} />
+              <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => updateConfig('readOnlyMessage', !config.readOnlyMessage)} darkMode={darkMode} hint="Lee el mensaje sin mencionar quién lo escribió" />
+              <CheckOption label="Saltar mensajes repetidos" checked={config.skipRepeated} onChange={() => updateConfig('skipRepeated', !config.skipRepeated)} darkMode={darkMode} hint="Ignora mensajes idénticos consecutivos para evitar spam" />
+              <CheckOption label="Leer solo preguntas" checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} hint="Solo lee mensajes que contengan signos de interrogación" />
+              <CheckOption label="Leer solo donadores" checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron regalos" />
+              <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} hint="Solo lee mensajes de moderadores del live" />
 
               {/* === SECCIÓN: VOCES === */}
               <div className={`px-4 pt-4 pb-2 mt-2 border-t ${darkMode ? 'border-cyan-500/20 text-cyan-400/70' : 'border-indigo-200 text-cyan-600'}`}>
@@ -151,7 +168,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                   }`}>
                     {config.donorVoiceEnabled && <Check className="w-4 h-4 text-cyan-400" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${config.donorVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz donadores</span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${config.donorVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz donadores<Hint text="Usa una voz diferente para quienes envían regalos" darkMode={darkMode} /></span>
                 </button>
                 {config.donorVoiceEnabled && (
                   <div className="mt-2 ml-8">
@@ -178,7 +195,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                   }`}>
                     {config.modVoiceEnabled && <Check className="w-4 h-4 text-cyan-400" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${config.modVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz moderadores</span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${config.modVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz moderadores<Hint text="Usa una voz diferente para los moderadores" darkMode={darkMode} /></span>
                 </button>
                 {config.modVoiceEnabled && (
                   <div className="mt-2 ml-8">
@@ -205,7 +222,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                   }`}>
                     {config.notifVoiceEnabled && <Check className="w-4 h-4 text-cyan-400" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${config.notifVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz notificaciones</span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${config.notifVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz notificaciones<Hint text="Usa una voz diferente para las notificaciones del live" darkMode={darkMode} /></span>
                 </button>
                 {config.notifVoiceEnabled && (
                   <div className="mt-2 ml-8">
@@ -232,9 +249,9 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                 <span className="text-xs font-bold uppercase tracking-widest">🔍 Filtros</span>
               </div>
 
-              <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} />
-              <CheckOption label="Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} />
-              <CheckOption label="No leer emojis en chat" checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} />
+              <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} hint="No lee links ni URLs en los mensajes" />
+              <CheckOption label="Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint="Limpia el nombre del usuario dejando solo letras" />
+              <CheckOption label="No leer emojis en chat" checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} hint="Elimina emojis del mensaje antes de leerlo en voz" />
               <CheckWithInput
                 label="Ignorar emojis excesivos del chat — cantidad máxima permitida:"
                 checked={config.ignoreExcessiveEmojis}
@@ -243,6 +260,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                 onValueChange={(v) => updateConfig('maxEmojisAllowed', v)}
                 placeholder="3"
                 darkMode={darkMode}
+                hint="Lee el mensaje pero quita emojis si pasan del límite"
               />
 
               <CheckWithInput
@@ -253,6 +271,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                 onValueChange={(v) => updateConfig('minMessageLength', v)}
                 placeholder="3"
                 darkMode={darkMode}
+                hint="Ignora mensajes con menos caracteres del mínimo"
               />
 
               <CheckWithInput
@@ -263,6 +282,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                 onValueChange={(v) => updateConfig('donorCharLimit', v)}
                 placeholder="200"
                 darkMode={darkMode}
+                hint="Corta mensajes largos al máximo de caracteres indicado"
               />
 
               <CheckWithInput
@@ -273,6 +293,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                 onValueChange={(v) => updateConfig('maxQueueSize', v)}
                 placeholder="20"
                 darkMode={darkMode}
+                hint="Evita acumulación excesiva de mensajes por leer"
               />
 
               {/* === SECCIÓN: NOTIFICACIONES === */}
@@ -280,14 +301,14 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                 <span className="text-xs font-bold uppercase tracking-widest">🔔 Notificaciones en Vivo</span>
               </div>
 
-              <CheckWithInput label="Anunciar nuevos seguidores — cada (seg)" checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} />
-              <CheckWithInput label="Anunciar regalos — cada (seg)" checked={config.announceGifts} onToggle={() => updateConfig('announceGifts', !config.announceGifts)} value={config.giftCooldown} onValueChange={(v) => updateConfig('giftCooldown', v)} placeholder="5" darkMode={darkMode} />
-              <CheckWithInput label="Anunciar conteo de viewers — cada (seg)" checked={config.announceViewers} onToggle={() => updateConfig('announceViewers', !config.announceViewers)} value={config.viewerCooldown} onValueChange={(v) => updateConfig('viewerCooldown', v)} placeholder="120" darkMode={darkMode} />
-              <CheckWithInput label="Anunciar likes — cada (seg)" checked={config.announceLikes} onToggle={() => updateConfig('announceLikes', !config.announceLikes)} value={config.likeCooldown} onValueChange={(v) => updateConfig('likeCooldown', v)} placeholder="60" darkMode={darkMode} />
-              <CheckWithInput label="Anunciar shares — cada (seg)" checked={config.announceShares} onToggle={() => updateConfig('announceShares', !config.announceShares)} value={config.shareCooldown} onValueChange={(v) => updateConfig('shareCooldown', v)} placeholder="15" darkMode={darkMode} />
-              <CheckOption label="Anunciar batallas" checked={config.announceBattles} onChange={() => updateConfig('announceBattles', !config.announceBattles)} darkMode={darkMode} />
-              <CheckOption label="Anunciar encuestas" checked={config.announcePolls} onChange={() => updateConfig('announcePolls', !config.announcePolls)} darkMode={darkMode} />
-              <CheckOption label="Anunciar metas/goals" checked={config.announceGoals} onChange={() => updateConfig('announceGoals', !config.announceGoals)} darkMode={darkMode} />
+              <CheckWithInput label="Anunciar nuevos seguidores — cada (seg)" checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} hint="Anuncia en voz cuando alguien te sigue" />
+              <CheckWithInput label="Anunciar regalos — cada (seg)" checked={config.announceGifts} onToggle={() => updateConfig('announceGifts', !config.announceGifts)} value={config.giftCooldown} onValueChange={(v) => updateConfig('giftCooldown', v)} placeholder="5" darkMode={darkMode} hint="Anuncia en voz cuando recibes un regalo" />
+              <CheckWithInput label="Anunciar conteo de viewers — cada (seg)" checked={config.announceViewers} onToggle={() => updateConfig('announceViewers', !config.announceViewers)} value={config.viewerCooldown} onValueChange={(v) => updateConfig('viewerCooldown', v)} placeholder="120" darkMode={darkMode} hint="Dice cuántos viewers hay en el live periódicamente" />
+              <CheckWithInput label="Anunciar likes — cada (seg)" checked={config.announceLikes} onToggle={() => updateConfig('announceLikes', !config.announceLikes)} value={config.likeCooldown} onValueChange={(v) => updateConfig('likeCooldown', v)} placeholder="60" darkMode={darkMode} hint="Anuncia la cantidad de likes acumulados" />
+              <CheckWithInput label="Anunciar shares — cada (seg)" checked={config.announceShares} onToggle={() => updateConfig('announceShares', !config.announceShares)} value={config.shareCooldown} onValueChange={(v) => updateConfig('shareCooldown', v)} placeholder="15" darkMode={darkMode} hint="Anuncia cuando alguien comparte tu live" />
+              <CheckOption label="Anunciar batallas" checked={config.announceBattles} onChange={() => updateConfig('announceBattles', !config.announceBattles)} darkMode={darkMode} hint="Anuncia inicio y resultado de batallas en vivo" />
+              <CheckOption label="Anunciar encuestas" checked={config.announcePolls} onChange={() => updateConfig('announcePolls', !config.announcePolls)} darkMode={darkMode} hint="Anuncia cuando se crea una encuesta en el live" />
+              <CheckOption label="Anunciar metas/goals" checked={config.announceGoals} onChange={() => updateConfig('announceGoals', !config.announceGoals)} darkMode={darkMode} hint="Anuncia progreso de metas del live" />
             </div>
 
           </div>
