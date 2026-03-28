@@ -526,7 +526,7 @@ export default function TikTokLivePanel({ config = {} }) {
                         }`}
                       />
                     ) : (
-                      <div className="flex items-center gap-1 group">
+                      <div className="flex items-center gap-2">
                         <p
                           onClick={() => {
                             setEditingNick(msg.user)
@@ -540,11 +540,14 @@ export default function TikTokLivePanel({ config = {} }) {
                           {nickOverrides[msg.user] || msg.nickname || msg.user}
                         </p>
                         <button
-                          onClick={() => setBannedUsers(prev => new Set([...prev, msg.user]))}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setBannedUsers(prev => new Set([...prev, msg.user]))
+                          }}
+                          className="p-1 rounded hover:bg-red-500/20 transition-colors"
                           title="Silenciar usuario"
                         >
-                          <Ban className="w-3 h-3 text-red-400 hover:text-red-300" />
+                          <Ban className="w-3.5 h-3.5 text-red-400/60 hover:text-red-300" />
                         </button>
                       </div>
                     )}
