@@ -215,7 +215,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                 StreamVoicer Studio
               </h1>
-              <p className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>Canal: {streamChannel}</p>
+              {user && <p className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>{user.email}</p>}
             </div>
           </button>
           <div className="flex items-center gap-4">
