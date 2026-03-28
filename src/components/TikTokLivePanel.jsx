@@ -19,6 +19,18 @@ const hasExcessiveEmojis = (text, maxAllowed = 3) => {
 
 const hasLinks = (text) => /https?:\/\/|www\.|\.com|\.net|\.org|bit\.ly/i.test(text)
 
+const hasNonPlainNick = (nickname) => {
+  // Detectar emojis y caracteres especiales en el nickname
+  const emojiRegex = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu
+  const hasEmoji = emojiRegex.test(nickname)
+
+  // Detectar caracteres especiales (no letras, números, guiones, guiones bajos, espacios)
+  const plainRegex = /^[a-zA-Z0-9\u00C0-\u00FF_\- ]*$/
+  const isPlain = plainRegex.test(nickname)
+
+  return hasEmoji || !isPlain
+}
+
 export default function TikTokLivePanel({ config = {} }) {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
@@ -206,6 +218,9 @@ export default function TikTokLivePanel({ config = {} }) {
 
           // Filtro: ignorar emojis excesivos
           if (c.ignoreExcessiveEmojis && hasExcessiveEmojis(msg.text, parseInt(c.maxEmojisAllowed) || 3)) return
+
+          // Filtro: solo nicks de texto simple (sin emojis ni caracteres especiales)
+          if (c.onlyPlainNicks && hasNonPlainNick(msg.nickname || msg.username)) return
 
           // Filtro: largo mínimo
           if (c.minMessageLengthEnabled && msg.text.trim().length < c.minMessageLength) return
