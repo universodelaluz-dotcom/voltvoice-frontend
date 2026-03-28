@@ -302,6 +302,7 @@ export default function TikTokLivePanel({ config = {} }) {
           const msg = data.data
           console.log(`[TikTok] Nuevo mensaje: ${msg.username} - ${msg.text}`)
           console.log(`  → isDonor: ${msg.isDonor}, isModerator: ${msg.isModerator}, isSubscriber: ${msg.isSubscriber}, topGifterRank: ${msg.topGifterRank}`)
+          console.log(`  → Full msg object:`, JSON.stringify(msg, null, 2))
 
           const isBanned = bannedRef.current.has(msg.username)
 
