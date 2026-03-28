@@ -403,7 +403,7 @@ export default function TikTokLivePanel({ config = {} }) {
 
   // Cola de audio
   const queueMessage = (text, username, extra = {}) => {
-    speakQueueRef.current.push({ text, username, ...extra })
+    speakQueueRef.current.push({ text: text.toLowerCase(), username, ...extra })
     console.log(`[TikTok] Agregado a cola (${speakQueueRef.current.length} pendientes)`)
     processQueue()
   }
