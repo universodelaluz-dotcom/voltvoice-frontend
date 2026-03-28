@@ -35,6 +35,7 @@ export default function TikTokLivePanel({ config = {} }) {
   const [messages, setMessages] = useState([])
   const [error, setError] = useState(null)
   const [stats, setStats] = useState({ count: 0, uptime: 0 })
+  const connectedAtRef = useRef(null)
   const [donors, setDonors] = useState(new Set())
   const [nickOverrides, setNickOverrides] = useState({})
   const [editingNick, setEditingNick] = useState(null)
@@ -180,6 +181,8 @@ export default function TikTokLivePanel({ config = {} }) {
               isBanned
             }
           ])
+          // Sumar al contador de comentarios
+          setStats(prev => ({ ...prev, count: prev.count + 1 }))
 
           // Si está baneado, no leer en voz
           if (isBanned) return
@@ -226,12 +229,7 @@ export default function TikTokLivePanel({ config = {} }) {
           queueMessage(finalText, msg.username, { isDonor: msg.isDonor || donors.has(msg.username), isModerator: msg.isModerator })
 
         } else if (data.type === 'status') {
-          if (data.data) {
-            setStats({
-              count: data.data.messageCount || 0,
-              uptime: Math.floor((data.data.uptime || 0) / 1000)
-            })
-          }
+          // Stats manejados localmente (timer + contador de mensajes)
         }
       } catch (err) {
         console.error('[TikTok] Error procesando WebSocket:', err)
@@ -258,31 +256,16 @@ export default function TikTokLivePanel({ config = {} }) {
     }
   }, [isConnected, tiktokUser])
 
-  // Polling para actualizar estadísticas
+  // Timer local de uptime — sube 1 segundo cada segundo mientras está conectado
   useEffect(() => {
-    if (!isConnected || !tiktokUser) return
-
-    statusIntervalRef.current = setInterval(async () => {
-      try {
-        const response = await fetch(`${API_URL}/api/tiktok/status/${tiktokUser}`)
-        const data = await response.json()
-        if (data.success) {
-          setStats({
-            count: data.messageCount || 0,
-            uptime: data.uptime || 0
-          })
-        }
-      } catch (err) {
-        console.error('[TikTok] Error actualizando stats:', err)
-      }
-    }, 2000)
-
-    return () => {
-      if (statusIntervalRef.current) {
-        clearInterval(statusIntervalRef.current)
-      }
-    }
-  }, [isConnected, tiktokUser])
+    if (!isConnected) return
+    connectedAtRef.current = connectedAtRef.current || Date.now()
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - connectedAtRef.current) / 1000)
+      setStats(prev => ({ ...prev, uptime: elapsed }))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [isConnected])
 
   // Cola de audio
   const queueMessage = (text, username, extra = {}) => {
@@ -384,6 +367,8 @@ export default function TikTokLivePanel({ config = {} }) {
 
       if (response.ok && data.success) {
         disconnectedRef.current = false
+        connectedAtRef.current = Date.now()
+        setStats({ count: 0, uptime: 0 })
         setIsConnected(true)
         setMessages([])
       } else {
@@ -457,6 +442,7 @@ export default function TikTokLivePanel({ config = {} }) {
       setIsConnected(false)
       setMessages([])
       setStats({ count: 0, uptime: 0 })
+      connectedAtRef.current = null
     } catch (err) {
       console.error('[TikTok] Error desconectando:', err)
     }
@@ -528,7 +514,11 @@ export default function TikTokLivePanel({ config = {} }) {
               </div>
               <div className="bg-purple-500/10 border border-purple-500/30 rounded p-2">
                 <p className="text-xs text-gray-400">Tiempo</p>
-                <p className="text-lg font-bold text-purple-300">{stats.uptime}s</p>
+                <p className="text-lg font-bold text-purple-300">
+                  {stats.uptime < 60
+                    ? `${stats.uptime}s`
+                    : `${Math.floor(stats.uptime / 60)}m ${stats.uptime % 60}s`}
+                </p>
               </div>
             </div>
             <button
