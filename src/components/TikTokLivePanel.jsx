@@ -704,6 +704,8 @@ export default function TikTokLivePanel({ config = {} }) {
                   : (highlightRules.banned.enabled && bannedUsers.has(msg.user)) ? highlightRules.banned.color
                   : null
                 const hlColor = highlightedUsers[msg.user] || autoColor
+                // Tipo de badge para mostrar
+                const badgeLabel = msg.isModerator ? '⚔️ MOD' : msg.isTopGifter ? '🏆 TOP' : msg.isDonor ? '🎁 DONOR' : msg.isSubscriber ? '⭐ SUB' : null
                 return (
                 <div
                   key={idx}
@@ -717,7 +719,7 @@ export default function TikTokLivePanel({ config = {} }) {
                         ? 'border-l border-gray-600/30 pl-3 opacity-40'
                         : 'border-l border-cyan-500/30'
                   }`}
-                  style={hlColor ? { backgroundColor: `${hlColor}20`, borderLeftColor: hlColor, borderLeftWidth: '3px' } : undefined}
+                  style={hlColor ? { backgroundColor: `${hlColor}40`, borderLeftColor: hlColor, borderLeftWidth: '4px' } : undefined}
                 >
                   <div className="flex items-center justify-between">
                     {editingNick === msg.id ? (
@@ -805,8 +807,9 @@ export default function TikTokLivePanel({ config = {} }) {
                           }`}
                           title={highlightMode ? "Click para remarcar/desmarcar este usuario" : bannedUsers.has(msg.user) ? "Click derecho para desbloquear" : "Click para editar · Click derecho para silenciar"}
                         >
-                          {hlColor && <span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: hlColor }} />}
+                          {hlColor && <span className="inline-block w-2.5 h-2.5 rounded-full mr-1 ring-1 ring-white/30" style={{ backgroundColor: hlColor }} />}
                           {nickOverrides[msg.user] || msg.nickname || msg.user}
+                          {badgeLabel && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded" style={{ backgroundColor: hlColor || '#666', color: '#fff' }}>{badgeLabel}</span>}
                         </p>
                       </div>
                     )}
