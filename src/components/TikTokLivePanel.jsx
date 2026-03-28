@@ -186,9 +186,13 @@ export default function TikTokLivePanel({ config = {} }) {
   // Cooldown por tipo de notificación (timestamp del último anuncio)
   const lastNotifTime = useRef({ like: 0, viewer_count: 0, share: 0, follow: 0, gift: 0 })
 
-  // Auto-scroll del chat al fondo cuando llegan mensajes
+  // Auto-scroll: si hay mensaje reproduciéndose, scroll a él; si no, al fondo
   useEffect(() => {
-    if (chatContainerRef.current) {
+    if (!chatContainerRef.current) return
+    const playing = chatContainerRef.current.querySelector('[data-playing="true"]')
+    if (playing) {
+      playing.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    } else {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
     }
   }, [messages])
@@ -682,7 +686,7 @@ export default function TikTokLivePanel({ config = {} }) {
             </button>
           </div>
 
-          <div ref={chatContainerRef} className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-64 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-64 overflow-y-auto space-y-2"}>
+          <div ref={chatContainerRef} className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-96 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-96 overflow-y-auto space-y-2"}>
             {messages.length === 0 ? (
               <div className="text-center text-gray-400 py-8">
                 <Loader className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
@@ -701,7 +705,8 @@ export default function TikTokLivePanel({ config = {} }) {
                 return (
                 <div
                   key={idx}
-                  className={`text-sm pl-3 py-2 rounded-r transition-all duration-300 ${
+                  data-playing={msg.status === 'playing' ? 'true' : undefined}
+                  className={`text-sm pl-3 py-2 rounded-r transition-all duration-300 relative ${
                     msg.status === 'playing'
                       ? darkMode
                         ? 'border-l-2 border-cyan-400 bg-cyan-500/10'
@@ -712,6 +717,9 @@ export default function TikTokLivePanel({ config = {} }) {
                   }`}
                   style={hlColor ? { backgroundColor: `${hlColor}20`, borderLeftColor: hlColor, borderLeftWidth: '3px' } : undefined}
                 >
+                  {msg.status === 'playing' && (
+                    <span className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+                  )}
                   <div className="flex items-center justify-between">
                     {editingNick === msg.id ? (
                       <input
