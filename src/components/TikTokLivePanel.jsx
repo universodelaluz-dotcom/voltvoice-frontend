@@ -46,6 +46,8 @@ export default function TikTokLivePanel({ config = {} }) {
   const speakQueueRef = useRef([])
   const isProcessingRef = useRef(false)
   const lastMessageRef = useRef('')
+  const currentAudioRef = useRef(null)
+  const disconnectedRef = useRef(false)
   const configRef = useRef(config)
   const volumeRef = useRef(0.8)
 
@@ -265,6 +267,7 @@ export default function TikTokLivePanel({ config = {} }) {
     isProcessingRef.current = true
 
     while (speakQueueRef.current.length > 0) {
+      if (disconnectedRef.current) break
       const item = speakQueueRef.current.shift()
       const { text, username } = item
       const remaining = speakQueueRef.current.length
@@ -299,10 +302,13 @@ export default function TikTokLivePanel({ config = {} }) {
           )
 
           await new Promise((resolve) => {
+            if (disconnectedRef.current) { resolve(); return }
             const audio = new Audio(data.audio)
+            currentAudioRef.current = audio
             audio.playbackRate = c.audioSpeed || 1.0
             audio.volume = volumeRef.current
             audio.onended = () => {
+              currentAudioRef.current = null
               console.log(`[TikTok] Audio terminado`)
               setMessages((prev) =>
                 prev.map((msg) =>
@@ -311,8 +317,8 @@ export default function TikTokLivePanel({ config = {} }) {
               )
               resolve()
             }
-            audio.onerror = () => resolve()
-            audio.play().catch(() => resolve())
+            audio.onerror = () => { currentAudioRef.current = null; resolve() }
+            audio.play().catch(() => { currentAudioRef.current = null; resolve() })
           })
         }
       } catch (err) {
@@ -345,6 +351,7 @@ export default function TikTokLivePanel({ config = {} }) {
       const data = await response.json()
 
       if (response.ok && data.success) {
+        disconnectedRef.current = false
         setIsConnected(true)
         setMessages([])
       } else {
@@ -359,6 +366,16 @@ export default function TikTokLivePanel({ config = {} }) {
 
   const handleDisconnect = async () => {
     try {
+      // Detener todo el audio inmediatamente
+      disconnectedRef.current = true
+      speakQueueRef.current = []
+      isProcessingRef.current = false
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause()
+        currentAudioRef.current.src = ''
+        currentAudioRef.current = null
+      }
+
       await fetch(`${API_URL}/api/tiktok/disconnect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
