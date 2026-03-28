@@ -273,7 +273,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               className="flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white hover:shadow-lg hover:shadow-purple-500/30"
             >
               <Mic2 className="w-5 h-5" />
-              <span>Clonar nuevas voces</span>
+              <span>Ir al taller de clonación</span>
             </button>
           )}
         </div>
