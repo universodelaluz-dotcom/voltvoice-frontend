@@ -697,9 +697,9 @@ export default function TikTokLivePanel({ config = {} }) {
                 // Color: primero reglas por tipo, luego override manual
                 const autoColor = (highlightRules.moderators.enabled && msg.isModerator) ? highlightRules.moderators.color
                   : (highlightRules.topFans.enabled && msg.isTopGifter) ? highlightRules.topFans.color
-                  : (highlightRules.donors.enabled && msg.isDonor) ? highlightRules.donors.color
+                  : (highlightRules.donors.enabled && (msg.isDonor || donors.has(msg.user))) ? highlightRules.donors.color
                   : (highlightRules.subscribers.enabled && msg.isSubscriber) ? highlightRules.subscribers.color
-                  : (highlightRules.banned.enabled && msg.isBanned) ? highlightRules.banned.color
+                  : (highlightRules.banned.enabled && bannedUsers.has(msg.user)) ? highlightRules.banned.color
                   : null
                 const hlColor = highlightedUsers[msg.user] || autoColor
                 return (
