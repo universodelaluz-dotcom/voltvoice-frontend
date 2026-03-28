@@ -14,7 +14,6 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
   }, [])
 
   const [voiceName, setVoiceName] = useState('')
-  const [transcription, setTranscription] = useState('')
   const [audioFile, setAudioFile] = useState(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState(null)
@@ -133,7 +132,7 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
             body: JSON.stringify({
               voiceName: voiceName.trim(),
               base64Audio: base64,
-              transcription: transcription.trim() || undefined,
+              transcription: undefined,
             })
           })
 
@@ -142,7 +141,6 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
           if (response.ok && data.success) {
             setMessage(`Voz "${voiceName}" clonada exitosamente`)
             setVoiceName('')
-            setTranscription('')
             setAudioFile(null)
             // Recargar lista de voces
             loadUserVoices()
@@ -237,21 +235,6 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
               onChange={(e) => setVoiceName(e.target.value)}
               placeholder="Ej: Mi voz, Voz profesional..."
               className={darkMode ? "w-full bg-gray-800 border border-cyan-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
-              disabled={loading}
-            />
-          </div>
-
-          {/* Transcripción (opcional) */}
-          <div>
-            <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
-              Transcripción del audio <span className={darkMode ? "text-gray-500" : "text-gray-400"}>(opcional, mejora la calidad)</span>
-            </label>
-            <textarea
-              value={transcription}
-              onChange={(e) => setTranscription(e.target.value)}
-              placeholder="Escribe lo que dice el audio..."
-              rows={2}
-              className={darkMode ? "w-full bg-gray-800 border border-cyan-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500 resize-none text-sm" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 resize-none text-sm"}
               disabled={loading}
             />
           </div>
