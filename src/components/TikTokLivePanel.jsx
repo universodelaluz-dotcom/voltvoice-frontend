@@ -373,9 +373,9 @@ export default function TikTokLivePanel({ config = {} }) {
   }
 
   return (
-    <div className={darkMode ? "bg-gray-900 border border-cyan-500/30 rounded-lg p-6 mb-6" : "bg-white border border-indigo-200 rounded-lg p-6 mb-6 shadow-sm"}>
+    <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6 mb-6" : "bg-white border border-indigo-200 rounded-lg p-6 mb-6 shadow-sm"}>
       <div className="flex items-center gap-3 mb-4">
-        <MessageCircle className="w-6 h-6 text-cyan-400" />
+        <MessageCircle className="w-6 h-6 text-cyan-300" />
         <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>TikTok LIVE en Tiempo Real</h2>
         <span
           className={`ml-auto px-3 py-1 rounded-full text-xs font-semibold ${
@@ -396,7 +396,7 @@ export default function TikTokLivePanel({ config = {} }) {
               value={tiktokUser}
               onChange={(e) => setTiktokUser(e.target.value)}
               placeholder="Usuario de TikTok (sin @)"
-              className={darkMode ? "flex-1 bg-gray-800 border border-cyan-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500" : "flex-1 bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
+              className={darkMode ? "flex-1 bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400" : "flex-1 bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
               disabled={isConnecting}
             />
             <button
@@ -450,7 +450,7 @@ export default function TikTokLivePanel({ config = {} }) {
             </button>
           </div>
 
-          <div className={darkMode ? "bg-gray-800/50 border border-cyan-500/20 rounded-lg p-4 h-64 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-64 overflow-y-auto space-y-2"}>
+          <div className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-64 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-64 overflow-y-auto space-y-2"}>
             {messages.length === 0 ? (
               <div className="text-center text-gray-400 py-8">
                 <Loader className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />

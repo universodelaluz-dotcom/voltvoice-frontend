@@ -166,7 +166,7 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
   return (
     <div className="space-y-6">
       {/* Mis Voces Clonadas */}
-      <div className={darkMode ? "bg-gray-900 border border-cyan-500/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
+      <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
         <div className="flex items-center gap-3 mb-4">
           <Mic2 className="w-6 h-6 text-purple-400" />
           <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Mis Voces Clonadas</h2>
@@ -217,7 +217,7 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
       </div>
 
       {/* Clonar Nueva Voz */}
-      <div className={darkMode ? "bg-gray-900 border border-cyan-500/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
+      <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
         <div className="flex items-center gap-3 mb-4">
           <Zap className="w-6 h-6 text-cyan-400" />
           <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Clonar Nueva Voz</h2>
@@ -234,7 +234,7 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
               value={voiceName}
               onChange={(e) => setVoiceName(e.target.value)}
               placeholder="Ej: Mi voz, Voz profesional..."
-              className={darkMode ? "w-full bg-gray-800 border border-cyan-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
+              className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
               disabled={loading}
             />
           </div>
