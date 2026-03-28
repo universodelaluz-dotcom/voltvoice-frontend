@@ -211,9 +211,9 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const estimatedTokens = Math.ceil(charCount / 100)
 
   return (
-    <div className={`${darkMode ? "min-h-screen bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950 text-white" : "min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 text-gray-900"}`}>
+    <div className={`${darkMode ? "min-h-screen bg-gradient-to-br from-[#0a0a1a] via-[#111827] to-[#0f172a] text-white" : "min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 text-gray-900"}`}>
       {/* Header */}
-      <div className={`${darkMode ? "border-b border-cyan-500/20 backdrop-blur-sm sticky top-0 z-50 bg-gray-950/80" : "border-b border-indigo-200 backdrop-blur-sm sticky top-0 z-50 bg-white/90 shadow-sm"}`}>
+      <div className={`${darkMode ? "border-b border-cyan-400/30 backdrop-blur-md sticky top-0 z-50 bg-[#0a0a1a]/90" : "border-b border-indigo-200 backdrop-blur-sm sticky top-0 z-50 bg-white/90 shadow-sm"}`}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
             onClick={onGoHome}
@@ -234,9 +234,9 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               <div className={`w-2 h-2 rounded-full ${isStreamActive ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></div>
               <span className="text-xs font-semibold">{isStreamActive ? 'EN VIVO' : 'INACTIVO'}</span>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
-              <Zap className="w-4 h-4 text-cyan-400" />
-              <span className="text-sm font-semibold text-cyan-400">{tokens} tokens</span>
+            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30 rounded-lg">
+              <Zap className="w-4 h-4 text-cyan-300" />
+              <span className="text-sm font-bold text-cyan-300">{tokens} tokens</span>
             </div>
             <button
               onClick={toggleTheme}
@@ -260,7 +260,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             onClick={onGoControlPanel}
             className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
               darkMode
-                ? 'bg-gray-800/80 border border-cyan-500/30 hover:bg-gray-700 hover:border-cyan-400 text-cyan-400'
+                ? 'bg-gradient-to-r from-[#1a1a2e] to-[#16213e] border border-cyan-400/30 hover:border-cyan-300 hover:shadow-lg hover:shadow-cyan-500/20 text-cyan-300'
                 : 'bg-white border border-indigo-200 hover:bg-indigo-50 hover:border-indigo-400 text-indigo-600 shadow-sm'
             }`}
           >
@@ -283,15 +283,15 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
           {/* Center Column - Synthesis */}
           <div className="lg:col-span-2 space-y-6">
             {/* Voice Selection */}
-            <div className={`${darkMode ? "space-y-2 bg-gray-900/50 border border-cyan-500/20 rounded-lg p-4" : "space-y-2 bg-white border border-indigo-200 rounded-lg p-4 shadow-sm"}`}>
-              <label className="text-sm font-semibold text-cyan-400 uppercase tracking-wide">
+            <div className={`${darkMode ? "space-y-2 bg-[#1a1a2e] border border-cyan-400/25 rounded-lg p-4" : "space-y-2 bg-white border border-indigo-200 rounded-lg p-4 shadow-sm"}`}>
+              <label className="text-sm font-semibold text-cyan-300 uppercase tracking-wide">
                 Selecciona una voz
               </label>
               <div className="relative">
                 <select
                   value={selectedVoice}
                   onChange={(e) => updateConfig('generalVoiceId', e.target.value)}
-                  className={`${darkMode ? "w-full bg-gray-800 border border-cyan-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500 appearance-none cursor-pointer pr-10" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 appearance-none cursor-pointer pr-10"}`}
+                  className={`${darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 appearance-none cursor-pointer pr-10" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 appearance-none cursor-pointer pr-10"}`}
                 >
                   {voices.map((voice) => (
                     <option key={voice.id} value={voice.id}>
@@ -299,20 +299,20 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400 pointer-events-none" />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-300 pointer-events-none" />
               </div>
             </div>
 
             {/* Text Input */}
-            <div className={`${darkMode ? "space-y-2 bg-gray-900/50 border border-cyan-500/20 rounded-lg p-4" : "space-y-2 bg-white border border-indigo-200 rounded-lg p-4 shadow-sm"}`}>
-              <label className="text-sm font-semibold text-cyan-400 uppercase tracking-wide">
+            <div className={`${darkMode ? "space-y-2 bg-[#1a1a2e] border border-purple-400/25 rounded-lg p-4" : "space-y-2 bg-white border border-indigo-200 rounded-lg p-4 shadow-sm"}`}>
+              <label className="text-sm font-semibold text-purple-300 uppercase tracking-wide">
                 Texto a probar
               </label>
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Escribe el texto que deseas convertir en voz..."
-                className={`${darkMode ? "w-full h-32 bg-gray-800 border border-cyan-500/30 rounded p-3 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 resize-none font-mono text-sm" : "w-full h-32 bg-gray-50 border border-indigo-300 rounded p-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 resize-none font-mono text-sm"}`}
+                className={`${darkMode ? "w-full h-32 bg-[#0f0f23] border border-purple-400/30 rounded p-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400 resize-none font-mono text-sm" : "w-full h-32 bg-gray-50 border border-indigo-300 rounded p-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 resize-none font-mono text-sm"}`}
               />
               <div className={`${darkMode ? "flex justify-between text-xs text-gray-400" : "flex justify-between text-xs text-gray-500"}`}>
                 <span>{charCount} caracteres</span>
@@ -384,7 +384,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
           <div className="lg:col-span-1 space-y-6">
             {/* Audio Player - Simple Button */}
             {audioUrl && (
-              <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/20 rounded-lg">
+              <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30 rounded-lg">
                 <audio ref={(el) => el && audioUrl && (audioRef.current = el)} src={audioUrl} className="hidden" />
                 <button
                   onClick={() => audioRef.current && audioRef.current.play()}
@@ -399,8 +399,8 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             )}
 
             {/* Tokens Dashboard */}
-            <div className={`${darkMode ? "bg-gray-900/50 border border-cyan-500/20 rounded-xl p-5 backdrop-blur-sm" : "bg-white border border-indigo-200 rounded-xl p-5 shadow-sm"}`}>
-              <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-wide mb-4">Tokens</h3>
+            <div className={`${darkMode ? "bg-[#1a1a2e] border border-cyan-400/20 rounded-xl p-5 backdrop-blur-sm" : "bg-white border border-indigo-200 rounded-xl p-5 shadow-sm"}`}>
+              <h3 className="text-sm font-semibold text-cyan-300 uppercase tracking-wide mb-4">Tokens</h3>
               <div className="flex justify-center mb-4">
                 <div className="relative w-32 h-32">
                   <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
@@ -422,21 +422,21 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 rounded-lg p-3 text-center">
+                <div className={`${darkMode ? "bg-gradient-to-br from-green-500/15 to-green-600/10 border border-green-400/25" : "bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20"} rounded-lg p-3 text-center`}>
                   <div className="text-lg font-black text-green-400">{tokens}</div>
-                  <div className={`${darkMode ? "text-[10px] text-gray-400 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Disponibles</div>
+                  <div className={`${darkMode ? "text-[10px] text-gray-300 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Disponibles</div>
                 </div>
-                <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 rounded-lg p-3 text-center">
+                <div className={`${darkMode ? "bg-gradient-to-br from-purple-500/15 to-purple-600/10 border border-purple-400/25" : "bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20"} rounded-lg p-3 text-center`}>
                   <div className="text-lg font-black text-purple-400">{totalTokensUsed}</div>
-                  <div className={`${darkMode ? "text-[10px] text-gray-400 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Usados</div>
+                  <div className={`${darkMode ? "text-[10px] text-gray-300 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Usados</div>
                 </div>
-                <div className="bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 border border-cyan-500/20 rounded-lg p-3 text-center">
+                <div className={`${darkMode ? "bg-gradient-to-br from-cyan-500/15 to-cyan-600/10 border border-cyan-400/25" : "bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 border border-cyan-500/20"} rounded-lg p-3 text-center`}>
                   <div className="text-lg font-black text-cyan-400">{synthesisCount}</div>
-                  <div className={`${darkMode ? "text-[10px] text-gray-400 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Síntesis</div>
+                  <div className={`${darkMode ? "text-[10px] text-gray-300 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Síntesis</div>
                 </div>
-                <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20 rounded-lg p-3 text-center">
+                <div className={`${darkMode ? "bg-gradient-to-br from-yellow-500/15 to-yellow-600/10 border border-yellow-400/25" : "bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20"} rounded-lg p-3 text-center`}>
                   <div className="text-lg font-black text-yellow-400">{synthesisCount > 0 ? (totalTokensUsed / synthesisCount).toFixed(0) : 0}</div>
-                  <div className={`${darkMode ? "text-[10px] text-gray-400 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Promedio</div>
+                  <div className={`${darkMode ? "text-[10px] text-gray-300 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Promedio</div>
                 </div>
               </div>
               <div className="space-y-2">
