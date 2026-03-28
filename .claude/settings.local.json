@@ -73,7 +73,8 @@
       "Bash(powershell -Command \"Remove-Item -Force ''C:\\\\Nueva carpeta\\\\VOLTVOICE CON SERVER M25\\\\VOLTVOICE\\\\.git\\\\index.lock''\")",
       "Bash(ls -la \"C:/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE/.git/modules/\"*/index.lock)",
       "Bash(GIT_INDEX_FILE=\"C:/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE/.git/index\" git -C \"C:/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE\" status)",
-      "Bash(git -C \"C:/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE\" add backend frontend tiktok_chat_reader.js .claude/settings.local.json)"
+      "Bash(git -C \"C:/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE\" add backend frontend tiktok_chat_reader.js .claude/settings.local.json)",
+      "Bash(git -C:*)"
     ]
   }
 }
