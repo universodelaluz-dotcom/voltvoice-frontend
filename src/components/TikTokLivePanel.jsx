@@ -546,16 +546,17 @@ export default function TikTokLivePanel({ config = {} }) {
                             e.preventDefault()
                             e.stopPropagation()
                             setBannedUsers(prev => {
-                              const next = new Set([...prev, msg.user])
+                              const next = new Set(prev)
+                              if (next.has(msg.user)) next.delete(msg.user)
+                              else next.add(msg.user)
                               bannedRef.current = next
                               return next
                             })
-                            setMessages(prev => prev.filter(m => m.user !== msg.user))
                           }}
                           className="p-1.5 rounded hover:bg-red-500/20 transition-colors"
-                          title="Silenciar usuario"
+                          title={bannedUsers.has(msg.user) ? "Silenciado (click para quitar)" : "Silenciar usuario"}
                         >
-                          <Ban className="w-3 h-3 text-red-400/40 hover:text-red-300" />
+                          <Ban className={`w-3 h-3 transition-colors ${bannedUsers.has(msg.user) ? 'text-red-400' : 'text-red-400/30 hover:text-red-300'}`} />
                         </button>
                       </div>
                     )}
