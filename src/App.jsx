@@ -199,12 +199,15 @@ export function App() {
               onClick={() => setCurrentPage('landing')}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-purple-500 rounded-lg flex items-center justify-center">
-                <span className="text-xl font-black">⚡</span>
+              <div className="p-2 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-lg">
+                <Mic2 className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-                StreamVoicer
-              </h1>
+              <div>
+                <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
+                  StreamVoicer
+                </h1>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Ir al taller de clonación</p>
+              </div>
             </button>
             <button
               onClick={() => setCurrentPage('studio')}
