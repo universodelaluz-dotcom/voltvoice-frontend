@@ -448,50 +448,6 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               </div>
             </div>
 
-            {/* Activity History */}
-            <div className={`${darkMode ? "bg-gray-900/50 border border-cyan-500/20 rounded-xl p-5 backdrop-blur-sm" : "bg-white border border-indigo-200 rounded-xl p-5 shadow-sm"}`}>
-              <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-wide flex items-center gap-2 mb-4">
-                <Clock className="w-4 h-4" /> Actividad
-              </h3>
-              <div className="space-y-3">
-                <div className={`${darkMode ? "flex items-center gap-3 p-2 rounded-lg bg-cyan-500/5 border border-cyan-500/10" : "flex items-center gap-3 p-2 rounded-lg bg-cyan-50 border border-cyan-200"}`}>
-                  <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
-                    <Mic2 className="w-4 h-4 text-cyan-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className={`${darkMode ? "text-xs font-bold text-white" : "text-xs font-bold text-gray-800"}`}>Síntesis completadas</p>
-                    <div className="w-full bg-gray-800 rounded-full h-1.5 mt-1">
-                      <div className="bg-cyan-400 h-1.5 rounded-full transition-all duration-700" style={{ width: `${Math.min(100, synthesisCount * 10)}%` }}></div>
-                    </div>
-                  </div>
-                  <span className="text-sm font-black text-cyan-400">{synthesisCount}</span>
-                </div>
-                <div className={`${darkMode ? "flex items-center gap-3 p-2 rounded-lg bg-purple-500/5 border border-purple-500/10" : "flex items-center gap-3 p-2 rounded-lg bg-purple-50 border border-purple-200"}`}>
-                  <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-purple-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className={`${darkMode ? "text-xs font-bold text-white" : "text-xs font-bold text-gray-800"}`}>Tokens gastados</p>
-                    <div className="w-full bg-gray-800 rounded-full h-1.5 mt-1">
-                      <div className="bg-purple-400 h-1.5 rounded-full transition-all duration-700" style={{ width: `${Math.min(100, (totalTokensUsed / (totalTokensUsed + tokens || 1)) * 100)}%` }}></div>
-                    </div>
-                  </div>
-                  <span className="text-sm font-black text-purple-400">{totalTokensUsed}</span>
-                </div>
-                <div className={`${darkMode ? "flex items-center gap-3 p-2 rounded-lg bg-yellow-500/5 border border-yellow-500/10" : "flex items-center gap-3 p-2 rounded-lg bg-yellow-50 border border-yellow-200"}`}>
-                  <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                    <Clock className="w-4 h-4 text-yellow-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className={`${darkMode ? "text-xs font-bold text-white" : "text-xs font-bold text-gray-800"}`}>Promedio por síntesis</p>
-                    <div className="w-full bg-gray-800 rounded-full h-1.5 mt-1">
-                      <div className="bg-yellow-400 h-1.5 rounded-full transition-all duration-700" style={{ width: `${Math.min(100, synthesisCount > 0 ? (totalTokensUsed / synthesisCount) : 0)}%` }}></div>
-                    </div>
-                  </div>
-                  <span className="text-sm font-black text-yellow-400">{synthesisCount > 0 ? (totalTokensUsed / synthesisCount).toFixed(0) : 0}</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
