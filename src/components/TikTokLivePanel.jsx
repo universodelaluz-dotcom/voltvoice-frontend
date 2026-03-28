@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw } from 'lucide-react'
+import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
@@ -159,6 +159,9 @@ export default function TikTokLivePanel({ config = {} }) {
   const [bannedUsers, setBannedUsers] = useState(new Set())
   const [volume, setVolume] = useState(0.8)
   const [isPaused, setIsPaused] = useState(false)
+  const [highlightedUsers, setHighlightedUsers] = useState({})
+  const [highlightMode, setHighlightMode] = useState(false)
+  const [selectedColor, setSelectedColor] = useState('#06b6d4')
   const isPausedRef = useRef(false)
   const wsRef = useRef(null)
   const statusIntervalRef = useRef(null)
@@ -676,7 +679,9 @@ export default function TikTokLivePanel({ config = {} }) {
                 <p>Esperando comentarios en vivo...</p>
               </div>
             ) : (
-              messages.map((msg, idx) => (
+              messages.map((msg, idx) => {
+                const hlColor = highlightedUsers[msg.user]
+                return (
                 <div
                   key={idx}
                   className={`text-sm pl-3 py-2 rounded-r transition-all duration-300 ${
@@ -688,6 +693,7 @@ export default function TikTokLivePanel({ config = {} }) {
                         ? 'border-l border-gray-600/30 pl-3 opacity-40'
                         : 'border-l border-cyan-500/30'
                   }`}
+                  style={hlColor ? { backgroundColor: `${hlColor}20`, borderLeftColor: hlColor, borderLeftWidth: '3px' } : undefined}
                 >
                   <div className="flex items-center justify-between">
                     {editingNick === msg.id ? (
@@ -724,6 +730,19 @@ export default function TikTokLivePanel({ config = {} }) {
                         {/* Nick: click izquierdo = editar, click derecho = ban toggle */}
                         <p
                           onClick={() => {
+                            if (highlightMode) {
+                              // En modo remarcar: toggle highlight del usuario
+                              setHighlightedUsers(prev => {
+                                const next = { ...prev }
+                                if (next[msg.user] === selectedColor) {
+                                  delete next[msg.user]
+                                } else {
+                                  next[msg.user] = selectedColor
+                                }
+                                return next
+                              })
+                              return
+                            }
                             if (!bannedUsers.has(msg.user)) {
                               setEditingNick(msg.id)
                               setEditingValue(nickOverrides[msg.user] || msg.nickname || msg.user)
@@ -760,8 +779,9 @@ export default function TikTokLivePanel({ config = {} }) {
                                 ? 'text-cyan-400 hover:underline'
                                 : 'text-cyan-300 hover:underline'
                           }`}
-                          title={bannedUsers.has(msg.user) ? "Click derecho para desbloquear" : "Click para editar · Click derecho para silenciar"}
+                          title={highlightMode ? "Click para remarcar/desmarcar este usuario" : bannedUsers.has(msg.user) ? "Click derecho para desbloquear" : "Click para editar · Click derecho para silenciar"}
                         >
+                          {hlColor && <span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: hlColor }} />}
                           {nickOverrides[msg.user] || msg.nickname || msg.user}
                         </p>
                       </div>
@@ -776,7 +796,8 @@ export default function TikTokLivePanel({ config = {} }) {
                       : darkMode ? "text-gray-300" : "text-gray-700"
                   }>{msg.text}</p>
                 </div>
-              ))
+                )
+              })
             )}
           </div>
 
@@ -803,6 +824,46 @@ export default function TikTokLivePanel({ config = {} }) {
             >
               <RotateCcw className="w-3 h-3" /> Refrescar
             </button>
+            <div className="relative">
+              <button
+                onClick={() => setHighlightMode(!highlightMode)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  highlightMode
+                    ? 'bg-amber-500/20 border border-amber-400/40 text-amber-300 hover:bg-amber-500/30'
+                    : 'bg-gray-700/40 border border-gray-600/30 text-gray-400 hover:bg-amber-500/10 hover:border-amber-500/30 hover:text-amber-300'
+                }`}
+                title="Remarcar usuarios con color para identificarlos rápido"
+              >
+                <Highlighter className="w-3 h-3" /> Remarcar
+              </button>
+              {highlightMode && (
+                <div className={`absolute bottom-full left-0 mb-2 flex items-center gap-1.5 p-2 rounded-lg border shadow-lg z-10 ${
+                  darkMode ? 'bg-gray-900 border-amber-500/30' : 'bg-white border-amber-300 shadow-md'
+                }`}>
+                  {['#06b6d4', '#a855f7', '#f59e0b', '#ef4444', '#22c55e', '#3b82f6', '#ec4899'].map(color => (
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      className={`w-5 h-5 rounded-full border-2 transition-transform ${
+                        selectedColor === color ? 'border-white scale-125' : 'border-transparent hover:scale-110'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))}
+                  <button
+                    onClick={() => {
+                      setHighlightedUsers({})
+                      setHighlightMode(false)
+                    }}
+                    className="ml-1 text-gray-400 hover:text-red-400 transition-colors"
+                    title="Limpiar todos los remarcados"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setVolume(v => v > 0 ? 0 : 0.8)}
