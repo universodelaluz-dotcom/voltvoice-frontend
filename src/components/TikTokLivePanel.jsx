@@ -31,6 +31,12 @@ const getPlainNick = (nickname) => {
   return cleanNick.trim().replace(/\s+/g, ' ')
 }
 
+const removeEmojis = (text) => {
+  // Eliminar todos los emojis del texto
+  const emojiRegex = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu
+  return text.replace(emojiRegex, '').trim()
+}
+
 export default function TikTokLivePanel({ config = {} }) {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
@@ -216,11 +222,16 @@ export default function TikTokLivePanel({ config = {} }) {
           // Filtro: ignorar enlaces
           if (c.ignoreLinks && hasLinks(msg.text)) return
 
-          // Filtro: ignorar emojis excesivos
-          if (c.ignoreExcessiveEmojis && hasExcessiveEmojis(msg.text, parseInt(c.maxEmojisAllowed) || 3)) return
+          // Filtro: limpiar emojis excesivos del texto (no ignorar el mensaje)
+          let textToProcess = msg.text
+          if (c.ignoreExcessiveEmojis && hasExcessiveEmojis(msg.text, parseInt(c.maxEmojisAllowed) || 3)) {
+            textToProcess = removeEmojis(msg.text)
+            // Si después de remover emojis el mensaje queda vacío, ignorar
+            if (!textToProcess.trim()) return
+          }
 
           // Filtro: largo mínimo
-          if (c.minMessageLengthEnabled && msg.text.trim().length < c.minMessageLength) return
+          if (c.minMessageLengthEnabled && textToProcess.trim().length < c.minMessageLength) return
 
           // Limitar cola máxima
           if (c.maxQueueEnabled && speakQueueRef.current.length >= c.maxQueueSize) {
@@ -229,9 +240,9 @@ export default function TikTokLivePanel({ config = {} }) {
           }
 
           // Limitar caracteres en todos los mensajes
-          let textToSpeak = msg.text
+          let textToSpeak = textToProcess
           if (c.donorCharLimitEnabled) {
-            textToSpeak = msg.text.substring(0, c.donorCharLimit)
+            textToSpeak = textToProcess.substring(0, c.donorCharLimit)
           }
 
           // Construir texto final (usar nickname para lectura, no el username técnico)
