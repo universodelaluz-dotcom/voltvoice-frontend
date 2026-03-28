@@ -43,6 +43,13 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const [newChatMessage, setNewChatMessage] = useState('')
   const [currentChatUser, setCurrentChatUser] = useState('viewer123')
 
+  // Reproducir automáticamente cuando haya audio
+  useEffect(() => {
+    if (audioUrl && audioRef.current) {
+      setTimeout(() => audioRef.current?.play(), 100)
+    }
+  }, [audioUrl])
+
   // Aplicar velocidad al audio cuando cambie
   useEffect(() => {
     if (audioRef.current) {
@@ -355,19 +362,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
                   </>
                 )}
               </button>
-              {audioUrl && (
-                <>
-                  <audio ref={audioRef} src={audioUrl} className="hidden" />
-                  <button
-                    onClick={() => audioRef.current && audioRef.current.play()}
-                    className="px-6 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-lg text-white hover:from-cyan-400 hover:to-purple-500 shadow-lg shadow-cyan-500/50 hover:shadow-cyan-500/75 transition-all duration-300 flex items-center justify-center gap-2 font-bold"
-                    title="Reproducir audio"
-                  >
-                    <Volume2 className="w-5 h-5" />
-                    Reproducir
-                  </button>
-                </>
-              )}
+              <audio ref={audioRef} src={audioUrl || ''} className="hidden" />
             </div>
 
             {estimatedTokens > tokens && (
