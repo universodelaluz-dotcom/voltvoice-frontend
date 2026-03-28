@@ -181,12 +181,7 @@ export function App() {
     return <PricingPage onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} />
   }
 
-  // Control Panel Page
-  if (currentPage === 'control-panel') {
-    return <ControlPanel onClose={() => setCurrentPage('studio')} darkMode={darkMode} config={config} updateConfig={updateConfig} user={user} />
-  }
-
-  // Voice Cloning Page
+  // Voice Cloning Page (se desmonta al salir, no tiene estado persistente crítico)
   if (currentPage === 'voice-cloning') {
     return (
       <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 text-gray-900"}>
@@ -230,19 +225,24 @@ export function App() {
     )
   }
 
-  // Studio Page
-  if (currentPage === 'studio') {
+  // Studio + ControlPanel: ambos montados, se ocultan con CSS para no perder el WebSocket
+  if (currentPage === 'studio' || currentPage === 'control-panel') {
     return (
-      <div>
-        <SynthesisStudio
-          onGoHome={() => setCurrentPage('landing')}
-          onGoVoiceCloning={() => setCurrentPage('voice-cloning')}
-          onGoControlPanel={() => setCurrentPage('control-panel')}
-          config={config}
-          updateConfig={updateConfig}
-          user={user}
-        />
-      </div>
+      <>
+        <div style={{ display: currentPage === 'studio' ? 'block' : 'none' }}>
+          <SynthesisStudio
+            onGoHome={() => setCurrentPage('landing')}
+            onGoVoiceCloning={() => setCurrentPage('voice-cloning')}
+            onGoControlPanel={() => setCurrentPage('control-panel')}
+            config={config}
+            updateConfig={updateConfig}
+            user={user}
+          />
+        </div>
+        <div style={{ display: currentPage === 'control-panel' ? 'block' : 'none' }}>
+          <ControlPanel onClose={() => setCurrentPage('studio')} darkMode={darkMode} config={config} updateConfig={updateConfig} user={user} />
+        </div>
+      </>
     )
   }
 
