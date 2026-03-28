@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { StripePayment } from './components/StripePayment'
 import { SynthesisStudio } from './components/SynthesisStudio'
 import VoiceCloningPanel from './components/VoiceCloningPanel'
@@ -29,7 +29,7 @@ export function App() {
         setUser(userData)
         setAuthToken(savedToken)
         setTokens(userData.tokens || 100)
-        // Verificar que el token sigue siendo válido
+        // Verificar token y cargar config del usuario
         fetch(`${API_URL}/api/auth/me`, {
           headers: { 'Authorization': `Bearer ${savedToken}` }
         }).then(r => r.json()).then(data => {
@@ -37,8 +37,9 @@ export function App() {
             setUser(data.user)
             setTokens(data.user.tokens || 100)
             localStorage.setItem('sv-user', JSON.stringify(data.user))
+            // Cargar config guardada del usuario
+            loadUserConfig(savedToken)
           } else {
-            // Token expirado, limpiar
             handleLogout()
           }
         }).catch(() => {})
@@ -49,10 +50,50 @@ export function App() {
     }
   }, [])
 
+  // Cargar config del usuario desde el backend
+  const loadUserConfig = async (token) => {
+    try {
+      const res = await fetch(`${API_URL}/api/settings`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (data.success && data.config && Object.keys(data.config).length > 0) {
+        setConfig(prev => ({ ...prev, ...data.config }))
+        console.log('[Config] Configuración del usuario cargada')
+      }
+    } catch (err) {
+      console.error('[Config] Error cargando config:', err)
+    }
+  }
+
+  // Auto-guardar config al backend cuando cambia (con debounce)
+  const saveTimerRef = useRef(null)
+  useEffect(() => {
+    const token = localStorage.getItem('sv-token')
+    if (!token || !user) return
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => {
+      fetch(`${API_URL}/api/settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ config })
+      }).then(() => {
+        console.log('[Config] Guardado automático')
+      }).catch(() => {})
+    }, 2000) // Espera 2 segundos después del último cambio
+
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
+  }, [config, user])
+
   const handleLogin = (userData, token) => {
     setUser(userData)
     setAuthToken(token)
     setTokens(userData.tokens || 100)
+    loadUserConfig(token)
     setCurrentPage('studio')
   }
 
@@ -61,6 +102,20 @@ export function App() {
     setAuthToken(null)
     localStorage.removeItem('sv-token')
     localStorage.removeItem('sv-user')
+    // Reset config a defaults
+    setConfig({
+      audioSpeed: 1.0, readOnlyMessage: false, skipRepeated: false,
+      onlyDonors: false, onlyQuestions: false, announceFollowers: false,
+      announceGifts: false, ignoreLinks: false, ignoreExcessiveEmojis: false,
+      onlyModerators: false, announceViewers: false, announceLikes: false,
+      announceShares: false, announceBattles: false, announcePolls: false,
+      announceGoals: false, donorCharLimitEnabled: false, donorCharLimit: 200,
+      minMessageLengthEnabled: false, minMessageLength: 3,
+      maxQueueEnabled: false, maxQueueSize: 20,
+      donorVoiceEnabled: false, donorVoiceId: 'Diego',
+      modVoiceEnabled: false, modVoiceId: 'Lupita',
+      generalVoiceId: 'es-ES', notifVoiceEnabled: false, notifVoiceId: 'Lupita',
+    })
     setCurrentPage('landing')
   }
 
