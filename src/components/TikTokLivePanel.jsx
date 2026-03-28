@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, Ban } from 'lucide-react'
+import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
@@ -40,15 +40,18 @@ export default function TikTokLivePanel({ config = {} }) {
   const [editingNick, setEditingNick] = useState(null)
   const [editingValue, setEditingValue] = useState('')
   const [bannedUsers, setBannedUsers] = useState(new Set())
+  const [volume, setVolume] = useState(0.8)
   const wsRef = useRef(null)
   const statusIntervalRef = useRef(null)
   const speakQueueRef = useRef([])
   const isProcessingRef = useRef(false)
   const lastMessageRef = useRef('')
   const configRef = useRef(config)
+  const volumeRef = useRef(0.8)
 
-  // Mantener config actualizado en ref para acceso en callbacks
+  // Mantener config y volumen actualizado en refs para acceso en callbacks
   useEffect(() => { configRef.current = config }, [config])
+  useEffect(() => { volumeRef.current = volume }, [volume])
 
   // Conectar a WebSocket cuando el usuario se conecte a TikTok
   useEffect(() => {
@@ -297,6 +300,7 @@ export default function TikTokLivePanel({ config = {} }) {
           await new Promise((resolve) => {
             const audio = new Audio(data.audio)
             audio.playbackRate = c.audioSpeed || 1.0
+            audio.volume = volumeRef.current
             audio.onended = () => {
               console.log(`[TikTok] Audio terminado`)
               setMessages((prev) =>
@@ -532,9 +536,34 @@ export default function TikTokLivePanel({ config = {} }) {
             )}
           </div>
 
-          <p className="text-xs text-gray-400">
-            💡 Los comentarios se sintetizan automáticamente y se reproducen en tiempo real
-          </p>
+          {/* Barra de volumen */}
+          <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${darkMode ? 'bg-[#0f0f23]/80 border border-cyan-400/15' : 'bg-gray-50 border border-gray-200'}`}>
+            <button
+              onClick={() => setVolume(v => v > 0 ? 0 : 0.8)}
+              className="flex-shrink-0 hover:opacity-80 transition-opacity"
+              title={volume === 0 ? 'Activar sonido' : 'Silenciar'}
+            >
+              {volume === 0
+                ? <VolumeX className="w-4 h-4 text-red-400" />
+                : <Volume2 className="w-4 h-4 text-cyan-400" />
+              }
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer accent-cyan-400"
+              style={{
+                background: `linear-gradient(to right, #22d3ee ${volume * 100}%, ${darkMode ? '#1e293b' : '#d1d5db'} ${volume * 100}%)`
+              }}
+            />
+            <span className={`text-xs font-mono w-8 text-right ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              {Math.round(volume * 100)}
+            </span>
+          </div>
         </div>
       )}
     </div>
