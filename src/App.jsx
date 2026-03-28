@@ -19,6 +19,41 @@ export function App() {
   const [authToken, setAuthToken] = useState(null)
   const [tokens, setTokens] = useState(100)
 
+  // Config centralizado para todas las opciones
+  const [config, setConfig] = useState({
+    audioSpeed: 1.0,
+    readOnlyMessage: false,
+    skipRepeated: false,
+    onlyDonors: false,
+    onlyQuestions: false,
+    announceFollowers: false,
+    announceGifts: false,
+    ignoreLinks: false,
+    ignoreExcessiveEmojis: false,
+    onlyModerators: false,
+    announceViewers: false,
+    announceLikes: false,
+    announceShares: false,
+    announceBattles: false,
+    announcePolls: false,
+    announceGoals: false,
+    donorCharLimitEnabled: false,
+    donorCharLimit: 200,
+    minMessageLengthEnabled: false,
+    minMessageLength: 3,
+    maxQueueEnabled: false,
+    maxQueueSize: 20,
+    donorVoiceEnabled: false,
+    donorVoiceId: 'Diego',
+    modVoiceEnabled: false,
+    modVoiceId: 'Lupita',
+    generalVoiceId: 'es-ES',
+    notifVoiceEnabled: false,
+    notifVoiceId: 'Lupita',
+  })
+
+  const updateConfig = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
+
   // Restaurar sesión al cargar
   useEffect(() => {
     const savedToken = localStorage.getItem('sv-token')
@@ -118,41 +153,6 @@ export function App() {
     })
     setCurrentPage('landing')
   }
-
-  // Config centralizado para todas las opciones
-  const [config, setConfig] = useState({
-    audioSpeed: 1.0,
-    readOnlyMessage: false,
-    skipRepeated: false,
-    onlyDonors: false,
-    onlyQuestions: false,
-    announceFollowers: false,
-    announceGifts: false,
-    ignoreLinks: false,
-    ignoreExcessiveEmojis: false,
-    onlyModerators: false,
-    announceViewers: false,
-    announceLikes: false,
-    announceShares: false,
-    announceBattles: false,
-    announcePolls: false,
-    announceGoals: false,
-    donorCharLimitEnabled: false,
-    donorCharLimit: 200,
-    minMessageLengthEnabled: false,
-    minMessageLength: 3,
-    maxQueueEnabled: false,
-    maxQueueSize: 20,
-    donorVoiceEnabled: false,
-    donorVoiceId: 'Diego',
-    modVoiceEnabled: false,
-    modVoiceId: 'Lupita',
-    generalVoiceId: 'es-ES',
-    notifVoiceEnabled: false,
-    notifVoiceId: 'Lupita',
-  })
-
-  const updateConfig = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
 
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
