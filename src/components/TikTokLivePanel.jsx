@@ -48,8 +48,16 @@ export default function TikTokLivePanel({ config = {} }) {
   const lastMessageRef = useRef('')
   const currentAudioRef = useRef(null)
   const disconnectedRef = useRef(false)
+  const chatContainerRef = useRef(null)
   const configRef = useRef(config)
   const volumeRef = useRef(0.8)
+
+  // Auto-scroll del chat al fondo cuando llegan mensajes
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
+    }
+  }, [messages])
 
   // Mantener config y volumen actualizado en refs para acceso en callbacks
   useEffect(() => { configRef.current = config }, [config])
@@ -472,7 +480,7 @@ export default function TikTokLivePanel({ config = {} }) {
             </button>
           </div>
 
-          <div className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-64 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-64 overflow-y-auto space-y-2"}>
+          <div ref={chatContainerRef} className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-64 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-64 overflow-y-auto space-y-2"}>
             {messages.length === 0 ? (
               <div className="text-center text-gray-400 py-8">
                 <Loader className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
