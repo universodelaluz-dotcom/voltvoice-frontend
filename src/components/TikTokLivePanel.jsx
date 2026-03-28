@@ -162,6 +162,12 @@ export default function TikTokLivePanel({ config = {} }) {
   const [highlightedUsers, setHighlightedUsers] = useState({})
   const [highlightMode, setHighlightMode] = useState(false)
   const [selectedColor, setSelectedColor] = useState('#06b6d4')
+  const [showHighlightPanel, setShowHighlightPanel] = useState(false)
+  const [highlightRules, setHighlightRules] = useState({
+    moderators: { enabled: false, color: '#a855f7' },
+    donors: { enabled: false, color: '#f59e0b' },
+    banned: { enabled: false, color: '#ef4444' },
+  })
   const isPausedRef = useRef(false)
   const wsRef = useRef(null)
   const statusIntervalRef = useRef(null)
@@ -680,7 +686,12 @@ export default function TikTokLivePanel({ config = {} }) {
               </div>
             ) : (
               messages.map((msg, idx) => {
-                const hlColor = highlightedUsers[msg.user]
+                // Color: primero reglas por tipo, luego override manual
+                const autoColor = (highlightRules.moderators.enabled && msg.isModerator) ? highlightRules.moderators.color
+                  : (highlightRules.donors.enabled && msg.isDonor) ? highlightRules.donors.color
+                  : (highlightRules.banned.enabled && msg.isBanned) ? highlightRules.banned.color
+                  : null
+                const hlColor = highlightedUsers[msg.user] || autoColor
                 return (
                 <div
                   key={idx}
@@ -801,93 +812,163 @@ export default function TikTokLivePanel({ config = {} }) {
             )}
           </div>
 
-          {/* Pausa y Volumen */}
-          <div className="flex items-center gap-3 justify-between">
-            <button
-              onClick={handlePause}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                isPaused
-                  ? 'bg-yellow-500/20 border border-yellow-400/40 text-yellow-300 hover:bg-yellow-500/30'
-                  : 'bg-gray-700/40 border border-gray-600/30 text-gray-400 hover:bg-gray-700/60'
-              }`}
-              title={isPaused ? 'Reanudar lectura' : 'Pausar lectura'}
-            >
-              {isPaused
-                ? <><Play className="w-3 h-3" /> Reanudar</>
-                : <><Pause className="w-3 h-3" /> Pausar</>
-              }
-            </button>
-            <button
-              onClick={handleRefresh}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-gray-700/40 border border-gray-600/30 text-gray-400 hover:bg-cyan-500/10 hover:border-cyan-500/30 hover:text-cyan-300"
-              title="Saltar cola y continuar desde el próximo mensaje"
-            >
-              <RotateCcw className="w-3 h-3" /> Refrescar
-            </button>
-            <div className="relative">
+          {/* Controles */}
+          <div className="flex items-center gap-1.5 justify-between">
+            <div className="flex items-center gap-1.5">
               <button
-                onClick={() => setHighlightMode(!highlightMode)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  highlightMode
-                    ? 'bg-amber-500/20 border border-amber-400/40 text-amber-300 hover:bg-amber-500/30'
-                    : 'bg-gray-700/40 border border-gray-600/30 text-gray-400 hover:bg-amber-500/10 hover:border-amber-500/30 hover:text-amber-300'
+                onClick={handlePause}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold tracking-wide transition-all ${
+                  isPaused
+                    ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-300'
+                    : darkMode
+                      ? 'bg-gray-600 text-gray-200 hover:bg-gray-500'
+                      : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
                 }`}
-                title="Remarcar usuarios con color para identificarlos rápido"
+                title={isPaused ? 'Reanudar lectura' : 'Pausar lectura'}
+              >
+                {isPaused
+                  ? <><Play className="w-3 h-3" /> Reanudar</>
+                  : <><Pause className="w-3 h-3" /> Pausar</>
+                }
+              </button>
+              <button
+                onClick={handleRefresh}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold tracking-wide transition-all ${
+                  darkMode
+                    ? 'bg-cyan-600 text-white hover:bg-cyan-500'
+                    : 'bg-cyan-500 text-white hover:bg-cyan-400'
+                }`}
+                title="Saltar cola y continuar desde el próximo mensaje"
+              >
+                <RotateCcw className="w-3 h-3" /> Refrescar
+              </button>
+              <button
+                onClick={() => setShowHighlightPanel(!showHighlightPanel)}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold tracking-wide transition-all ${
+                  showHighlightPanel || highlightMode
+                    ? 'bg-amber-400 text-gray-900 hover:bg-amber-300'
+                    : darkMode
+                      ? 'bg-amber-600 text-white hover:bg-amber-500'
+                      : 'bg-amber-500 text-white hover:bg-amber-400'
+                }`}
+                title="Remarcar usuarios con color"
               >
                 <Highlighter className="w-3 h-3" /> Remarcar
               </button>
-              {highlightMode && (
-                <div className={`absolute bottom-full left-0 mb-2 flex items-center gap-1.5 p-2 rounded-lg border shadow-lg z-10 ${
-                  darkMode ? 'bg-gray-900 border-amber-500/30' : 'bg-white border-amber-300 shadow-md'
-                }`}>
-                  {['#06b6d4', '#a855f7', '#f59e0b', '#ef4444', '#22c55e', '#3b82f6', '#ec4899'].map(color => (
-                    <button
-                      key={color}
-                      onClick={() => setSelectedColor(color)}
-                      className={`w-5 h-5 rounded-full border-2 transition-transform ${
-                        selectedColor === color ? 'border-white scale-125' : 'border-transparent hover:scale-110'
-                      }`}
-                      style={{ backgroundColor: color }}
-                      title={color}
-                    />
-                  ))}
-                  <button
-                    onClick={() => {
-                      setHighlightedUsers({})
-                      setHighlightMode(false)
-                    }}
-                    className="ml-1 text-gray-400 hover:text-red-400 transition-colors"
-                    title="Limpiar todos los remarcados"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
             </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setVolume(v => v > 0 ? 0 : 0.8)}
-              className="hover:opacity-80 transition-opacity"
-            >
-              {volume === 0
-                ? <VolumeX className="w-3.5 h-3.5 text-red-400" />
-                : <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
-              }
-            </button>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={volume}
-              onChange={(e) => setVolume(parseFloat(e.target.value))}
-              className="w-24 h-1 rounded-full appearance-none cursor-pointer accent-cyan-400"
-              style={{
-                background: `linear-gradient(to right, #22d3ee ${volume * 100}%, ${darkMode ? '#1e293b' : '#d1d5db'} ${volume * 100}%)`
-              }}
-            />
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setVolume(v => v > 0 ? 0 : 0.8)}
+                className="hover:opacity-80 transition-opacity"
+              >
+                {volume === 0
+                  ? <VolumeX className="w-3.5 h-3.5 text-red-400" />
+                  : <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
+                }
+              </button>
+              <input
+                type="range" min="0" max="1" step="0.01" value={volume}
+                onChange={(e) => setVolume(parseFloat(e.target.value))}
+                className="w-20 h-1 rounded-full appearance-none cursor-pointer accent-cyan-400"
+                style={{
+                  background: `linear-gradient(to right, #22d3ee ${volume * 100}%, ${darkMode ? '#1e293b' : '#d1d5db'} ${volume * 100}%)`
+                }}
+              />
+            </div>
           </div>
-          </div>
+
+          {/* Panel Remarcar */}
+          {showHighlightPanel && (
+            <div className={`rounded-lg border p-3 space-y-3 ${
+              darkMode ? 'bg-gray-900/80 border-amber-500/30' : 'bg-amber-50 border-amber-200'
+            }`}>
+              <div className="flex items-center justify-between">
+                <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>
+                  Remarcar por tipo
+                </span>
+                <button onClick={() => setShowHighlightPanel(false)} className="text-gray-400 hover:text-gray-200"><X className="w-3.5 h-3.5" /></button>
+              </div>
+
+              {/* Reglas por tipo */}
+              {[
+                { key: 'moderators', label: 'Moderadores' },
+                { key: 'donors', label: 'Donadores' },
+                { key: 'banned', label: 'Baneados' },
+              ].map(({ key, label }) => (
+                <div key={key} className="flex items-center gap-2">
+                  <button
+                    onClick={() => setHighlightRules(prev => ({
+                      ...prev,
+                      [key]: { ...prev[key], enabled: !prev[key].enabled }
+                    }))}
+                    className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                      highlightRules[key].enabled ? 'border-amber-400 bg-amber-400/30' : darkMode ? 'border-gray-500' : 'border-gray-400'
+                    }`}
+                  >
+                    {highlightRules[key].enabled && <span className="text-amber-300 text-[10px] font-bold">✓</span>}
+                  </button>
+                  <span className={`text-xs font-medium flex-1 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{label}</span>
+                  <div className="flex gap-1">
+                    {['#06b6d4', '#a855f7', '#f59e0b', '#ef4444', '#22c55e', '#3b82f6', '#ec4899'].map(c => (
+                      <button
+                        key={c}
+                        onClick={() => setHighlightRules(prev => ({
+                          ...prev,
+                          [key]: { ...prev[key], color: c, enabled: true }
+                        }))}
+                        className={`w-4 h-4 rounded-full transition-transform ${
+                          highlightRules[key].color === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-110'
+                        }`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {/* Remarcar manual */}
+              <div className={`pt-2 border-t ${darkMode ? 'border-gray-700' : 'border-amber-200'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>
+                    Remarcar usuario manual
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setHighlightMode(!highlightMode)}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold transition-all ${
+                      highlightMode
+                        ? 'bg-amber-400 text-gray-900'
+                        : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                    }`}
+                  >
+                    <Highlighter className="w-3 h-3" />
+                    {highlightMode ? 'Seleccionando...' : 'Click en nick'}
+                  </button>
+                  <div className="flex gap-1">
+                    {['#06b6d4', '#a855f7', '#f59e0b', '#ef4444', '#22c55e', '#3b82f6', '#ec4899'].map(c => (
+                      <button
+                        key={c}
+                        onClick={() => setSelectedColor(c)}
+                        className={`w-4 h-4 rounded-full transition-transform ${
+                          selectedColor === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-110'
+                        }`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                  {Object.keys(highlightedUsers).length > 0 && (
+                    <button
+                      onClick={() => setHighlightedUsers({})}
+                      className="text-[10px] text-gray-400 hover:text-red-400 ml-auto"
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
