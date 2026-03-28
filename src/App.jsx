@@ -50,6 +50,11 @@ export function App() {
     generalVoiceId: 'es-ES',
     notifVoiceEnabled: false,
     notifVoiceId: 'Lupita',
+    likeCooldown: 60,
+    viewerCooldown: 120,
+    followCooldown: 10,
+    shareCooldown: 15,
+    giftCooldown: 5,
   })
 
   const updateConfig = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
@@ -150,6 +155,7 @@ export function App() {
       donorVoiceEnabled: false, donorVoiceId: 'Diego',
       modVoiceEnabled: false, modVoiceId: 'Lupita',
       generalVoiceId: 'es-ES', notifVoiceEnabled: false, notifVoiceId: 'Lupita',
+      likeCooldown: 60, viewerCooldown: 120, followCooldown: 10, shareCooldown: 15, giftCooldown: 5,
     })
     setCurrentPage('landing')
   }

@@ -55,6 +55,8 @@ export default function TikTokLivePanel({ config = {} }) {
   const nickOverridesRef = useRef({})
   const configRef = useRef(config)
   const volumeRef = useRef(0.8)
+  // Cooldown por tipo de notificación (timestamp del último anuncio)
+  const lastNotifTime = useRef({ like: 0, viewer_count: 0, share: 0, follow: 0, gift: 0 })
 
   // Auto-scroll del chat al fondo cuando llegan mensajes
   useEffect(() => {
@@ -97,37 +99,44 @@ export default function TikTokLivePanel({ config = {} }) {
         if (data.type === 'subscribed') {
           console.log('[TikTok] Suscrito a:', data.username)
 
+        // Helper cooldown: solo anuncia si pasó suficiente tiempo
+        const canAnnounce = (type, cooldownSecs) => {
+          const now = Date.now()
+          if (now - lastNotifTime.current[type] < cooldownSecs * 1000) return false
+          lastNotifTime.current[type] = now
+          return true
+        }
+
         // === EVENTOS DE NOTIFICACIÓN ===
         } else if (data.data && data.data.type === 'gift') {
           const giftData = data.data
           console.log(`[TikTok] 🎁 Regalo de @${giftData.username}: ${giftData.giftName}`)
           setDonors(prev => new Set([...prev, giftData.username]))
-          // Anunciar regalo
-          if (c.announceGifts) {
+          if (c.announceGifts && canAnnounce('gift', c.giftCooldown || 5)) {
             const text = `${giftData.username} envió ${giftData.giftName}`
             queueMessage(text, giftData.username, { isNotification: true })
           }
 
         } else if (data.data && data.data.type === 'follow') {
-          if (c.announceFollowers) {
+          if (c.announceFollowers && canAnnounce('follow', c.followCooldown || 10)) {
             const text = `Nuevo seguidor: ${data.data.username}`
             queueMessage(text, data.data.username, { isNotification: true })
           }
 
         } else if (data.data && data.data.type === 'like') {
-          if (c.announceLikes && data.data.totalLikeCount) {
+          if (c.announceLikes && data.data.totalLikeCount && canAnnounce('like', c.likeCooldown || 60)) {
             const text = `Ya tienes ${data.data.totalLikeCount} likes`
             queueMessage(text, 'sistema', { isNotification: true })
           }
 
         } else if (data.data && data.data.type === 'share') {
-          if (c.announceShares) {
+          if (c.announceShares && canAnnounce('share', c.shareCooldown || 15)) {
             const text = `${data.data.username} compartió tu stream`
             queueMessage(text, data.data.username, { isNotification: true })
           }
 
         } else if (data.data && data.data.type === 'viewer_count') {
-          if (c.announceViewers) {
+          if (c.announceViewers && canAnnounce('viewer_count', c.viewerCooldown || 120)) {
             const text = `Hay ${data.data.viewerCount} personas viéndote`
             queueMessage(text, 'sistema', { isNotification: true })
           }

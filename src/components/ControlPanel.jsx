@@ -265,11 +265,11 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
               <span className="text-xs font-bold uppercase tracking-widest">Notificaciones en Vivo</span>
             </div>
 
-            <CheckOption label="Anunciar nuevos seguidores" checked={config.announceFollowers} onChange={() => updateConfig('announceFollowers', !config.announceFollowers)} darkMode={darkMode} />
-            <CheckOption label="Anunciar regalos" checked={config.announceGifts} onChange={() => updateConfig('announceGifts', !config.announceGifts)} darkMode={darkMode} />
-            <CheckOption label="Anunciar conteo de viewers" checked={config.announceViewers} onChange={() => updateConfig('announceViewers', !config.announceViewers)} darkMode={darkMode} />
-            <CheckOption label="Anunciar likes" checked={config.announceLikes} onChange={() => updateConfig('announceLikes', !config.announceLikes)} darkMode={darkMode} />
-            <CheckOption label="Anunciar shares" checked={config.announceShares} onChange={() => updateConfig('announceShares', !config.announceShares)} darkMode={darkMode} />
+            <CheckWithInput label="Anunciar nuevos seguidores — cada (seg)" checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} />
+            <CheckWithInput label="Anunciar regalos — cada (seg)" checked={config.announceGifts} onToggle={() => updateConfig('announceGifts', !config.announceGifts)} value={config.giftCooldown} onValueChange={(v) => updateConfig('giftCooldown', v)} placeholder="5" darkMode={darkMode} />
+            <CheckWithInput label="Anunciar conteo de viewers — cada (seg)" checked={config.announceViewers} onToggle={() => updateConfig('announceViewers', !config.announceViewers)} value={config.viewerCooldown} onValueChange={(v) => updateConfig('viewerCooldown', v)} placeholder="120" darkMode={darkMode} />
+            <CheckWithInput label="Anunciar likes — cada (seg)" checked={config.announceLikes} onToggle={() => updateConfig('announceLikes', !config.announceLikes)} value={config.likeCooldown} onValueChange={(v) => updateConfig('likeCooldown', v)} placeholder="60" darkMode={darkMode} />
+            <CheckWithInput label="Anunciar shares — cada (seg)" checked={config.announceShares} onToggle={() => updateConfig('announceShares', !config.announceShares)} value={config.shareCooldown} onValueChange={(v) => updateConfig('shareCooldown', v)} placeholder="15" darkMode={darkMode} />
             <CheckOption label="Anunciar batallas" checked={config.announceBattles} onChange={() => updateConfig('announceBattles', !config.announceBattles)} darkMode={darkMode} />
             <CheckOption label="Anunciar encuestas" checked={config.announcePolls} onChange={() => updateConfig('announcePolls', !config.announcePolls)} darkMode={darkMode} />
             <CheckOption label="Anunciar metas/goals" checked={config.announceGoals} onChange={() => updateConfig('announceGoals', !config.announceGoals)} darkMode={darkMode} />
