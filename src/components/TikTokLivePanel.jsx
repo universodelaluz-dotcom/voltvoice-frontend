@@ -211,14 +211,27 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   // Cooldown por tipo de notificación (timestamp del último anuncio)
   const lastNotifTime = useRef({ like: 0, viewer_count: 0, share: 0, follow: 0, gift: 0 })
 
-  // Auto-scroll: si hay mensaje reproduciéndose, scroll a él; si no, al fondo
+  // Auto-scroll suave: solo scroll al fondo si el usuario está cerca del fondo
+  const lastPlayingIdRef = useRef(null)
   useEffect(() => {
     if (!chatContainerRef.current) return
-    const playing = chatContainerRef.current.querySelector('[data-playing="true"]')
+    const container = chatContainerRef.current
+    const playing = container.querySelector('[data-playing="true"]')
+
     if (playing) {
-      playing.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+      const playingId = playing.getAttribute('data-playing-id')
+      // Solo scroll al mensaje playing si es uno NUEVO (evita rebotes)
+      if (playingId !== lastPlayingIdRef.current) {
+        lastPlayingIdRef.current = playingId
+        playing.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+      }
     } else {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
+      lastPlayingIdRef.current = null
+      // Solo auto-scroll al fondo si el usuario ya está cerca del fondo (< 150px)
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150
+      if (isNearBottom) {
+        container.scrollTop = container.scrollHeight
+      }
     }
   }, [messages])
 
@@ -752,6 +765,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 <div
                   key={idx}
                   data-playing={msg.status === 'playing' ? 'true' : undefined}
+                  data-playing-id={msg.status === 'playing' ? msg.id : undefined}
                   style={{ fontSize: `${chatFontSize}px`, ...(hlColor ? { backgroundColor: `${hlColor}40`, borderLeftColor: hlColor, borderLeftWidth: '4px' } : {}) }}
                   className={`pl-3 py-2 rounded-r transition-all duration-300 relative ${
                     msg.status === 'playing'
