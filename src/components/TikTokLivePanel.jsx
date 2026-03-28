@@ -300,7 +300,12 @@ export default function TikTokLivePanel({ config = {} }) {
         // === MENSAJES DE CHAT ===
         } else if (data.type === 'message') {
           const msg = data.data
-          console.log('[TikTok] Nuevo mensaje:', msg.username, msg.text)
+          console.log('[TikTok] Nuevo mensaje:', msg.username, msg.text, {
+            isDonor: msg.isDonor || false,
+            isModerator: msg.isModerator || false,
+            isSubscriber: msg.isSubscriber || false,
+            topGifterRank: msg.topGifterRank || 0
+          })
 
           const isBanned = bannedRef.current.has(msg.username)
 
