@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban } from 'lucide-react'
+import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
@@ -41,6 +41,8 @@ export default function TikTokLivePanel({ config = {} }) {
   const [editingValue, setEditingValue] = useState('')
   const [bannedUsers, setBannedUsers] = useState(new Set())
   const [volume, setVolume] = useState(0.8)
+  const [isPaused, setIsPaused] = useState(false)
+  const isPausedRef = useRef(false)
   const wsRef = useRef(null)
   const statusIntervalRef = useRef(null)
   const speakQueueRef = useRef([])
@@ -63,6 +65,7 @@ export default function TikTokLivePanel({ config = {} }) {
 
   // Mantener refs actualizados para acceso en callbacks del WebSocket
   useEffect(() => { configRef.current = config }, [config])
+  useEffect(() => { isPausedRef.current = isPaused }, [isPaused])
   useEffect(() => { volumeRef.current = volume }, [volume])
   useEffect(() => { bannedRef.current = bannedUsers }, [bannedUsers])
   useEffect(() => { nickOverridesRef.current = nickOverrides }, [nickOverrides])
@@ -278,6 +281,7 @@ export default function TikTokLivePanel({ config = {} }) {
   const processQueue = async () => {
     if (isProcessingRef.current) return
     if (speakQueueRef.current.length === 0) return
+    if (isPausedRef.current) return
 
     isProcessingRef.current = true
 
@@ -376,6 +380,27 @@ export default function TikTokLivePanel({ config = {} }) {
       setError(`Error: ${err.message}`)
     } finally {
       setIsConnecting(false)
+    }
+  }
+
+  const handlePause = () => {
+    if (!isPaused) {
+      // Pausar: detener audio actual y vaciar cola
+      isPausedRef.current = true
+      setIsPaused(true)
+      speakQueueRef.current = []
+      isProcessingRef.current = false
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause()
+        currentAudioRef.current.src = ''
+        currentAudioRef.current = null
+      }
+    } else {
+      // Reanudar: limpiar cola vieja y arrancar desde cero
+      isPausedRef.current = false
+      setIsPaused(false)
+      speakQueueRef.current = []
+      isProcessingRef.current = false
     }
   }
 
@@ -579,8 +604,23 @@ export default function TikTokLivePanel({ config = {} }) {
             )}
           </div>
 
-          {/* Volumen */}
-          <div className="flex items-center gap-2 justify-end">
+          {/* Pausa y Volumen */}
+          <div className="flex items-center gap-3 justify-between">
+            <button
+              onClick={handlePause}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                isPaused
+                  ? 'bg-yellow-500/20 border border-yellow-400/40 text-yellow-300 hover:bg-yellow-500/30'
+                  : 'bg-gray-700/40 border border-gray-600/30 text-gray-400 hover:bg-gray-700/60'
+              }`}
+              title={isPaused ? 'Reanudar lectura' : 'Pausar lectura'}
+            >
+              {isPaused
+                ? <><Play className="w-3 h-3" /> Reanudar</>
+                : <><Pause className="w-3 h-3" /> Pausar</>
+              }
+            </button>
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setVolume(v => v > 0 ? 0 : 0.8)}
               className="hover:opacity-80 transition-opacity"
@@ -602,6 +642,7 @@ export default function TikTokLivePanel({ config = {} }) {
                 background: `linear-gradient(to right, #22d3ee ${volume * 100}%, ${darkMode ? '#1e293b' : '#d1d5db'} ${volume * 100}%)`
               }}
             />
+          </div>
           </div>
         </div>
       )}
