@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause } from 'lucide-react'
+import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
@@ -404,6 +404,21 @@ export default function TikTokLivePanel({ config = {} }) {
     }
   }
 
+  const handleRefresh = () => {
+    speakQueueRef.current = []
+    isProcessingRef.current = false
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause()
+      currentAudioRef.current.src = ''
+      currentAudioRef.current = null
+    }
+    // Si estaba pausado, reanudar también
+    if (isPausedRef.current) {
+      isPausedRef.current = false
+      setIsPaused(false)
+    }
+  }
+
   const handleDisconnect = async () => {
     try {
       // Detener todo el audio inmediatamente
@@ -619,6 +634,13 @@ export default function TikTokLivePanel({ config = {} }) {
                 ? <><Play className="w-3 h-3" /> Reanudar</>
                 : <><Pause className="w-3 h-3" /> Pausar</>
               }
+            </button>
+            <button
+              onClick={handleRefresh}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-gray-700/40 border border-gray-600/30 text-gray-400 hover:bg-cyan-500/10 hover:border-cyan-500/30 hover:text-cyan-300"
+              title="Saltar cola y continuar desde el próximo mensaje"
+            >
+              <RotateCcw className="w-3 h-3" /> Refrescar
             </button>
           <div className="flex items-center gap-2">
             <button
