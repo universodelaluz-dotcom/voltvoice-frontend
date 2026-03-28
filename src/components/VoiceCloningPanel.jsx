@@ -40,6 +40,12 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
       const token = localStorage.getItem('sv-token')
       if (!token) { setLoadingVoices(false); return }
 
+      // Migrar voces pre-existentes (solo la primera vez, ON CONFLICT ignora duplicados)
+      await fetch(`${API_URL}/api/settings/voices/migrate`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).catch(() => {})
+
       const res = await fetch(`${API_URL}/api/settings/voices`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
