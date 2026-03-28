@@ -165,6 +165,7 @@ export default function TikTokLivePanel({ config = {} }) {
             {
               id: msg.id,
               user: msg.username,
+              nickname: msg.nickname || msg.username,
               text: msg.text,
               status: 'received',
               timestamp: new Date(),
@@ -185,8 +186,8 @@ export default function TikTokLivePanel({ config = {} }) {
             textToSpeak = msg.text.substring(0, c.donorCharLimit)
           }
 
-          // Construir texto final
-          const displayName = nickOverrides[msg.username] || msg.username
+          // Construir texto final (usar nickname para lectura, no el username técnico)
+          const displayName = nickOverrides[msg.username] || msg.nickname || msg.username
           const finalText = c.readOnlyMessage ? textToSpeak : `${displayName}: ${textToSpeak}`
 
           queueMessage(finalText, msg.username, { isDonor: msg.isDonor || donors.has(msg.username), isModerator: msg.isModerator })
@@ -504,14 +505,14 @@ export default function TikTokLivePanel({ config = {} }) {
                         <p
                           onClick={() => {
                             setEditingNick(msg.user)
-                            setEditingValue(nickOverrides[msg.user] || msg.user)
+                            setEditingValue(nickOverrides[msg.user] || msg.nickname || msg.user)
                           }}
                           className={`font-semibold cursor-pointer hover:underline ${
                             msg.status === 'playing' ? 'text-cyan-400' : 'text-cyan-300'
                           }`}
                           title="Click para cambiar nick"
                         >
-                          {nickOverrides[msg.user] || msg.user}
+                          {nickOverrides[msg.user] || msg.nickname || msg.user}
                         </p>
                         <button
                           onClick={() => setBannedUsers(prev => new Set([...prev, msg.user]))}
