@@ -47,6 +47,8 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
   const speed = config.audioSpeed || 1.0
 
   const baseVoiceOptions = [
+    { id: 'es-ES', name: 'Voz Básica Español (ilimitada)' },
+    { id: 'en-US', name: 'Voz Básica Inglés (ilimitada)' },
     { id: 'Diego', name: 'Diego - Premium' },
     { id: 'Lupita', name: 'Lupita - Premium' },
     { id: 'Miguel', name: 'Miguel - Premium' },

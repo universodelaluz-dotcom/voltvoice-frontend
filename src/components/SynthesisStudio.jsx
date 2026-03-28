@@ -65,8 +65,8 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   useEffect(() => {
     const allVoices = [
       // === GOOGLE TTS (Sin tokens) ===
-      { id: "es-ES", name: "Español sin tokens", category: "google", engine: "google" },
-      { id: "en-US", name: "Ingles sin tokens", category: "google", engine: "google" },
+      { id: "es-ES", name: "Voz Básica Español (ilimitada)", category: "google", engine: "google" },
+      { id: "en-US", name: "Voz Básica Inglés (ilimitada)", category: "google", engine: "google" },
 
       // === INWORLD AI (Voces Premium - Naturales) ===
       { id: "Diego", name: "🎙️ Diego - Premium (Inworld)", category: "inworld", engine: "inworld" },
