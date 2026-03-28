@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import TikTokLivePanel from './TikTokLivePanel'
-import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings } from 'lucide-react'
+import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3 } from 'lucide-react'
 
-export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, config, updateConfig, user }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, config, updateConfig, user }) {
   const audioSpeed = config.audioSpeed || 1.0
   // User Config
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
@@ -255,7 +255,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
         <TikTokLivePanel config={config} />
 
         {/* Botones de configuración y preparar voces */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <button
             onClick={onGoControlPanel}
             className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
@@ -274,6 +274,19 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             >
               <Mic2 className="w-5 h-5" />
               <span>Ir al taller de clonación</span>
+            </button>
+          )}
+          {onGoStatistics && (
+            <button
+              onClick={onGoStatistics}
+              className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
+                darkMode
+                  ? 'bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-400/40 hover:border-cyan-300 hover:shadow-lg hover:shadow-cyan-500/30 text-cyan-300'
+                  : 'bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-300 hover:from-cyan-100 hover:to-blue-100 text-cyan-700 shadow-sm'
+              }`}
+            >
+              <BarChart3 className="w-5 h-5" />
+              <span>Estadísticas</span>
             </button>
           )}
         </div>

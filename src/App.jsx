@@ -5,13 +5,14 @@ import VoiceCloningPanel from './components/VoiceCloningPanel'
 import { PricingPage } from './components/PricingPage'
 import { PricingCards } from './components/PricingCards'
 import { ControlPanel } from './components/ControlPanel'
+import { StatisticsDashboard } from './components/StatisticsDashboard'
 import { AuthPage } from './components/AuthPage'
 import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft, LogOut } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-cloning', 'pricing', 'control-panel', 'auth'
+  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-cloning', 'pricing', 'control-panel', 'statistics', 'auth'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
 
   // Auth state
@@ -231,6 +232,19 @@ export function App() {
     )
   }
 
+  // Statistics Dashboard
+  if (currentPage === 'statistics') {
+    return (
+      <StatisticsDashboard
+        onGoHome={() => setCurrentPage('landing')}
+        onGoStudio={() => setCurrentPage('studio')}
+        darkMode={darkMode}
+        user={user}
+        authToken={authToken}
+      />
+    )
+  }
+
   // Studio + ControlPanel: ambos montados, se ocultan con CSS para no perder el WebSocket
   if (currentPage === 'studio' || currentPage === 'control-panel') {
     return (
@@ -240,6 +254,7 @@ export function App() {
             onGoHome={() => setCurrentPage('landing')}
             onGoVoiceCloning={() => setCurrentPage('voice-cloning')}
             onGoControlPanel={() => setCurrentPage('control-panel')}
+            onGoStatistics={() => setCurrentPage('statistics')}
             config={config}
             updateConfig={updateConfig}
             user={user}
