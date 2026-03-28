@@ -866,7 +866,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                     )}
                   </div>
                   <p className={msg.status === 'playing' ? "font-medium" : ""}
-                    style={{ color: msg.status === 'playing' ? '#fff' : chatMsgColor }}
+                    style={{ color: chatMsgColor }}
                   >{msg.text}</p>
                 </div>
                 )
@@ -987,14 +987,14 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               <div className="flex items-center gap-2">
                 <span className={`text-xs font-medium w-20 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Nick</span>
                 <div className="flex gap-1.5">
-                  {['#22d3ee', '#a855f7', '#f59e0b', '#ef4444', '#22c55e', '#3b82f6', '#ec4899', '#f97316', '#ffffff'].map(c => (
+                  {['#000000', '#22d3ee', '#a855f7', '#f59e0b', '#ef4444', '#22c55e', '#3b82f6', '#ec4899', '#f97316', '#ffffff'].map(c => (
                     <button
                       key={c}
                       onClick={() => setChatNickColor(c)}
                       className={`w-5 h-5 rounded-full transition-transform ${
                         chatNickColor === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-110'
                       }`}
-                      style={{ backgroundColor: c, border: c === '#ffffff' ? '1px solid #666' : 'none' }}
+                      style={{ backgroundColor: c, border: (c === '#ffffff' || c === '#000000') ? '1px solid #666' : 'none' }}
                     />
                   ))}
                 </div>
@@ -1004,14 +1004,14 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               <div className="flex items-center gap-2">
                 <span className={`text-xs font-medium w-20 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Mensaje</span>
                 <div className="flex gap-1.5">
-                  {['#d1d5db', '#ffffff', '#22d3ee', '#a855f7', '#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#94a3b8'].map(c => (
+                  {['#000000', '#d1d5db', '#ffffff', '#22d3ee', '#a855f7', '#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#94a3b8'].map(c => (
                     <button
                       key={c}
                       onClick={() => setChatMsgColor(c)}
                       className={`w-5 h-5 rounded-full transition-transform ${
                         chatMsgColor === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-110'
                       }`}
-                      style={{ backgroundColor: c, border: c === '#ffffff' ? '1px solid #666' : 'none' }}
+                      style={{ backgroundColor: c, border: (c === '#ffffff' || c === '#000000') ? '1px solid #666' : 'none' }}
                     />
                   ))}
                 </div>
