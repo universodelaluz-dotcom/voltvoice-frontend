@@ -183,7 +183,7 @@ export function App() {
 
   // Control Panel Page
   if (currentPage === 'control-panel') {
-    return <ControlPanel onClose={() => setCurrentPage('studio')} darkMode={darkMode} config={config} updateConfig={updateConfig} />
+    return <ControlPanel onClose={() => setCurrentPage('studio')} darkMode={darkMode} config={config} updateConfig={updateConfig} user={user} />
   }
 
   // Voice Cloning Page
@@ -240,6 +240,7 @@ export function App() {
           onGoControlPanel={() => setCurrentPage('control-panel')}
           config={config}
           updateConfig={updateConfig}
+          user={user}
         />
       </div>
     )

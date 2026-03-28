@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import TikTokLivePanel from './TikTokLivePanel'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings } from 'lucide-react'
 
-export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, config, updateConfig }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, config, updateConfig, user }) {
   const audioSpeed = config.audioSpeed || 1.0
   // User Config
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
@@ -74,12 +74,14 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       { id: "Miguel", name: "🎙️ Miguel - Premium (Inworld)", category: "inworld", engine: "inworld" },
       { id: "Rafael", name: "🎙️ Rafael - Premium (Inworld)", category: "inworld", engine: "inworld" },
 
-      // === INWORLD AI (Tu Voz Clonada) ===
-      { id: "default-cfjnp8x4nt-owd7yg-1xsw__garret", name: "👤 Garret (Tu Voz Clonada)", category: "inworld-cloned", engine: "inworld" },
-      { id: "default-cfjnp8x4nt-owd7yg-1xsw__connor", name: "👤 Connor (Tu Voz Clonada)", category: "inworld-cloned", engine: "inworld" },
+      // === INWORLD AI (Voces Clonadas personales) ===
+      ...(user?.email === 'alainsh@gmail.com' ? [
+        { id: "default-cfjnp8x4nt-owd7yg-1xsw__garret", name: "👤 Garret (Tu Voz Clonada)", category: "inworld-cloned", engine: "inworld" },
+        { id: "default-cfjnp8x4nt-owd7yg-1xsw__connor", name: "👤 Connor (Tu Voz Clonada)", category: "inworld-cloned", engine: "inworld" },
+      ] : []),
     ]
     setVoices(allVoices)
-  }, [userId])
+  }, [userId, user])
 
   const handleSynthesize = async () => {
     if (!text.trim()) {

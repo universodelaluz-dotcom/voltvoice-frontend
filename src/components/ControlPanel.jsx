@@ -43,16 +43,24 @@ function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeh
   )
 }
 
-export function ControlPanel({ onClose, darkMode, config, updateConfig }) {
+export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) {
   const speed = config.audioSpeed || 1.0
 
-  const voiceOptions = [
+  const baseVoiceOptions = [
     { id: 'Diego', name: 'Diego - Premium' },
     { id: 'Lupita', name: 'Lupita - Premium' },
     { id: 'Miguel', name: 'Miguel - Premium' },
     { id: 'Rafael', name: 'Rafael - Premium' },
-    { id: 'default-cfjnp8x4nt-owd7yg-1xsw__garret', name: 'Garret - Clonada' },
-    { id: 'default-cfjnp8x4nt-owd7yg-1xsw__connor', name: 'Connor - Clonada' },
+  ]
+
+  const personalVoices = [
+    { id: 'default-cfjnp8x4nt-owd7yg-1xsw__garret', name: 'Garret - Clonada', owner: 'alainsh@gmail.com' },
+    { id: 'default-cfjnp8x4nt-owd7yg-1xsw__connor', name: 'Connor - Clonada', owner: 'alainsh@gmail.com' },
+  ]
+
+  const voiceOptions = [
+    ...baseVoiceOptions,
+    ...personalVoices.filter(v => user?.email === v.owner),
   ]
 
   return (
