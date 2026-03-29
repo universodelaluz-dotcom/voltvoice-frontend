@@ -318,46 +318,7 @@ export function App() {
             <p className={`text-lg mb-12 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               Aquí puedes clonar y preparar tus voces personalizadas antes de usarlas en el Studio.
             </p>
-            <VoiceWorkshopPanel onCloneSuccess={() => window.location.reload()} />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // AI Roleplay Workshop Page
-  if (currentPage === 'ai-workshop') {
-    return (
-      <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 text-gray-900"}>
-        {/* Header */}
-        <nav className={`fixed top-0 w-full backdrop-blur-md z-50 transition-colors duration-300 ${darkMode ? 'bg-[#0f0f23]/80 border-b border-cyan-500/20' : 'bg-white/80 border-b border-gray-200 shadow-sm'}`}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-            <button
-              onClick={() => setCurrentPage('landing')}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
-            >
-              <img src="/images/Sin%20t%C3%ADtulo%20(200%20x%2060%20px)%20(250%20x%2060%20px).png" alt="StreamVoicer" className="h-12 w-auto" />
-            </button>
-            <button
-              onClick={() => setCurrentPage('studio')}
-              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Volver al Studio
-            </button>
-          </div>
-        </nav>
-
-        {/* AI Workshop Content */}
-        <div className="pt-32 pb-20 px-4">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-4xl font-black mb-4">
-              Taller de <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Asistentes IA</span>
-            </h2>
-            <p className={`text-lg mb-12 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              Crea y gestiona personajes IA con roleplay personalizado para tu stream.
-            </p>
-            <AIRoleplayWorkshop darkMode={darkMode} config={config} updateConfig={updateConfig} user={user} />
+            <VoiceWorkshopPanel onCloneSuccess={() => window.location.reload()} darkModeOverride={darkMode} config={config} updateConfig={updateConfig} user={user} />
           </div>
         </div>
       </div>
@@ -377,8 +338,8 @@ export function App() {
     )
   }
 
-  // Studio + ControlPanel + BotPanel: todos montados, se ocultan con CSS para no perder el WebSocket
-  if (currentPage === 'studio' || currentPage === 'control-panel' || currentPage === 'bot-panel' || currentPage === 'ai-workshop') {
+  // Studio + ControlPanel: ambos montados, se ocultan con CSS para no perder el WebSocket
+  if (currentPage === 'studio' || currentPage === 'control-panel') {
     return (
       <>
         <div style={{ display: currentPage === 'studio' ? 'block' : 'none' }}>
@@ -386,8 +347,6 @@ export function App() {
             onGoHome={() => setCurrentPage('landing')}
             onGoVoiceCloning={() => setCurrentPage('voice-workshop')}
             onGoControlPanel={() => setCurrentPage('control-panel')}
-            onGoAIWorkshop={() => setCurrentPage('ai-workshop')}
-            onGoBotPanel={() => setCurrentPage('bot-panel')}
             onGoStatistics={() => setCurrentPage('statistics')}
             darkMode={darkMode}
             setDarkMode={setDarkMode}
@@ -398,9 +357,6 @@ export function App() {
         </div>
         <div style={{ display: currentPage === 'control-panel' ? 'block' : 'none' }}>
           <ControlPanel onClose={() => setCurrentPage('studio')} darkMode={darkMode} config={config} updateConfig={updateConfig} user={user} />
-        </div>
-        <div style={{ display: currentPage === 'bot-panel' ? 'block' : 'none' }}>
-          <BotPanel tiktokUsername="test_stream" darkMode={darkMode} />
         </div>
       </>
     )

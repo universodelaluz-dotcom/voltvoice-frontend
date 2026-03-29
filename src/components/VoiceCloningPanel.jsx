@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Sparkles, Edit2 } from 'lucide-react'
+import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Sparkles, Edit2, Bot } from 'lucide-react'
+import AIRoleplayWorkshop from './AIRoleplayWorkshop'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
-export default function VoiceWorkshopPanel({ onCloneSuccess }) {
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
+export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, config, updateConfig, user }) {
+  const [darkMode, setDarkMode] = useState(() => darkModeOverride !== undefined ? darkModeOverride : localStorage.getItem('voltvoice-theme') !== 'light')
 
   useEffect(() => {
     const sync = () => setDarkMode(localStorage.getItem('voltvoice-theme') !== 'light')
@@ -427,6 +428,21 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
         >
           <Sparkles className="inline w-4 h-4 mr-2" />
           Generar Voz Personalizada
+        </button>
+        <button
+          onClick={() => setActiveTab('ai-assistant')}
+          className={`flex-1 px-6 py-3 rounded-md font-semibold transition-all ${
+            activeTab === 'ai-assistant'
+              ? darkMode
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg'
+                : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
+              : darkMode
+                ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                : 'text-gray-700 hover:text-gray-900 hover:bg-white'
+          }`}
+        >
+          <Bot className="inline w-4 h-4 mr-2" />
+          Asistente IA
         </button>
       </div>
 
@@ -970,6 +986,13 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Asistente IA */}
+      {activeTab === 'ai-assistant' && (
+        <div>
+          <AIRoleplayWorkshop darkMode={darkMode} config={config || {}} updateConfig={updateConfig || (() => {})} user={user} />
         </div>
       )}
     </div>

@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import TikTokLivePanel from './TikTokLivePanel'
 import AudioVisualizer from './AudioVisualizer'
-import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Sparkles, Wand2 } from 'lucide-react'
+import BotInvoker from './BotInvoker'
+import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3 } from 'lucide-react'
 
-export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAIWorkshop, onGoBotPanel, darkMode, setDarkMode, config, updateConfig, user }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, darkMode, setDarkMode, config, updateConfig, user }) {
   const audioSpeed = config.audioSpeed || 1.0
+  const [showBotInvoker, setShowBotInvoker] = useState(false)
 
   const toggleTheme = () => {
     const newMode = darkMode ? 'light' : 'dark'
@@ -300,8 +302,8 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
         {/* TikTok Live Section */}
         <TikTokLivePanel config={config} updateConfig={updateConfig} />
 
-        {/* Botones de configuración y preparar voces */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        {/* Botones principales: Configuración, Taller de Voces, Estadísticas */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
           <button
             onClick={onGoControlPanel}
             className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
@@ -319,25 +321,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               className="flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white hover:shadow-lg hover:shadow-purple-500/30"
             >
               <Mic2 className="w-5 h-5" />
-              <span>Clonación</span>
-            </button>
-          )}
-          {onGoAIWorkshop && (
-            <button
-              onClick={onGoAIWorkshop}
-              className="flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white hover:shadow-lg hover:shadow-amber-500/30"
-            >
-              <Sparkles className="w-5 h-5" />
-              <span>Taller IA</span>
-            </button>
-          )}
-          {onGoBotPanel && (
-            <button
-              onClick={onGoBotPanel}
-              className="flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 text-white hover:shadow-lg hover:shadow-rose-500/30"
-            >
-              <Wand2 className="w-5 h-5" />
-              <span>Invocar</span>
+              <span>Taller de Voces</span>
             </button>
           )}
           {onGoStatistics && (
@@ -469,6 +453,14 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
                 </div>
               </div>
             )}
+
+            {/* Bot Invoker - Push to Talk */}
+            <BotInvoker
+              darkMode={darkMode}
+              onClose={() => setShowBotInvoker(false)}
+              tiktokUsername="test_stream"
+              config={config}
+            />
 
             {/* Tokens Dashboard */}
             <div className={`${darkMode ? "bg-[#1a1a2e] border border-cyan-400/20 rounded-xl p-5 backdrop-blur-sm" : "bg-white border border-indigo-200 rounded-xl p-5 shadow-sm"}`}>
