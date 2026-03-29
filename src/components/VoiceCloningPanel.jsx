@@ -397,15 +397,17 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
   return (
     <div className="space-y-6">
       {/* Tabs */}
-      <div className="flex gap-2 border-b" style={{ borderColor: darkMode ? '#333' : '#e5e7eb' }}>
+      <div className={`flex gap-3 p-1 rounded-lg mb-2 ${darkMode ? 'bg-gray-800/60' : 'bg-gray-100'}`}>
         <button
           onClick={() => setActiveTab('clone')}
-          className={`px-4 py-3 font-semibold transition-colors ${
+          className={`flex-1 px-6 py-3 rounded-md font-semibold transition-all ${
             activeTab === 'clone'
-              ? `text-cyan-400 border-b-2 border-cyan-400`
+              ? darkMode
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg'
+                : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
               : darkMode
-                ? 'text-gray-400 hover:text-gray-300'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                : 'text-gray-700 hover:text-gray-900 hover:bg-white'
           }`}
         >
           <Mic2 className="inline w-4 h-4 mr-2" />
@@ -413,12 +415,14 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
         </button>
         <button
           onClick={() => setActiveTab('generate')}
-          className={`px-4 py-3 font-semibold transition-colors ${
+          className={`flex-1 px-6 py-3 rounded-md font-semibold transition-all ${
             activeTab === 'generate'
-              ? `text-cyan-400 border-b-2 border-cyan-400`
+              ? darkMode
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg'
+                : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
               : darkMode
-                ? 'text-gray-400 hover:text-gray-300'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                : 'text-gray-700 hover:text-gray-900 hover:bg-white'
           }`}
         >
           <Sparkles className="inline w-4 h-4 mr-2" />
