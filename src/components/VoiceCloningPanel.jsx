@@ -463,7 +463,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
                     <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{voice.voice_name}</p>
                   )}
                   <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                    {voice.provider} · {new Date(voice.created_at).toLocaleDateString()}
+                    {new Date(voice.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
