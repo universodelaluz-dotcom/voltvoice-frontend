@@ -14,12 +14,25 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
   }, [])
 
   const [voiceName, setVoiceName] = useState('')
+  const [voiceLanguage, setVoiceLanguage] = useState('es-ES')
   const [audioFile, setAudioFile] = useState(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState(null)
   const [error, setError] = useState(null)
   const [userVoices, setUserVoices] = useState([])
   const [loadingVoices, setLoadingVoices] = useState(true)
+
+  const languageOptions = [
+    { code: 'es-ES', label: 'Español (España)' },
+    { code: 'es-MX', label: 'Español (México)' },
+    { code: 'es-AR', label: 'Español (Argentina)' },
+    { code: 'en-US', label: 'English (USA)' },
+    { code: 'en-GB', label: 'English (UK)' },
+    { code: 'pt-BR', label: 'Português (Brasil)' },
+    { code: 'fr-FR', label: 'Français' },
+    { code: 'de-DE', label: 'Deutsch' },
+    { code: 'it-IT', label: 'Italiano' }
+  ]
 
   // Cargar voces del usuario al montar
   useEffect(() => {
@@ -132,6 +145,7 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
             body: JSON.stringify({
               voiceName: voiceName.trim(),
               base64Audio: base64,
+              language: voiceLanguage,
               transcription: undefined,
             })
           })
@@ -237,6 +251,28 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
               className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
               disabled={loading}
             />
+          </div>
+
+          {/* Idioma */}
+          <div>
+            <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
+              Idioma de la voz
+            </label>
+            <select
+              value={voiceLanguage}
+              onChange={(e) => setVoiceLanguage(e.target.value)}
+              className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
+              disabled={loading}
+            >
+              {languageOptions.map(lang => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.label}
+                </option>
+              ))}
+            </select>
+            <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+              Selecciona el idioma del audio que vas a subir
+            </p>
           </div>
 
           {/* File upload */}
