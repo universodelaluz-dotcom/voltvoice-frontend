@@ -517,90 +517,6 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
         )}
       </div>
 
-      {/* Área de Prueba de Voces */}
-      {userVoices.length > 0 && (
-        <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
-          <div className="flex items-center gap-3 mb-4">
-            <Mic2 className="w-6 h-6 text-cyan-400" />
-            <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Probar Voz</h2>
-          </div>
-
-          <div className="space-y-4">
-            {/* Selector de voz */}
-            <div>
-              <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
-                Selecciona una voz
-              </label>
-              <select
-                value={testVoiceId || ''}
-                onChange={(e) => setTestVoiceId(e.target.value)}
-                className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
-              >
-                <option value="">-- Elige una voz --</option>
-                {userVoices.map(voice => (
-                  <option key={voice.id} value={voice.voice_id}>
-                    {voice.voice_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Textarea */}
-            <div>
-              <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
-                Escribe un texto para probar
-              </label>
-              <textarea
-                value={testText}
-                onChange={(e) => setTestText(e.target.value)}
-                placeholder="Ej: Hola, esto es una prueba de mi voz personalizada"
-                className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 min-h-20" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 min-h-20"}
-              />
-              <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                {testText.length} caracteres
-              </p>
-            </div>
-
-            {/* Botón de prueba */}
-            <button
-              onClick={handleTestVoice}
-              disabled={testingVoice || !testVoiceId || !testText.trim()}
-              className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
-            >
-              {testingVoice ? (
-                <>
-                  <Loader className="w-5 h-5 animate-spin" />
-                  Generando audio...
-                </>
-              ) : (
-                <>
-                  <Mic2 className="w-5 h-5" />
-                  Probar voz
-                </>
-              )}
-            </button>
-
-            {/* Reproductor */}
-            {testAudioUrl && (
-              <div className={darkMode ? "bg-gray-800/60 border border-gray-700/50 rounded-lg p-4" : "bg-gray-50 border border-gray-200 rounded-lg p-4"}>
-                <p className={`text-sm mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  🔊 Escucha el resultado:
-                </p>
-                <audio
-                  controls
-                  className="w-full"
-                  style={{ accentColor: '#06b6d4' }}
-                  autoPlay
-                >
-                  <source src={testAudioUrl} type="audio/mpeg" />
-                  Tu navegador no soporta el reproductor
-                </audio>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Clonar Nueva Voz */}
       {activeTab === 'clone' && (
         <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
@@ -965,6 +881,90 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
               <div className="p-3 bg-red-500/20 border border-red-400/50 rounded-lg flex gap-2">
                 <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                 <p className="text-red-100 text-sm">{error}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Probar Voz - Al Final con Color Diferente */}
+      {userVoices.length > 0 && (
+        <div className={darkMode ? "bg-amber-900/20 border-2 border-amber-500/30 rounded-lg p-6" : "bg-amber-50 border-2 border-amber-200 rounded-lg p-6 shadow-sm"}>
+          <div className="flex items-center gap-3 mb-4">
+            <Mic2 className="w-6 h-6 text-amber-500" />
+            <h2 className={darkMode ? "text-xl font-bold text-amber-300" : "text-xl font-bold text-amber-900"}>Probar Voz</h2>
+          </div>
+
+          <div className="space-y-4">
+            {/* Selector de voz */}
+            <div>
+              <label className={darkMode ? "block text-sm font-medium text-amber-300 mb-2" : "block text-sm font-medium text-amber-700 mb-2"}>
+                Selecciona una voz
+              </label>
+              <select
+                value={testVoiceId || ''}
+                onChange={(e) => setTestVoiceId(e.target.value)}
+                className={darkMode ? "w-full bg-[#0f0f23] border border-amber-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-amber-500" : "w-full bg-white border border-amber-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-amber-500"}
+              >
+                <option value="">-- Elige una voz --</option>
+                {userVoices.map(voice => (
+                  <option key={voice.id} value={voice.voice_id}>
+                    {voice.voice_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Textarea */}
+            <div>
+              <label className={darkMode ? "block text-sm font-medium text-amber-300 mb-2" : "block text-sm font-medium text-amber-700 mb-2"}>
+                Escribe un texto para probar
+              </label>
+              <textarea
+                value={testText}
+                onChange={(e) => setTestText(e.target.value)}
+                placeholder="Ej: Hola, esto es una prueba de mi voz personalizada"
+                className={darkMode ? "w-full bg-[#0f0f23] border border-amber-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-amber-500 min-h-20" : "w-full bg-white border border-amber-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-amber-500 min-h-20"}
+              />
+              <p className={`text-xs mt-1 ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>
+                {testText.length} caracteres
+              </p>
+            </div>
+
+            {/* Botón de prueba */}
+            <button
+              onClick={handleTestVoice}
+              disabled={testingVoice || !testVoiceId || !testText.trim()}
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+            >
+              {testingVoice ? (
+                <>
+                  <Loader className="w-5 h-5 animate-spin" />
+                  Generando audio...
+                </>
+              ) : (
+                <>
+                  <Mic2 className="w-5 h-5" />
+                  Probar voz
+                </>
+              )}
+            </button>
+
+            {/* Reproductor */}
+            {testAudioUrl && (
+              <div className={darkMode ? "bg-amber-900/30 border border-amber-700/50 rounded-lg p-4" : "bg-amber-100 border border-amber-300 rounded-lg p-4"}>
+                <p className={`text-sm mb-2 ${darkMode ? 'text-amber-300' : 'text-amber-900'}`}>
+                  🔊 Escucha el resultado:
+                </p>
+                <audio
+                  controls
+                  className="w-full"
+                  style={{ accentColor: '#f59e0b' }}
+                  autoPlay
+                >
+                  <source src={testAudioUrl} type="audio/mpeg" />
+                  Tu navegador no soporta el reproductor
+                </audio>
               </div>
             )}
           </div>
