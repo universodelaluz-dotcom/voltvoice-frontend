@@ -627,12 +627,12 @@ export function App() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, idx) => (
-              <div key={idx} className="bg-white/5 border border-white/10 rounded-xl p-8">
+              <div key={idx} className={darkMode ? "bg-white/5 border border-white/10 rounded-xl p-8" : "bg-white border border-gray-200 shadow-md rounded-xl p-8"}>
                 <div className="flex items-center gap-4 mb-6">
                   <div className="text-4xl">{testimonial.avatar}</div>
                   <div>
-                    <h4 className="font-bold">{testimonial.name}</h4>
-                    <p className="text-sm text-gray-400">{testimonial.role}</p>
+                    <h4 className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{testimonial.name}</h4>
+                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{testimonial.role}</p>
                   </div>
                 </div>
                 <div className="flex gap-1 mb-4">
@@ -640,7 +640,7 @@ export function App() {
                     <span key={i} className="text-yellow-400">⭐</span>
                   ))}
                 </div>
-                <p className="text-gray-300 italic">"{testimonial.text}"</p>
+                <p className={`italic ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>"{testimonial.text}"</p>
               </div>
             ))}
           </div>
@@ -650,11 +650,11 @@ export function App() {
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="bg-gradient-to-br from-cyan-400/20 to-purple-500/20 border border-cyan-400/30 rounded-2xl p-12">
-            <h3 className="text-4xl font-black mb-6">
+          <div className={`rounded-2xl p-12 ${darkMode ? 'bg-gradient-to-br from-cyan-400/20 to-purple-500/20 border border-cyan-400/30' : 'bg-gradient-to-br from-cyan-50 to-purple-50 border border-cyan-200'}`}>
+            <h3 className={`text-4xl font-black mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
               Listo para revolucionar tus streams?
             </h3>
-            <p className="text-xl text-gray-300 mb-8">
+            <p className={`text-xl mb-8 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               Únete a miles de creadores que ya están usando StreamVoicer
             </p>
             <div className="flex gap-4 justify-center">
