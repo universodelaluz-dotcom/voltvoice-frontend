@@ -1,20 +1,82 @@
 import { useState, useEffect } from 'react'
 import { Check } from 'lucide-react'
 
-const MXN_RATE = 20 // Tipo de cambio aproximado USD -> MXN
-
 export function PricingCards({ darkMode, showToggle = true }) {
   const [billingCycle, setBillingCycle] = useState('monthly')
-  const [showMxn, setShowMxn] = useState(false)
+  const [exchangeRates, setExchangeRates] = useState(null)
+  const [userCurrency, setUserCurrency] = useState('USD')
+  const [userCountry, setUserCountry] = useState(null)
 
-  // Detectar si el usuario es de México/LATAM por idioma del navegador
+  // Detectar ubicación por IP y obtener tipos de cambio
   useEffect(() => {
-    const lang = navigator.language || ''
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''
-    if (lang.includes('MX') || lang.includes('mx') || tz.includes('Mexico')) {
-      setShowMxn(true)
+    const detectLocationAndExchangeRates = async () => {
+      try {
+        // Detectar país por IP
+        const ipResponse = await fetch('https://ipapi.co/json/')
+        const ipData = await ipResponse.json()
+        const country = ipData.country_code || 'US'
+        const currency = ipData.currency || 'USD'
+
+        setUserCountry(country)
+        setUserCurrency(currency)
+
+        // Obtener tipos de cambio desde USD
+        const ratesResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD')
+        const ratesData = await ratesResponse.json()
+
+        if (ratesData.rates) {
+          setExchangeRates(ratesData.rates)
+        }
+      } catch (error) {
+        console.error('Error detectando ubicación/tipos de cambio:', error)
+        // Fallback
+        setExchangeRates({
+          MXN: 20,
+          ARS: 920,
+          BRL: 5.2,
+          COP: 4100,
+          CLP: 900,
+          PEN: 3.8,
+          UYU: 42
+        })
+      }
     }
+
+    detectLocationAndExchangeRates()
   }, [])
+
+  // Convertir precio USD a moneda local
+  const convertPrice = (usdPrice) => {
+    if (!exchangeRates || userCurrency === 'USD') {
+      return { amount: usdPrice, currency: 'USD', display: `$${usdPrice.toFixed(2)} USD` }
+    }
+
+    const rate = exchangeRates[userCurrency] || 1
+    const convertedAmount = parseFloat((usdPrice * rate).toFixed(2))
+    const symbols = {
+      MXN: '$',
+      ARS: '$',
+      BRL: 'R$',
+      COP: '$',
+      CLP: '$',
+      PEN: 'S/',
+      UYU: '$',
+      EUR: '€',
+      GBP: '£',
+      JPY: '¥',
+      CNY: '¥',
+      INR: '₹',
+      AUD: '$',
+      CAD: '$'
+    }
+
+    const symbol = symbols[userCurrency] || '$'
+    return {
+      amount: convertedAmount,
+      currency: userCurrency,
+      display: `${symbol}${convertedAmount.toLocaleString()} ${userCurrency}`
+    }
+  }
 
   const monthlyPlans = [
     {
@@ -193,17 +255,22 @@ export function PricingCards({ darkMode, showToggle = true }) {
             <div className="mb-5">
               <div className="flex items-baseline gap-2 mb-1">
                 <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-                  ${billingCycle === 'monthly' ? plan.price.toFixed(2) : plan.price}
+                  {(() => {
+                    const converted = convertPrice(plan.price)
+                    return converted.currency === 'USD'
+                      ? `$${billingCycle === 'monthly' ? plan.price.toFixed(2) : plan.price}`
+                      : converted.display.split(' ')[0]
+                  })()}
                 </span>
                 <span className={`text-xl ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  USD/{billingCycle === 'monthly' ? 'mes' : 'año'}
+                  {userCurrency}/{billingCycle === 'monthly' ? 'mes' : 'año'}
                 </span>
               </div>
 
-              {/* MXN equivalent */}
-              {showMxn && plan.price > 0 && (
+              {/* Local currency equivalent */}
+              {exchangeRates && userCurrency !== 'USD' && plan.price > 0 && (
                 <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  ≈ ${Math.round(plan.price * MXN_RATE).toLocaleString()} MXN aprox./{billingCycle === 'monthly' ? 'mes' : 'año'}
+                  ≈ ${parseFloat((plan.price).toFixed(2))} USD aprox./{billingCycle === 'monthly' ? 'mes' : 'año'}
                 </p>
               )}
 
