@@ -67,38 +67,42 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
   const speed = config.audioSpeed || 1.0
   const [userVoices, setUserVoices] = useState([])
 
-  // Cargar voces del usuario desde la API - con polling automático
-  useEffect(() => {
-    const loadUserVoices = async () => {
-      try {
-        const token = localStorage.getItem('sv-token')
-        if (!token) return
+  // Cargar voces del usuario desde la API
+  const loadUserVoices = async () => {
+    try {
+      const token = localStorage.getItem('sv-token')
+      if (!token) return
 
-        const res = await fetch(`${API_URL}/api/settings/voices`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        const data = await res.json()
+      const res = await fetch(`${API_URL}/api/settings/voices`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
 
-        if (data.success && data.voices) {
-          // Convertir voces del usuario al formato correcto
-          const formattedVoices = data.voices.map(v => ({
-            id: v.voice_id,
-            name: v.voice_name,
-            owner: user?.email
-          }))
-          setUserVoices(formattedVoices)
-        }
-      } catch (err) {
-        console.error('[ControlPanel] Error cargando voces:', err)
+      if (data.success && data.voices) {
+        // Convertir voces del usuario al formato correcto
+        const formattedVoices = data.voices.map(v => ({
+          id: v.voice_id,
+          name: v.voice_name,
+          owner: user?.email
+        }))
+        setUserVoices(formattedVoices)
       }
+    } catch (err) {
+      console.error('[ControlPanel] Error cargando voces:', err)
     }
+  }
 
-    // Cargar inmediatamente
+  // Cargar voces al montar y escuchar evento de voz nueva
+  useEffect(() => {
     loadUserVoices()
 
-    // Polling cada 2 segundos para detectar nuevas voces
-    const interval = setInterval(loadUserVoices, 2000)
-    return () => clearInterval(interval)
+    // Escuchar evento cuando se agrega una voz nueva
+    const handleVoiceAdded = () => {
+      loadUserVoices()
+    }
+
+    window.addEventListener('voice-added', handleVoiceAdded)
+    return () => window.removeEventListener('voice-added', handleVoiceAdded)
   }, [user?.email])
 
   const premiumVoiceOptions = [

@@ -126,6 +126,8 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
         setMessage(`Voz renombrada a "${editingVoiceName}"`)
         setEditingVoiceId(null)
         setEditingVoiceName('')
+        // Notificar a otros componentes que se actualizó una voz
+        window.dispatchEvent(new CustomEvent('voice-added'))
         setTimeout(() => setMessage(null), 3000)
       } else {
         setError('Error renombrando la voz')
@@ -177,6 +179,8 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
         setShowPreviewModal(false)
         setPreviewVoice(null)
         loadUserVoices()
+        // Notificar a otros componentes que se guardó una voz
+        window.dispatchEvent(new CustomEvent('voice-added'))
         setTimeout(() => setMessage(null), 3000)
       } else {
         const data = await res.json()
@@ -366,6 +370,8 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
             setAudioFile(null)
             // Recargar lista de voces
             loadUserVoices()
+            // Notificar a otros componentes que se agregó una voz
+            window.dispatchEvent(new CustomEvent('voice-added'))
             if (onCloneSuccess) {
               onCloneSuccess(data.voice.voice_id, voiceName)
             }
