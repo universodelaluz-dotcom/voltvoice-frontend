@@ -354,40 +354,28 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
             {userVoices.map((voice) => (
               <div
                 key={voice.id}
-                className={`flex flex-col gap-2 px-4 py-3 rounded-lg ${
+                className={`flex items-center justify-between px-4 py-3 rounded-lg ${
                   darkMode ? 'bg-gray-800/60 border border-gray-700/50' : 'bg-gray-50 border border-gray-200'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{voice.voice_name}</p>
-                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      {voice.provider} · {new Date(voice.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-1 rounded ${darkMode ? 'bg-cyan-500/10 text-cyan-400' : 'bg-cyan-50 text-cyan-600'}`}>
-                      {voice.voice_id.substring(0, 20)}...
-                    </span>
-                    <button
-                      onClick={() => handleDeleteVoice(voice.id, voice.voice_name)}
-                      className="p-1.5 rounded hover:bg-red-500/20 transition-colors"
-                      title="Eliminar voz"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-400" />
-                    </button>
-                  </div>
+                <div className="flex-1">
+                  <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{voice.voice_name}</p>
+                  <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                    {voice.provider} · {new Date(voice.created_at).toLocaleDateString()}
+                  </p>
                 </div>
-                <audio
-                  controls
-                  className="w-full h-7"
-                  style={{
-                    accentColor: '#06b6d4'
-                  }}
-                >
-                  <source src={`${API_URL}/api/settings/voices/${voice.id}/play`} type="audio/mpeg" />
-                  Tu navegador no soporta el reproductor
-                </audio>
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs px-2 py-1 rounded whitespace-nowrap ${darkMode ? 'bg-cyan-500/10 text-cyan-400' : 'bg-cyan-50 text-cyan-600'}`}>
+                    {voice.voice_id.substring(0, 15)}...
+                  </span>
+                  <button
+                    onClick={() => handleDeleteVoice(voice.id, voice.voice_name)}
+                    className="p-1.5 rounded hover:bg-red-500/20 transition-colors flex-shrink-0"
+                    title="Eliminar voz"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-400" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
