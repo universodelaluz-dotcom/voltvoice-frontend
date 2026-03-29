@@ -777,11 +777,14 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
               </select>
             </div>
 
-            {/* Script Mode */}
+            {/* Preview Audio Mode */}
             <div>
               <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
-                Script
+                Texto para el Preview de Voz
               </label>
+              <p className={`text-xs mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Este es el texto que Inworld sintetizará para que escuches cómo suena la voz generada
+              </p>
               <div className="flex gap-2 mb-2">
                 <button
                   type="button"
@@ -795,7 +798,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
                   }`}
                   disabled={generatingVoice}
                 >
-                  Auto-generar
+                  Usar descripción
                 </button>
                 <button
                   type="button"
@@ -809,7 +812,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
                   }`}
                   disabled={generatingVoice}
                 >
-                  Escribir manualmente
+                  Personalizado
                 </button>
               </div>
 
@@ -817,14 +820,14 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
                 <textarea
                   value={voiceScript}
                   onChange={(e) => setVoiceScript(e.target.value.substring(0, 200))}
-                  placeholder="Escribe el texto que la voz debe decir (máx 200 caracteres)"
+                  placeholder="Escribe el texto que quieres escuchar en el preview (máx 200 caracteres)"
                   className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 min-h-24" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 min-h-24"}
                   disabled={generatingVoice}
                   maxLength="200"
                 />
               )}
               <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                {scriptMode === 'custom' ? `${voiceScript.length}/200 caracteres` : 'Inworld generará un script automáticamente'}
+                {scriptMode === 'custom' ? `${voiceScript.length}/200 caracteres` : 'Se usará tu descripción de voz como texto para sintetizar'}
               </p>
             </div>
 
