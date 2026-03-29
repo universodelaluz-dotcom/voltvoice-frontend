@@ -255,22 +255,20 @@ export function PricingCards({ darkMode, showToggle = true }) {
             <div className="mb-5">
               <div className="flex items-baseline gap-2 mb-1">
                 <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-                  {(() => {
-                    const converted = convertPrice(plan.price)
-                    return converted.currency === 'USD'
-                      ? `$${billingCycle === 'monthly' ? plan.price.toFixed(2) : plan.price}`
-                      : converted.display.split(' ')[0]
-                  })()}
+                  ${billingCycle === 'monthly' ? plan.price.toFixed(2) : plan.price}
                 </span>
                 <span className={`text-xl ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {userCurrency}/{billingCycle === 'monthly' ? 'mes' : 'año'}
+                  USD/{billingCycle === 'monthly' ? 'mes' : 'año'}
                 </span>
               </div>
 
               {/* Local currency equivalent */}
               {exchangeRates && userCurrency !== 'USD' && plan.price > 0 && (
                 <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  ≈ ${parseFloat((plan.price).toFixed(2))} USD aprox./{billingCycle === 'monthly' ? 'mes' : 'año'}
+                  {(() => {
+                    const converted = convertPrice(plan.price)
+                    return `≈ ${converted.display} aprox./${billingCycle === 'monthly' ? 'mes' : 'año'}`
+                  })()}
                 </p>
               )}
 
