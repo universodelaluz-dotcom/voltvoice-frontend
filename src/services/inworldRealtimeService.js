@@ -37,6 +37,8 @@ export class InworldRealtimeService {
       })
 
       const sessionData = await sessionResponse.json()
+      console.log('[Inworld] Full session response:', sessionData)
+
       this.sessionId = sessionData.session?.name
       this.sessionInfo = sessionData.session
 
@@ -45,6 +47,7 @@ export class InworldRealtimeService {
       // Conectar WebSocket
       const wsUrl = sessionData.session?.websocketUri
       if (!wsUrl) {
+        console.error('[Inworld] Missing websocketUri in response:', sessionData)
         throw new Error('No WebSocket URI in session response')
       }
 
