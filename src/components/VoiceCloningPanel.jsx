@@ -608,7 +608,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
             {loading ? (
               <>
                 <Loader className="w-5 h-5 animate-spin" />
-                Clonando voz con Inworld AI...
+                Clonando voz...
               </>
             ) : (
               <>
