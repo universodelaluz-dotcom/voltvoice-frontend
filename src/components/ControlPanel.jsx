@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { ArrowLeft, Check, HelpCircle } from 'lucide-react'
 
 function Hint({ text, darkMode }) {
@@ -60,13 +61,40 @@ function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeh
   )
 }
 
+const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+
 export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) {
   const speed = config.audioSpeed || 1.0
+  const [userVoices, setUserVoices] = useState([])
 
-  const personalVoices = [
-    { id: 'default-cfjnp8x4nt-owd7yg-1xsw__garret', name: 'Garret - Clonada', owner: 'alainsh@gmail.com' },
-    { id: 'default-cfjnp8x4nt-owd7yg-1xsw__connor', name: 'Connor - Clonada', owner: 'alainsh@gmail.com' },
-  ]
+  // Cargar voces del usuario desde la API
+  useEffect(() => {
+    const loadUserVoices = async () => {
+      try {
+        const token = localStorage.getItem('sv-token')
+        if (!token) return
+
+        const res = await fetch(`${API_URL}/api/settings/voices`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const data = await res.json()
+
+        if (data.success && data.voices) {
+          // Convertir voces del usuario al formato correcto
+          const formattedVoices = data.voices.map(v => ({
+            id: v.voice_id,
+            name: v.voice_name,
+            owner: user?.email
+          }))
+          setUserVoices(formattedVoices)
+        }
+      } catch (err) {
+        console.error('[ControlPanel] Error cargando voces:', err)
+      }
+    }
+
+    loadUserVoices()
+  }, [user?.email])
 
   const premiumVoiceOptions = [
     { id: 'es-ES', name: 'Voz Básica Español (ilimitada)' },
@@ -75,7 +103,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
     { id: 'Lupita', name: 'Voz natural de Sofia - Premium' },
     { id: 'Miguel', name: 'Voz natural de Gustavo - Premium' },
     { id: 'Rafael', name: 'Voz natural de Leonel - Premium' },
-    ...personalVoices.filter(v => user?.email === v.owner),
+    ...userVoices,
   ]
 
   return (
