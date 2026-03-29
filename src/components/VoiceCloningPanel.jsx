@@ -140,7 +140,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
     setError(null)
 
     try {
-      const response = await fetch(`${API_URL}/api/voices/generate`, {
+      const response = await fetch(`${API_URL}/api/settings/voices/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
