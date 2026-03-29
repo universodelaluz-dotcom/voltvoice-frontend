@@ -551,14 +551,14 @@ export function App() {
         <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-16">
             <span className={"text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 inline-block " + (darkMode ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "bg-cyan-50 text-cyan-600 border border-cyan-200")}>
-              ⚡ Recarga cuando quieras
+              ⚡ ¿Se te acabaron los tokens?
             </span>
             <h3 className="text-5xl font-black mt-4 mb-4">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500">
-                Tokens Adicionales
+                Recarga de Tokens
               </span>
             </h3>
-            <p className={"text-lg " + (darkMode ? "text-gray-400" : "text-gray-500")}>Sin suscripción. Paga solo lo que usas.</p>
+            <p className={"text-lg " + (darkMode ? "text-gray-400" : "text-gray-500")}>Si tu plan mensual se queda corto, recarga al instante sin esperar al siguiente mes.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
