@@ -18,7 +18,9 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
   // Voices
   const [voices, setVoices] = useState([])
+  const [userVoices, setUserVoices] = useState([])
   const selectedVoice = config.generalVoiceId || 'es-ES'
+  const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   // Synthesis
   const [text, setText] = useState('Hola, este es StreamVoicer. Tu plataforma para síntesis de voz profesional.')
@@ -57,7 +59,32 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     }
   }, [audioSpeed, audioUrl])
 
-  // Cargar voces disponibles de Inworld AI + Google TTS + Voces locales
+  // Cargar voces del usuario desde la API
+  const loadUserVoices = async () => {
+    try {
+      const token = localStorage.getItem('sv-token')
+      if (!token) return
+
+      const res = await fetch(`${API_URL}/api/settings/voices`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+
+      if (data.success && data.voices) {
+        const formatted = data.voices.map(v => ({
+          id: v.voice_id,
+          name: v.voice_name,
+          category: v.provider === 'inworld-cloned' ? 'inworld-cloned' : 'inworld-generated',
+          engine: 'inworld'
+        }))
+        setUserVoices(formatted)
+      }
+    } catch (err) {
+      console.error('[Studio] Error loading voices:', err)
+    }
+  }
+
+  // Cargar voces disponibles de Inworld AI + Google TTS + Voces del usuario
   useEffect(() => {
     const allVoices = [
       // === GOOGLE TTS (Sin tokens) ===
@@ -70,14 +97,23 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       { id: "Miguel", name: "🎙️ Voz natural de Gustavo - Premium", category: "premium", engine: "inworld" },
       { id: "Rafael", name: "🎙️ Voz natural de Leonel - Premium", category: "premium", engine: "inworld" },
 
-      // === Voces Clonadas personales ===
-      ...(user?.email === 'alainsh@gmail.com' ? [
-        { id: "default-cfjnp8x4nt-owd7yg-1xsw__garret", name: "👤 Garret (Tu Voz Clonada)", category: "inworld-cloned", engine: "inworld" },
-        { id: "default-cfjnp8x4nt-owd7yg-1xsw__connor", name: "👤 Connor (Tu Voz Clonada)", category: "inworld-cloned", engine: "inworld" },
-      ] : []),
+      // === Voces Clonadas/Generadas del usuario ===
+      ...userVoices,
     ]
     setVoices(allVoices)
-  }, [userId, user])
+  }, [userVoices])
+
+  // Cargar voces al montar y escuchar evento de voz nueva
+  useEffect(() => {
+    loadUserVoices()
+
+    const handleVoiceAdded = () => {
+      loadUserVoices()
+    }
+
+    window.addEventListener('voice-added', handleVoiceAdded)
+    return () => window.removeEventListener('voice-added', handleVoiceAdded)
+  }, [user?.email])
 
   const handleSynthesize = async () => {
     if (!text.trim()) {
