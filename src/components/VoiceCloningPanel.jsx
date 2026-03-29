@@ -467,9 +467,6 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-1 rounded whitespace-nowrap ${darkMode ? 'bg-cyan-500/10 text-cyan-400' : 'bg-cyan-50 text-cyan-600'}`}>
-                    {voice.voice_id.substring(0, 15)}...
-                  </span>
                   {editingVoiceId === voice.id ? (
                     <>
                       <button
