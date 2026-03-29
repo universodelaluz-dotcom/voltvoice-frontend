@@ -203,7 +203,7 @@ export function PricingCards({ darkMode, showToggle = true }) {
               {/* MXN equivalent */}
               {showMxn && plan.price > 0 && (
                 <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  ≈ ${Math.round(plan.price * MXN_RATE).toLocaleString()} MXN/{billingCycle === 'monthly' ? 'mes' : 'año'}
+                  ≈ ${Math.round(plan.price * MXN_RATE).toLocaleString()} MXN aprox./{billingCycle === 'monthly' ? 'mes' : 'año'}
                 </p>
               )}
 
