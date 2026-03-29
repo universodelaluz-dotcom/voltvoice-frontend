@@ -21,6 +21,34 @@ const hasExcessiveEmojis = (text, maxAllowed = 3) => {
 
 const hasLinks = (text) => /https?:\/\/|www\.|\.com|\.net|\.org|bit\.ly/i.test(text)
 
+// Normalizar Unicode para evitar homóglifos y caracteres de evasión
+const normalizeUnicode = (text) => {
+  // Contar caracteres sospechosos antes de normalizar
+  const suspiciousChars = text.match(/[\u0370-\u03FF\u0400-\u04FF\u3040-\u309F\u4E00-\u9FFF\u2000-\u206F\u2070-\u209F]/g) || []
+  const suspiciousRatio = suspiciousChars.length / text.length
+
+  // Si más del 30% son caracteres no-latinos sospechosos, marcar como riesgoso
+  if (suspiciousRatio > 0.3) {
+    return { text, suspicious: true, reason: 'Muchos caracteres especiales detectados' }
+  }
+
+  // Normalizar Unicode NFKD (descomponer caracteres)
+  const normalized = text.normalize('NFKD')
+    // Remover diacríticos y convertir a ASCII similar
+    .replace(/[\u0300-\u036f]/g, '')
+    // Reemplazar caracteres cirilicos/griegos/CJK comunes con advertencia
+    .replace(/[а-яЁё]/g, 'a') // Cirílico
+    .replace(/[α-ω]/g, 'a')   // Griego
+    .replace(/[ぁ-ん]/g, 'a')  // Hiragana
+    .replace(/[ァ-ン]/g, 'a')  // Katakana
+    .replace(/[一-龯]/g, 'a')  // Kanji
+
+  // Detectar si hubo cambios importantes
+  const changed = normalized.toLowerCase() !== text.toLowerCase()
+
+  return { text: normalized, suspicious: changed && suspiciousRatio > 0, reason: changed ? 'Caracteres Unicode normalizados' : null }
+}
+
 const getPlainNick = (nickname) => {
   // Eliminar emojis del nickname
   let cleanNick = nickname.replace(emojiFullRegex, '')
@@ -396,6 +424,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             textToProcess = removeEmojis(textToProcess)
             if (!textToProcess.trim()) return
           }
+
+          // Filtro: Normalizar Unicode y detectar intentos de evasión
+          const unicodeCheck = normalizeUnicode(textToProcess)
+          if (unicodeCheck.suspicious) {
+            console.log(`[TikTok] ⚠️ Mensaje sospechoso detectado: ${unicodeCheck.reason}`)
+            console.log(`[TikTok] Usuario: ${msg.username}, Texto original: ${textToProcess.substring(0, 50)}...`)
+            // Silenciosamente usar el texto normalizado, pero alertar en logs
+            textToProcess = unicodeCheck.text
+          } else if (unicodeCheck.text !== textToProcess) {
+            // Si hay normalización pero no es sospechoso, usar el texto normalizado
+            textToProcess = unicodeCheck.text
+          }
+          if (!textToProcess.trim()) return
 
           // Filtro: largo mínimo
           if (c.minMessageLengthEnabled && textToProcess.trim().length < c.minMessageLength) return
