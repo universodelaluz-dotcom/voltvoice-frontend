@@ -278,34 +278,46 @@ export function App() {
 
   const benefits = [
     {
-      icon: '⚡',
-      title: 'Ultra Rápido',
-      description: 'Síntesis de voz en tiempo real sin latencia. Perfecta para streams en vivo.'
+      icon: '🎭',
+      title: 'Clonación y Sistema de Personajes',
+      subtitle: 'Crea identidades únicas dentro de tu stream.',
+      description: 'Clona voces y asigna personajes a cada tipo de usuario (chat, donadores, moderadores, etc).'
     },
     {
-      icon: '🎤',
-      title: 'Voces Naturales',
-      description: 'IA de última generación que crea voces expresivas y realistas en español.'
+      icon: '⚙️',
+      title: 'Más de 30 Herramientas de Control',
+      subtitle: 'Tú decides cómo se comporta tu chat.',
+      description: 'Filtros inteligentes, control de cola, bloqueo de spam, gestión de mensajes, límites, limpieza automática y más.'
     },
     {
-      icon: '🎯',
-      title: 'Fácil de Usar',
-      description: 'Configura en 2 minutos. No necesitas conocimientos técnicos.'
+      icon: '🔊',
+      title: 'Interacción en Tiempo Real',
+      subtitle: 'Tu stream reacciona automáticamente.',
+      description: 'Lectura de chat, notificaciones, eventos y acciones sin retrasos.'
+    },
+    {
+      icon: '🎨',
+      title: 'Personalización Total',
+      subtitle: 'Diseña la experiencia completa.',
+      description: 'Colores, nicks, estilos, tipos de usuario, visual del chat y comportamiento.'
     },
     {
       icon: '💰',
-      title: 'Económico',
-      description: 'Planes accesibles. Solo pagas por lo que usas con nuestro sistema de tokens.'
+      title: 'Optimizado para Engagement y Monetización',
+      subtitle: 'Convierte interacción en resultados.',
+      description: 'Diferencia donadores, destaca usuarios clave y aumenta participación en tu stream.'
     },
     {
-      icon: '📱',
-      title: 'Optimizado para TikTok',
-      description: 'Diseñado específicamente para TikTok LIVE con máxima compatibilidad.'
+      icon: '🎮',
+      title: 'Preparado para Streaming en Vivo',
+      subtitle: 'Funciona donde lo necesitas.',
+      description: 'Optimizado para TikTok LIVE y flujos en tiempo real.'
     },
     {
       icon: '🔒',
-      title: 'Seguro',
-      description: 'Tus datos están protegidos. Cumplimos con estándares internacionales de seguridad.'
+      title: 'Seguro y Estable',
+      subtitle: 'Sistema confiable para streams largos.',
+      description: 'Protección de datos y rendimiento constante.'
     }
   ]
 
@@ -525,7 +537,10 @@ export function App() {
                 className={"group rounded-xl p-8 transition-all " + (darkMode ? "bg-gradient-to-br from-white/5 to-white/0 border border-white/10 hover:border-cyan-400/50 hover:bg-white/10" : "bg-white border border-gray-200 shadow-md hover:shadow-lg hover:border-cyan-400")}
               >
                 <div className="text-4xl mb-4">{benefit.icon}</div>
-                <h4 className="text-xl font-bold mb-3">{benefit.title}</h4>
+                <h4 className="text-xl font-bold mb-2">{benefit.title}</h4>
+                {benefit.subtitle && (
+                  <p className="text-sm font-medium mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">{benefit.subtitle}</p>
+                )}
                 <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{benefit.description}</p>
               </div>
             ))}
