@@ -1,0 +1,8 @@
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/universodelaluz-dotcom/voltvoice-frontend.git
+	branch = main
+[submodule "backend"]
+	path = backend
+	url = https://github.com/universodelaluz-dotcom/voltvoice-backend.git
+	branch = main
