@@ -428,11 +428,11 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
         </button>
       </div>
 
-      {/* Mis Voces Clonadas */}
+      {/* Mis Voces Creadas */}
       <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
         <div className="flex items-center gap-3 mb-4">
           <Mic2 className="w-6 h-6 text-purple-400" />
-          <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Mis Voces Clonadas</h2>
+          <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Mis Voces Creadas</h2>
           <span className={`ml-auto text-xs font-semibold px-2 py-1 rounded-full ${darkMode ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-50 text-purple-600'}`}>
             {userVoices.length}/10
           </span>
