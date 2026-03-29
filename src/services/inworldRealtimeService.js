@@ -1,57 +1,120 @@
 /**
- * Inworld Realtime API Service
- * Maneja conexión WebSocket y comunicación con Inworld speech-to-speech API
+ * Inworld Realtime WebRTC API Service
+ * Handles WebRTC connection with Inworld for speech-to-speech interactions
  *
- * Nota: Requiere:
- * - VITE_INWORLD_API_KEY en .env
- * - VITE_INWORLD_WORKSPACE_ID en .env
+ * Requires:
+ * - VITE_INWORLD_API_KEY in .env
+ * - VITE_INWORLD_WORKSPACE_ID in .env
  */
 
 export class InworldRealtimeService {
   constructor() {
-    this.ws = null
+    this.peerConnection = null
     this.sessionId = null
+    this.dataChannel = null
     this.isConnected = false
-    this.sessionInfo = null
     this.audioContext = null
+    this.mediaStream = null
     this.audioQueue = []
-    this.isProcessingAudio = false
+    this.isPlayingAudio = false
+    this.eventCallbacks = {}
   }
 
   /**
-   * Iniciar sesión con Inworld
+   * Start WebRTC session with Inworld
    */
   async startSession(characterId, systemPrompt, workspaceId, apiKey) {
     try {
-      // Crear sesión
-      const sessionResponse = await fetch('https://api.inworld.ai/v1/sessions:create', {
+      // Create RTCPeerConnection
+      this.peerConnection = new RTCPeerConnection({
+        iceServers: [
+          { urls: ['stun:stun.l.google.com:19302'] },
+          { urls: ['stun:stun1.l.google.com:19302'] }
+        ]
+      })
+
+      // Create audio context for audio processing
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)()
+
+      // Generate SDP offer
+      const offer = await this.peerConnection.createOffer()
+      await this.peerConnection.setLocalDescription(offer)
+
+      // Send offer to Inworld
+      console.log('[Inworld] Sending SDP offer to /v1/realtime/calls')
+
+      // Create Basic auth header (username:password format, username is empty)
+      const authString = `:${apiKey}`
+      const encodedAuth = btoa(authString)
+
+      const response = await fetch('https://api.inworld.ai/v1/realtime/calls', {
         method: 'POST',
         headers: {
-          'Authorization': `Basic ${apiKey}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          workspace: `workspaces/${workspaceId}`,
-          user: { name: `user_${Date.now()}` }
+          offer: offer.sdp
         })
       })
 
-      const sessionData = await sessionResponse.json()
-      console.log('[Inworld] Full session response:', sessionData)
-
-      this.sessionId = sessionData.session?.name
-      this.sessionInfo = sessionData.session
-
-      console.log('[Inworld] Session created:', this.sessionId)
-
-      // Conectar WebSocket
-      const wsUrl = sessionData.session?.websocketUri
-      if (!wsUrl) {
-        console.error('[Inworld] Missing websocketUri in response:', sessionData)
-        throw new Error('No WebSocket URI in session response')
+      if (!response.ok) {
+        const errorData = await response.text()
+        console.error('[Inworld] API error:', response.status, errorData)
+        throw new Error(`Inworld API error: ${response.status}`)
       }
 
-      this.connectWebSocket(wsUrl)
+      const answerData = await response.json()
+      console.log('[Inworld] Received answer from API', answerData)
+
+      // Set remote SDP answer
+      if (answerData.answer) {
+        const answer = {
+          type: 'answer',
+          sdp: answerData.answer
+        }
+        await this.peerConnection.setRemoteDescription(answer)
+      }
+
+      // Add ICE servers from response if provided
+      if (answerData.iceServers && Array.isArray(answerData.iceServers)) {
+        answerData.iceServers.forEach(server => {
+          this.peerConnection.addIceServer(server)
+        })
+      }
+
+      // Set up connection event handlers
+      this.peerConnection.onconnectionstatechange = () => {
+        console.log('[Inworld] Connection state:', this.peerConnection.connectionState)
+        if (this.peerConnection.connectionState === 'connected') {
+          this.isConnected = true
+          this._emit('connected')
+        } else if (this.peerConnection.connectionState === 'failed' ||
+                   this.peerConnection.connectionState === 'disconnected') {
+          this.isConnected = false
+          this._emit('disconnected')
+        }
+      }
+
+      this.peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          console.log('[Inworld] New ICE candidate:', event.candidate)
+        }
+      }
+
+      // Wait for data channel to open
+      this.peerConnection.ondatachannel = (event) => {
+        console.log('[Inworld] Data channel received:', event.channel.label)
+        if (event.channel.label === 'oai-events') {
+          this.dataChannel = event.channel
+          this._setupDataChannel()
+        }
+      }
+
+      // Store session info
+      this.sessionId = answerData.sessionId || `session_${Date.now()}`
+      console.log('[Inworld] Session started:', this.sessionId)
+
       return this.sessionId
     } catch (err) {
       console.error('[Inworld] Error starting session:', err)
@@ -60,141 +123,260 @@ export class InworldRealtimeService {
   }
 
   /**
-   * Conectar WebSocket
+   * Setup data channel event handlers
    */
-  connectWebSocket(wsUrl) {
-    return new Promise((resolve, reject) => {
+  _setupDataChannel() {
+    if (!this.dataChannel) return
+
+    this.dataChannel.onopen = () => {
+      console.log('[Inworld] Data channel opened')
+      this.isConnected = true
+      this._emit('channel-open')
+    }
+
+    this.dataChannel.onmessage = (event) => {
       try {
-        this.ws = new WebSocket(wsUrl)
-
-        this.ws.onopen = () => {
-          console.log('[Inworld] WebSocket connected')
-          this.isConnected = true
-          resolve(true)
-        }
-
-        this.ws.onmessage = (event) => {
-          this.handleInworldMessage(event.data)
-        }
-
-        this.ws.onerror = (err) => {
-          console.error('[Inworld] WebSocket error:', err)
-          reject(err)
-        }
-
-        this.ws.onclose = () => {
-          console.log('[Inworld] WebSocket closed')
-          this.isConnected = false
-        }
+        const message = JSON.parse(event.data)
+        console.log('[Inworld] Received event:', message.type || 'unknown')
+        this._handleInworldEvent(message)
       } catch (err) {
-        reject(err)
+        console.error('[Inworld] Error parsing message:', err)
       }
-    })
+    }
+
+    this.dataChannel.onerror = (error) => {
+      console.error('[Inworld] Data channel error:', error)
+      this._emit('error', error)
+    }
+
+    this.dataChannel.onclose = () => {
+      console.log('[Inworld] Data channel closed')
+      this.isConnected = false
+      this._emit('channel-closed')
+    }
   }
 
   /**
-   * Manejar mensajes de Inworld
+   * Handle incoming Inworld events
    */
-  handleInworldMessage(data) {
+  _handleInworldEvent(event) {
+    switch (event.type) {
+      case 'response.output_audio.delta':
+        // Audio chunk received
+        if (event.delta) {
+          this.audioQueue.push(event.delta)
+          this._processAudioQueue()
+        }
+        break
+
+      case 'response.output_audio.done':
+        // Audio response complete
+        console.log('[Inworld] Audio response complete')
+        this._emit('audio-complete')
+        break
+
+      case 'conversation.item.created':
+        // New conversation item
+        console.log('[Inworld] Conversation item created')
+        break
+
+      case 'conversation.item.done':
+        // Conversation item complete
+        console.log('[Inworld] Conversation item done')
+        this._emit('response-complete', event)
+        break
+
+      case 'response.text.done':
+        // Text response complete
+        if (event.text) {
+          console.log('[Inworld] Text response:', event.text)
+          this._emit('text-response', { text: event.text })
+        }
+        break
+
+      case 'session.updated':
+        // Session update
+        console.log('[Inworld] Session updated')
+        this._emit('session-updated', event)
+        break
+
+      case 'error':
+        // Error event
+        console.error('[Inworld] Error event:', event.error)
+        this._emit('error', event.error)
+        break
+
+      default:
+        console.log('[Inworld] Unknown event type:', event.type)
+    }
+  }
+
+  /**
+   * Process and play audio queue
+   */
+  _processAudioQueue() {
+    if (this.isPlayingAudio || this.audioQueue.length === 0) return
+
+    this.isPlayingAudio = true
+    const audioData = this.audioQueue.shift()
+
     try {
-      const message = JSON.parse(data)
-
-      // Manejar diferentes tipos de mensajes
-      if (message.audioChunk) {
-        // Audio response
-        this.audioQueue.push(message.audioChunk)
-        this.processAudioQueue()
-      } else if (message.text) {
-        // Text response
-        console.log('[Inworld] Response:', message.text)
-        // Emitir evento para UI
-        window.dispatchEvent(new CustomEvent('inworld-response', {
-          detail: { text: message.text, type: 'text' }
-        }))
-      } else if (message.character) {
-        // Character action
-        console.log('[Inworld] Character action:', message.character)
+      // Decode base64 audio
+      const binaryString = atob(audioData)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
       }
+
+      // Create audio element and play
+      const audioBlob = new Blob([bytes], { type: 'audio/wav' })
+      const audioUrl = URL.createObjectURL(audioBlob)
+      const audioElement = new Audio(audioUrl)
+
+      audioElement.onended = () => {
+        URL.revokeObjectURL(audioUrl)
+        this.isPlayingAudio = false
+        if (this.audioQueue.length > 0) {
+          this._processAudioQueue()
+        }
+      }
+
+      audioElement.onerror = (err) => {
+        console.error('[Inworld] Audio playback error:', err)
+        this.isPlayingAudio = false
+        if (this.audioQueue.length > 0) {
+          this._processAudioQueue()
+        }
+      }
+
+      audioElement.play().catch(err => {
+        console.error('[Inworld] Error playing audio:', err)
+        this.isPlayingAudio = false
+        if (this.audioQueue.length > 0) {
+          this._processAudioQueue()
+        }
+      })
     } catch (err) {
-      console.error('[Inworld] Error parsing message:', err)
-    }
-  }
-
-  /**
-   * Procesar cola de audio y reproducirlo
-   */
-  processAudioQueue() {
-    if (this.isProcessingAudio || this.audioQueue.length === 0) return
-
-    this.isProcessingAudio = true
-
-    const audioChunk = this.audioQueue.shift()
-    const audioElement = new Audio(`data:audio/wav;base64,${audioChunk}`)
-
-    audioElement.onended = () => {
-      this.isProcessingAudio = false
+      console.error('[Inworld] Error processing audio:', err)
+      this.isPlayingAudio = false
       if (this.audioQueue.length > 0) {
-        this.processAudioQueue()
-      } else {
-        // Emitir evento cuando termina
-        window.dispatchEvent(new CustomEvent('inworld-audio-complete'))
+        this._processAudioQueue()
       }
     }
-
-    audioElement.play()
   }
 
   /**
-   * Enviar mensaje de texto a Inworld
+   * Send text message to Inworld
    */
   sendMessage(text) {
-    if (!this.isConnected || !this.ws) {
-      throw new Error('WebSocket not connected')
+    if (!this.isConnected || !this.dataChannel) {
+      throw new Error('WebRTC connection not established')
     }
 
-    const message = {
-      text: {
-        text: text,
-        finalResponse: true
+    const event = {
+      type: 'conversation.item.create',
+      item: {
+        type: 'message',
+        role: 'user',
+        content: {
+          content_type: 'text',
+          text: text
+        }
       }
     }
 
-    this.ws.send(JSON.stringify(message))
+    this.dataChannel.send(JSON.stringify(event))
+
+    // Request response
+    this.dataChannel.send(JSON.stringify({
+      type: 'response.create'
+    }))
   }
 
   /**
-   * Enviar audio (para entrada de micrófono)
+   * Send audio data to Inworld
    */
   sendAudio(audioBase64) {
-    if (!this.isConnected || !this.ws) {
-      throw new Error('WebSocket not connected')
+    if (!this.isConnected || !this.dataChannel) {
+      throw new Error('WebRTC connection not established')
     }
 
-    const message = {
-      audioChunk: {
-        chunk: audioBase64
-      }
+    const event = {
+      type: 'input_audio_buffer.append',
+      audio: audioBase64
     }
 
-    this.ws.send(JSON.stringify(message))
+    this.dataChannel.send(JSON.stringify(event))
   }
 
   /**
-   * Cerrar sesión
+   * Commit audio input buffer
+   */
+  commitAudio() {
+    if (!this.isConnected || !this.dataChannel) {
+      throw new Error('WebRTC connection not established')
+    }
+
+    this.dataChannel.send(JSON.stringify({
+      type: 'input_audio_buffer.commit'
+    }))
+
+    // Request response
+    this.dataChannel.send(JSON.stringify({
+      type: 'response.create'
+    }))
+  }
+
+  /**
+   * Close WebRTC session
    */
   closeSession() {
-    if (this.ws) {
-      this.ws.close()
-      this.isConnected = false
-      this.sessionId = null
+    if (this.dataChannel) {
+      this.dataChannel.close()
     }
+
+    if (this.peerConnection) {
+      this.peerConnection.close()
+      this.peerConnection = null
+    }
+
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop())
+      this.mediaStream = null
+    }
+
+    this.isConnected = false
+    this.sessionId = null
+    this.dataChannel = null
+    this.audioQueue = []
   }
 
   /**
-   * Verificar si está conectado
+   * Check if session is active
    */
   isSessionActive() {
     return this.isConnected && this.sessionId !== null
+  }
+
+  /**
+   * Register event callback
+   */
+  on(event, callback) {
+    if (!this.eventCallbacks[event]) {
+      this.eventCallbacks[event] = []
+    }
+    this.eventCallbacks[event].push(callback)
+  }
+
+  /**
+   * Emit event to listeners
+   */
+  _emit(event, data) {
+    if (this.eventCallbacks[event]) {
+      this.eventCallbacks[event].forEach(callback => {
+        callback(data)
+      })
+    }
   }
 }
 

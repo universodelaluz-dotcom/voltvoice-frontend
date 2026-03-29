@@ -75,7 +75,7 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
     }
   }
 
-  const invokeBot = async (audioData) => {
+  const invokeBot = async (inputData) => {
     if (!selectedCharacterId) {
       alert('Selecciona un personaje')
       return
@@ -87,39 +87,89 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
     }
 
     setIsLoading(true)
+    setResponse(null)
+
     try {
       const character = characters.find(c => c.id === selectedCharacterId)
 
-      const sessionId = await inworldRealtimeService.startSession(
+      // Start WebRTC session
+      await inworldRealtimeService.startSession(
         selectedCharacterId,
         character?.system_prompt || '',
         INWORLD_WORKSPACE_ID,
         INWORLD_API_KEY
       )
 
-      // Enviar audio al bot
-      const audioData = await inworldRealtimeService.sendAudioMessage(
-        sessionId,
-        audioData
-      )
+      // Wait for data channel to be ready
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Session timeout')), 5000)
 
-      if (audioData) {
-        setResponseAudio(audioData.audioUrl)
-        setResponse(audioData.text || 'Bot respondiendo...')
-        setIsPlayingResponse(false)
+        inworldRealtimeService.on('channel-open', () => {
+          clearTimeout(timeout)
+          resolve()
+        })
+      })
+
+      // Handle input based on type
+      if (inputData instanceof Blob) {
+        // Audio input - convert to base64 PCM
+        const audioBase64 = await blobToBase64(inputData)
+        inworldRealtimeService.sendAudio(audioBase64)
+        inworldRealtimeService.commitAudio()
+      } else if (typeof inputData === 'string') {
+        // Text input
+        inworldRealtimeService.sendMessage(inputData)
       }
+
+      // Listen for responses
+      let responseText = ''
+
+      inworldRealtimeService.on('text-response', (data) => {
+        if (data.text) {
+          responseText += data.text + ' '
+          setResponse(responseText.trim())
+        }
+      })
+
+      inworldRealtimeService.on('audio-complete', () => {
+        console.log('Audio playback complete')
+      })
+
+      inworldRealtimeService.on('response-complete', () => {
+        console.log('Response complete')
+        setIsLoading(false)
+      })
+
+      inworldRealtimeService.on('error', (error) => {
+        console.error('Session error:', error)
+        setResponse('Error: ' + error?.message || 'Unknown error')
+        setIsLoading(false)
+      })
+
     } catch (err) {
       console.error('Error invoking bot:', err)
       setResponse('Error: ' + err.message)
-    } finally {
       setIsLoading(false)
     }
   }
 
+  const blobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const base64 = reader.result.split(',')[1]
+        resolve(base64)
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+  }
+
   const handleTextSubmit = async () => {
     if (!inputText.trim()) return
-    await invokeBot(inputText)
+    const textToSend = inputText
     setInputText('')
+    await invokeBot(textToSend)
   }
 
   const playResponse = () => {
