@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2 } from 'lucide-react'
+import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Sparkles } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
-export default function VoiceCloningPanel({ onCloneSuccess }) {
+export default function VoiceWorkshopPanel({ onCloneSuccess }) {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
   useEffect(() => {
@@ -13,6 +13,7 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
     return () => clearInterval(interval)
   }, [])
 
+  // Clone section
   const [voiceName, setVoiceName] = useState('')
   const [voiceLanguage, setVoiceLanguage] = useState('es-ES')
   const [audioFile, setAudioFile] = useState(null)
@@ -21,6 +22,14 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
   const [error, setError] = useState(null)
   const [userVoices, setUserVoices] = useState([])
   const [loadingVoices, setLoadingVoices] = useState(true)
+
+  // Generate section
+  const [activeTab, setActiveTab] = useState('clone') // 'clone' or 'generate'
+  const [voiceDescription, setVoiceDescription] = useState('')
+  const [voiceType, setVoiceType] = useState('Narrator')
+  const [scriptMode, setScriptMode] = useState('auto')
+  const [voiceScript, setVoiceScript] = useState('')
+  const [generatingVoice, setGeneratingVoice] = useState(false)
 
   const languageOptions = [
     { code: 'es-ES', label: 'Español (España)' },
@@ -107,6 +116,63 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
     }
   }
 
+  const handleGenerateVoice = async (e) => {
+    e.preventDefault()
+
+    if (!voiceDescription.trim()) {
+      setError('Describe cómo deseas que suene la voz')
+      return
+    }
+
+    if (scriptMode === 'custom' && !voiceScript.trim()) {
+      setError('Escribe el script para la voz')
+      return
+    }
+
+    const token = localStorage.getItem('sv-token')
+    if (!token) {
+      setError('Debes iniciar sesión')
+      return
+    }
+
+    setGeneratingVoice(true)
+    setMessage(null)
+    setError(null)
+
+    try {
+      const response = await fetch(`${API_URL}/api/voices/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          description: voiceDescription.trim(),
+          voiceType: voiceType,
+          language: voiceLanguage,
+          scriptMode: scriptMode,
+          script: scriptMode === 'custom' ? voiceScript.trim() : undefined
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        setMessage(`Voz personalizada generada exitosamente`)
+        setVoiceDescription('')
+        setVoiceScript('')
+        setScriptMode('auto')
+        loadUserVoices()
+      } else {
+        setError(data.error || data.details || 'Error al generar la voz')
+      }
+    } catch (err) {
+      setError(`Error: ${err.message}`)
+    } finally {
+      setGeneratingVoice(false)
+    }
+  }
+
   const handleCloneVoice = async (e) => {
     e.preventDefault()
 
@@ -179,6 +245,36 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
 
   return (
     <div className="space-y-6">
+      {/* Tabs */}
+      <div className="flex gap-2 border-b" style={{ borderColor: darkMode ? '#333' : '#e5e7eb' }}>
+        <button
+          onClick={() => setActiveTab('clone')}
+          className={`px-4 py-3 font-semibold transition-colors ${
+            activeTab === 'clone'
+              ? `text-cyan-400 border-b-2 border-cyan-400`
+              : darkMode
+                ? 'text-gray-400 hover:text-gray-300'
+                : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Mic2 className="inline w-4 h-4 mr-2" />
+          Clonar Voz
+        </button>
+        <button
+          onClick={() => setActiveTab('generate')}
+          className={`px-4 py-3 font-semibold transition-colors ${
+            activeTab === 'generate'
+              ? `text-cyan-400 border-b-2 border-cyan-400`
+              : darkMode
+                ? 'text-gray-400 hover:text-gray-300'
+                : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Sparkles className="inline w-4 h-4 mr-2" />
+          Generar Voz Personalizada
+        </button>
+      </div>
+
       {/* Mis Voces Clonadas */}
       <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
         <div className="flex items-center gap-3 mb-4">
@@ -231,11 +327,12 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
       </div>
 
       {/* Clonar Nueva Voz */}
-      <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
-        <div className="flex items-center gap-3 mb-4">
-          <Zap className="w-6 h-6 text-cyan-400" />
-          <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Clonar Nueva Voz</h2>
-        </div>
+      {activeTab === 'clone' && (
+        <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
+          <div className="flex items-center gap-3 mb-4">
+            <Zap className="w-6 h-6 text-cyan-400" />
+            <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Clonar Nueva Voz</h2>
+          </div>
 
         <form onSubmit={handleCloneVoice} className="space-y-4">
           {/* Nombre */}
@@ -344,6 +441,159 @@ export default function VoiceCloningPanel({ onCloneSuccess }) {
           )}
         </form>
       </div>
+      )}
+
+      {/* Generar Voz Personalizada */}
+      {activeTab === 'generate' && (
+        <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
+          <div className="flex items-center gap-3 mb-4">
+            <Sparkles className="w-6 h-6 text-cyan-400" />
+            <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Generar Voz Personalizada</h2>
+          </div>
+
+          <form onSubmit={handleGenerateVoice} className="space-y-4">
+            {/* Voice Description */}
+            <div>
+              <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
+                Descripción de la voz
+              </label>
+              <textarea
+                value={voiceDescription}
+                onChange={(e) => setVoiceDescription(e.target.value)}
+                placeholder="Ej: Un hombre de mediana edad, acento español neutral, tono profesional y amigable"
+                className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 min-h-28" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 min-h-28"}
+                disabled={generatingVoice}
+              />
+              <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                Incluye edad, género, acento, tono y personalidad
+              </p>
+            </div>
+
+            {/* Voice Type */}
+            <div>
+              <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
+                Tipo de voz
+              </label>
+              <select
+                value={voiceType}
+                onChange={(e) => setVoiceType(e.target.value)}
+                className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
+                disabled={generatingVoice}
+              >
+                <option value="Narrator">Narrador</option>
+                <option value="Support Agent">Agente de Soporte</option>
+                <option value="Companion">Compañero</option>
+                <option value="Meditation Instructor">Instructor de Meditación</option>
+              </select>
+            </div>
+
+            {/* Language */}
+            <div>
+              <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
+                Idioma
+              </label>
+              <select
+                value={voiceLanguage}
+                onChange={(e) => setVoiceLanguage(e.target.value)}
+                className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
+                disabled={generatingVoice}
+              >
+                <option value="es-ES">Español (España)</option>
+                <option value="es-MX">Español (México)</option>
+                <option value="es-AR">Español (Argentina)</option>
+                <option value="en-US">English (USA)</option>
+                <option value="en-GB">English (UK)</option>
+                <option value="pt-BR">Português (Brasil)</option>
+              </select>
+            </div>
+
+            {/* Script Mode */}
+            <div>
+              <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
+                Script
+              </label>
+              <div className="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setScriptMode('auto')}
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition ${
+                    scriptMode === 'auto'
+                      ? 'bg-cyan-500 text-white'
+                      : darkMode
+                        ? 'bg-gray-800 text-gray-300'
+                        : 'bg-gray-200 text-gray-700'
+                  }`}
+                  disabled={generatingVoice}
+                >
+                  Auto-generar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setScriptMode('custom')}
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition ${
+                    scriptMode === 'custom'
+                      ? 'bg-cyan-500 text-white'
+                      : darkMode
+                        ? 'bg-gray-800 text-gray-300'
+                        : 'bg-gray-200 text-gray-700'
+                  }`}
+                  disabled={generatingVoice}
+                >
+                  Escribir manualmente
+                </button>
+              </div>
+
+              {scriptMode === 'custom' && (
+                <textarea
+                  value={voiceScript}
+                  onChange={(e) => setVoiceScript(e.target.value.substring(0, 200))}
+                  placeholder="Escribe el texto que la voz debe decir (máx 200 caracteres)"
+                  className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 min-h-24" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 min-h-24"}
+                  disabled={generatingVoice}
+                  maxLength="200"
+                />
+              )}
+              <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                {scriptMode === 'custom' ? `${voiceScript.length}/200 caracteres` : 'Inworld generará un script automáticamente'}
+              </p>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={generatingVoice || !voiceDescription.trim()}
+              className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+            >
+              {generatingVoice ? (
+                <>
+                  <Loader className="w-5 h-5 animate-spin" />
+                  Generando voz con Inworld...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5" />
+                  Generar voz personalizada
+                </>
+              )}
+            </button>
+
+            {/* Messages */}
+            {message && (
+              <div className="p-4 bg-gradient-to-r from-green-500/30 to-emerald-500/30 border-2 border-green-400 rounded-lg flex gap-3">
+                <CheckCircle className="w-5 h-5 text-green-300 flex-shrink-0 mt-0.5" />
+                <p className="text-green-50 font-semibold">{message}</p>
+              </div>
+            )}
+
+            {error && (
+              <div className="p-4 bg-gradient-to-r from-red-500/30 to-rose-500/30 border-2 border-red-400 rounded-lg flex gap-3">
+                <AlertCircle className="w-5 h-5 text-red-300 flex-shrink-0 mt-0.5" />
+                <p className="text-red-50 font-semibold">{error}</p>
+              </div>
+            )}
+          </form>
+        </div>
+      )}
     </div>
   )
 }

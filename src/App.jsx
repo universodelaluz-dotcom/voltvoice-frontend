@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { StripePayment } from './components/StripePayment'
 import { SynthesisStudio } from './components/SynthesisStudio'
-import VoiceCloningPanel from './components/VoiceCloningPanel'
+import VoiceWorkshopPanel from './components/VoiceCloningPanel'
 import { PricingPage } from './components/PricingPage'
 import { PricingCards } from './components/PricingCards'
 import { ControlPanel } from './components/ControlPanel'
@@ -12,7 +12,7 @@ import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon,
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-cloning', 'pricing', 'control-panel', 'statistics', 'auth'
+  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-workshop', 'pricing', 'control-panel', 'statistics', 'auth'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
@@ -284,8 +284,8 @@ export function App() {
     return <PricingPage onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} />
   }
 
-  // Voice Cloning Page (se desmonta al salir, no tiene estado persistente crítico)
-  if (currentPage === 'voice-cloning') {
+  // Voice Workshop Page (se desmonta al salir, no tiene estado persistente crítico)
+  if (currentPage === 'voice-workshop') {
     return (
       <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 text-gray-900"}>
         {/* Header */}
@@ -316,7 +316,7 @@ export function App() {
             <p className={`text-lg mb-12 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               Aquí puedes clonar y preparar tus voces personalizadas antes de usarlas en el Studio.
             </p>
-            <VoiceCloningPanel onCloneSuccess={() => window.location.reload()} />
+            <VoiceWorkshopPanel onCloneSuccess={() => window.location.reload()} />
           </div>
         </div>
       </div>
@@ -343,7 +343,7 @@ export function App() {
         <div style={{ display: currentPage === 'studio' ? 'block' : 'none' }}>
           <SynthesisStudio
             onGoHome={() => setCurrentPage('landing')}
-            onGoVoiceCloning={() => setCurrentPage('voice-cloning')}
+            onGoVoiceCloning={() => setCurrentPage('voice-workshop')}
             onGoControlPanel={() => setCurrentPage('control-panel')}
             onGoStatistics={() => setCurrentPage('statistics')}
             darkMode={darkMode}
