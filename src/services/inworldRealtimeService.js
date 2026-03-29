@@ -27,7 +27,7 @@ export class InworldRealtimeService {
       const sessionResponse = await fetch('https://api.inworld.ai/v1/sessions:create', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Basic ${apiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
