@@ -13,6 +13,9 @@ export class InworldRealtimeService {
     this.sessionId = null
     this.dataChannel = null
     this.isConnected = false
+    this.dataChannelReady = false
+    this.dataChannelPromise = null
+    this.dataChannelResolve = null
     this.audioContext = null
     this.mediaStream = null
     this.audioQueue = []
@@ -131,6 +134,10 @@ export class InworldRealtimeService {
     this.dataChannel.onopen = () => {
       console.log('[Inworld] Data channel opened')
       this.isConnected = true
+      this.dataChannelReady = true
+      if (this.dataChannelResolve) {
+        this.dataChannelResolve()
+      }
       this._emit('channel-open')
     }
 
@@ -152,8 +159,33 @@ export class InworldRealtimeService {
     this.dataChannel.onclose = () => {
       console.log('[Inworld] Data channel closed')
       this.isConnected = false
+      this.dataChannelReady = false
       this._emit('channel-closed')
     }
+  }
+
+  /**
+   * Wait for data channel to be ready
+   */
+  waitForDataChannel(timeout = 5000) {
+    return new Promise((resolve, reject) => {
+      if (this.dataChannelReady) {
+        resolve()
+        return
+      }
+
+      this.dataChannelResolve = resolve
+      const timer = setTimeout(() => {
+        reject(new Error('Data channel did not open in time'))
+      }, timeout)
+
+      // Fallback in case resolve is called before timer
+      const originalResolve = resolve
+      this.dataChannelResolve = () => {
+        clearTimeout(timer)
+        originalResolve()
+      }
+    })
   }
 
   /**

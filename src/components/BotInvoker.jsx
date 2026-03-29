@@ -101,14 +101,7 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
       )
 
       // Wait for data channel to be ready
-      await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('Session timeout')), 5000)
-
-        inworldRealtimeService.on('channel-open', () => {
-          clearTimeout(timeout)
-          resolve()
-        })
-      })
+      await inworldRealtimeService.waitForDataChannel(5000)
 
       // Handle input based on type
       if (inputData instanceof Blob) {
