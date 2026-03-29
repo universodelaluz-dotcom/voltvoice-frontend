@@ -64,10 +64,10 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
     loadUserVoices()
   }, [])
 
-  // Limpiar audio cuando cambia la voz seleccionada o el texto
+  // Limpiar audio cuando cambia la voz seleccionada
   useEffect(() => {
     setTestAudioUrl(null)
-  }, [testVoiceId, testText])
+  }, [testVoiceId])
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('sv-token')
