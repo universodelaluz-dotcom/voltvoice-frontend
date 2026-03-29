@@ -558,7 +558,7 @@ export function App() {
                 Recarga de Tokens
               </span>
             </h3>
-            <p className={"text-lg " + (darkMode ? "text-gray-400" : "text-gray-500")}>Si tu plan mensual se queda corto, recarga al instante sin esperar al siguiente mes.</p>
+            <p className={"text-xl font-medium " + (darkMode ? "text-gray-200" : "text-gray-700")}>Si tu plan mensual se queda corto, recarga al instante sin esperar al siguiente mes.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
