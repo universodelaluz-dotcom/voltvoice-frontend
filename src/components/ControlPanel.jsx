@@ -346,6 +346,51 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
               <CheckOption label="Anunciar batallas" checked={config.announceBattles} onChange={() => updateConfig('announceBattles', !config.announceBattles)} darkMode={darkMode} hint="Anuncia inicio y resultado de batallas en vivo" />
               <CheckOption label="Anunciar encuestas" checked={config.announcePolls} onChange={() => updateConfig('announcePolls', !config.announcePolls)} darkMode={darkMode} hint="Anuncia cuando se crea una encuesta en el live" />
               <CheckOption label="Anunciar metas/goals" checked={config.announceGoals} onChange={() => updateConfig('announceGoals', !config.announceGoals)} darkMode={darkMode} hint="Anuncia progreso de metas del live" />
+
+              {/* === SECCIÓN: ASISTENTE DE IA === */}
+              <div className={`px-4 pt-8 pb-3 mt-4 border-t ${darkMode ? 'border-purple-500/20 text-purple-400/70' : 'border-purple-200 text-purple-600'}`}>
+                <span className="text-xs font-bold uppercase tracking-widest">🤖 Asistente de IA</span>
+              </div>
+
+              {/* Modo de respuesta */}
+              <div className={`px-4 py-2 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
+                <span className={`text-[13px] font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Modo de respuesta</span>
+                <div className="mt-2 space-y-1">
+                  {[
+                    { value: 'audio', label: 'Solo audio', hint: 'El personaje responde con voz sintetizada' },
+                    { value: 'text', label: 'Solo texto', hint: 'El personaje responde con texto escrito' },
+                    { value: 'both', label: 'Audio + texto', hint: 'Responde con voz y muestra el texto al mismo tiempo' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => updateConfig('bot_response_mode', opt.value)}
+                      className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity"
+                    >
+                      <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                        (config.bot_response_mode || 'audio') === opt.value
+                          ? 'bg-purple-500/30 border-purple-400'
+                          : darkMode ? 'border-gray-500' : 'border-gray-400'
+                      }`}>
+                        {(config.bot_response_mode || 'audio') === opt.value && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-purple-400" />
+                        )}
+                      </div>
+                      <span className={`text-[14px] ${darkMode ? 'text-white' : 'text-gray-900'} ${(config.bot_response_mode || 'audio') === opt.value ? 'font-semibold' : 'font-medium'}`}>
+                        {opt.label}
+                        <Hint text={opt.hint} darkMode={darkMode} />
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <CheckOption
+                label="Chequeos automáticos de spam"
+                checked={!!config.bot_auto_spam_check}
+                onChange={() => updateConfig('bot_auto_spam_check', !config.bot_auto_spam_check)}
+                darkMode={darkMode}
+                hint="El asistente analiza el chat y sugiere acciones automáticamente"
+              />
             </div>
 
           </div>

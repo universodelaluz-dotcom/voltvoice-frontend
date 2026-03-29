@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import TikTokLivePanel from './TikTokLivePanel'
+import AudioVisualizer from './AudioVisualizer'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3 } from 'lucide-react'
 
 export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, darkMode, setDarkMode, config, updateConfig, user }) {
@@ -26,6 +27,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const [text, setText] = useState('Hola, este es StreamVoicer. Tu plataforma para síntesis de voz profesional.')
   const [loading, setLoading] = useState(false)
   const [audioUrl, setAudioUrl] = useState(null)
+  const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef(null)
   const [tokensUsed, setTokensUsed] = useState(0)
   const [error, setError] = useState(null)
@@ -49,6 +51,23 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   useEffect(() => {
     if (audioUrl && audioRef.current) {
       setTimeout(() => audioRef.current?.play(), 100)
+    }
+  }, [audioUrl])
+
+  // Rastrear estado de reproducción para el visualizador
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    const handlePlay = () => setIsPlaying(true)
+    const handlePause = () => setIsPlaying(false)
+    const handleEnded = () => setIsPlaying(false)
+    audio.addEventListener('play', handlePlay)
+    audio.addEventListener('pause', handlePause)
+    audio.addEventListener('ended', handleEnded)
+    return () => {
+      audio.removeEventListener('play', handlePlay)
+      audio.removeEventListener('pause', handlePause)
+      audio.removeEventListener('ended', handleEnded)
     }
   }, [audioUrl])
 
@@ -410,18 +429,25 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
           {/* Right Column - Stats & Audio */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Audio Player - Simple Button */}
+            {/* Audio Player - with Visualizer */}
             {audioUrl && (
-              <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30 rounded-lg">
-                <audio ref={(el) => el && audioUrl && (audioRef.current = el)} src={audioUrl} className="hidden" />
-                <button
-                  onClick={() => audioRef.current && audioRef.current.play()}
-                  className="p-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full hover:shadow-lg hover:shadow-cyan-500/50 transition-all flex-shrink-0"
-                >
-                  <Volume2 className="w-5 h-5 text-white" />
-                </button>
-                <div className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>
-                  <span className="text-cyan-400 font-bold">{tokensUsed}</span> tokens usados
+              <div className="space-y-2">
+                <AudioVisualizer audioUrl={audioUrl} isPlaying={isPlaying} darkMode={darkMode} />
+                <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30 rounded-lg">
+                  <audio ref={(el) => el && audioUrl && (audioRef.current = el)} src={audioUrl} className="hidden" />
+                  <button
+                    onClick={() => {
+                      if (audioRef.current) {
+                        isPlaying ? audioRef.current.pause() : audioRef.current.play()
+                      }
+                    }}
+                    className="p-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full hover:shadow-lg hover:shadow-cyan-500/50 transition-all flex-shrink-0"
+                  >
+                    <Volume2 className="w-5 h-5 text-white" />
+                  </button>
+                  <div className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>
+                    <span className="text-cyan-400 font-bold">{tokensUsed}</span> tokens usados
+                  </div>
                 </div>
               </div>
             )}
