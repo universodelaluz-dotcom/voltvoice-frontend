@@ -591,7 +591,7 @@ export function App() {
 
                   <div className="mb-4">
                     <div className={"text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r " + gradient}>
-                      {pkg.price}
+                      {pkg.price} <span className={"text-base font-bold " + (darkMode ? "text-gray-400" : "text-gray-500")}>USD</span>
                     </div>
                   </div>
 

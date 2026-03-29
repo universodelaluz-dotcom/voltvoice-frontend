@@ -1,8 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Check } from 'lucide-react'
+
+const MXN_RATE = 20 // Tipo de cambio aproximado USD -> MXN
 
 export function PricingCards({ darkMode, showToggle = true }) {
   const [billingCycle, setBillingCycle] = useState('monthly')
+  const [showMxn, setShowMxn] = useState(false)
+
+  // Detectar si el usuario es de México/LATAM por idioma del navegador
+  useEffect(() => {
+    const lang = navigator.language || ''
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''
+    if (lang.includes('MX') || lang.includes('mx') || tz.includes('Mexico')) {
+      setShowMxn(true)
+    }
+  }, [])
 
   const monthlyPlans = [
     {
@@ -184,15 +196,22 @@ export function PricingCards({ darkMode, showToggle = true }) {
                   ${billingCycle === 'monthly' ? plan.price.toFixed(2) : plan.price}
                 </span>
                 <span className={`text-xl ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  /{billingCycle === 'monthly' ? 'mes' : 'año'}
+                  USD/{billingCycle === 'monthly' ? 'mes' : 'año'}
                 </span>
               </div>
 
+              {/* MXN equivalent */}
+              {showMxn && plan.price > 0 && (
+                <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  ≈ ${Math.round(plan.price * MXN_RATE).toLocaleString()} MXN/{billingCycle === 'monthly' ? 'mes' : 'año'}
+                </p>
+              )}
+
               {/* Badge + per month for annual */}
               {billingCycle === 'annual' && (
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mt-1">
                   <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                    ~${plan.pricePerMonth}/mes
+                    ~${plan.pricePerMonth} USD/mes
                   </span>
                   {plan.badge && (
                     <span className="text-sm font-bold px-2.5 py-1 rounded bg-green-500/20 text-green-400">
