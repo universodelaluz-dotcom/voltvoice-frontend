@@ -81,7 +81,15 @@
       "Bash(node -c src/routes/nicks.js)",
       "Bash(node -c server.js)",
       "Bash(npx eslint:*)",
-      "Bash(node -c src/components/TikTokLivePanel.jsx)"
+      "Bash(node -c src/components/TikTokLivePanel.jsx)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(find '/c/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE/backend/src/routes' -name *.js)",
+      "Bash(grep -r \"UPDATE users SET plan\\\\|plan.*=\" '/c/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE/backend/src' --include=*.js)",
+      "Bash(psql -U postgres -d voltvoice -c \"UPDATE users SET plan = ''elite'' WHERE email = ''alainsh@gmail.com'' RETURNING id, email, plan;\")",
+      "WebFetch(domain:vercel.com)",
+      "Bash(find '/c/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE/backend/src' -name *.js -type f)",
+      "Bash(grep -E \"\\\\.js$\")"
     ]
   }
 }
