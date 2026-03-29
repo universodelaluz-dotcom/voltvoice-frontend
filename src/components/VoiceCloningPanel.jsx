@@ -205,16 +205,21 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
 
       const data = await response.json()
 
+      console.log('[VoiceGenerate] Response:', { ok: response.ok, data })
+
       if (response.ok && data.success) {
         // Mostrar modal de preview con reproductor y opción de renombrar
+        console.log('[VoiceGenerate] ✓ Voz generada, mostrando modal')
         setPreviewVoice(data.voice)
-        setEditingName(data.voice.defaultName)
+        setEditingName(data.voice.voice_name || data.voice.defaultName)
         setShowPreviewModal(true)
         setVoiceDescription('')
         setVoiceScript('')
         setScriptMode('auto')
         setMessage(null)
+        setError(null)
       } else {
+        console.error('[VoiceGenerate] ✗ Error:', data)
         setError(data.error || data.details || 'Error al generar la voz')
       }
     } catch (err) {
@@ -349,28 +354,43 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
             {userVoices.map((voice) => (
               <div
                 key={voice.id}
-                className={`flex items-center justify-between px-4 py-3 rounded-lg ${
+                className={`flex flex-col gap-2 px-4 py-3 rounded-lg ${
                   darkMode ? 'bg-gray-800/60 border border-gray-700/50' : 'bg-gray-50 border border-gray-200'
                 }`}
               >
-                <div>
-                  <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{voice.voice_name}</p>
-                  <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                    {voice.provider} · {new Date(voice.created_at).toLocaleDateString()}
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{voice.voice_name}</p>
+                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      {voice.provider} · {new Date(voice.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-1 rounded ${darkMode ? 'bg-cyan-500/10 text-cyan-400' : 'bg-cyan-50 text-cyan-600'}`}>
+                      {voice.voice_id.substring(0, 20)}...
+                    </span>
+                    <button
+                      onClick={() => handleDeleteVoice(voice.id, voice.voice_name)}
+                      className="p-1.5 rounded hover:bg-red-500/20 transition-colors"
+                      title="Eliminar voz"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-400" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-1 rounded ${darkMode ? 'bg-cyan-500/10 text-cyan-400' : 'bg-cyan-50 text-cyan-600'}`}>
-                    {voice.voice_id.substring(0, 20)}...
-                  </span>
-                  <button
-                    onClick={() => handleDeleteVoice(voice.id, voice.voice_name)}
-                    className="p-1.5 rounded hover:bg-red-500/20 transition-colors"
-                    title="Eliminar voz"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-400" />
-                  </button>
-                </div>
+                <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                  🔊 Reproductor:
+                </p>
+                <audio
+                  controls
+                  className="w-full h-8"
+                  style={{
+                    accentColor: '#06b6d4'
+                  }}
+                >
+                  <source src={`${API_URL}/api/tiktok/synthesize?voiceId=${voice.voice_id}`} type="audio/mpeg" />
+                  Tu navegador no soporta el reproductor
+                </audio>
               </div>
             ))}
           </div>
