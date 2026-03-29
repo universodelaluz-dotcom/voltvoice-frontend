@@ -37,6 +37,12 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
   const [editingName, setEditingName] = useState('')
   const [savingName, setSavingName] = useState(false)
 
+  // Prueba de voz
+  const [testVoiceId, setTestVoiceId] = useState(null)
+  const [testText, setTestText] = useState('Hola, esta es una prueba de mi voz personalizada.')
+  const [testingVoice, setTestingVoice] = useState(false)
+  const [testAudioUrl, setTestAudioUrl] = useState(null)
+
   const languageOptions = [
     { code: 'es-ES', label: 'Español (España)' },
     { code: 'es-MX', label: 'Español (México)' },
@@ -146,6 +152,44 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
     setPreviewVoice(null)
     setEditingName('')
     loadUserVoices() // Recargar igual aunque no haya renombrado
+  }
+
+  const handleTestVoice = async () => {
+    if (!testVoiceId || !testText.trim()) {
+      setError('Selecciona una voz y escribe un texto para probar')
+      return
+    }
+
+    setTestingVoice(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`${API_URL}/api/inworld/tts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': localStorage.getItem('sv-token') ? 'authenticated' : 'guest'
+        },
+        body: JSON.stringify({
+          text: testText.trim(),
+          voiceId: testVoiceId
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && (data.audio || data.audioUrl)) {
+        setTestAudioUrl(data.audio || data.audioUrl)
+        setMessage('✓ Audio generado exitosamente')
+        setTimeout(() => setMessage(null), 3000)
+      } else {
+        setError(data.error || 'Error al sintetizar el audio')
+      }
+    } catch (err) {
+      setError(`Error: ${err.message}`)
+    } finally {
+      setTestingVoice(false)
+    }
   }
 
   const handleFileChange = (e) => {
@@ -381,6 +425,90 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
           </div>
         )}
       </div>
+
+      {/* Área de Prueba de Voces */}
+      {userVoices.length > 0 && (
+        <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
+          <div className="flex items-center gap-3 mb-4">
+            <Mic2 className="w-6 h-6 text-cyan-400" />
+            <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Probar Voz</h2>
+          </div>
+
+          <div className="space-y-4">
+            {/* Selector de voz */}
+            <div>
+              <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
+                Selecciona una voz
+              </label>
+              <select
+                value={testVoiceId || ''}
+                onChange={(e) => setTestVoiceId(e.target.value)}
+                className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
+              >
+                <option value="">-- Elige una voz --</option>
+                {userVoices.map(voice => (
+                  <option key={voice.id} value={voice.voice_id}>
+                    {voice.voice_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Textarea */}
+            <div>
+              <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
+                Escribe un texto para probar
+              </label>
+              <textarea
+                value={testText}
+                onChange={(e) => setTestText(e.target.value)}
+                placeholder="Ej: Hola, esto es una prueba de mi voz personalizada"
+                className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 min-h-20" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 min-h-20"}
+              />
+              <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                {testText.length} caracteres
+              </p>
+            </div>
+
+            {/* Botón de prueba */}
+            <button
+              onClick={handleTestVoice}
+              disabled={testingVoice || !testVoiceId || !testText.trim()}
+              className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+            >
+              {testingVoice ? (
+                <>
+                  <Loader className="w-5 h-5 animate-spin" />
+                  Generando audio...
+                </>
+              ) : (
+                <>
+                  <Mic2 className="w-5 h-5" />
+                  Probar voz
+                </>
+              )}
+            </button>
+
+            {/* Reproductor */}
+            {testAudioUrl && (
+              <div className={darkMode ? "bg-gray-800/60 border border-gray-700/50 rounded-lg p-4" : "bg-gray-50 border border-gray-200 rounded-lg p-4"}>
+                <p className={`text-sm mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  🔊 Escucha el resultado:
+                </p>
+                <audio
+                  controls
+                  className="w-full"
+                  style={{ accentColor: '#06b6d4' }}
+                  autoPlay
+                >
+                  <source src={testAudioUrl} type="audio/mpeg" />
+                  Tu navegador no soporta el reproductor
+                </audio>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Clonar Nueva Voz */}
       {activeTab === 'clone' && (
