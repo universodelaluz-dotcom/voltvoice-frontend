@@ -48,9 +48,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
   const [testAudioUrl, setTestAudioUrl] = useState(null)
 
   const languageOptions = [
-    { code: 'es-ES', label: 'Español (España)' },
-    { code: 'es-MX', label: 'Español (México)' },
-    { code: 'es-AR', label: 'Español (Argentina)' },
+    { code: 'es-ES', label: 'Voz en Español' },
     { code: 'en-US', label: 'English (USA)' },
     { code: 'en-GB', label: 'English (UK)' },
     { code: 'pt-BR', label: 'Português (Brasil)' },
