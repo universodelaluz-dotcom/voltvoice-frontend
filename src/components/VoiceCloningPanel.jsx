@@ -442,7 +442,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
           </div>
         ) : userVoices.length === 0 ? (
           <p className={`text-sm py-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            Aún no tienes voces clonadas. ¡Crea tu primera voz abajo!
+            Aún no tienes voces creadas. ¡Crea tu primera voz abajo!
           </p>
         ) : (
           <div className="space-y-2">
