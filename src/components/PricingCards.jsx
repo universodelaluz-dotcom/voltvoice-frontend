@@ -159,7 +159,7 @@ export function PricingCards({ darkMode, showToggle = true }) {
                 : darkMode
                   ? 'bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-700 hover:border-cyan-400/50'
                   : 'bg-white border border-gray-200 hover:border-cyan-400/50'
-            } p-6`}
+            } p-8`}
           >
             {/* Popular Badge */}
             {plan.popular && (
@@ -171,19 +171,19 @@ export function PricingCards({ darkMode, showToggle = true }) {
             )}
 
             {/* Icon + Plan Name */}
-            <div className="text-3xl mb-2">{plan.icon}</div>
-            <h3 className="text-2xl font-bold mb-1">{plan.name}</h3>
-            <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            <div className="text-4xl mb-3">{plan.icon}</div>
+            <h3 className="text-3xl font-black mb-1">{plan.name}</h3>
+            <p className={`text-base mb-5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               {plan.description}
             </p>
 
             {/* Price */}
-            <div className="mb-4">
+            <div className="mb-5">
               <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
+                <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
                   ${billingCycle === 'monthly' ? plan.price.toFixed(2) : plan.price}
                 </span>
-                <span className={`text-lg ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                <span className={`text-xl ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   /{billingCycle === 'monthly' ? 'mes' : 'año'}
                 </span>
               </div>
@@ -191,11 +191,11 @@ export function PricingCards({ darkMode, showToggle = true }) {
               {/* Badge + per month for annual */}
               {billingCycle === 'annual' && (
                 <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                     ~${plan.pricePerMonth}/mes
                   </span>
                   {plan.badge && (
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-green-500/20 text-green-400">
+                    <span className="text-sm font-bold px-2.5 py-1 rounded bg-green-500/20 text-green-400">
                       {plan.badge}
                     </span>
                   )}
@@ -205,7 +205,7 @@ export function PricingCards({ darkMode, showToggle = true }) {
 
             {/* CTA Button */}
             <button
-              className={`w-full py-3 rounded-lg font-bold transition-all mb-6 ${
+              className={`w-full py-3.5 rounded-lg font-bold text-base transition-all mb-6 ${
                 plan.popular
                   ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white hover:shadow-lg hover:shadow-cyan-400/50'
                   : plan.price === 0
@@ -222,11 +222,11 @@ export function PricingCards({ darkMode, showToggle = true }) {
 
             {/* Features */}
             <div className={`border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} pt-6`}>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {plan.features.map((feature, idx) => (
                   <div key={idx} className="flex items-start gap-3">
                     <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    <span className={`text-base font-medium ${darkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                       {feature.text}
                     </span>
                   </div>
@@ -239,7 +239,7 @@ export function PricingCards({ darkMode, showToggle = true }) {
 
       {/* Nota */}
       <div className="mt-8 text-center">
-        <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           Estimado basado en chats promedio de 15–30 mensajes por minuto y mensajes de 40–60 caracteres.
           El uso real puede variar según la actividad del stream y configuración.
         </p>
