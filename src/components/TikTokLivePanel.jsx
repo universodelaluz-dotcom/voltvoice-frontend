@@ -144,7 +144,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     return () => clearInterval(interval)
   }, [])
 
-  const [tiktokUser, setTiktokUser] = useState('')
+  const [tiktokUser, setTiktokUser] = useState(config.lastTiktokUser || '')
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [messages, setMessages] = useState([])
@@ -567,6 +567,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         setStats({ count: 0, uptime: 0 })
         setIsConnected(true)
         setMessages([])
+        // Guardar último usuario conectado
+        if (updateConfig) updateConfig('lastTiktokUser', tiktokUser.trim())
       } else {
         setError(data.error || 'Error conectando a TikTok')
       }
