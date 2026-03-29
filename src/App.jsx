@@ -14,11 +14,24 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
 export function App() {
   const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-cloning', 'pricing', 'control-panel', 'statistics', 'auth'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
+  const [showTerms, setShowTerms] = useState(false)
+  const [showPrivacy, setShowPrivacy] = useState(false)
+  const [showContact, setShowContact] = useState(false)
+  const [showFAQ, setShowFAQ] = useState(false)
+  const [showCookies, setShowCookies] = useState(false)
+  const [cookieConsent, setCookieConsent] = useState(() => {
+    return localStorage.getItem('cookieConsent') === 'true'
+  })
 
   // Auth state
   const [user, setUser] = useState(null)
   const [authToken, setAuthToken] = useState(null)
   const [tokens, setTokens] = useState(100)
+
+  // Currency detection state
+  const [exchangeRates, setExchangeRates] = useState(null)
+  const [userCurrency, setUserCurrency] = useState('USD')
+  const [userCountry, setUserCountry] = useState(null)
 
   // Config centralizado para todas las opciones
   const [config, setConfig] = useState({
@@ -103,6 +116,44 @@ export function App() {
     }
   }, [])
 
+  // Detectar ubicación y tipos de cambio
+  useEffect(() => {
+    const detectLocationAndExchangeRates = async () => {
+      try {
+        // Detectar país por IP
+        const ipResponse = await fetch('https://ipapi.co/json/')
+        const ipData = await ipResponse.json()
+        const country = ipData.country_code || 'US'
+        const currency = ipData.currency || 'USD'
+
+        setUserCountry(country)
+        setUserCurrency(currency)
+
+        // Obtener tipos de cambio desde USD a todas las monedas principales
+        const ratesResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD')
+        const ratesData = await ratesResponse.json()
+
+        if (ratesData.rates) {
+          setExchangeRates(ratesData.rates)
+        }
+      } catch (error) {
+        console.error('Error detectando ubicación/tipos de cambio:', error)
+        // Fallback si hay error
+        setExchangeRates({
+          MXN: 20,
+          ARS: 920,
+          BRL: 5.2,
+          COP: 4100,
+          CLP: 900,
+          PEN: 3.8,
+          UYU: 42
+        })
+      }
+    }
+
+    detectLocationAndExchangeRates()
+  }, [])
+
   // Cargar config del usuario desde el backend
   const loadUserConfig = async (token) => {
     try {
@@ -116,6 +167,39 @@ export function App() {
       }
     } catch (err) {
       console.error('[Config] Error cargando config:', err)
+    }
+  }
+
+  // Convertir precio USD a moneda local
+  const convertPrice = (usdPrice) => {
+    if (!exchangeRates || userCurrency === 'USD') {
+      return { amount: usdPrice, currency: 'USD', display: `$${usdPrice.toFixed(2)} USD` }
+    }
+
+    const rate = exchangeRates[userCurrency] || 1
+    const convertedAmount = parseFloat((usdPrice * rate).toFixed(2))
+    const symbols = {
+      MXN: '$',
+      ARS: '$',
+      BRL: 'R$',
+      COP: '$',
+      CLP: '$',
+      PEN: 'S/',
+      UYU: '$',
+      EUR: '€',
+      GBP: '£',
+      JPY: '¥',
+      CNY: '¥',
+      INR: '₹',
+      AUD: '$',
+      CAD: '$'
+    }
+
+    const symbol = symbols[userCurrency] || '$'
+    return {
+      amount: convertedAmount,
+      currency: userCurrency,
+      display: `${symbol}${convertedAmount.toLocaleString()} ${userCurrency}`
     }
   }
 
@@ -326,24 +410,28 @@ export function App() {
       size: 'S',
       tokens: '100,000',
       price: '$3.99',
+      priceMxn: '≈ 80 MXN',
       hours: '≈ 2 – 3 horas extra'
     },
     {
       size: 'M',
       tokens: '300,000',
       price: '$9.99',
+      priceMxn: '≈ 200 MXN',
       hours: '≈ 5 – 8 horas extra'
     },
     {
       size: 'L',
       tokens: '1,000,000',
       price: '$24.99',
+      priceMxn: '≈ 500 MXN',
       hours: '≈ 16 – 30 horas extra'
     },
     {
       size: 'XL',
       tokens: '2,500,000',
       price: '$49.99',
+      priceMxn: '≈ 1,000 MXN',
       hours: '≈ 40 – 75 horas extra'
     }
   ]
@@ -593,6 +681,15 @@ export function App() {
                     <div className={"text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r " + gradient}>
                       {pkg.price} <span className={"text-base font-bold " + (darkMode ? "text-gray-400" : "text-gray-500")}>USD</span>
                     </div>
+                    {exchangeRates && userCurrency !== 'USD' && (
+                      <div className={"text-xs font-medium " + (darkMode ? "text-gray-500" : "text-gray-400")}>
+                        {(() => {
+                          const priceNum = parseFloat(pkg.price.replace('$', ''))
+                          const converted = convertPrice(priceNum)
+                          return `≈ ${converted.display} aprox.`
+                        })()}
+                      </div>
+                    )}
                   </div>
 
                   <div className={"rounded-xl px-3 py-2 mb-4 " + (darkMode ? "bg-white/5" : "bg-gray-50")}>
@@ -684,24 +781,18 @@ export function App() {
               <p className="text-sm text-gray-400">La mejor solución para leer chats en vivo</p>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Producto</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-cyan-400 transition">Características</a></li>
-                <li><a href="#" className="hover:text-cyan-400 transition">Precios</a></li>
-              </ul>
-            </div>
-            <div>
               <h4 className="font-bold mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-cyan-400 transition">Términos</a></li>
-                <li><a href="#" className="hover:text-cyan-400 transition">Privacidad</a></li>
+                <li><button onClick={() => setShowTerms(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Términos</button></li>
+                <li><button onClick={() => setShowPrivacy(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Privacidad</button></li>
+                <li><button onClick={() => setShowCookies(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Cookies</button></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-4">Soporte</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-cyan-400 transition">Contacto</a></li>
-                <li><a href="#" className="hover:text-cyan-400 transition">FAQ</a></li>
+                <li><button onClick={() => setShowContact(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Contacto</button></li>
+                <li><button onClick={() => setShowFAQ(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">FAQ</button></li>
               </ul>
             </div>
           </div>
@@ -714,6 +805,269 @@ export function App() {
 
       {/* Payment Modal */}
       <StripePayment isOpen={isPaymentOpen} onClose={() => setIsPaymentOpen(false)} />
+
+      {/* Términos Modal */}
+      {showTerms && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
+          <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Términos de Servicio</h2>
+              <button onClick={() => setShowTerms(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
+            </div>
+            <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. Aceptación de Términos</h3>
+                <p>Al usar StreamVoicer, aceptas estos términos y condiciones. Si no estás de acuerdo, no uses el servicio.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. Descripción del Servicio</h3>
+                <p>StreamVoicer es una plataforma de síntesis de voz (TTS) para streamers. Proporciona características para leer mensajes en vivo usando inteligencia artificial.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Uso Permitido</h3>
+                <p>Debes usar StreamVoicer solo para propósitos legales y éticos. Se prohíbe:</p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li>Contenido ofensivo, discriminatorio o ilegal</li>
+                  <li>Intentos de piratería o acceso no autorizado</li>
+                  <li>Spam o abuso del servicio</li>
+                  <li>Violación de derechos de terceros</li>
+                </ul>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Suscripciones y Pagos</h3>
+                <p>Los planes son recurrentes. Puedes cancelar en cualquier momento. No hay reembolsos por uso parcial del período.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Limitaciones de Responsabilidad</h3>
+                <p>StreamVoicer se proporciona "tal cual". No garantizamos disponibilidad continua. No somos responsables por daños indirectos.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en los Términos</h3>
+                <p>Nos reservamos el derecho de modificar estos términos. Te notificaremos de cambios significativos.</p>
+              </section>
+            </div>
+            <button onClick={() => setShowTerms(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Privacidad Modal */}
+      {showPrivacy && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
+          <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Política de Privacidad</h2>
+              <button onClick={() => setShowPrivacy(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
+            </div>
+            <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. Información que Recolectamos</h3>
+                <p>Recolectamos información que voluntariamente proporcionas, como nombre, email, y datos de suscripción.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. Cómo Usamos Tu Información</h3>
+                <p>Usamos tu información para:</p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li>Proporcionar y mejorar nuestros servicios</li>
+                  <li>Procesar pagos y suscripciones</li>
+                  <li>Enviarte actualizaciones importantes</li>
+                  <li>Personalizar tu experiencia</li>
+                </ul>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Seguridad de Datos</h3>
+                <p>Implementamos medidas de seguridad estándar para proteger tu información. Sin embargo, no podemos garantizar seguridad absoluta.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Cookies y Tecnologías Similares</h3>
+                <p>Usamos cookies para mejorar tu experiencia y analizar el uso del servicio.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Derechos del Usuario</h3>
+                <p>Tienes derecho a acceder, modificar o eliminar tu información personal. Contacta al correo de soporte para solicitar estos derechos.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en la Política</h3>
+                <p>Nos reservamos el derecho de actualizar esta política. Los cambios serán notificados en esta página.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>7. Contacto</h3>
+                <p>Para preguntas sobre privacidad, contáctanos a: support@streamvoicer.com</p>
+              </section>
+            </div>
+            <button onClick={() => setShowPrivacy(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Contacto Modal */}
+      {showContact && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4">
+          <div className={`rounded-2xl p-8 max-w-md w-full ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Contacto</h2>
+              <button onClick={() => setShowContact(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
+            </div>
+            <div className={`space-y-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              <p>¿Tienes preguntas o necesitas ayuda? Nos encantaría escucharte.</p>
+              <div className="bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl p-4 text-center">
+                <p className="text-white text-sm mb-2 font-bold">Envíanos un correo a:</p>
+                <a href="mailto:opusvolt@gmail.com" className="text-white text-lg font-black hover:opacity-80 transition">
+                  opusvolt@gmail.com
+                </a>
+              </div>
+              <p className="text-sm">Responderemos tu mensaje lo antes posible. Esperamos tu contacto.</p>
+            </div>
+            <button onClick={() => setShowContact(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* FAQ Modal */}
+      {showFAQ && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
+          <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Preguntas Frecuentes</h2>
+              <button onClick={() => setShowFAQ(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
+            </div>
+            <div className={`space-y-6 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              <div>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Cómo funciona StreamVoicer?</h3>
+                <p>StreamVoicer es una plataforma de síntesis de voz (TTS) que lee automáticamente los mensajes de tu chat de TikTok LIVE usando inteligencia artificial con voces naturales en español.</p>
+              </div>
+              <div>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Qué es un token?</h3>
+                <p>Un token representa caracteres de texto. Cuando un usuario envía un mensaje, se consumen tokens según la cantidad de caracteres. Cada plan incluye una cantidad mensual de tokens renovables.</p>
+              </div>
+              <div>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Puedo cambiar de plan cuando quiera?</h3>
+                <p>Sí, puedes cambiar o cancelar tu plan en cualquier momento. Los cambios se reflejan en tu próximo período de facturación.</p>
+              </div>
+              <div>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Qué hago si se me acaban los tokens?</h3>
+                <p>Puedes comprar tokens adicionales en cualquier momento en la sección "Recarga de Tokens". Los tokens se acumulan con los de tu plan actual.</p>
+              </div>
+              <div>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Los tokens expiran?</h3>
+                <p>No, los tokens no expiran. Se acumulan en tu cuenta y puedes usarlos cuando quieras mientras tengas una suscripción activa.</p>
+              </div>
+              <div>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Funciona con otros idiomas?</h3>
+                <p>Actualmente StreamVoicer está optimizado para español. Estamos trabajando en agregar más idiomas próximamente.</p>
+              </div>
+              <div>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Cuánto tiempo toma procesar un mensaje?</h3>
+                <p>Los mensajes se procesan en tiempo real. Típicamente entre 2-5 segundos dependiendo de la longitud y el servidor.</p>
+              </div>
+              <div>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Puedo personalizar las voces?</h3>
+                <p>Sí, en el panel de control puedes elegir entre diferentes voces en español y configurar qué mensajes se leen según tus reglas.</p>
+              </div>
+              <div>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Es seguro dar acceso a mi TikTok?</h3>
+                <p>Sí, solo solicitamos acceso a la información pública de tu stream LIVE. Tus datos están protegidos y no compartimos información con terceros.</p>
+              </div>
+              <div>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Hay período de prueba gratuito?</h3>
+                <p>Sí, ofrecemos un plan FREE con 20,000 tokens mensuales para que pruebes todas las características.</p>
+              </div>
+            </div>
+            <button onClick={() => setShowFAQ(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Cookies Modal */}
+      {showCookies && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
+          <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Política de Cookies</h2>
+              <button onClick={() => setShowCookies(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
+            </div>
+            <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Qué son las cookies?</h3>
+                <p>Las cookies son pequeños archivos de texto que se guardan en tu dispositivo cuando visitas nuestro sitio. Nos ayudan a mejorar tu experiencia y analizar cómo usas StreamVoicer.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Tipos de Cookies que Usamos</h3>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li><strong>Cookies Esenciales:</strong> Necesarias para el funcionamiento básico del sitio (autenticación, seguridad)</li>
+                  <li><strong>Cookies de Rendimiento:</strong> Nos ayudan a entender cómo usas el sitio y mejorarlo</li>
+                  <li><strong>Cookies de Análisis:</strong> Rastrean cómo interactúas con StreamVoicer para optimizar la experiencia</li>
+                  <li><strong>Cookies de Publicidad:</strong> Permiten mostrar anuncios relevantes según tus intereses</li>
+                </ul>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Cómo Usamos las Cookies?</h3>
+                <p>Usamos cookies para:</p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li>Mantener tu sesión iniciada</li>
+                  <li>Recordar tus preferencias de idioma y tema</li>
+                  <li>Analizar el tráfico del sitio con Google Analytics</li>
+                  <li>Personalizar contenido según tu actividad</li>
+                  <li>Prevenir fraude y mejorar la seguridad</li>
+                </ul>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Control de Cookies</h3>
+                <p>Puedes controlar o eliminar cookies desde la configuración de tu navegador. Ten en cuenta que desactivarlas puede afectar la funcionalidad del sitio.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cookies de Terceros</h3>
+                <p>Usamos servicios de terceros como Google Analytics que también pueden guardar cookies. Consulta sus políticas para más información.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cambios en la Política</h3>
+                <p>Nos reservamos el derecho de actualizar esta política en cualquier momento. Te notificaremos de cambios significativos.</p>
+              </section>
+            </div>
+            <button onClick={() => setShowCookies(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Cookie Consent Banner */}
+      {!cookieConsent && (
+        <div className={`fixed bottom-0 left-0 right-0 p-4 z-[998] ${darkMode ? 'bg-gray-900 border-t border-gray-700' : 'bg-white border-t border-gray-200 shadow-lg'}`}>
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex-1">
+              <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Usamos cookies para mejorar tu experiencia. Al continuar, aceptas nuestra{' '}
+                <button onClick={() => setShowCookies(true)} className="underline hover:no-underline text-cyan-400 font-semibold">
+                  política de cookies
+                </button>
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setCookieConsent(true) && localStorage.setItem('cookieConsent', 'true')}
+                className="px-6 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90 whitespace-nowrap"
+              >
+                Aceptar
+              </button>
+              <button
+                onClick={() => setCookieConsent(true) && localStorage.setItem('cookieConsent', 'true')}
+                className={`px-6 py-2 rounded-lg font-bold whitespace-nowrap ${darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+              >
+                Rechazar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
