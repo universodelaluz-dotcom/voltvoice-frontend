@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import TikTokLivePanel from './TikTokLivePanel'
 import AudioVisualizer from './AudioVisualizer'
-import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3 } from 'lucide-react'
+import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Sparkles, Wand2 } from 'lucide-react'
 
-export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, darkMode, setDarkMode, config, updateConfig, user }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAIWorkshop, onGoBotPanel, darkMode, setDarkMode, config, updateConfig, user }) {
   const audioSpeed = config.audioSpeed || 1.0
 
   const toggleTheme = () => {
@@ -301,7 +301,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
         <TikTokLivePanel config={config} updateConfig={updateConfig} />
 
         {/* Botones de configuración y preparar voces */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <button
             onClick={onGoControlPanel}
             className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
@@ -311,7 +311,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             }`}
           >
             <Settings className="w-5 h-5" />
-            <span>Configuración de lectura y voces</span>
+            <span>Configuración</span>
           </button>
           {onGoVoiceCloning && (
             <button
@@ -319,7 +319,25 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               className="flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white hover:shadow-lg hover:shadow-purple-500/30"
             >
               <Mic2 className="w-5 h-5" />
-              <span>Ir al taller de clonación</span>
+              <span>Clonación</span>
+            </button>
+          )}
+          {onGoAIWorkshop && (
+            <button
+              onClick={onGoAIWorkshop}
+              className="flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white hover:shadow-lg hover:shadow-amber-500/30"
+            >
+              <Sparkles className="w-5 h-5" />
+              <span>Taller IA</span>
+            </button>
+          )}
+          {onGoBotPanel && (
+            <button
+              onClick={onGoBotPanel}
+              className="flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 text-white hover:shadow-lg hover:shadow-rose-500/30"
+            >
+              <Wand2 className="w-5 h-5" />
+              <span>Invocar</span>
             </button>
           )}
           {onGoStatistics && (
