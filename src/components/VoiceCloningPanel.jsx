@@ -31,6 +31,12 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
   const [voiceScript, setVoiceScript] = useState('')
   const [generatingVoice, setGeneratingVoice] = useState(false)
 
+  // Modal de preview después de generar
+  const [showPreviewModal, setShowPreviewModal] = useState(false)
+  const [previewVoice, setPreviewVoice] = useState(null)
+  const [editingName, setEditingName] = useState('')
+  const [savingName, setSavingName] = useState(false)
+
   const languageOptions = [
     { code: 'es-ES', label: 'Español (España)' },
     { code: 'es-MX', label: 'Español (México)' },
@@ -100,6 +106,48 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
     }
   }
 
+  const handleSaveVoiceName = async () => {
+    if (!editingName.trim()) {
+      setError('El nombre de la voz no puede estar vacío')
+      return
+    }
+
+    setSavingName(true)
+    try {
+      const token = localStorage.getItem('sv-token')
+      const res = await fetch(`${API_URL}/api/settings/voices/${previewVoice.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ voiceName: editingName.trim() })
+      })
+
+      if (res.ok) {
+        setMessage(`Voz renombrada a "${editingName}"`)
+        setShowPreviewModal(false)
+        setPreviewVoice(null)
+        loadUserVoices()
+        setTimeout(() => setMessage(null), 3000)
+      } else {
+        const data = await res.json()
+        setError(data.error || 'Error al renombrar la voz')
+      }
+    } catch (err) {
+      setError(`Error: ${err.message}`)
+    } finally {
+      setSavingName(false)
+    }
+  }
+
+  const handleCloseModal = () => {
+    setShowPreviewModal(false)
+    setPreviewVoice(null)
+    setEditingName('')
+    loadUserVoices() // Recargar igual aunque no haya renombrado
+  }
+
   const handleFileChange = (e) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -158,11 +206,14 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        setMessage(`Voz personalizada generada exitosamente`)
+        // Mostrar modal de preview con reproductor y opción de renombrar
+        setPreviewVoice(data.voice)
+        setEditingName(data.voice.defaultName)
+        setShowPreviewModal(true)
         setVoiceDescription('')
         setVoiceScript('')
         setScriptMode('auto')
-        loadUserVoices()
+        setMessage(null)
       } else {
         setError(data.error || data.details || 'Error al generar la voz')
       }
@@ -592,6 +643,104 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
               </div>
             )}
           </form>
+        </div>
+      )}
+
+      {/* Modal de Preview de Voz Generada */}
+      {showPreviewModal && previewVoice && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className={`${darkMode ? 'bg-[#1a1a2e]' : 'bg-white'} rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4`}>
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              <Sparkles className="w-6 h-6 text-cyan-400" />
+              <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Voz Generada
+              </h3>
+            </div>
+
+            {/* Reproductor */}
+            {previewVoice.previewAudio && (
+              <div className={`${darkMode ? 'bg-gray-800/60 border border-gray-700/50' : 'bg-gray-50 border border-gray-200'} rounded-lg p-4`}>
+                <p className={`text-sm mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  📢 Escucha tu voz generada:
+                </p>
+                <audio
+                  controls
+                  className="w-full"
+                  style={{
+                    accentColor: '#06b6d4'
+                  }}
+                >
+                  <source src={previewVoice.previewAudio} type="audio/mpeg" />
+                  Tu navegador no soporta el reproductor de audio
+                </audio>
+              </div>
+            )}
+
+            {/* Nombre editable */}
+            <div>
+              <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-cyan-300' : 'text-indigo-600'}`}>
+                Nombre de la voz
+              </label>
+              <input
+                type="text"
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                className={`w-full px-3 py-2 rounded-lg transition ${
+                  darkMode
+                    ? 'bg-[#0f0f23] border border-cyan-400/30 text-white focus:outline-none focus:border-cyan-400'
+                    : 'bg-gray-50 border border-indigo-300 text-gray-900 focus:outline-none focus:border-indigo-500'
+                }`}
+                disabled={savingName}
+              />
+            </div>
+
+            {/* Detalles */}
+            <div className={`text-xs space-y-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+              <p>🎯 Proveedor: <span className="text-cyan-400">{previewVoice.provider}</span></p>
+              <p>🆔 ID: <span className="font-mono text-cyan-400">{previewVoice.voiceId.substring(0, 20)}...</span></p>
+            </div>
+
+            {/* Acciones */}
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={handleCloseModal}
+                disabled={savingName}
+                className={`flex-1 px-4 py-2 rounded-lg font-semibold transition ${
+                  darkMode
+                    ? 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                }`}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveVoiceName}
+                disabled={savingName || !editingName.trim()}
+                className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-2 rounded-lg transition flex items-center justify-center gap-2"
+              >
+                {savingName ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    Guardar
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Error en modal */}
+            {error && (
+              <div className="p-3 bg-red-500/20 border border-red-400/50 rounded-lg flex gap-2">
+                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                <p className="text-red-100 text-sm">{error}</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
