@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Sparkles } from 'lucide-react'
+import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Sparkles, Edit2 } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
@@ -36,6 +36,10 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
   const [previewVoice, setPreviewVoice] = useState(null)
   const [editingName, setEditingName] = useState('')
   const [savingName, setSavingName] = useState(false)
+
+  // Modal de renombrar voz existente
+  const [editingVoiceId, setEditingVoiceId] = useState(null)
+  const [editingVoiceName, setEditingVoiceName] = useState('')
 
   // Prueba de voz
   const [testVoiceId, setTestVoiceId] = useState(null)
@@ -90,6 +94,44 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
       console.error('[Voices] Error cargando voces:', err)
     } finally {
       setLoadingVoices(false)
+    }
+  }
+
+  const handleEditVoice = (voice) => {
+    setEditingVoiceId(voice.id)
+    setEditingVoiceName(voice.voice_name)
+  }
+
+  const handleSaveVoiceEdit = async () => {
+    if (!editingVoiceName.trim()) {
+      setError('El nombre no puede estar vacío')
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('sv-token')
+      const res = await fetch(`${API_URL}/api/settings/voices/${editingVoiceId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ voiceName: editingVoiceName.trim() })
+      })
+
+      if (res.ok) {
+        setUserVoices(prev =>
+          prev.map(v => v.id === editingVoiceId ? {...v, voice_name: editingVoiceName.trim()} : v)
+        )
+        setMessage(`Voz renombrada a "${editingVoiceName}"`)
+        setEditingVoiceId(null)
+        setEditingVoiceName('')
+        setTimeout(() => setMessage(null), 3000)
+      } else {
+        setError('Error renombrando la voz')
+      }
+    } catch (err) {
+      setError(`Error: ${err.message}`)
     }
   }
 
@@ -403,22 +445,63 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
                 }`}
               >
                 <div className="flex-1">
-                  <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{voice.voice_name}</p>
+                  {editingVoiceId === voice.id ? (
+                    <input
+                      type="text"
+                      value={editingVoiceName}
+                      onChange={(e) => setEditingVoiceName(e.target.value)}
+                      autoFocus
+                      className={`w-full mb-1 px-2 py-1 rounded ${darkMode ? 'bg-[#0f0f23] border border-cyan-400/30 text-white focus:outline-none focus:border-cyan-400' : 'bg-white border border-indigo-300 text-gray-900 focus:outline-none focus:border-indigo-500'}`}
+                    />
+                  ) : (
+                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{voice.voice_name}</p>
+                  )}
                   <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                     {voice.provider} · {new Date(voice.created_at).toLocaleDateString()}
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <span className={`text-xs px-2 py-1 rounded whitespace-nowrap ${darkMode ? 'bg-cyan-500/10 text-cyan-400' : 'bg-cyan-50 text-cyan-600'}`}>
                     {voice.voice_id.substring(0, 15)}...
                   </span>
-                  <button
-                    onClick={() => handleDeleteVoice(voice.id, voice.voice_name)}
-                    className="p-1.5 rounded hover:bg-red-500/20 transition-colors flex-shrink-0"
-                    title="Eliminar voz"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-400" />
-                  </button>
+                  {editingVoiceId === voice.id ? (
+                    <>
+                      <button
+                        onClick={handleSaveVoiceEdit}
+                        className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded text-xs font-semibold transition-colors flex-shrink-0"
+                        title="Guardar"
+                      >
+                        Guardar
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingVoiceId(null)
+                          setEditingVoiceName('')
+                        }}
+                        className="px-2 py-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 rounded text-xs font-semibold transition-colors flex-shrink-0"
+                        title="Cancelar"
+                      >
+                        Cancelar
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleEditVoice(voice)}
+                        className="p-1.5 rounded hover:bg-cyan-500/20 transition-colors flex-shrink-0"
+                        title="Renombrar voz"
+                      >
+                        <Edit2 className="w-4 h-4 text-cyan-400" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteVoice(voice.id, voice.voice_name)}
+                        className="p-1.5 rounded hover:bg-red-500/20 transition-colors flex-shrink-0"
+                        title="Eliminar voz"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-400" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
