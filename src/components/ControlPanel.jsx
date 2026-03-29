@@ -67,7 +67,7 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
   const speed = config.audioSpeed || 1.0
   const [userVoices, setUserVoices] = useState([])
 
-  // Cargar voces del usuario desde la API
+  // Cargar voces del usuario desde la API - con polling automático
   useEffect(() => {
     const loadUserVoices = async () => {
       try {
@@ -93,7 +93,12 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
       }
     }
 
+    // Cargar inmediatamente
     loadUserVoices()
+
+    // Polling cada 2 segundos para detectar nuevas voces
+    const interval = setInterval(loadUserVoices, 2000)
+    return () => clearInterval(interval)
   }, [user?.email])
 
   const premiumVoiceOptions = [
