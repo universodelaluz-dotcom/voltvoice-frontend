@@ -321,79 +321,30 @@ export function App() {
     }
   ]
 
-  const pricing = [
-    {
-      name: 'Plan Básico',
-      price: '$5',
-      priceUsd: '$5 USD',
-      priceMxn: '90 MXN',
-      tokens: '168K',
-      tokensPerMonth: '168,000 tokens/mes',
-      hours: '~2 horas/semana',
-      description: 'Perfecto para probar',
-      features: ['~2 horas de voces naturales o clonadas', 'Voces básicas ilimitadas', 'Soporte por email']
-    },
-    {
-      name: 'Professional',
-      price: '$20',
-      priceUsd: '$20 USD',
-      priceMxn: '360 MXN',
-      tokens: '840K',
-      tokensPerMonth: '840,000 tokens/mes',
-      hours: '~10 horas/semana',
-      popular: true,
-      description: 'Más popular',
-      features: ['~10 horas de voces naturales o clonadas', 'Voces básicas ilimitadas', 'Soporte prioritario', 'Estadísticas']
-    },
-    {
-      name: 'Premium',
-      price: '$49',
-      priceUsd: '$49 USD',
-      priceMxn: '882 MXN',
-      tokens: '2.5M',
-      tokensPerMonth: '2,500,000 tokens/mes',
-      hours: '~30 horas/semana',
-      description: 'Para streamers profesionales',
-      features: ['~30 horas de voces naturales o clonadas', 'Voces básicas ilimitadas', 'Soporte 24/7', 'Streams ilimitados', 'Estadísticas avanzadas']
-    }
-  ]
-
   const additionalPackages = [
     {
-      size: 'Pequeño',
-      tokens: '100K',
-      price: '$3 USD',
-      priceMxn: '54 MXN',
-      cost: '$1.00',
-      profit: '$2.00',
-      margin: '3x'
+      size: 'S',
+      tokens: '100,000',
+      price: '$3.99',
+      hours: '≈ 2 – 3 horas extra'
     },
     {
-      size: 'Mediano',
-      tokens: '250K',
-      price: '$7 USD',
-      priceMxn: '126 MXN',
-      cost: '$2.50',
-      profit: '$4.50',
-      margin: '2.8x'
+      size: 'M',
+      tokens: '300,000',
+      price: '$9.99',
+      hours: '≈ 5 – 8 horas extra'
     },
     {
-      size: 'Grande',
-      tokens: '500K',
-      price: '$12 USD',
-      priceMxn: '216 MXN',
-      cost: '$5.00',
-      profit: '$7.00',
-      margin: '2.4x'
+      size: 'L',
+      tokens: '1,000,000',
+      price: '$24.99',
+      hours: '≈ 16 – 30 horas extra'
     },
     {
-      size: 'Máximo',
-      tokens: '1M',
-      price: '$20 USD',
-      priceMxn: '360 MXN',
-      cost: '$10.00',
-      profit: '$10.00',
-      margin: '2x'
+      size: 'XL',
+      tokens: '2,500,000',
+      price: '$49.99',
+      hours: '≈ 40 – 75 horas extra'
     }
   ]
 
@@ -611,109 +562,53 @@ export function App() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              {
-                size: 'Pequeño',
-                tokens: '100K', tokensNum: '100,000',
-                price: '$3', priceSub: 'USD',
-                icon: '🔋',
-                gradient: 'from-cyan-500 to-blue-500',
-                glowColor: 'cyan',
-                badge: null,
-                profit: '$2.00', margin: '3x',
-                popular: false,
-              },
-              {
-                size: 'Mediano',
-                tokens: '250K', tokensNum: '250,000',
-                price: '$7', priceSub: 'USD',
-                icon: '⚡',
-                gradient: 'from-blue-500 to-purple-500',
-                glowColor: 'blue',
-                badge: '🔥 MÁS POPULAR',
-                profit: '$4.50', margin: '2.8x',
-                popular: true,
-              },
-              {
-                size: 'Grande',
-                tokens: '500K', tokensNum: '500,000',
-                price: '$12', priceSub: 'USD',
-                icon: '🚀',
-                gradient: 'from-purple-500 to-pink-500',
-                glowColor: 'purple',
-                badge: null,
-                profit: '$7.00', margin: '2.4x',
-                popular: false,
-              },
-              {
-                size: 'Máximo',
-                tokens: '1M', tokensNum: '1,000,000',
-                price: '$20', priceSub: 'USD',
-                icon: '💎',
-                gradient: 'from-yellow-400 to-orange-500',
-                glowColor: 'yellow',
-                badge: '💰 MEJOR VALOR',
-                profit: '$10.00', margin: '2x',
-                popular: false,
-              },
-            ].map((pkg, idx) => (
+            {additionalPackages.map((pkg, idx) => {
+              const gradients = ['from-cyan-500 to-blue-500', 'from-blue-500 to-purple-500', 'from-purple-500 to-pink-500', 'from-yellow-400 to-orange-500']
+              const icons = ['🔋', '⚡', '🚀', '💎']
+              const gradient = gradients[idx]
+              const icon = icons[idx]
+              const isPopular = idx === 2
+              return (
               <div
                 key={idx}
-                className={"relative group rounded-2xl p-px transition-all duration-300 cursor-pointer " + (pkg.popular ? "scale-105 shadow-2xl shadow-blue-500/20" : "hover:scale-102 hover:shadow-xl")}
-                style={{ background: pkg.popular ? 'linear-gradient(135deg, #06b6d4, #8b5cf6)' : undefined }}
+                className={"relative group rounded-2xl p-px transition-all duration-300 cursor-pointer " + (isPopular ? "scale-105 shadow-2xl shadow-purple-500/20" : "hover:scale-102 hover:shadow-xl")}
+                style={{ background: isPopular ? 'linear-gradient(135deg, #a855f7, #ec4899)' : undefined }}
                 onClick={() => setIsPaymentOpen(true)}
               >
-                {/* Card inner */}
-                <div className={"rounded-2xl p-6 h-full flex flex-col " + (darkMode ? "bg-[#0f0f23]" : "bg-white") + " " + (!pkg.popular ? ("border " + (darkMode ? "border-white/10 hover:border-" + pkg.glowColor + "-400/40" : "border-gray-200 hover:border-" + pkg.glowColor + "-300")) : "")}>
+                <div className={"rounded-2xl p-6 h-full flex flex-col " + (darkMode ? "bg-[#0f0f23]" : "bg-white") + " " + (!isPopular ? ("border " + (darkMode ? "border-white/10" : "border-gray-200")) : "")}>
 
-                  {/* Badge */}
-                  {pkg.badge && (
-                    <div className={"text-[10px] font-black tracking-wider mb-4 px-3 py-1 rounded-full text-center w-full bg-gradient-to-r " + pkg.gradient + " text-white"}>
-                      {pkg.badge}
+                  {isPopular && (
+                    <div className={"text-[10px] font-black tracking-wider mb-4 px-3 py-1 rounded-full text-center w-full bg-gradient-to-r " + gradient + " text-white"}>
+                      🔥 MÁS POPULAR
                     </div>
                   )}
-                  {!pkg.badge && <div className="mb-4 h-6" />}
+                  {!isPopular && <div className="mb-4 h-6" />}
 
-                  {/* Icon + Size */}
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-2xl">{pkg.icon}</span>
-                    <span className={"font-black text-lg " + (darkMode ? "text-white" : "text-gray-800")}>{pkg.size}</span>
+                    <span className="text-2xl">{icon}</span>
+                    <span className={"font-black text-2xl " + (darkMode ? "text-white" : "text-gray-800")}>{pkg.size}</span>
                   </div>
 
-                  {/* Price */}
                   <div className="mb-4">
-                    <div className={"text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r " + pkg.gradient}>
+                    <div className={"text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r " + gradient}>
                       {pkg.price}
                     </div>
-                    <div className={"text-sm font-semibold " + (darkMode ? "text-gray-400" : "text-gray-500")}>{pkg.priceSub}</div>
                   </div>
 
-                  {/* Tokens count */}
-                  <div className={"rounded-xl px-3 py-2 mb-5 " + (darkMode ? "bg-white/5" : "bg-gray-50")}>
+                  <div className={"rounded-xl px-3 py-2 mb-4 " + (darkMode ? "bg-white/5" : "bg-gray-50")}>
                     <div className={"text-xs " + (darkMode ? "text-gray-500" : "text-gray-400")}>Tokens incluidos</div>
-                    <div className={"font-black text-lg text-transparent bg-clip-text bg-gradient-to-r " + pkg.gradient}>{pkg.tokens}</div>
-                    <div className={"text-[10px] " + (darkMode ? "text-gray-600" : "text-gray-400")}>{pkg.tokensNum} caracteres</div>
+                    <div className={"font-black text-lg text-transparent bg-clip-text bg-gradient-to-r " + gradient}>{pkg.tokens}</div>
                   </div>
 
-                  {/* CTA Button */}
-                  <button className={"w-full py-3 rounded-xl font-black text-sm mb-5 text-white bg-gradient-to-r transition-all " + pkg.gradient + " hover:opacity-90 hover:shadow-lg"}>
+                  <p className={"text-sm mb-5 " + (darkMode ? "text-gray-400" : "text-gray-500")}>{pkg.hours}</p>
+
+                  <button className={"w-full py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r transition-all mt-auto " + gradient + " hover:opacity-90 hover:shadow-lg"}>
                     Comprar ahora →
                   </button>
-
-                  {/* Stats */}
-                  <div className={"mt-auto space-y-1.5 pt-4 border-t " + (darkMode ? "border-white/5" : "border-gray-100")}>
-                    <div className={"flex justify-between text-xs " + (darkMode ? "text-gray-500" : "text-gray-400")}>
-                      <span>Tu ganancia:</span>
-                      <span className={"font-bold text-transparent bg-clip-text bg-gradient-to-r " + pkg.gradient}>{pkg.profit}</span>
-                    </div>
-                    <div className={"flex justify-between text-xs " + (darkMode ? "text-gray-500" : "text-gray-400")}>
-                      <span>Margen:</span>
-                      <span className={"font-bold " + (darkMode ? "text-white" : "text-gray-700")}>{pkg.margin}</span>
-                    </div>
-                  </div>
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* Bottom note */}
