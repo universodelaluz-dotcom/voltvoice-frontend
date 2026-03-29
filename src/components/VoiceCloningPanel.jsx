@@ -378,17 +378,14 @@ export default function VoiceWorkshopPanel({ onCloneSuccess }) {
                     </button>
                   </div>
                 </div>
-                <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                  🔊 Reproductor:
-                </p>
                 <audio
                   controls
-                  className="w-full h-8"
+                  className="w-full h-7"
                   style={{
                     accentColor: '#06b6d4'
                   }}
                 >
-                  <source src={`${API_URL}/api/tiktok/synthesize?voiceId=${voice.voice_id}`} type="audio/mpeg" />
+                  <source src={`${API_URL}/api/settings/voices/${voice.id}/play`} type="audio/mpeg" />
                   Tu navegador no soporta el reproductor
                 </audio>
               </div>
