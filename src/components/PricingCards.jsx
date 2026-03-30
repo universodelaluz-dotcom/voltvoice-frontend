@@ -12,10 +12,18 @@ export function PricingCards({ darkMode, showToggle = true }) {
     const detectLocationAndExchangeRates = async () => {
       try {
         // Detectar país por IP
-        const ipResponse = await fetch('https://ipapi.co/json/')
-        const ipData = await ipResponse.json()
-        const country = ipData.country_code || 'US'
-        const currency = ipData.currency || 'USD'
+        let country = 'US'
+        let currency = 'USD'
+        try {
+          const ipResponse = await fetch('https://ipapi.co/json/')
+          if (ipResponse.ok) {
+            const ipData = await ipResponse.json()
+            country = ipData.country_code || country
+            currency = ipData.currency || currency
+          }
+        } catch {
+          console.warn('[Pricing] No se pudo detectar ubicacion por IP; usando USD por defecto')
+        }
 
         setUserCountry(country)
         setUserCurrency(currency)
