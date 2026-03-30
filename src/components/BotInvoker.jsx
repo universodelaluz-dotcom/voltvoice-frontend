@@ -1007,10 +1007,10 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       })
       const data = await res.json()
       if (data.success) {
-        setCharacters(data.characters)
-        if (data.characters.length > 0) {
-          const preferredCharacter = data.characters.find((character) => character.is_custom) || data.characters[0]
-          setSelectedCharacterId(preferredCharacter.id)
+        const filtered = data.characters.filter((c) => c.is_custom)
+        setCharacters(filtered)
+        if (filtered.length > 0) {
+          setSelectedCharacterId(filtered[0].id)
         }
       }
     } catch (err) {
