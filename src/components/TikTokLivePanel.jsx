@@ -406,6 +406,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           const giftData = data.data
           console.log(`[TikTok] 🎁 Regalo de @${giftData.username}: ${giftData.giftName}`)
           setDonors(prev => new Set([...prev, giftData.username]))
+          chatStore.trackEvent({
+            type: 'gift',
+            username: giftData.username,
+            count: Number(giftData.repeatCount) > 0 ? Number(giftData.repeatCount) : 1,
+            timestamp: Date.now(),
+            meta: { giftName: giftData.giftName }
+          })
           if (c.announceGifts && canAnnounce('gift', c.giftCooldown || 5)) {
             const text = `${giftData.username} envió ${giftData.giftName}`
             queueMessage(text, giftData.username, { isNotification: true })
@@ -424,6 +431,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           }
 
         } else if (data.data && data.data.type === 'share') {
+          chatStore.trackEvent({
+            type: 'share',
+            username: data.data.username,
+            count: 1,
+            timestamp: Date.now()
+          })
           if (c.announceShares && canAnnounce('share', c.shareCooldown || 15)) {
             const text = `${data.data.username} compartió tu stream`
             queueMessage(text, data.data.username, { isNotification: true })

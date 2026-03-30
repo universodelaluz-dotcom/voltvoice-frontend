@@ -250,7 +250,6 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const transcriptCompleteRef = useRef('')
   const transcriptDeltaTimerRef = useRef(null)
   const localAudioRef = useRef(null)
-  const chatResumeTimerRef = useRef(null)
   const latestResponseTextRef = useRef('')
   const hasChargedCurrentResponseRef = useRef(false)
   const selectedRealtimeVoiceIdRef = useRef('')
@@ -272,13 +271,6 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     if (responseTimeoutRef.current) {
       clearTimeout(responseTimeoutRef.current)
       responseTimeoutRef.current = null
-    }
-  }
-
-  const clearChatResumeTimer = () => {
-    if (chatResumeTimerRef.current) {
-      clearTimeout(chatResumeTimerRef.current)
-      chatResumeTimerRef.current = null
     }
   }
 
@@ -362,6 +354,27 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       .replace(/[^a-z0-9._\s-]+/g, ' ')
       .split(/\s+/)
       .filter(Boolean)
+  }
+
+  const COLOR_NAME_MAP = {
+    verde: { hex: '#22c55e', label: 'verde' },
+    rojo: { hex: '#ef4444', label: 'rojo' },
+    morado: { hex: '#a855f7', label: 'morado' },
+    violeta: { hex: '#a855f7', label: 'morado' },
+    azul: { hex: '#3b82f6', label: 'azul' },
+    rosa: { hex: '#ec4899', label: 'rosa' },
+    dorado: { hex: '#f59e0b', label: 'dorado' },
+    amarillo: { hex: '#f59e0b', label: 'dorado' },
+    cian: { hex: '#06b6d4', label: 'cian' },
+    cyan: { hex: '#06b6d4', label: 'cian' }
+  }
+
+  const getColorFromIntentText = (normalized) => {
+    const matchedName = Object.keys(COLOR_NAME_MAP).find((name) => normalized.includes(name))
+    if (!matchedName) {
+      return null
+    }
+    return COLOR_NAME_MAP[matchedName]
   }
 
   const detectDesiredBooleanState = (normalized) => {
@@ -573,6 +586,33 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     const nickMatch = normalized.match(/(?:ponle|cambia(?:le)?|asigna|dile\s+ahora)\s+(?:apodo|nickname)?\s*(?:a\s+)?@?([a-z0-9._\s-]+)\s+(?:por|a)\s+(.+)/i)
     if (nickMatch) {
       return { type: 'set_nickname', username: nickMatch[1], nickname: nickMatch[2].trim() }
+    }
+
+    if (/(humor|animo|ambiente|vibra)/i.test(normalized) && /chat/.test(normalized)) {
+      return { type: 'get_chat_mood' }
+    }
+
+    if ((/(quien|usuario|persona)/i.test(normalized) && /(mas|top|mayor)/i.test(normalized)) &&
+        /(compartido|compartio|share|shares|compartido el live)/i.test(normalized)) {
+      return { type: 'get_top_sharer_today' }
+    }
+
+    if ((/(quien|usuario|persona)/i.test(normalized) && /(mas|top|mayor)/i.test(normalized)) &&
+        /(regalo|regalos|gift|gifts|dio regalos|ha dado)/i.test(normalized)) {
+      return { type: 'get_top_gifter_today' }
+    }
+
+    const highlightWithColorMatch = normalized.match(/(?:remarca|resalta|destaca|pon(?:le)?\s+color|colorea)\s+(?:en\s+color\s+)?(?:verde|rojo|morado|violeta|azul|rosa|dorado|amarillo|cian|cyan)\s+(?:a\s+)?(?:usuario\s+)?@?([a-z0-9._\s-]+)/i) ||
+      normalized.match(/(?:remarca|resalta|destaca|pon(?:le)?\s+color|colorea)\s+(?:a\s+)?(?:usuario\s+)?@?([a-z0-9._\s-]+)\s+(?:en\s+color\s+)?(?:verde|rojo|morado|violeta|azul|rosa|dorado|amarillo|cian|cyan)/i)
+    if (highlightWithColorMatch) {
+      const username = highlightWithColorMatch[1]
+      const color = getColorFromIntentText(normalized)
+      return {
+        type: 'highlight_user',
+        username,
+        color: color?.hex || '#06b6d4',
+        colorLabel: color?.label || 'cian'
+      }
     }
 
     const highlightMatch = normalized.match(/(?:remarca|remarcame|resalta|resaltame|destaca|destacame|marca|marcame|pon(?:lo|la)?\s+en\s+color|haz(?:lo|la)?\s+notar)\s+(?:a\s+)?@?([a-z0-9._\s-]+)/i)
@@ -819,7 +859,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
         if (!target.ok) return target.message
         const result = chatStore.highlightUser(target.username, intent.color || '#06b6d4')
         return result.success
-          ? `Listo, ya resalte a ${result.nickname || target.nickname}.`
+          ? `Listo, ya remarque a ${result.nickname || target.nickname}${intent.colorLabel ? ` en color ${intent.colorLabel}` : ''}.`
           : result.message || `No pude resaltar a ${intent.username}.`
       }
       case 'remove_highlight': {
@@ -869,6 +909,27 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       case 'funniest_user': {
         const grounded = chatStore.findGroundedChatAnswer('funniest_user', { minutes: 10 })
         return grounded?.text || 'Todavia no tengo suficiente contexto para decidir quien trae mas cotorreo en el chat.'
+      }
+      case 'get_chat_mood': {
+        const mood = chatStore.getChatMood(10)
+        if (!mood) {
+          return 'Aun no tengo suficientes mensajes para estimar el humor del chat.'
+        }
+        return `El humor del chat se siente ${mood.mood}. En los ultimos minutos vi ${mood.messages} mensajes, con ${mood.positive} senales positivas, ${mood.negative} senales tensas y ${mood.funny} de cotorreo.`
+      }
+      case 'get_top_sharer_today': {
+        const top = chatStore.getTopEventUser('share', { todayOnly: true })
+        if (!top) {
+          return 'Hoy aun no tengo registros suficientes de compartidos para decirte quien va primero.'
+        }
+        return `Hoy quien mas ha compartido es ${top.username}, con ${top.total} compartido${top.total === 1 ? '' : 's'}.`
+      }
+      case 'get_top_gifter_today': {
+        const top = chatStore.getTopEventUser('gift', { todayOnly: true })
+        if (!top) {
+          return 'Hoy aun no tengo registros suficientes de regalos para decirte quien va primero.'
+        }
+        return `Hoy quien mas regalos ha dado es ${top.username}, con ${top.total} regalo${top.total === 1 ? '' : 's'}.`
       }
       case 'get_token_balance': {
         const stats = await fetchStatsSummary()
@@ -1007,20 +1068,9 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
           console.warn('[Bot] No se pudo registrar consumo realtime:', error.message)
         }
       }
-
-      if (!responsePlaybackStartedRef.current && !hasVoiceResponseRef.current) {
-        clearChatResumeTimer()
-        chatResumeTimerRef.current = setTimeout(() => {
-          chatResumeTimerRef.current = null
-          if (!responsePlaybackStartedRef.current && !hasVoiceResponseRef.current) {
-            setChatSuppressed(false)
-          }
-        }, 1200)
-      }
     }
 
     const handleAudioStarted = () => {
-      clearChatResumeTimer()
       hasVoiceResponseRef.current = true
       responsePlaybackStartedRef.current = true
       setHasActiveResponse(true)
@@ -1033,7 +1083,6 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     }
 
     const handleAudioComplete = () => {
-      clearChatResumeTimer()
       responsePlaybackStartedRef.current = false
       setIsPlayingResponse(false)
       setChatSuppressed(false)
@@ -1047,7 +1096,6 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       setIsRecording(false)
       setChatSuppressed(false)
       clearResponseTimeout()
-      clearChatResumeTimer()
     }
 
     inworldRealtimeService.on('text-response', handleTextResponse)
@@ -1076,7 +1124,6 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
         mediaStreamRef.current.getTracks().forEach(track => track.stop())
       }
       clearResponseTimeout()
-      clearChatResumeTimer()
       setChatSuppressed(false)
       if (transcriptDeltaTimerRef.current) {
         clearTimeout(transcriptDeltaTimerRef.current)
@@ -1100,7 +1147,6 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     setSelectedRealtimeVoiceId((current) => current || resolvedVoice)
     setVoiceLabel(resolvedVoice || 'Clive')
     clearResponseTimeout()
-    clearChatResumeTimer()
     setChatSuppressed(false)
     inworldRealtimeService.closeSession()
   }, [selectedCharacterId, characters, userVoices])

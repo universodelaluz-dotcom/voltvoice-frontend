@@ -10,6 +10,8 @@ class ChatStore {
   constructor() {
     this.messages = []        // Recent chat messages
     this.maxMessages = 200    // Keep last 200 messages
+    this.eventHistory = []    // Recent non-chat events (gifts, shares, etc.)
+    this.maxEvents = 1000
     this.bannedUsers = new Set()
     this.highlightedUsers = {}
     this.nickOverrides = {}
@@ -147,6 +149,24 @@ class ChatStore {
     }
   }
 
+  trackEvent({ type, username, count = 1, timestamp = Date.now(), meta = {} }) {
+    if (!type || !username) {
+      return
+    }
+
+    this.eventHistory.push({
+      type,
+      username,
+      count: Number.isFinite(count) ? count : 1,
+      timestamp,
+      meta
+    })
+
+    if (this.eventHistory.length > this.maxEvents) {
+      this.eventHistory = this.eventHistory.slice(-this.maxEvents)
+    }
+  }
+
   syncBannedUsers(bannedSet) {
     this.bannedUsers = new Set(bannedSet)
   }
@@ -211,7 +231,65 @@ class ChatStore {
       recentMessages: recentMsgs.length,
       activeUsers: uniqueUsers.size,
       bannedCount: this.bannedUsers.size,
-      highlightedCount: Object.keys(this.highlightedUsers).length
+      highlightedCount: Object.keys(this.highlightedUsers).length,
+      giftsToday: this.eventHistory
+        .filter((event) => event.type === 'gift' && event.timestamp >= new Date(new Date().setHours(0, 0, 0, 0)).getTime())
+        .reduce((acc, event) => acc + (event.count || 1), 0),
+      sharesToday: this.eventHistory
+        .filter((event) => event.type === 'share' && event.timestamp >= new Date(new Date().setHours(0, 0, 0, 0)).getTime())
+        .reduce((acc, event) => acc + (event.count || 1), 0)
+    }
+  }
+
+  getTopEventUser(eventType, { todayOnly = true } = {}) {
+    const startOfDay = new Date(new Date().setHours(0, 0, 0, 0)).getTime()
+    const grouped = new Map()
+
+    this.eventHistory
+      .filter((event) => event.type === eventType)
+      .filter((event) => !todayOnly || event.timestamp >= startOfDay)
+      .forEach((event) => {
+        const prev = grouped.get(event.username) || 0
+        grouped.set(event.username, prev + (event.count || 1))
+      })
+
+    const sorted = [...grouped.entries()].sort((a, b) => b[1] - a[1])
+    if (!sorted.length) {
+      return null
+    }
+
+    return {
+      username: sorted[0][0],
+      total: sorted[0][1]
+    }
+  }
+
+  getChatMood(minutes = 10) {
+    const users = this.getUserActivitySummary(minutes)
+    if (!users.length) {
+      return null
+    }
+
+    const aggregate = users.reduce((acc, user) => {
+      acc.positive += user.positiveScore
+      acc.negative += user.negativeScore
+      acc.funny += user.funnyScore
+      acc.messages += user.messageCount
+      return acc
+    }, { positive: 0, negative: 0, funny: 0, messages: 0 })
+
+    let mood = 'neutral'
+    if (aggregate.positive >= aggregate.negative + 2) {
+      mood = aggregate.funny > 0 ? 'positivo y relajado' : 'positivo'
+    } else if (aggregate.negative >= aggregate.positive + 2) {
+      mood = 'tenso'
+    } else if (aggregate.funny >= 3) {
+      mood = 'relajado'
+    }
+
+    return {
+      mood,
+      ...aggregate
     }
   }
 
