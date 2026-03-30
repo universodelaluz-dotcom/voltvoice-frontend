@@ -19,6 +19,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
 
   const mediaStreamRef = useRef(null)
   const chatSuppressedRef = useRef(false)
+  const responseTimeoutRef = useRef(null)
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   const setChatSuppressed = (active) => {
@@ -32,6 +33,24 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     }))
   }
 
+  const clearResponseTimeout = () => {
+    if (responseTimeoutRef.current) {
+      clearTimeout(responseTimeoutRef.current)
+      responseTimeoutRef.current = null
+    }
+  }
+
+  const armResponseTimeout = () => {
+    clearResponseTimeout()
+    responseTimeoutRef.current = setTimeout(() => {
+      console.warn('[Bot] Response timeout reached, restoring UI state')
+      setIsLoading(false)
+      setIsRecording(false)
+      setChatSuppressed(false)
+      setResponse((current) => current || 'La IA tardó demasiado en responder. Intenta de nuevo.')
+    }, 20000)
+  }
+
   useEffect(() => {
     loadCharacters()
     loadUserVoices()
@@ -42,6 +61,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       if (data?.text) {
         setResponse(data.text)
         setIsLoading(false)
+        clearResponseTimeout()
       }
     }
 
@@ -49,17 +69,20 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       setIsLoading(false)
       setIsRecording(false)
       setChatSuppressed(false)
+      clearResponseTimeout()
     }
 
     const handleAudioStarted = () => {
       setHasVoiceResponse(true)
       setIsPlayingResponse(true)
       setIsLoading(false)
+      clearResponseTimeout()
     }
 
     const handleAudioComplete = () => {
       setIsPlayingResponse(false)
       setChatSuppressed(false)
+      clearResponseTimeout()
     }
 
     const handleError = (error) => {
@@ -68,6 +91,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       setIsLoading(false)
       setIsRecording(false)
       setChatSuppressed(false)
+      clearResponseTimeout()
     }
 
     inworldRealtimeService.on('text-response', handleTextResponse)
@@ -85,6 +109,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(track => track.stop())
       }
+      clearResponseTimeout()
       setChatSuppressed(false)
       inworldRealtimeService.closeSession()
     }
@@ -98,6 +123,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     const resolvedVoice = resolveRealtimeVoice(currentCharacter) || ''
     setSelectedRealtimeVoiceId((current) => current || resolvedVoice)
     setVoiceLabel(resolvedVoice || 'Clive')
+    clearResponseTimeout()
     setChatSuppressed(false)
     inworldRealtimeService.closeSession()
   }, [selectedCharacterId, characters, userVoices])
@@ -246,6 +272,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       await inworldRealtimeService.removeAudioTracks()
       setIsRecording(false)
       setIsLoading(true)
+      armResponseTimeout()
       await inworldRealtimeService.requestResponse()
       console.log('[Bot] Microphone deactivated, requesting response')
     } catch (err) {
@@ -264,12 +291,14 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     setResponse(null)
     setHasVoiceResponse(false)
     setChatSuppressed(true)
+    armResponseTimeout()
 
     try {
       await ensureBotSession()
       await inworldRealtimeService.sendMessage(text.trim())
     } catch (err) {
       console.error('Error invoking bot:', err)
+      clearResponseTimeout()
       setResponse(`Error: ${err.message}`)
       setIsLoading(false)
     }

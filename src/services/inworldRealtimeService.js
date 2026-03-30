@@ -238,6 +238,7 @@ export class InworldRealtimeService {
         }
 
         let completed = false
+        let firstCandidateSeen = false
         const done = () => {
           if (completed) return
           completed = true
@@ -253,11 +254,31 @@ export class InworldRealtimeService {
           }
         }
 
+        const originalOnIceCandidate = this.peerConnection.onicecandidate
+        this.peerConnection.onicecandidate = (event) => {
+          if (event.candidate) {
+            console.log('[Inworld] New ICE candidate:', event.candidate)
+            if (!firstCandidateSeen) {
+              firstCandidateSeen = true
+              setTimeout(() => {
+                if (!completed && this.peerConnection?.iceGatheringState !== 'complete') {
+                  console.log('[Inworld] Proceeding after first ICE candidate')
+                  done()
+                }
+              }, 350)
+            }
+          }
+
+          if (typeof originalOnIceCandidate === 'function') {
+            originalOnIceCandidate(event)
+          }
+        }
+
         // Safety timeout - don't wait forever
         const timeoutId = setTimeout(() => {
           console.warn('[Inworld] ICE gathering timeout, proceeding with current SDP')
           done()
-        }, 5000)
+        }, 1500)
 
         // Store timeout ID to clear if done early
         this._iceTimeout = timeoutId
