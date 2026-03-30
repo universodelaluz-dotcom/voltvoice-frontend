@@ -365,7 +365,7 @@ export class InworldRealtimeService {
                 model: 'inworld-tts-1.5-mini'
               }
             },
-            tools: this._getToolDefinitions()
+            tools: []
           }
         }
         this.dataChannel.send(JSON.stringify(sessionConfig))

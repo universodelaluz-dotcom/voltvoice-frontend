@@ -72,12 +72,12 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
   const resolveChatIntent = (text) => {
     const normalized = normalizeIntentText(text)
 
-    const banMatch = normalized.match(/(?:bloquea|ban(?:ea)?|banea|silencia|ignora)\s+a\s+@?([a-z0-9._-]+)/i)
+    const banMatch = normalized.match(/(?:bloque(?:a|ame|alo|ala|alo\s+a|en)|bane(?:a|ame|alo|ala|en)?|ban(?:ea|ear)?|silencia|ignora|mutea|calla)\s+(?:a\s+)?@?([a-z0-9._-]+)/i)
     if (banMatch) {
       return { type: 'ban_user', username: banMatch[1] }
     }
 
-    const unbanMatch = normalized.match(/(?:desbloquea|desban(?:ea)?|desbanea|quita\s+ban)\s+a\s+@?([a-z0-9._-]+)/i)
+    const unbanMatch = normalized.match(/(?:desbloque(?:a|ame|alo|ala)?|desban(?:ea|eame|ealo|eala)?|quita\s+ban|quita\s+el\s+ban|desmutea)\s+(?:a\s+)?@?([a-z0-9._-]+)/i)
     if (unbanMatch) {
       return { type: 'unban_user', username: unbanMatch[1] }
     }
@@ -93,6 +93,11 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     }
 
     if (normalized.includes('usuarios activos') || normalized.includes('mas activos del chat')) {
+      return { type: 'get_active_users', minutes: 5 }
+    }
+
+    if ((normalized.includes('comentador') || normalized.includes('comenta')) &&
+        (normalized.includes('mas') || normalized.includes('frecuente') || normalized.includes('activo'))) {
       return { type: 'get_active_users', minutes: 5 }
     }
 
@@ -529,6 +534,7 @@ After using a tool, summarize the result conversationally.`
 
       const localIntent = resolveChatIntent(transcriptFromSpeech)
       if (localIntent) {
+        clearResponseTimeout()
         const localResponse = await executeLocalIntent(localIntent, transcriptFromSpeech)
         setResponse(localResponse)
         setHasActiveResponse(true)
