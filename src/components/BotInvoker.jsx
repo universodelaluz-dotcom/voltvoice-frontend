@@ -18,8 +18,6 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
   const responseAudioRef = useRef(null)
 
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
-  const INWORLD_API_KEY = import.meta.env.VITE_INWORLD_API_KEY
-  const INWORLD_WORKSPACE_ID = import.meta.env.VITE_INWORLD_WORKSPACE_ID
 
   // Load characters
   useEffect(() => {
@@ -88,11 +86,6 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
       return
     }
 
-    if (!INWORLD_API_KEY || !INWORLD_WORKSPACE_ID) {
-      alert('Faltan credenciales de Inworld. Configura VITE_INWORLD_API_KEY y VITE_INWORLD_WORKSPACE_ID en .env')
-      return
-    }
-
     setIsLoading(true)
     setResponse(null)
 
@@ -103,7 +96,7 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
       await inworldRealtimeService.startSession(
         selectedCharacterId,
         character?.system_prompt || '',
-        INWORLD_WORKSPACE_ID,
+        null,
         API_URL
       )
 

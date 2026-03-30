@@ -4,8 +4,6 @@ import AudioVisualizer from './AudioVisualizer'
 import { inworldRealtimeService } from '../services/inworldRealtimeService'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
-const INWORLD_API_KEY = import.meta.env.VITE_INWORLD_API_KEY
-const INWORLD_WORKSPACE_ID = import.meta.env.VITE_INWORLD_WORKSPACE_ID
 
 export default function BotPanel({ tiktokUsername, darkMode = true }) {
   const [characters, setCharacters] = useState([])
@@ -124,11 +122,6 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
       return
     }
 
-    if (!INWORLD_API_KEY || !INWORLD_WORKSPACE_ID) {
-      alert('Faltan credenciales de Inworld (VITE_INWORLD_API_KEY, VITE_INWORLD_WORKSPACE_ID)')
-      return
-    }
-
     setIsInvoking(true)
     setError(null)
     setResponse(null)
@@ -163,8 +156,8 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
       const sessionId = await inworldRealtimeService.startSession(
         invokeData.character_id,
         invokeData.system_prompt,
-        INWORLD_WORKSPACE_ID,
-        INWORLD_API_KEY
+        null,
+        API_URL
       )
 
       // Escuchar eventos de Inworld

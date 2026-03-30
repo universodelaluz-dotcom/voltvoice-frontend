@@ -1,10 +1,6 @@
 /**
  * Inworld Realtime WebRTC API Service
  * Handles WebRTC connection with Inworld for speech-to-speech interactions
- *
- * Requires:
- * - VITE_INWORLD_API_KEY in .env
- * - VITE_INWORLD_WORKSPACE_ID in .env
  */
 
 export class InworldRealtimeService {
@@ -22,6 +18,26 @@ export class InworldRealtimeService {
     this.isPlayingAudio = false
     this.eventCallbacks = {}
     this.config = null  // Store config from backend
+    this.microphoneSender = null
+  }
+
+  _normalizeApiUrl(apiUrl = '') {
+    if (!apiUrl || apiUrl.startsWith('http://') || apiUrl.startsWith('https://') || apiUrl.startsWith('/')) {
+      return apiUrl
+    }
+
+    console.warn('[Inworld] Ignoring invalid apiUrl value, falling back to relative backend path')
+    return ''
+  }
+
+  _getAuthorizationHeader(apiKey = '') {
+    const normalizedKey = apiKey.replace(/^(Basic|Bearer)\s+/i, '').trim()
+
+    if (!normalizedKey) {
+      throw new Error('No Inworld API key available - check backend config endpoint')
+    }
+
+    return `Bearer ${normalizedKey}`
   }
 
   /**
@@ -29,7 +45,8 @@ export class InworldRealtimeService {
    */
   async getConfig(apiUrl = '') {
     try {
-      const configUrl = apiUrl ? `${apiUrl}/api/inworld/config` : '/api/inworld/config'
+      const normalizedApiUrl = this._normalizeApiUrl(apiUrl)
+      const configUrl = normalizedApiUrl ? `${normalizedApiUrl}/api/inworld/config` : '/api/inworld/config'
       console.log('[Inworld] Fetching config from:', configUrl)
 
       const response = await fetch(configUrl)
@@ -56,14 +73,14 @@ export class InworldRealtimeService {
    */
   async startSession(characterId, systemPrompt, workspaceId, apiUrl = '') {
     try {
+      const normalizedApiUrl = this._normalizeApiUrl(apiUrl)
+
       // Fetch config from backend (includes API key + ICE servers)
       if (!this.config) {
-        await this.getConfig(apiUrl)
+        await this.getConfig(normalizedApiUrl)
       }
 
-      if (!this.config || !this.config.api_key) {
-        throw new Error('No Inworld API key available - check backend config endpoint')
-      }
+      const authHeader = this._getAuthorizationHeader(this.config?.api_key)
 
       // Create RTCPeerConnection with ICE servers from config
       const iceServers = this.config.ice_servers || [
@@ -80,6 +97,10 @@ export class InworldRealtimeService {
       this.dataChannel = this.peerConnection.createDataChannel('oai-events', { ordered: true })
       this._setupDataChannel()
       console.log('[Inworld] Data channel created (before offer)')
+
+      // Reserve an audio sender so push-to-talk can attach tracks later without renegotiating.
+      const audioTransceiver = this.peerConnection.addTransceiver('audio', { direction: 'sendrecv' })
+      this.microphoneSender = audioTransceiver.sender
 
       // Generate SDP offer
       const offer = await this.peerConnection.createOffer()
@@ -126,11 +147,12 @@ export class InworldRealtimeService {
       console.log('[Inworld] SDP preview:', this.peerConnection.localDescription.sdp.substring(0, 200))
 
       // Send offer to Inworld - IMPORTANT: Content-Type is application/sdp, body is raw SDP text
+      // Use Bearer token with base64-encoded API key from portal
       const response = await fetch(this.config.url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/sdp',
-          'Authorization': `Bearer ${this.config.api_key}`
+          'Authorization': authHeader
         },
         body: this.peerConnection.localDescription.sdp
       })
@@ -222,19 +244,33 @@ export class InworldRealtimeService {
       this.isConnected = true
       this.dataChannelReady = true
 
-      // Send initial session configuration
+      // Send session configuration - REQUIRED for Realtime API
       try {
         const sessionConfig = {
           type: 'session.update',
           session: {
             type: 'realtime',
-            model: 'gpt-4-turbo',
-            instructions: 'You are a helpful voice assistant. Respond in Spanish. Keep responses short and concise.',
-            output_modalities: ['text']
+            model: 'openai/gpt-4o-mini',
+            instructions: 'You are a helpful voice assistant. Respond in Spanish. Keep responses concise.',
+            output_modalities: ['audio', 'text'],
+            audio: {
+              input: {
+                turn_detection: {
+                  type: 'semantic_vad',
+                  eagerness: 'medium',
+                  create_response: true,
+                  interrupt_response: true
+                }
+              },
+              output: {
+                voice: 'Clive',
+                model: 'inworld-tts-1.5-mini'
+              }
+            }
           }
         }
         this.dataChannel.send(JSON.stringify(sessionConfig))
-        console.log('[Inworld] Session config sent')
+        console.log('[Inworld] Session config sent with model:', sessionConfig.session.model)
       } catch (err) {
         console.error('[Inworld] Error sending session config:', err)
       }
@@ -326,8 +362,13 @@ export class InworldRealtimeService {
         break
 
       case 'response.done':
-        console.log('[Inworld] Response done')
-        console.log('[Inworld] Full response event:', JSON.stringify(event).substring(0, 500))
+        console.log('[Inworld] Response done - Full event:')
+        console.log('[Inworld] Status:', event.response?.status)
+        console.log('[Inworld] Status details:', event.response?.status_details)
+        console.log('[Inworld] Output:', event.response?.output)
+        if (event.response?.status === 'failed') {
+          console.error('[Inworld] Response failed:', JSON.stringify(event).substring(0, 500))
+        }
         this._emit('response-complete', event)
         break
 
@@ -345,16 +386,24 @@ export class InworldRealtimeService {
         break
 
       // Text output events
-      case 'response.text.delta':
+      case 'response.output_text.delta':
         if (event.delta) {
           console.log('[Inworld] Text delta:', event.delta)
+          this._emit('text-delta', { text: event.delta })
         }
         break
 
-      case 'response.text.done':
+      case 'response.output_text.done':
         if (event.text) {
           console.log('[Inworld] Text response:', event.text)
           this._emit('text-response', { text: event.text })
+        }
+        break
+
+      case 'response.output_audio_transcript.done':
+        if (event.transcript) {
+          console.log('[Inworld] Audio transcript:', event.transcript)
+          this._emit('text-response', { text: event.transcript })
         }
         break
 
@@ -482,10 +531,12 @@ export class InworldRealtimeService {
           item: {
             type: 'message',
             role: 'user',
-            content: {
-              content_type: 'text',
-              text: text
-            }
+            content: [
+              {
+                type: 'input_text',
+                text
+              }
+            ]
           }
         }
 
@@ -600,11 +651,22 @@ export class InworldRealtimeService {
     }
 
     try {
-      stream.getAudioTracks().forEach(track => {
-        const sender = this.peerConnection.addTrack(track, stream)
-        this.audioTracks.push({ track, sender })
-        console.log('[Inworld] Audio track added to connection')
-      })
+      const [track] = stream.getAudioTracks()
+      if (!track) {
+        console.warn('[Inworld] No audio track found in stream')
+        return
+      }
+
+      if (this.microphoneSender) {
+        this.microphoneSender.replaceTrack(track)
+        this.audioTracks = [{ track, sender: this.microphoneSender }]
+        console.log('[Inworld] Audio track attached to reserved sender')
+        return
+      }
+
+      const sender = this.peerConnection.addTrack(track, stream)
+      this.audioTracks = [{ track, sender }]
+      console.log('[Inworld] Audio track added to connection')
     } catch (err) {
       console.error('[Inworld] Error adding audio tracks:', err)
     }
@@ -616,8 +678,10 @@ export class InworldRealtimeService {
   async removeAudioTracks() {
     try {
       for (const { sender } of this.audioTracks) {
-        if (sender && this.peerConnection) {
-          await this.peerConnection.removeTrack(sender)
+        if (sender === this.microphoneSender) {
+          await this.microphoneSender.replaceTrack(null)
+        } else if (sender && this.peerConnection) {
+          this.peerConnection.removeTrack(sender)
         }
       }
       this.audioTracks = []
@@ -665,6 +729,7 @@ export class InworldRealtimeService {
     }
 
     this.audioTracks = []
+    this.microphoneSender = null
     this.isConnected = false
     this.sessionId = null
     this.dataChannel = null
