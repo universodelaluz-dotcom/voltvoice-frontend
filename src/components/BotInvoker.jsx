@@ -254,6 +254,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const hasChargedCurrentResponseRef = useRef(false)
   const selectedRealtimeVoiceIdRef = useRef('')
   const voiceLabelRef = useRef('Clive')
+  const sessionBrokenRef = useRef(false)
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   const setChatSuppressed = (active) => {
@@ -265,6 +266,12 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     window.dispatchEvent(new CustomEvent('voltvoice:ptt-audio-state', {
       detail: { active }
     }))
+  }
+
+  const markSessionBroken = () => {
+    if (sessionBrokenRef.current) return
+    sessionBrokenRef.current = true
+    inworldRealtimeService.closeSession()
   }
 
   const clearResponseTimeout = () => {
@@ -1091,6 +1098,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
     const handleError = (error) => {
       console.error('Session error:', error)
+      markSessionBroken()
       setResponse(`Error: ${error?.message || 'Unknown error'}`)
       setIsLoading(false)
       setIsRecording(false)
@@ -1238,6 +1246,11 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const ensureBotSession = async () => {
     if (!selectedCharacterId) {
       throw new Error('Selecciona un personaje')
+    }
+
+    if (sessionBrokenRef.current) {
+      inworldRealtimeService.closeSession()
+      sessionBrokenRef.current = false
     }
 
     const character = characters.find((item) => item.id === selectedCharacterId)
