@@ -392,22 +392,24 @@ export class InworldRealtimeService {
    */
   waitForDataChannel(timeout = 5000) {
     return new Promise((resolve, reject) => {
-      if (this.dataChannelReady) {
-        resolve()
-        return
+      const startedAt = Date.now()
+
+      const checkReady = () => {
+        if (this.dataChannel?.readyState === 'open' || this.dataChannelReady) {
+          this.dataChannelReady = true
+          resolve()
+          return
+        }
+
+        if (Date.now() - startedAt >= timeout) {
+          reject(new Error('Data channel did not open in time'))
+          return
+        }
+
+        setTimeout(checkReady, 100)
       }
 
-      this.dataChannelResolve = resolve
-      const timer = setTimeout(() => {
-        reject(new Error('Data channel did not open in time'))
-      }, timeout)
-
-      // Fallback in case resolve is called before timer
-      const originalResolve = resolve
-      this.dataChannelResolve = () => {
-        clearTimeout(timer)
-        originalResolve()
-      }
+      checkReady()
     })
   }
 

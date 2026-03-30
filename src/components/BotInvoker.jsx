@@ -7,6 +7,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
   const [userVoices, setUserVoices] = useState([])
   const [voicesLoaded, setVoicesLoaded] = useState(false)
   const [selectedCharacterId, setSelectedCharacterId] = useState(null)
+  const [selectedRealtimeVoiceId, setSelectedRealtimeVoiceId] = useState('')
   const [inputMode, setInputMode] = useState('microphone')
   const [inputText, setInputText] = useState('')
   const [isRecording, setIsRecording] = useState(false)
@@ -76,7 +77,9 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     setHasVoiceResponse(false)
     setIsPlayingResponse(false)
     const currentCharacter = characters.find((item) => item.id === selectedCharacterId)
-    setVoiceLabel(resolveRealtimeVoice(currentCharacter) || 'Clive')
+    const resolvedVoice = resolveRealtimeVoice(currentCharacter) || ''
+    setSelectedRealtimeVoiceId((current) => current || resolvedVoice)
+    setVoiceLabel(resolvedVoice || 'Clive')
     inworldRealtimeService.closeSession()
   }, [selectedCharacterId, characters, userVoices])
 
@@ -90,7 +93,8 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       if (data.success) {
         setCharacters(data.characters)
         if (data.characters.length > 0) {
-          setSelectedCharacterId(data.characters[0].id)
+          const preferredCharacter = data.characters.find((character) => character.is_custom) || data.characters[0]
+          setSelectedCharacterId(preferredCharacter.id)
         }
       }
     } catch (err) {
@@ -148,7 +152,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
         voiceName: matchedVoice.voice_name,
         voiceId: matchedVoice.voice_id
       })
-    } else {
+    } else if (character?.id !== 'streamer_ai_example') {
       console.warn('[Bot] No realtime voice match found for character:', {
         character: character?.name,
         availableVoices: normalizedVoices.map((voice) => voice.voice_name)
@@ -156,6 +160,11 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     }
 
     return matchedVoice?.voice_id || null
+  }
+
+  const getVoiceDisplayName = (voiceId) => {
+    const matchedVoice = userVoices.find((voice) => voice.voice_id === voiceId)
+    return matchedVoice?.voice_name || voiceId || 'Clive'
   }
 
   const ensureBotSession = async () => {
@@ -168,8 +177,9 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       await loadUserVoices()
     }
 
-    const realtimeVoice = resolveRealtimeVoice(character)
-    setVoiceLabel(realtimeVoice || 'Clive')
+    const realtimeVoice = selectedRealtimeVoiceId || resolveRealtimeVoice(character)
+    setVoiceLabel(getVoiceDisplayName(realtimeVoice || 'Clive'))
+    console.log('[Bot] Using realtime voice:', realtimeVoice || 'Clive')
 
     await inworldRealtimeService.startSession(
       selectedCharacterId,
@@ -287,6 +297,23 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
         {characters.map(char => (
           <option key={char.id} value={char.id}>
             {char.name}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={selectedRealtimeVoiceId}
+        onChange={(e) => setSelectedRealtimeVoiceId(e.target.value)}
+        className={`w-full p-2 rounded text-sm ${
+          darkMode
+            ? 'bg-[#0f0f23] border border-cyan-400/30 text-white'
+            : 'bg-gray-50 border border-indigo-300 text-gray-900'
+        }`}
+      >
+        <option value="">Usar voz resuelta automáticamente</option>
+        {userVoices.map((voice) => (
+          <option key={voice.id} value={voice.voice_id}>
+            {voice.voice_name}
           </option>
         ))}
       </select>
