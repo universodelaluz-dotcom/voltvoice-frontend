@@ -170,17 +170,8 @@ export class InworldRealtimeService {
         }
       }
 
-      // Wait for data channel to open
-      this.peerConnection.ondatachannel = (event) => {
-        console.log('[Inworld] Data channel received:', event.channel.label)
-        if (event.channel.label === 'oai-events') {
-          this.dataChannel = event.channel
-          this._setupDataChannel()
-        }
-      }
-
-      // Store session info
-      this.sessionId = answerData.sessionId || `session_${Date.now()}`
+      // Store session info (generate ID if not provided)
+      this.sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       console.log('[Inworld] Session started:', this.sessionId)
 
       return this.sessionId
@@ -203,6 +194,39 @@ export class InworldRealtimeService {
       console.log('[Inworld] Data channel opened (state:', this.dataChannel.readyState, ')')
       this.isConnected = true
       this.dataChannelReady = true
+
+      // Send initial session configuration
+      try {
+        const sessionConfig = {
+          type: 'session.update',
+          session: {
+            type: 'realtime',
+            model: 'openai/gpt-4o-mini',
+            instructions: 'You are a helpful voice assistant',
+            output_modalities: ['audio', 'text'],
+            audio: {
+              input: {
+                turn_detection: {
+                  type: 'semantic_vad',
+                  eagerness: 'medium',
+                  create_response: true,
+                  interrupt_response: true
+                }
+              },
+              output: {
+                voice: 'Clive',
+                model: 'inworld-tts-1.5-mini',
+                speed: 1.0
+              }
+            }
+          }
+        }
+        this.dataChannel.send(JSON.stringify(sessionConfig))
+        console.log('[Inworld] Session config sent')
+      } catch (err) {
+        console.error('[Inworld] Error sending session config:', err)
+      }
+
       if (this.dataChannelResolve) {
         this.dataChannelResolve()
       }
