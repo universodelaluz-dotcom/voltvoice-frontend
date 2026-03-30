@@ -858,6 +858,11 @@ export class InworldRealtimeService {
     }
 
     try {
+      this.dataChannel.send(JSON.stringify({
+        type: 'input_audio_buffer.commit'
+      }))
+      console.log('[Inworld] Audio buffer commit requested')
+
       this.pendingAudioResponse = true
       console.log('[Inworld] Queued audio response request')
       clearTimeout(this.pendingAudioResponseTimer)
@@ -874,7 +879,7 @@ export class InworldRealtimeService {
         } catch (error) {
           console.error('[Inworld] Fallback response request failed:', error)
         }
-      }, 2500)
+      }, 4000)
     } catch (err) {
       console.error('[Inworld] Error requesting response:', err)
       throw err
