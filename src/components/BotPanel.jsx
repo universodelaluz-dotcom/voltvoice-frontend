@@ -157,7 +157,8 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
         invokeData.character_id,
         invokeData.system_prompt,
         null,
-        API_URL
+        API_URL,
+        invokeData.voice_id || null
       )
 
       // Escuchar eventos de Inworld

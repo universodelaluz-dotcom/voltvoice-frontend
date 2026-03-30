@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Mic2, Send, X, Volume2 } from 'lucide-react'
 import inworldRealtimeService from '../services/inworldRealtimeService'
 
-export default function BotInvoker({ darkMode = true, onClose }) {
+export default function BotInvoker({ darkMode = true, onClose, config }) {
   const [characters, setCharacters] = useState([])
   const [selectedCharacterId, setSelectedCharacterId] = useState(null)
   const [inputMode, setInputMode] = useState('microphone')
@@ -103,7 +103,8 @@ export default function BotInvoker({ darkMode = true, onClose }) {
       selectedCharacterId,
       character?.system_prompt || '',
       null,
-      API_URL
+      API_URL,
+      character?.voice_id || config?.generalVoiceId || null
     )
 
     await inworldRealtimeService.waitForDataChannel(5000)

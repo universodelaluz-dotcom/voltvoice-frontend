@@ -22,6 +22,7 @@ export class InworldRealtimeService {
     this.outputAudioElement = null
     this.remoteAudioStream = null
     this.sessionInstructions = 'You are a helpful voice assistant. Respond in Spanish. Keep responses concise.'
+    this.sessionVoice = 'Clive'
     this.pendingAudioResponse = false
     this.pendingAudioResponseTimer = null
   }
@@ -123,9 +124,10 @@ export class InworldRealtimeService {
   /**
    * Start WebRTC session with Inworld
    */
-  async startSession(characterId, systemPrompt, workspaceId, apiUrl = '') {
+  async startSession(characterId, systemPrompt, workspaceId, apiUrl = '', voiceId = null) {
     try {
       this.sessionInstructions = systemPrompt?.trim() || this.sessionInstructions
+      this.sessionVoice = voiceId?.trim() || 'Clive'
 
       if (this.peerConnection && this.dataChannelReady && this.sessionId) {
         return this.sessionId
@@ -322,14 +324,14 @@ export class InworldRealtimeService {
                 }
               },
               output: {
-                voice: 'Clive',
+                voice: this.sessionVoice,
                 model: 'inworld-tts-1.5-mini'
               }
             }
           }
         }
         this.dataChannel.send(JSON.stringify(sessionConfig))
-        console.log('[Inworld] Session config sent with model:', sessionConfig.session.model)
+        console.log('[Inworld] Session config sent with model:', sessionConfig.session.model, 'voice:', this.sessionVoice)
       } catch (err) {
         console.error('[Inworld] Error sending session config:', err)
       }
@@ -846,6 +848,7 @@ export class InworldRealtimeService {
     this.pendingAudioResponse = false
     clearTimeout(this.pendingAudioResponseTimer)
     this.pendingAudioResponseTimer = null
+    this.sessionVoice = 'Clive'
 
     if (this.outputAudioElement) {
       this.outputAudioElement.pause()
