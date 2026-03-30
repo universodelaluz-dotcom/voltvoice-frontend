@@ -228,24 +228,9 @@ export class InworldRealtimeService {
           type: 'session.update',
           session: {
             type: 'realtime',
-            model: 'openai/gpt-4o-mini',
-            instructions: 'You are a helpful voice assistant',
-            output_modalities: ['audio', 'text'],
-            audio: {
-              input: {
-                turn_detection: {
-                  type: 'semantic_vad',
-                  eagerness: 'medium',
-                  create_response: true,
-                  interrupt_response: true
-                }
-              },
-              output: {
-                voice: 'Clive',
-                model: 'inworld-tts-1.5-mini',
-                speed: 1.0
-              }
-            }
+            model: 'gpt-4-turbo',
+            instructions: 'You are a helpful voice assistant. Respond in Spanish. Keep responses short and concise.',
+            output_modalities: ['text']
           }
         }
         this.dataChannel.send(JSON.stringify(sessionConfig))
