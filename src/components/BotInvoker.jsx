@@ -3,6 +3,15 @@ import { Mic2, Send, X, Volume2 } from 'lucide-react'
 import inworldRealtimeService from '../services/inworldRealtimeService'
 import chatStore from '../services/chatStore.js'
 
+const BUILTIN_VOICE_OPTIONS = [
+  { id: 'es-ES', name: 'Voz Basica Espanol' },
+  { id: 'en-US', name: 'Voz Basica Ingles' },
+  { id: 'Diego', name: 'Diego' },
+  { id: 'Lupita', name: 'Lupita' },
+  { id: 'Miguel', name: 'Miguel' },
+  { id: 'Rafael', name: 'Rafael' }
+]
+
 const CONFIG_COMMANDS = [
   {
     key: 'onlyModerators',
@@ -78,11 +87,24 @@ const CONFIG_COMMANDS = [
     key: 'onlyPlainNicks',
     label: 'solo nicks simples',
     aliases: [
+      'limpiar nicks',
       'solo nicks simples',
       'solo nombres simples',
       'sin caracteres raros',
       'solo nombres limpios',
-      'filtra nicks raros'
+      'filtra nicks raros',
+      'limpia nicknames'
+    ]
+  },
+  {
+    key: 'stripChatEmojis',
+    label: 'no leer emojis en chat',
+    aliases: [
+      'no leer emojis en chat',
+      'quita emojis del chat',
+      'sin emojis en chat',
+      'no leas emojis',
+      'elimina emojis del chat'
     ]
   },
   {
@@ -177,6 +199,27 @@ const CONFIG_COMMANDS = [
       'leer metas',
       'avisar metas'
     ]
+  },
+  {
+    key: 'bot_auto_spam_check',
+    label: 'chequeos automaticos de spam',
+    aliases: [
+      'chequeos automaticos de spam',
+      'revision automatica de spam',
+      'detector automatico de spam',
+      'spam automatico'
+    ]
+  },
+  {
+    key: 'botShortcutEnabled',
+    label: 'push to talk',
+    aliases: [
+      'push to talk',
+      'shortcut de teclado',
+      'atajo del bot',
+      'tecla del bot',
+      'ptt'
+    ]
   }
 ]
 
@@ -268,8 +311,135 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     return null
   }
 
+  const getAvailableVoiceOptions = () => {
+    return [
+      ...BUILTIN_VOICE_OPTIONS,
+      ...userVoices.map((voice) => ({
+        id: voice.voice_id,
+        name: voice.voice_name
+      }))
+    ]
+  }
+
+  const resolveVoiceOption = (rawName) => {
+    const requestedKey = normalizeVoiceKey(rawName)
+    if (!requestedKey) {
+      return null
+    }
+
+    const options = getAvailableVoiceOptions().map((voice) => ({
+      ...voice,
+      normalizedName: normalizeVoiceKey(voice.name)
+    }))
+
+    return options.find((voice) => voice.normalizedName === requestedKey) ||
+      options.find((voice) => voice.normalizedName.includes(requestedKey) || requestedKey.includes(voice.normalizedName)) ||
+      null
+  }
+
   const resolveConfigIntent = (normalized) => {
     const explicitState = detectDesiredBooleanState(normalized)
+
+    const voiceMatch = normalized.match(/(?:cambia|pon|usa|asigna|deja)\s+(?:la\s+)?voz\s+(general|de\s+donadores|de\s+moderadores|de\s+notificaciones)\s+(?:a|por)\s+(.+)/i)
+    if (voiceMatch) {
+      const targetMap = {
+        general: { key: 'generalVoiceId', label: 'voz general' },
+        'de donadores': { key: 'donorVoiceId', label: 'voz de donadores', enableKey: 'donorVoiceEnabled' },
+        'de moderadores': { key: 'modVoiceId', label: 'voz de moderadores', enableKey: 'modVoiceEnabled' },
+        'de notificaciones': { key: 'notifVoiceId', label: 'voz de notificaciones', enableKey: 'notifVoiceEnabled' }
+      }
+      const target = targetMap[voiceMatch[1]]
+      const voice = resolveVoiceOption(voiceMatch[2])
+      return {
+        type: 'set_voice_config',
+        key: target.key,
+        enableKey: target.enableKey,
+        label: target.label,
+        voice
+      }
+    }
+
+    if (/(?:modo|respuesta).*(?:solo audio)/i.test(normalized)) {
+      return { type: 'set_config_select', key: 'bot_response_mode', label: 'modo del asistente', value: 'audio', responseLabel: 'solo audio' }
+    }
+    if (/(?:modo|respuesta).*(?:solo texto)/i.test(normalized)) {
+      return { type: 'set_config_select', key: 'bot_response_mode', label: 'modo del asistente', value: 'text', responseLabel: 'solo texto' }
+    }
+    if (/(?:modo|respuesta).*(?:audio y texto|texto y audio|audio \+ texto)/i.test(normalized)) {
+      return { type: 'set_config_select', key: 'bot_response_mode', label: 'modo del asistente', value: 'both', responseLabel: 'audio y texto' }
+    }
+
+    const emojiLimitMatch = normalized.match(/(?:limita|maximo|maxima|cantidad maxima).*emojis?.*?(\d+)/i)
+    if (emojiLimitMatch) {
+      return {
+        type: 'set_config_multi',
+        updates: {
+          ignoreExcessiveEmojis: true,
+          maxEmojisAllowed: parseInt(emojiLimitMatch[1], 10)
+        },
+        label: 'limite de emojis'
+      }
+    }
+
+    const minCharsMatch = normalized.match(/(?:menos de|minimo de|minimo)\s+(\d+)\s+caracter/i)
+    if (minCharsMatch && /(ignora|ignorar|filtra|filtro|minimo|cortos)/i.test(normalized)) {
+      return {
+        type: 'set_config_multi',
+        updates: {
+          minMessageLengthEnabled: true,
+          minMessageLength: parseInt(minCharsMatch[1], 10)
+        },
+        label: 'minimo de caracteres'
+      }
+    }
+
+    const maxCharsMatch = normalized.match(/(?:limita|maximo|limite).*(?:mensajes?|caracteres?).*?(\d+)/i)
+    if (maxCharsMatch && /(caracter|mensaje)/i.test(normalized) && !/espera|cola/.test(normalized)) {
+      return {
+        type: 'set_config_multi',
+        updates: {
+          donorCharLimitEnabled: true,
+          donorCharLimit: parseInt(maxCharsMatch[1], 10)
+        },
+        label: 'limite de caracteres'
+      }
+    }
+
+    const queueMatch = normalized.match(/(?:limite|limita|pon).*(?:mensajes en espera|cola|espera).*?(\d+)/i)
+    if (queueMatch) {
+      return {
+        type: 'set_config_multi',
+        updates: {
+          maxQueueEnabled: true,
+          maxQueueSize: parseInt(queueMatch[1], 10)
+        },
+        label: 'limite de mensajes en espera'
+      }
+    }
+
+    const cooldownMatch = normalized.match(/(?:anuncia|anunciar|avisar|notificar|lee(?:r)?).*(seguidores|follows|regalos|viewers|likes|compartidos|shares).*(?:cada)\s+(\d+)\s+seg/i)
+    if (cooldownMatch) {
+      const cooldownMap = {
+        seguidores: { key: 'announceFollowers', cooldownKey: 'followCooldown', label: 'seguidores' },
+        follows: { key: 'announceFollowers', cooldownKey: 'followCooldown', label: 'seguidores' },
+        regalos: { key: 'announceGifts', cooldownKey: 'giftCooldown', label: 'regalos' },
+        viewers: { key: 'announceViewers', cooldownKey: 'viewerCooldown', label: 'viewers' },
+        likes: { key: 'announceLikes', cooldownKey: 'likeCooldown', label: 'likes' },
+        compartidos: { key: 'announceShares', cooldownKey: 'shareCooldown', label: 'compartidos' },
+        shares: { key: 'announceShares', cooldownKey: 'shareCooldown', label: 'compartidos' }
+      }
+      const target = cooldownMap[cooldownMatch[1]]
+      if (target) {
+        return {
+          type: 'set_config_multi',
+          updates: {
+            [target.key]: true,
+            [target.cooldownKey]: parseInt(cooldownMatch[2], 10)
+          },
+          label: `anuncios de ${target.label}`
+        }
+      }
+    }
 
     for (const command of CONFIG_COMMANDS) {
       const commandMatched = command.aliases.some((alias) => normalized.includes(alias))
@@ -301,6 +471,17 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
           value
         }
       }
+    }
+
+    if ((normalized.includes('tokens') && /(quedan|quedan?me|disponibles|restan|restantes|me quedan|saldo)/i.test(normalized)) ||
+        normalized.includes('cuantos tokens') ||
+        /(cuantos me quedan|cuanto me queda|que me queda)/i.test(normalized)) {
+      return { type: 'get_token_balance' }
+    }
+
+    if ((normalized.includes('estadisticas') || normalized.includes('stats')) &&
+        (normalized.includes('mis') || normalized.includes('mias') || normalized.includes('mio') || normalized.includes('lee'))) {
+      return { type: 'get_platform_stats' }
     }
 
     return null
@@ -385,7 +566,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
   const looksLikePlatformRequest = (text) => {
     const normalized = normalizeIntentText(text)
-    return /(chat|moderador|moderadores|mods|donadores|preguntas|resalta|remarca|destaca|bloque|banea|desbloque|apodo|nickname|lee|leer|configuracion|filtro|activa|desactiva|enciende|apaga|likes|regalos|metas|batallas|encuestas)/i.test(normalized)
+    return /(chat|moderador|moderadores|mods|donadores|preguntas|resalta|remarca|destaca|bloque|banea|desbloque|apodo|nickname|lee|leer|configuracion|filtro|activa|desactiva|enciende|apaga|likes|regalos|metas|batallas|encuestas|tokens|estadisticas|voz|velocidad|push to talk|spam)/i.test(normalized)
   }
 
   const resolveActionTarget = (rawReference) => {
@@ -411,6 +592,22 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       nickname: resolution.match.nickname,
       confidence: resolution.confidence
     }
+  }
+
+  const fetchStatsSummary = async () => {
+    const token = localStorage.getItem('sv-token')
+    if (!token) {
+      throw new Error('No encontre sesion activa para consultar estadisticas.')
+    }
+
+    const res = await fetch(`${API_URL}/api/stats`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const data = await res.json()
+    if (!res.ok || !data.success) {
+      throw new Error(data?.error || 'No pude cargar las estadisticas.')
+    }
+    return data
   }
 
   const speakLocalResponse = async (text, voiceId) => {
@@ -481,6 +678,45 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
         }
         updateConfig(intent.key, intent.value)
         return `Listo, ajuste ${intent.label} a ${intent.value.toFixed(1)}x.`
+      }
+      case 'set_config_select': {
+        if (typeof updateConfig !== 'function') {
+          return `Todavia no tengo acceso real para cambiar ${intent.label}.`
+        }
+        updateConfig(intent.key, intent.value)
+        return `Listo, ya deje ${intent.label} en ${intent.responseLabel}.`
+      }
+      case 'set_config_multi': {
+        if (typeof updateConfig !== 'function') {
+          return `Todavia no tengo acceso real para cambiar ${intent.label}.`
+        }
+        Object.entries(intent.updates).forEach(([key, value]) => updateConfig(key, value))
+        if (intent.label === 'limite de emojis') {
+          return `Listo, ya limite los emojis a ${intent.updates.maxEmojisAllowed}.`
+        }
+        if (intent.label === 'minimo de caracteres') {
+          return `Listo, ahora ignorare mensajes con menos de ${intent.updates.minMessageLength} caracteres.`
+        }
+        if (intent.label === 'limite de caracteres') {
+          return `Listo, ya limite los mensajes a ${intent.updates.donorCharLimit} caracteres.`
+        }
+        if (intent.label === 'limite de mensajes en espera') {
+          return `Listo, ya puse el limite de mensajes en espera en ${intent.updates.maxQueueSize}.`
+        }
+        return `Listo, ya actualice ${intent.label}.`
+      }
+      case 'set_voice_config': {
+        if (typeof updateConfig !== 'function') {
+          return `Todavia no tengo acceso real para cambiar ${intent.label}.`
+        }
+        if (!intent.voice) {
+          return `No encontre una voz llamada asi en tu libreria o en las voces base.`
+        }
+        if (intent.enableKey) {
+          updateConfig(intent.enableKey, true)
+        }
+        updateConfig(intent.key, intent.voice.id)
+        return `Listo, ya cambie ${intent.label} a ${intent.voice.name}.`
       }
       case 'ban_user': {
         const target = resolveActionTarget(intent.username)
@@ -561,6 +797,25 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       case 'funniest_user': {
         const grounded = chatStore.findGroundedChatAnswer('funniest_user', { minutes: 10 })
         return grounded?.text || 'Todavia no tengo suficiente contexto para decidir quien trae mas cotorreo en el chat.'
+      }
+      case 'get_token_balance': {
+        const stats = await fetchStatsSummary()
+        const available = stats?.plan_info?.tokens_balance
+        const limit = stats?.plan_info?.token_limit
+        if (available == null || limit == null) {
+          return 'No pude leer tu saldo de tokens ahorita.'
+        }
+        return `Te quedan ${available.toLocaleString()} tokens de ${limit.toLocaleString()} en tu plan actual.`
+      }
+      case 'get_platform_stats': {
+        const stats = await fetchStatsSummary()
+        const month = stats?.current_month
+        const plan = stats?.plan_info
+        const benefits = stats?.benefits
+        if (!month || !plan || !benefits) {
+          return 'No pude leer tus estadisticas completas ahorita.'
+        }
+        return `Este mes llevas ${month.messages_count.toLocaleString()} mensajes escuchados, ${month.tokens_used.toLocaleString()} tokens usados y ${month.unique_voices_used} voces unicas. Te quedan ${plan.tokens_balance.toLocaleString()} tokens. Ademas has ahorrado aproximadamente ${benefits.hours_saved.toFixed(1)} horas y ${benefits.money_saved_usd.toFixed(2)} dolares este mes.`
       }
       default:
         return originalText
