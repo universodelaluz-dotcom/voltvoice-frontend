@@ -300,14 +300,19 @@ After using a tool, summarize the result conversationally.`
         return
       }
 
-      mediaStreamRef.current.getAudioTracks().forEach(track => track.stop())
+      const stream = mediaStreamRef.current
       mediaStreamRef.current = null
 
-      await inworldRealtimeService.removeAudioTracks()
       setIsRecording(false)
       setIsLoading(true)
       armResponseTimeout()
       await inworldRealtimeService.requestResponse()
+      stream.getAudioTracks().forEach(track => track.stop())
+      setTimeout(() => {
+        inworldRealtimeService.removeAudioTracks().catch((error) => {
+          console.error('Error removing audio tracks after commit:', error)
+        })
+      }, 500)
       console.log('[Bot] Microphone deactivated, requesting response')
     } catch (err) {
       console.error('Error stopping recording:', err)
