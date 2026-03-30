@@ -530,7 +530,14 @@ export class InworldRealtimeService {
           clearTimeout(this.pendingAudioResponseTimer)
           this.pendingAudioResponseTimer = null
           this.pendingAudioResponse = false
-          this._sendResponseCreate()
+          setTimeout(() => {
+            try {
+              this._sendResponseCreate()
+            } catch (error) {
+              console.error('[Inworld] Delayed response request failed:', error)
+              this._emit('error', error)
+            }
+          }, 250)
         }
         break
 
@@ -871,15 +878,11 @@ export class InworldRealtimeService {
           return
         }
 
-        try {
-          console.log('[Inworld] Audio response fallback triggered')
-          this.pendingAudioResponse = false
-          this.pendingAudioResponseTimer = null
-          this._sendResponseCreate()
-        } catch (error) {
-          console.error('[Inworld] Fallback response request failed:', error)
-        }
-      }, 4000)
+        console.warn('[Inworld] Audio transcription did not complete in time')
+        this.pendingAudioResponse = false
+        this.pendingAudioResponseTimer = null
+        this._emit('error', { message: 'No se pudo finalizar la transcripcion del audio a tiempo.' })
+      }, 7000)
     } catch (err) {
       console.error('[Inworld] Error requesting response:', err)
       throw err
