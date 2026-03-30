@@ -227,10 +227,13 @@ export class InworldRealtimeService {
         console.error('[Inworld] Error sending session config:', err)
       }
 
-      if (this.dataChannelResolve) {
-        this.dataChannelResolve()
-      }
-      this._emit('channel-open')
+      // Small delay to ensure channel is truly ready before resolving
+      setTimeout(() => {
+        if (this.dataChannelResolve) {
+          this.dataChannelResolve()
+        }
+        this._emit('channel-open')
+      }, 100)
     }
 
     this.dataChannel.onmessage = (event) => {
@@ -421,44 +424,57 @@ export class InworldRealtimeService {
    * Send text message to Inworld
    */
   sendMessage(text) {
-    if (!this.isConnected || !this.dataChannel) {
-      throw new Error('WebRTC connection not established')
+    if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
+      throw new Error(`Data channel not ready (state: ${this.dataChannel?.readyState || 'null'})`)
     }
 
-    const event = {
-      type: 'conversation.item.create',
-      item: {
-        type: 'message',
-        role: 'user',
-        content: {
-          content_type: 'text',
-          text: text
+    try {
+      const event = {
+        type: 'conversation.item.create',
+        item: {
+          type: 'message',
+          role: 'user',
+          content: {
+            content_type: 'text',
+            text: text
+          }
         }
       }
+
+      this.dataChannel.send(JSON.stringify(event))
+      console.log('[Inworld] Message sent:', text.substring(0, 50))
+
+      // Request response
+      this.dataChannel.send(JSON.stringify({
+        type: 'response.create'
+      }))
+      console.log('[Inworld] Response requested')
+    } catch (err) {
+      console.error('[Inworld] Error sending message:', err)
+      throw err
     }
-
-    this.dataChannel.send(JSON.stringify(event))
-
-    // Request response
-    this.dataChannel.send(JSON.stringify({
-      type: 'response.create'
-    }))
   }
 
   /**
    * Send audio data to Inworld
    */
   sendAudio(audioBase64) {
-    if (!this.isConnected || !this.dataChannel) {
-      throw new Error('WebRTC connection not established')
+    if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
+      throw new Error(`Data channel not ready (state: ${this.dataChannel?.readyState || 'null'})`)
     }
 
-    const event = {
-      type: 'input_audio_buffer.append',
-      audio: audioBase64
-    }
+    try {
+      const event = {
+        type: 'input_audio_buffer.append',
+        audio: audioBase64
+      }
 
-    this.dataChannel.send(JSON.stringify(event))
+      this.dataChannel.send(JSON.stringify(event))
+      console.log('[Inworld] Audio sent:', audioBase64.length, 'bytes')
+    } catch (err) {
+      console.error('[Inworld] Error sending audio:', err)
+      throw err
+    }
   }
 
   /**
