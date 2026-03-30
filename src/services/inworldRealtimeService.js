@@ -158,6 +158,45 @@ export class InworldRealtimeService {
       // Create audio context for audio processing
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)()
 
+      // Register connection handlers before signaling so we do not miss early RTP tracks.
+      this.peerConnection.onconnectionstatechange = () => {
+        console.log('[Inworld] Connection state:', this.peerConnection.connectionState)
+        if (this.peerConnection.connectionState === 'connected') {
+          this.isConnected = true
+          this._emit('connected')
+        } else if (this.peerConnection.connectionState === 'failed' ||
+                   this.peerConnection.connectionState === 'disconnected') {
+          this.isConnected = false
+          this._emit('disconnected')
+        }
+      }
+
+      this.peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          console.log('[Inworld] New ICE candidate:', event.candidate)
+        }
+      }
+
+      this.peerConnection.ontrack = (event) => {
+        console.log('[Inworld] Audio track received:', event.track.kind)
+        if (event.track.kind === 'audio') {
+          const audioElement = this._ensureOutputAudioElement()
+          if (!this.remoteAudioStream) {
+            this.remoteAudioStream = new MediaStream()
+            audioElement.srcObject = this.remoteAudioStream
+          }
+
+          this.remoteAudioStream.addTrack(event.track)
+          event.track.onended = () => {
+            this.remoteAudioStream?.removeTrack(event.track)
+          }
+
+          audioElement.play().catch((err) => {
+            console.warn('[Inworld] Remote audio autoplay blocked, will retry on next user gesture:', err.message)
+          })
+        }
+      }
+
       // IMPORTANT: Create data channel BEFORE creating offer
       this.dataChannel = this.peerConnection.createDataChannel('oai-events', { ordered: true })
       this._setupDataChannel()
@@ -238,46 +277,6 @@ export class InworldRealtimeService {
         sdp: answerSdp
       }
       await this.peerConnection.setRemoteDescription(answer)
-
-      // Set up connection event handlers
-      this.peerConnection.onconnectionstatechange = () => {
-        console.log('[Inworld] Connection state:', this.peerConnection.connectionState)
-        if (this.peerConnection.connectionState === 'connected') {
-          this.isConnected = true
-          this._emit('connected')
-        } else if (this.peerConnection.connectionState === 'failed' ||
-                   this.peerConnection.connectionState === 'disconnected') {
-          this.isConnected = false
-          this._emit('disconnected')
-        }
-      }
-
-      this.peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-          console.log('[Inworld] New ICE candidate:', event.candidate)
-        }
-      }
-
-      // Handle audio tracks from Inworld (RTP, not data channel)
-      this.peerConnection.ontrack = (event) => {
-        console.log('[Inworld] Audio track received:', event.track.kind)
-        if (event.track.kind === 'audio') {
-          const audioElement = this._ensureOutputAudioElement()
-          if (!this.remoteAudioStream) {
-            this.remoteAudioStream = new MediaStream()
-            audioElement.srcObject = this.remoteAudioStream
-          }
-
-          this.remoteAudioStream.addTrack(event.track)
-          event.track.onended = () => {
-            this.remoteAudioStream?.removeTrack(event.track)
-          }
-
-          audioElement.play().catch((err) => {
-            console.warn('[Inworld] Remote audio autoplay blocked, will retry on next user gesture:', err.message)
-          })
-        }
-      }
 
       // Store session info (generate ID if not provided)
       this.sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
