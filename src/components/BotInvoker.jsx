@@ -79,6 +79,9 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     }
 
     const handleResponseComplete = () => {
+      if (!hasActiveResponseRef.current) {
+        setResponse((current) => current || 'La IA no devolvio contenido. Intenta de nuevo.')
+      }
       setIsLoading(false)
       setIsRecording(false)
       setChatSuppressed(false)
@@ -335,6 +338,7 @@ After using a tool, summarize the result conversationally.`
       clearResponseTimeout()
       setResponse(`Error: ${err.message}`)
       setIsLoading(false)
+      setChatSuppressed(false)
     }
   }
 

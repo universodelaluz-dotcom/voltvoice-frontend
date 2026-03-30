@@ -123,21 +123,8 @@ export function App() {
     const detectLocationAndExchangeRates = async () => {
       try {
         // Detectar país por IP
-        let country = 'US'
-        let currency = 'USD'
-        try {
-          const ipResponse = await fetch('https://ipapi.co/json/')
-          if (ipResponse.ok) {
-            const ipData = await ipResponse.json()
-            country = ipData.country_code || country
-            currency = ipData.currency || currency
-          }
-        } catch {
-          console.warn('[Config] No se pudo detectar ubicacion por IP; usando USD por defecto')
-        }
-
-        setUserCountry(country)
-        setUserCurrency(currency)
+        setUserCountry('US')
+        setUserCurrency('USD')
 
         // Obtener tipos de cambio desde USD a todas las monedas principales
         const ratesResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD')
