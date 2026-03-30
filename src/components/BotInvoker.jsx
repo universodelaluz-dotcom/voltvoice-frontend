@@ -3,7 +3,184 @@ import { Mic2, Send, X, Volume2 } from 'lucide-react'
 import inworldRealtimeService from '../services/inworldRealtimeService'
 import chatStore from '../services/chatStore.js'
 
-export default function BotInvoker({ darkMode = true, onClose, config }) {
+const CONFIG_COMMANDS = [
+  {
+    key: 'onlyModerators',
+    label: 'leer solo moderadores',
+    aliases: [
+      'leer solo moderadores',
+      'solo moderadores',
+      'solo mods',
+      'solo moderadores del live',
+      'nada mas moderadores',
+      'solamente moderadores'
+    ]
+  },
+  {
+    key: 'onlyDonors',
+    label: 'leer solo donadores',
+    aliases: [
+      'leer solo donadores',
+      'solo donadores',
+      'solo regalos',
+      'solo gifters',
+      'solo quienes donan',
+      'nada mas donadores'
+    ]
+  },
+  {
+    key: 'onlyQuestions',
+    label: 'leer solo preguntas',
+    aliases: [
+      'leer solo preguntas',
+      'solo preguntas',
+      'solo mensajes con pregunta',
+      'solo las preguntas',
+      'filtra preguntas'
+    ]
+  },
+  {
+    key: 'readOnlyMessage',
+    label: 'leer solo mensajes sin nombre',
+    aliases: [
+      'leer solo mensajes',
+      'sin nombre',
+      'sin mencionar nombre',
+      'solo el mensaje',
+      'omite el nombre',
+      'no leas el nombre'
+    ]
+  },
+  {
+    key: 'skipRepeated',
+    label: 'saltar mensajes repetidos',
+    aliases: [
+      'saltar mensajes repetidos',
+      'ignora repetidos',
+      'omite repetidos',
+      'quita repetidos',
+      'filtro de repetidos'
+    ]
+  },
+  {
+    key: 'ignoreLinks',
+    label: 'ignorar links',
+    aliases: [
+      'ignorar links',
+      'ignora links',
+      'ignora enlaces',
+      'no leer links',
+      'no leer enlaces',
+      'bloquea links'
+    ]
+  },
+  {
+    key: 'onlyPlainNicks',
+    label: 'solo nicks simples',
+    aliases: [
+      'solo nicks simples',
+      'solo nombres simples',
+      'sin caracteres raros',
+      'solo nombres limpios',
+      'filtra nicks raros'
+    ]
+  },
+  {
+    key: 'ignoreExcessiveEmojis',
+    label: 'ignorar emojis excesivos',
+    aliases: [
+      'ignorar emojis excesivos',
+      'ignora emojis',
+      'filtra emojis',
+      'no leas muchos emojis',
+      'quita emojis excesivos'
+    ]
+  },
+  {
+    key: 'announceFollowers',
+    label: 'anunciar follows',
+    aliases: [
+      'anunciar follows',
+      'leer follows',
+      'avisar seguidores',
+      'anunciar seguidores',
+      'notificar follows'
+    ]
+  },
+  {
+    key: 'announceGifts',
+    label: 'anunciar regalos',
+    aliases: [
+      'anunciar regalos',
+      'leer regalos',
+      'avisar regalos',
+      'notificar regalos',
+      'anunciar gifts'
+    ]
+  },
+  {
+    key: 'announceViewers',
+    label: 'anunciar viewers',
+    aliases: [
+      'anunciar viewers',
+      'anunciar espectadores',
+      'avisar viewers',
+      'leer viewers'
+    ]
+  },
+  {
+    key: 'announceLikes',
+    label: 'anunciar likes',
+    aliases: [
+      'anunciar likes',
+      'leer likes',
+      'avisar likes',
+      'notificar likes'
+    ]
+  },
+  {
+    key: 'announceShares',
+    label: 'anunciar shares',
+    aliases: [
+      'anunciar shares',
+      'anunciar compartidos',
+      'leer shares',
+      'avisar shares'
+    ]
+  },
+  {
+    key: 'announceBattles',
+    label: 'anunciar battles',
+    aliases: [
+      'anunciar battles',
+      'anunciar batallas',
+      'leer battles',
+      'avisar batallas'
+    ]
+  },
+  {
+    key: 'announcePolls',
+    label: 'anunciar polls',
+    aliases: [
+      'anunciar polls',
+      'anunciar encuestas',
+      'leer encuestas',
+      'avisar encuestas'
+    ]
+  },
+  {
+    key: 'announceGoals',
+    label: 'anunciar goals',
+    aliases: [
+      'anunciar goals',
+      'anunciar metas',
+      'leer metas',
+      'avisar metas'
+    ]
+  }
+]
+
+export default function BotInvoker({ darkMode = true, onClose, config, updateConfig }) {
   const [characters, setCharacters] = useState([])
   const [userVoices, setUserVoices] = useState([])
   const [voicesLoaded, setVoicesLoaded] = useState(false)
@@ -23,6 +200,8 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
   const chatSuppressedRef = useRef(false)
   const responseTimeoutRef = useRef(null)
   const hasActiveResponseRef = useRef(false)
+  const hasVoiceResponseRef = useRef(false)
+  const responsePlaybackStartedRef = useRef(false)
   const transcriptBufferRef = useRef('')
   const transcriptCompleteRef = useRef('')
   const transcriptDeltaTimerRef = useRef(null)
@@ -69,8 +248,56 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       .trim()
   }
 
+  const detectDesiredBooleanState = (normalized) => {
+    if (/(?:desactiva|apaga|deshabilita|quita|remueve|cancela|deja de|ya no|desmarca)/i.test(normalized)) {
+      return false
+    }
+
+    if (/(?:activa|enciende|habilita|prende|usa|pon|deja|marca|filtra|limita|solo|solamente|nada mas)/i.test(normalized)) {
+      return true
+    }
+
+    return null
+  }
+
+  const resolveConfigIntent = (normalized) => {
+    const explicitState = detectDesiredBooleanState(normalized)
+
+    for (const command of CONFIG_COMMANDS) {
+      if (command.aliases.some((alias) => normalized.includes(alias))) {
+        return {
+          type: 'set_config_boolean',
+          key: command.key,
+          label: command.label,
+          value: explicitState ?? true
+        }
+      }
+    }
+
+    const speedMatch = normalized.match(/(?:velocidad(?: de voz)?|rapidez)(?:\s+(?:a|en))?\s*([0-9]+(?:[.,][0-9]+)?)/i)
+    if (speedMatch) {
+      const parsed = Number(speedMatch[1].replace(',', '.'))
+      if (!Number.isNaN(parsed)) {
+        const value = Math.min(2, Math.max(0.5, parsed))
+        return {
+          type: 'set_config_number',
+          key: 'audioSpeed',
+          label: 'velocidad de voz',
+          value
+        }
+      }
+    }
+
+    return null
+  }
+
   const resolveChatIntent = (text) => {
     const normalized = normalizeIntentText(text)
+
+    const configIntent = resolveConfigIntent(normalized)
+    if (configIntent) {
+      return configIntent
+    }
 
     const banMatch = normalized.match(/(?:bloque(?:a|ame|alo|ala|alos|alas|alo\s+a|en)|bane(?:a|ame|alo|ala|alos|alas|en)?|ban(?:ea|ear|eame)?|silencia|ignora|mutea|calla)\s+(?:a\s+)?@?([a-z0-9._\s-]+)/i)
     if (banMatch) {
@@ -141,6 +368,11 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     return null
   }
 
+  const looksLikePlatformRequest = (text) => {
+    const normalized = normalizeIntentText(text)
+    return /(chat|moderador|moderadores|mods|donadores|preguntas|resalta|remarca|destaca|bloque|banea|desbloque|apodo|nickname|lee|leer|configuracion|filtro|activa|desactiva|enciende|apaga|likes|regalos|metas|batallas|encuestas)/i.test(normalized)
+  }
+
   const resolveActionTarget = (rawReference) => {
     const resolution = chatStore.resolveUserReferenceDetailed(rawReference)
     if (!resolution.match) {
@@ -192,6 +424,8 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     localAudioRef.current = audio
 
     audio.onplay = () => {
+      hasVoiceResponseRef.current = true
+      responsePlaybackStartedRef.current = true
       setHasVoiceResponse(true)
       setIsPlayingResponse(true)
       setIsLoading(false)
@@ -199,12 +433,14 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     }
 
     audio.onended = () => {
+      responsePlaybackStartedRef.current = false
       setIsPlayingResponse(false)
       setChatSuppressed(false)
       localAudioRef.current = null
     }
 
     audio.onerror = () => {
+      responsePlaybackStartedRef.current = false
       setIsPlayingResponse(false)
       setChatSuppressed(false)
       localAudioRef.current = null
@@ -215,6 +451,22 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
 
   const executeLocalIntent = async (intent, originalText) => {
     switch (intent.type) {
+      case 'set_config_boolean': {
+        if (typeof updateConfig !== 'function') {
+          return `Todavia no tengo acceso real para cambiar ${intent.label}.`
+        }
+        updateConfig(intent.key, intent.value)
+        return intent.value
+          ? `Listo, ya active ${intent.label}.`
+          : `Listo, ya desactive ${intent.label}.`
+      }
+      case 'set_config_number': {
+        if (typeof updateConfig !== 'function') {
+          return `Todavia no tengo acceso real para cambiar ${intent.label}.`
+        }
+        updateConfig(intent.key, intent.value)
+        return `Listo, ajuste ${intent.label} a ${intent.value.toFixed(1)}x.`
+      }
       case 'ban_user': {
         const target = resolveActionTarget(intent.username)
         if (!target.ok) return target.message
@@ -354,11 +606,15 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       }
       setIsLoading(false)
       setIsRecording(false)
-      setChatSuppressed(false)
       clearResponseTimeout()
+      if (!responsePlaybackStartedRef.current && !hasVoiceResponseRef.current) {
+        setChatSuppressed(false)
+      }
     }
 
     const handleAudioStarted = () => {
+      hasVoiceResponseRef.current = true
+      responsePlaybackStartedRef.current = true
       setHasActiveResponse(true)
       hasActiveResponseRef.current = true
       setHasVoiceResponse(true)
@@ -369,6 +625,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     }
 
     const handleAudioComplete = () => {
+      responsePlaybackStartedRef.current = false
       setIsPlayingResponse(false)
       setChatSuppressed(false)
       clearResponseTimeout()
@@ -420,6 +677,8 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
   useEffect(() => {
     setResponse(null)
     setHasVoiceResponse(false)
+    hasVoiceResponseRef.current = false
+    responsePlaybackStartedRef.current = false
     setIsPlayingResponse(false)
     setHasActiveResponse(false)
     hasActiveResponseRef.current = false
@@ -555,17 +814,19 @@ After using a tool, summarize the result conversationally.`
     try {
       setIsLoading(true)
       setResponse(null)
-    setHasVoiceResponse(false)
-    setHasActiveResponse(false)
-    hasActiveResponseRef.current = false
-    transcriptBufferRef.current = ''
-    transcriptCompleteRef.current = ''
-    if (transcriptDeltaTimerRef.current) {
-      clearTimeout(transcriptDeltaTimerRef.current)
-      transcriptDeltaTimerRef.current = null
-    }
-    setChatSuppressed(true)
-    await ensureBotSession()
+      setHasVoiceResponse(false)
+      hasVoiceResponseRef.current = false
+      responsePlaybackStartedRef.current = false
+      setHasActiveResponse(false)
+      hasActiveResponseRef.current = false
+      transcriptBufferRef.current = ''
+      transcriptCompleteRef.current = ''
+      if (transcriptDeltaTimerRef.current) {
+        clearTimeout(transcriptDeltaTimerRef.current)
+        transcriptDeltaTimerRef.current = null
+      }
+      setChatSuppressed(true)
+      await ensureBotSession()
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       mediaStreamRef.current = stream
@@ -649,12 +910,34 @@ After using a tool, summarize the result conversationally.`
     setIsLoading(true)
     setResponse(null)
     setHasVoiceResponse(false)
+    hasVoiceResponseRef.current = false
+    responsePlaybackStartedRef.current = false
     setHasActiveResponse(false)
     hasActiveResponseRef.current = false
     setChatSuppressed(true)
-    armResponseTimeout()
 
     try {
+      const localIntent = resolveChatIntent(text.trim())
+      if (localIntent) {
+        const localResponse = await executeLocalIntent(localIntent, text.trim())
+        setResponse(localResponse)
+        setHasActiveResponse(true)
+        hasActiveResponseRef.current = true
+        setVoiceLabel(getVoiceDisplayName(selectedRealtimeVoiceId || resolveRealtimeVoice(characters.find((item) => item.id === selectedCharacterId)) || 'Clive'))
+        armResponseTimeout()
+        console.log('[Bot] Handling typed intent locally:', localIntent.type, localIntent)
+        await speakLocalResponse(localResponse, selectedRealtimeVoiceId || resolveRealtimeVoice(characters.find((item) => item.id === selectedCharacterId)))
+        return
+      }
+
+      if (looksLikePlatformRequest(text.trim())) {
+        setResponse('Entendi que eso suena a accion o consulta real de la plataforma, pero todavia no pude resolverla con confianza. Prueba siendo un poco mas especifico.')
+        setIsLoading(false)
+        setChatSuppressed(false)
+        return
+      }
+
+      armResponseTimeout()
       await ensureBotSession()
       await inworldRealtimeService.sendMessage(text.trim())
     } catch (err) {

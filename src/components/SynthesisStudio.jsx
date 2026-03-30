@@ -460,6 +460,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               onClose={() => setShowBotInvoker(false)}
               tiktokUsername="test_stream"
               config={config}
+              updateConfig={updateConfig}
             />
 
             {/* Tokens Dashboard */}
