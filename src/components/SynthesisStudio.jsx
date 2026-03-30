@@ -36,7 +36,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const [success, setSuccess] = useState(false)
 
   // Tokens & Stats
-  const [tokens, setTokens] = useState(1000)
+  const [tokens, setTokens] = useState(user?.tokens || 1000)
   const [totalTokensUsed, setTotalTokensUsed] = useState(0)
   const [synthesisCount, setSynthesisCount] = useState(0)
 
@@ -135,6 +135,28 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     window.addEventListener('voice-added', handleVoiceAdded)
     return () => window.removeEventListener('voice-added', handleVoiceAdded)
   }, [user?.email])
+
+  useEffect(() => {
+    if (typeof user?.tokens === 'number') {
+      setTokens(user.tokens)
+    }
+  }, [user?.tokens])
+
+  useEffect(() => {
+    const handleTokenUpdate = (event) => {
+      const remaining = Number(event.detail?.remainingTokens)
+      const consumed = Number(event.detail?.tokensUsed || 0)
+      if (Number.isFinite(remaining)) {
+        setTokens(remaining)
+      }
+      if (Number.isFinite(consumed) && consumed > 0) {
+        setTotalTokensUsed((prev) => prev + consumed)
+      }
+    }
+
+    window.addEventListener('voltvoice:tokens-updated', handleTokenUpdate)
+    return () => window.removeEventListener('voltvoice:tokens-updated', handleTokenUpdate)
+  }, [])
 
   const handleSynthesize = async () => {
     if (!text.trim()) {

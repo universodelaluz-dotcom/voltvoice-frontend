@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Mic2, Send, X, Volume2 } from 'lucide-react'
+import { Mic2, Send, Volume2 } from 'lucide-react'
 import inworldRealtimeService from '../services/inworldRealtimeService'
 import chatStore from '../services/chatStore.js'
 
@@ -250,6 +250,11 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const transcriptCompleteRef = useRef('')
   const transcriptDeltaTimerRef = useRef(null)
   const localAudioRef = useRef(null)
+  const chatResumeTimerRef = useRef(null)
+  const latestResponseTextRef = useRef('')
+  const hasChargedCurrentResponseRef = useRef(false)
+  const selectedRealtimeVoiceIdRef = useRef('')
+  const voiceLabelRef = useRef('Clive')
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   const setChatSuppressed = (active) => {
@@ -268,6 +273,66 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       clearTimeout(responseTimeoutRef.current)
       responseTimeoutRef.current = null
     }
+  }
+
+  const clearChatResumeTimer = () => {
+    if (chatResumeTimerRef.current) {
+      clearTimeout(chatResumeTimerRef.current)
+      chatResumeTimerRef.current = null
+    }
+  }
+
+  const dispatchTokenUsageUpdate = ({ tokensUsed, remainingTokens }) => {
+    if (!Number.isFinite(tokensUsed) || !Number.isFinite(remainingTokens)) {
+      return
+    }
+
+    const savedUser = localStorage.getItem('sv-user')
+    if (savedUser) {
+      try {
+        const userData = JSON.parse(savedUser)
+        localStorage.setItem('sv-user', JSON.stringify({ ...userData, tokens: remainingTokens }))
+      } catch (error) {
+        console.warn('[Bot] Could not update cached token balance:', error.message)
+      }
+    }
+
+    window.dispatchEvent(new CustomEvent('voltvoice:tokens-updated', {
+      detail: {
+        source: 'ptt',
+        tokensUsed,
+        remainingTokens
+      }
+    }))
+  }
+
+  const reportRealtimeUsage = async (text, voiceId) => {
+    const token = localStorage.getItem('sv-token')
+    if (!token || !text?.trim()) {
+      return
+    }
+
+    const response = await fetch(`${API_URL}/api/inworld/realtime-usage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        text,
+        voiceId: voiceId || selectedRealtimeVoiceIdRef.current || voiceLabelRef.current || 'Clive'
+      })
+    })
+
+    const data = await response.json()
+    if (!response.ok || !data?.success) {
+      throw new Error(data?.error || 'No se pudo registrar uso de push-to-talk')
+    }
+
+    dispatchTokenUsageUpdate({
+      tokensUsed: Number(data.tokensUsed || 0),
+      remainingTokens: Number(data.remainingTokens)
+    })
   }
 
   const armResponseTimeout = () => {
@@ -629,6 +694,11 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       throw new Error(data?.error || 'No se pudo sintetizar audio local')
     }
 
+    dispatchTokenUsageUpdate({
+      tokensUsed: Number(data.tokensUsed || 0),
+      remainingTokens: Number(data.remainingTokens)
+    })
+
     if (localAudioRef.current) {
       localAudioRef.current.pause()
       localAudioRef.current = null
@@ -868,8 +938,17 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   }, [config?.botShortcutEnabled, config?.botShortcutKey])
 
   useEffect(() => {
+    selectedRealtimeVoiceIdRef.current = selectedRealtimeVoiceId
+  }, [selectedRealtimeVoiceId])
+
+  useEffect(() => {
+    voiceLabelRef.current = voiceLabel
+  }, [voiceLabel])
+
+  useEffect(() => {
     const handleTextResponse = (data) => {
       if (data?.text) {
+        latestResponseTextRef.current = data.text
         setHasActiveResponse(true)
         hasActiveResponseRef.current = true
         setResponse(data.text)
@@ -880,6 +959,8 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
     const handleResponseCreated = () => {
       // Wait for real content (text/audio) before considering the response active.
+      hasChargedCurrentResponseRef.current = false
+      latestResponseTextRef.current = ''
       console.log('[Bot] Response created, waiting for actual content')
     }
 
@@ -910,19 +991,36 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       }
     }
 
-    const handleResponseComplete = () => {
+    const handleResponseComplete = async () => {
       if (!hasActiveResponseRef.current) {
         setResponse((current) => current || 'La IA no devolvio contenido. Intenta de nuevo.')
       }
       setIsLoading(false)
       setIsRecording(false)
       clearResponseTimeout()
+
+      if (!hasChargedCurrentResponseRef.current && latestResponseTextRef.current.trim()) {
+        try {
+          await reportRealtimeUsage(latestResponseTextRef.current, selectedRealtimeVoiceIdRef.current || voiceLabelRef.current)
+          hasChargedCurrentResponseRef.current = true
+        } catch (error) {
+          console.warn('[Bot] No se pudo registrar consumo realtime:', error.message)
+        }
+      }
+
       if (!responsePlaybackStartedRef.current && !hasVoiceResponseRef.current) {
-        setChatSuppressed(false)
+        clearChatResumeTimer()
+        chatResumeTimerRef.current = setTimeout(() => {
+          chatResumeTimerRef.current = null
+          if (!responsePlaybackStartedRef.current && !hasVoiceResponseRef.current) {
+            setChatSuppressed(false)
+          }
+        }, 1200)
       }
     }
 
     const handleAudioStarted = () => {
+      clearChatResumeTimer()
       hasVoiceResponseRef.current = true
       responsePlaybackStartedRef.current = true
       setHasActiveResponse(true)
@@ -935,6 +1033,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     }
 
     const handleAudioComplete = () => {
+      clearChatResumeTimer()
       responsePlaybackStartedRef.current = false
       setIsPlayingResponse(false)
       setChatSuppressed(false)
@@ -948,6 +1047,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       setIsRecording(false)
       setChatSuppressed(false)
       clearResponseTimeout()
+      clearChatResumeTimer()
     }
 
     inworldRealtimeService.on('text-response', handleTextResponse)
@@ -976,6 +1076,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
         mediaStreamRef.current.getTracks().forEach(track => track.stop())
       }
       clearResponseTimeout()
+      clearChatResumeTimer()
       setChatSuppressed(false)
       if (transcriptDeltaTimerRef.current) {
         clearTimeout(transcriptDeltaTimerRef.current)
@@ -992,11 +1093,14 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     setIsPlayingResponse(false)
     setHasActiveResponse(false)
     hasActiveResponseRef.current = false
+    hasChargedCurrentResponseRef.current = false
+    latestResponseTextRef.current = ''
     const currentCharacter = characters.find((item) => item.id === selectedCharacterId)
     const resolvedVoice = resolveRealtimeVoice(currentCharacter) || ''
     setSelectedRealtimeVoiceId((current) => current || resolvedVoice)
     setVoiceLabel(resolvedVoice || 'Clive')
     clearResponseTimeout()
+    clearChatResumeTimer()
     setChatSuppressed(false)
     inworldRealtimeService.closeSession()
   }, [selectedCharacterId, characters, userVoices])
@@ -1129,6 +1233,8 @@ After using a tool, summarize the result conversationally.`
       responsePlaybackStartedRef.current = false
       setHasActiveResponse(false)
       hasActiveResponseRef.current = false
+      hasChargedCurrentResponseRef.current = false
+      latestResponseTextRef.current = ''
       transcriptBufferRef.current = ''
       transcriptCompleteRef.current = ''
       if (transcriptDeltaTimerRef.current) {
@@ -1231,6 +1337,8 @@ After using a tool, summarize the result conversationally.`
     responsePlaybackStartedRef.current = false
     setHasActiveResponse(false)
     hasActiveResponseRef.current = false
+    hasChargedCurrentResponseRef.current = false
+    latestResponseTextRef.current = ''
     setChatSuppressed(true)
 
     try {
@@ -1290,12 +1398,6 @@ After using a tool, summarize the result conversationally.`
         <h3 className={`text-sm font-bold ${darkMode ? 'text-cyan-300' : 'text-indigo-600'}`}>
           Llamar a Asistente
         </h3>
-        <button
-          onClick={onClose}
-          className="p-1 hover:bg-red-500/20 rounded transition-all"
-        >
-          <X className="w-4 h-4 text-red-400" />
-        </button>
       </div>
 
       {/* Selector de personalidad */}

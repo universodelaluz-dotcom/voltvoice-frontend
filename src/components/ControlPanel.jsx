@@ -137,7 +137,6 @@ function BotShortcutCapture({ darkMode, onCapture }) {
 }
 
 export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode, config, updateConfig, user }) {
-  const speed = config.audioSpeed || 1.0
   const [userVoices, setUserVoices] = useState([])
 
   // Cargar voces del usuario desde la API
@@ -211,33 +210,6 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
 
             {/* LEFT COLUMN */}
             <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-[#1a1a2e]/60 border-cyan-500/20' : 'bg-indigo-50/40 border-indigo-200/50'}`}>
-              {/* === VELOCIDAD === */}
-              <div className={`mb-2 rounded-xl px-4 py-3 border ${
-                darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-              }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-[15px] font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Velocidad de Voz</span>
-                  <span className="text-sm text-cyan-400 font-semibold">{speed.toFixed(1)}x</span>
-                </div>
-                <input
-                  type="range" min="0.5" max="2.0" step="0.1" value={speed}
-                  onChange={(e) => updateConfig('audioSpeed', parseFloat(e.target.value))}
-                  className="w-full h-1 rounded-full appearance-none cursor-pointer accent-cyan-400 mb-2"
-                  style={{
-                    background: darkMode
-                      ? `linear-gradient(to right, #06b6d4 0%, #06b6d4 ${((speed - 0.5) / 1.5) * 100}%, #374151 ${((speed - 0.5) / 1.5) * 100}%, #374151 100%)`
-                      : `linear-gradient(to right, #06b6d4 0%, #06b6d4 ${((speed - 0.5) / 1.5) * 100}%, #e5e7eb ${((speed - 0.5) / 1.5) * 100}%, #e5e7eb 100%)`
-                  }}
-                />
-                <div className="flex gap-2 text-xs">
-                  {[0.5, 1.0, 1.5, 2.0].map((btn) => (
-                    <button key={btn} onClick={() => updateConfig('audioSpeed', btn)}
-                      className={`transition-colors ${Math.abs(speed - btn) < 0.01 ? 'text-cyan-400' : darkMode ? 'text-gray-500 hover:text-gray-400' : 'text-gray-500 hover:text-gray-600'}`}
-                    >{btn}x</button>
-                  ))}
-                </div>
-              </div>
-
               {/* === SECCIÓN: LECTURA === */}
               <div className={`mx-1 mt-4 mb-3 px-4 py-2 rounded-xl border ${
                 darkMode
@@ -530,3 +502,4 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     </div>
   )
 }
+

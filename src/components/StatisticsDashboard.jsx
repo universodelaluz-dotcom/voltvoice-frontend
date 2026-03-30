@@ -147,6 +147,16 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
     loadStats()
   }, [authToken, user])
 
+  useEffect(() => {
+    const onTokenUpdate = () => {
+      if (authToken && user) {
+        loadStats(true)
+      }
+    }
+    window.addEventListener('voltvoice:tokens-updated', onTokenUpdate)
+    return () => window.removeEventListener('voltvoice:tokens-updated', onTokenUpdate)
+  }, [authToken, user])
+
   const derived = useMemo(() => {
     if (!stats) return null
 

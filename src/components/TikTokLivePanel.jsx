@@ -240,6 +240,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const volumeRef = useRef(0.8)
   const pttSnapshotRef = useRef({ wasPaused: false, hadCurrentAudio: false })
   const pttRestoreTimerRef = useRef(null)
+  const autoScrollPinnedRef = useRef(true)
   // Cooldown por tipo de notificación (timestamp del último anuncio)
   const lastNotifTime = useRef({ like: 0, viewer_count: 0, share: 0, follow: 0, gift: 0 })
 
@@ -257,15 +258,23 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         lastPlayingIdRef.current = playingId
         playing.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
       }
-    } else {
+    } else if (autoScrollPinnedRef.current) {
       lastPlayingIdRef.current = null
-      // Solo auto-scroll al fondo si el usuario ya está cerca del fondo (< 150px)
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150
-      if (isNearBottom) {
-        container.scrollTop = container.scrollHeight
-      }
+      container.scrollTop = container.scrollHeight
     }
   }, [messages])
+
+  useEffect(() => {
+    if (!chatContainerRef.current) return
+    const container = chatContainerRef.current
+    const onScroll = () => {
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150
+      autoScrollPinnedRef.current = isNearBottom
+    }
+    onScroll()
+    container.addEventListener('scroll', onScroll, { passive: true })
+    return () => container.removeEventListener('scroll', onScroll)
+  }, [])
 
   // Mantener refs actualizados para acceso en callbacks del WebSocket
   useEffect(() => { configRef.current = config }, [config])
@@ -721,11 +730,38 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     }
   }
 
+  const markPlayingMessagesAsDone = () => {
+    setMessages((prev) => prev.map((msg) => (
+      msg.status === 'playing'
+        ? { ...msg, status: 'done' }
+        : msg
+    )))
+    lastPlayingIdRef.current = null
+  }
+
+  const keepReadMessageVisible = () => {
+    requestAnimationFrame(() => {
+      const container = chatContainerRef.current
+      if (!container) return
+
+      const currentPlaying = container.querySelector('[data-playing="true"]')
+      if (currentPlaying) {
+        currentPlaying.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+        return
+      }
+
+      if (autoScrollPinnedRef.current) {
+        container.scrollTop = container.scrollHeight
+      }
+    })
+  }
+
   const handlePause = () => {
     if (!isPaused) {
       // Pausar: detener audio actual y vaciar cola
       isPausedRef.current = true
       setIsPaused(true)
+      markPlayingMessagesAsDone()
       speakQueueRef.current = []
       isProcessingRef.current = false
       if (currentAudioRef.current) {
@@ -733,16 +769,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         currentAudioRef.current.src = ''
         currentAudioRef.current = null
       }
+      keepReadMessageVisible()
     } else {
       // Reanudar: limpiar cola vieja y arrancar desde cero
       isPausedRef.current = false
       setIsPaused(false)
       speakQueueRef.current = []
       isProcessingRef.current = false
+      keepReadMessageVisible()
     }
   }
 
   const handleRefresh = () => {
+    markPlayingMessagesAsDone()
     speakQueueRef.current = []
     isProcessingRef.current = false
     if (currentAudioRef.current) {
@@ -755,6 +794,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       isPausedRef.current = false
       setIsPaused(false)
     }
+    keepReadMessageVisible()
   }
 
   const handleDisconnect = async () => {
@@ -1105,6 +1145,18 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 className="w-20 h-1 rounded-full appearance-none cursor-pointer accent-cyan-400"
                 style={{
                   background: `linear-gradient(to right, #22d3ee ${volume * 100}%, ${darkMode ? '#1e293b' : '#d1d5db'} ${volume * 100}%)`
+                }}
+              />
+              <div className={`mx-1 h-4 w-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`} />
+              <span className={`text-[10px] font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Vel {Number(config.audioSpeed || 1).toFixed(1)}x
+              </span>
+              <input
+                type="range" min="0.5" max="2" step="0.1" value={Number(config.audioSpeed || 1)}
+                onChange={(e) => updateConfig && updateConfig('audioSpeed', parseFloat(e.target.value))}
+                className="w-20 h-1 rounded-full appearance-none cursor-pointer accent-fuchsia-400"
+                style={{
+                  background: `linear-gradient(to right, #d946ef ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%, ${darkMode ? '#1e293b' : '#d1d5db'} ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%)`
                 }}
               />
             </div>
