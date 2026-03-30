@@ -18,7 +18,19 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
   const [voiceLabel, setVoiceLabel] = useState('Clive')
 
   const mediaStreamRef = useRef(null)
+  const chatSuppressedRef = useRef(false)
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+
+  const setChatSuppressed = (active) => {
+    if (chatSuppressedRef.current === active) {
+      return
+    }
+
+    chatSuppressedRef.current = active
+    window.dispatchEvent(new CustomEvent('voltvoice:ptt-audio-state', {
+      detail: { active }
+    }))
+  }
 
   useEffect(() => {
     loadCharacters()
@@ -35,6 +47,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     const handleResponseComplete = () => {
       setIsLoading(false)
       setIsRecording(false)
+      setChatSuppressed(false)
     }
 
     const handleAudioStarted = () => {
@@ -44,6 +57,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
 
     const handleAudioComplete = () => {
       setIsPlayingResponse(false)
+      setChatSuppressed(false)
     }
 
     const handleError = (error) => {
@@ -51,6 +65,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       setResponse(`Error: ${error?.message || 'Unknown error'}`)
       setIsLoading(false)
       setIsRecording(false)
+      setChatSuppressed(false)
     }
 
     inworldRealtimeService.on('text-response', handleTextResponse)
@@ -68,6 +83,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(track => track.stop())
       }
+      setChatSuppressed(false)
       inworldRealtimeService.closeSession()
     }
   }, [])
@@ -80,6 +96,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     const resolvedVoice = resolveRealtimeVoice(currentCharacter) || ''
     setSelectedRealtimeVoiceId((current) => current || resolvedVoice)
     setVoiceLabel(resolvedVoice || 'Clive')
+    setChatSuppressed(false)
     inworldRealtimeService.closeSession()
   }, [selectedCharacterId, characters, userVoices])
 
@@ -197,6 +214,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       setIsLoading(true)
       setResponse(null)
       setHasVoiceResponse(false)
+      setChatSuppressed(true)
       await ensureBotSession()
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -209,6 +227,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     } catch (err) {
       console.error('Error starting push-to-talk:', err)
       setIsLoading(false)
+      setChatSuppressed(false)
       alert('No se pudo iniciar el bot de voz')
     }
   }
@@ -230,6 +249,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     } catch (err) {
       console.error('Error stopping recording:', err)
       setIsLoading(false)
+      setChatSuppressed(false)
     }
   }
 

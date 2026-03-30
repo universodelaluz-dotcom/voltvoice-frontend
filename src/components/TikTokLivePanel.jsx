@@ -224,6 +224,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     }
   }, [highlightRules])
   const isPausedRef = useRef(false)
+  const isPttSuppressedRef = useRef(false)
   const wsRef = useRef(null)
   const statusIntervalRef = useRef(null)
   const speakQueueRef = useRef([])
@@ -236,6 +237,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const nickOverridesRef = useRef({})
   const configRef = useRef(config)
   const volumeRef = useRef(0.8)
+  const pttSnapshotRef = useRef({ wasPaused: false, hadCurrentAudio: false })
   // Cooldown por tipo de notificación (timestamp del último anuncio)
   const lastNotifTime = useRef({ like: 0, viewer_count: 0, share: 0, follow: 0, gift: 0 })
 
@@ -269,6 +271,46 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   useEffect(() => { volumeRef.current = volume }, [volume])
   useEffect(() => { bannedRef.current = bannedUsers }, [bannedUsers])
   useEffect(() => { nickOverridesRef.current = nickOverrides }, [nickOverrides])
+
+  useEffect(() => {
+    const handlePttAudioState = (event) => {
+      const active = !!event.detail?.active
+
+      if (active) {
+        if (isPttSuppressedRef.current) return
+
+        pttSnapshotRef.current = {
+          wasPaused: isPausedRef.current,
+          hadCurrentAudio: !!currentAudioRef.current
+        }
+
+        isPttSuppressedRef.current = true
+
+        if (currentAudioRef.current) {
+          currentAudioRef.current.pause()
+        }
+
+        console.log('[TikTok] Chat audio suppressed for push-to-talk')
+        return
+      }
+
+      if (!isPttSuppressedRef.current) return
+
+      isPttSuppressedRef.current = false
+      console.log('[TikTok] Restoring chat audio after push-to-talk')
+
+      if (!pttSnapshotRef.current.wasPaused) {
+        if (currentAudioRef.current) {
+          currentAudioRef.current.play().catch(() => {})
+        } else {
+          processQueue()
+        }
+      }
+    }
+
+    window.addEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
+    return () => window.removeEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
+  }, [])
 
   // Conectar a WebSocket cuando el usuario se conecte a TikTok
   useEffect(() => {
@@ -515,11 +557,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     if (isProcessingRef.current) return
     if (speakQueueRef.current.length === 0) return
     if (isPausedRef.current) return
+    if (isPttSuppressedRef.current) return
 
     isProcessingRef.current = true
 
     while (speakQueueRef.current.length > 0) {
       if (disconnectedRef.current) break
+      if (isPausedRef.current || isPttSuppressedRef.current) break
       const item = speakQueueRef.current.shift()
       const { text, username } = item
       const remaining = speakQueueRef.current.length
@@ -570,6 +614,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               resolve()
             }
             audio.onerror = () => { currentAudioRef.current = null; resolve() }
+            if (isPttSuppressedRef.current) {
+              audio.pause()
+              resolve()
+              return
+            }
             audio.play().catch(() => { currentAudioRef.current = null; resolve() })
           })
         }
