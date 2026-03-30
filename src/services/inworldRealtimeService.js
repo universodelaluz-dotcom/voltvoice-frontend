@@ -19,6 +19,9 @@ export class InworldRealtimeService {
     this.eventCallbacks = {}
     this.config = null  // Store config from backend
     this.microphoneSender = null
+    this.outputAudioElement = null
+    this.remoteAudioStream = null
+    this.sessionInstructions = 'You are a helpful voice assistant. Respond in Spanish. Keep responses concise.'
   }
 
   _normalizeApiUrl(apiUrl = '') {
@@ -38,6 +41,36 @@ export class InworldRealtimeService {
     }
 
     return `Bearer ${normalizedKey}`
+  }
+
+  _ensureOutputAudioElement() {
+    if (this.outputAudioElement) {
+      return this.outputAudioElement
+    }
+
+    const audioElement = document.createElement('audio')
+    audioElement.autoplay = true
+    audioElement.playsInline = true
+    audioElement.style.display = 'none'
+    document.body.appendChild(audioElement)
+
+    audioElement.onplay = () => {
+      console.log('[Inworld] Audio playing')
+      this._emit('audio-started')
+    }
+
+    audioElement.onended = () => {
+      console.log('[Inworld] Audio ended')
+      this._emit('audio-complete')
+    }
+
+    audioElement.onerror = (err) => {
+      console.error('[Inworld] Audio error:', err)
+      this._emit('error', err)
+    }
+
+    this.outputAudioElement = audioElement
+    return audioElement
   }
 
   /**
@@ -73,6 +106,19 @@ export class InworldRealtimeService {
    */
   async startSession(characterId, systemPrompt, workspaceId, apiUrl = '') {
     try {
+      this.sessionInstructions = systemPrompt?.trim() || this.sessionInstructions
+
+      if (this.peerConnection && this.dataChannelReady && this.sessionId) {
+        return this.sessionId
+      }
+
+      if (this.peerConnection && !this.dataChannelReady) {
+        await this.waitForDataChannel(5000)
+        if (this.sessionId) {
+          return this.sessionId
+        }
+      }
+
       const normalizedApiUrl = this._normalizeApiUrl(apiUrl)
 
       // Fetch config from backend (includes API key + ICE servers)
@@ -197,25 +243,20 @@ export class InworldRealtimeService {
       this.peerConnection.ontrack = (event) => {
         console.log('[Inworld] Audio track received:', event.track.kind)
         if (event.track.kind === 'audio') {
-          // Create audio element and attach the track
-          const audioElement = new Audio()
-          audioElement.autoplay = true
-          audioElement.srcObject = new MediaStream([event.track])
-
-          // Log when audio plays/ends
-          audioElement.onplay = () => {
-            console.log('[Inworld] Audio playing')
-            this._emit('audio-started')
+          const audioElement = this._ensureOutputAudioElement()
+          if (!this.remoteAudioStream) {
+            this.remoteAudioStream = new MediaStream()
+            audioElement.srcObject = this.remoteAudioStream
           }
 
-          audioElement.onended = () => {
-            console.log('[Inworld] Audio ended')
-            this._emit('audio-complete')
+          this.remoteAudioStream.addTrack(event.track)
+          event.track.onended = () => {
+            this.remoteAudioStream?.removeTrack(event.track)
           }
 
-          audioElement.onerror = (err) => {
-            console.error('[Inworld] Audio error:', err)
-          }
+          audioElement.play().catch((err) => {
+            console.warn('[Inworld] Remote audio autoplay blocked, will retry on next user gesture:', err.message)
+          })
         }
       }
 
@@ -251,14 +292,14 @@ export class InworldRealtimeService {
           session: {
             type: 'realtime',
             model: 'openai/gpt-4o-mini',
-            instructions: 'You are a helpful voice assistant. Respond in Spanish. Keep responses concise.',
+            instructions: this.sessionInstructions,
             output_modalities: ['audio', 'text'],
             audio: {
               input: {
                 turn_detection: {
                   type: 'semantic_vad',
                   eagerness: 'medium',
-                  create_response: true,
+                  create_response: false,
                   interrupt_response: true
                 }
               },
@@ -731,9 +772,16 @@ export class InworldRealtimeService {
     this.audioTracks = []
     this.microphoneSender = null
     this.isConnected = false
+    this.dataChannelReady = false
     this.sessionId = null
     this.dataChannel = null
     this.audioQueue = []
+    this.remoteAudioStream = null
+
+    if (this.outputAudioElement) {
+      this.outputAudioElement.pause()
+      this.outputAudioElement.srcObject = null
+    }
   }
 
   /**
@@ -751,6 +799,19 @@ export class InworldRealtimeService {
       this.eventCallbacks[event] = []
     }
     this.eventCallbacks[event].push(callback)
+  }
+
+  off(event, callback) {
+    if (!this.eventCallbacks[event]) {
+      return
+    }
+
+    this.eventCallbacks[event] = this.eventCallbacks[event].filter((cb) => cb !== callback)
+  }
+
+  async resumeOutputAudio() {
+    const audioElement = this._ensureOutputAudioElement()
+    await audioElement.play()
   }
 
   /**

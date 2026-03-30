@@ -1,34 +1,84 @@
 import { useState, useRef, useEffect } from 'react'
 import { Mic2, Send, X, Volume2 } from 'lucide-react'
 import inworldRealtimeService from '../services/inworldRealtimeService'
-import AudioVisualizer from './AudioVisualizer'
 
-export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, config }) {
+export default function BotInvoker({ darkMode = true, onClose }) {
   const [characters, setCharacters] = useState([])
   const [selectedCharacterId, setSelectedCharacterId] = useState(null)
-  const [inputMode, setInputMode] = useState('microphone') // 'microphone' | 'text'
+  const [inputMode, setInputMode] = useState('microphone')
   const [inputText, setInputText] = useState('')
   const [isRecording, setIsRecording] = useState(false)
   const [response, setResponse] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [responseAudio, setResponseAudio] = useState(null)
+  const [hasVoiceResponse, setHasVoiceResponse] = useState(false)
   const [isPlayingResponse, setIsPlayingResponse] = useState(false)
 
   const mediaStreamRef = useRef(null)
-  const responseAudioRef = useRef(null)
-
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
-  // Load characters
   useEffect(() => {
     loadCharacters()
   }, [])
+
+  useEffect(() => {
+    const handleTextResponse = (data) => {
+      if (data?.text) {
+        setResponse(data.text)
+      }
+    }
+
+    const handleResponseComplete = () => {
+      setIsLoading(false)
+      setIsRecording(false)
+    }
+
+    const handleAudioStarted = () => {
+      setHasVoiceResponse(true)
+      setIsPlayingResponse(true)
+    }
+
+    const handleAudioComplete = () => {
+      setIsPlayingResponse(false)
+    }
+
+    const handleError = (error) => {
+      console.error('Session error:', error)
+      setResponse(`Error: ${error?.message || 'Unknown error'}`)
+      setIsLoading(false)
+      setIsRecording(false)
+    }
+
+    inworldRealtimeService.on('text-response', handleTextResponse)
+    inworldRealtimeService.on('response-complete', handleResponseComplete)
+    inworldRealtimeService.on('audio-started', handleAudioStarted)
+    inworldRealtimeService.on('audio-complete', handleAudioComplete)
+    inworldRealtimeService.on('error', handleError)
+
+    return () => {
+      inworldRealtimeService.off('text-response', handleTextResponse)
+      inworldRealtimeService.off('response-complete', handleResponseComplete)
+      inworldRealtimeService.off('audio-started', handleAudioStarted)
+      inworldRealtimeService.off('audio-complete', handleAudioComplete)
+      inworldRealtimeService.off('error', handleError)
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop())
+      }
+      inworldRealtimeService.closeSession()
+    }
+  }, [])
+
+  useEffect(() => {
+    setResponse(null)
+    setHasVoiceResponse(false)
+    setIsPlayingResponse(false)
+    inworldRealtimeService.closeSession()
+  }, [selectedCharacterId])
 
   const loadCharacters = async () => {
     try {
       const token = localStorage.getItem('sv-token')
       const res = await fetch(`${API_URL}/api/bot/characters`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` }
       })
       const data = await res.json()
       if (data.success) {
@@ -42,115 +92,94 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
     }
   }
 
+  const ensureBotSession = async () => {
+    if (!selectedCharacterId) {
+      throw new Error('Selecciona un personaje')
+    }
+
+    const character = characters.find((item) => item.id === selectedCharacterId)
+
+    await inworldRealtimeService.startSession(
+      selectedCharacterId,
+      character?.system_prompt || '',
+      null,
+      API_URL
+    )
+
+    await inworldRealtimeService.waitForDataChannel(5000)
+  }
+
   const startRecording = async () => {
     try {
-      // Get microphone stream and add audio tracks to WebRTC connection
+      setIsLoading(true)
+      setResponse(null)
+      setHasVoiceResponse(false)
+      await ensureBotSession()
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       mediaStreamRef.current = stream
-
-      // Add audio tracks to active Inworld session
       inworldRealtimeService.addAudioTracks(stream)
 
       setIsRecording(true)
+      setIsLoading(false)
       console.log('[Bot] Microphone activated')
     } catch (err) {
-      console.error('Error accessing microphone:', err)
-      alert('No se pudo acceder al micrófono')
+      console.error('Error starting push-to-talk:', err)
+      setIsLoading(false)
+      alert('No se pudo iniciar el bot de voz')
     }
   }
 
   const stopRecording = async () => {
     try {
-      if (mediaStreamRef.current) {
-        // Stop all audio tracks
-        mediaStreamRef.current.getAudioTracks().forEach(track => track.stop())
-        mediaStreamRef.current = null
-
-        // Remove audio tracks from WebRTC connection
-        await inworldRealtimeService.removeAudioTracks()
-
-        // Request response from bot
-        await inworldRealtimeService.requestResponse()
-
-        setIsRecording(false)
-        console.log('[Bot] Microphone deactivated, requesting response')
+      if (!mediaStreamRef.current) {
+        return
       }
+
+      mediaStreamRef.current.getAudioTracks().forEach(track => track.stop())
+      mediaStreamRef.current = null
+
+      await inworldRealtimeService.removeAudioTracks()
+      setIsRecording(false)
+      setIsLoading(true)
+      await inworldRealtimeService.requestResponse()
+      console.log('[Bot] Microphone deactivated, requesting response')
     } catch (err) {
       console.error('Error stopping recording:', err)
+      setIsLoading(false)
     }
   }
 
-  const invokeBot = async (inputData) => {
-    if (!selectedCharacterId) {
-      alert('Selecciona un personaje')
+  const invokeBot = async (text) => {
+    if (!text.trim()) {
       return
     }
 
     setIsLoading(true)
     setResponse(null)
+    setHasVoiceResponse(false)
 
     try {
-      const character = characters.find(c => c.id === selectedCharacterId)
-
-      // Start WebRTC session (API key fetched securely from backend)
-      await inworldRealtimeService.startSession(
-        selectedCharacterId,
-        character?.system_prompt || '',
-        null,
-        API_URL
-      )
-
-      // Wait for data channel to be ready
-      await inworldRealtimeService.waitForDataChannel(5000)
-
-      // Handle input based on type
-      if (typeof inputData === 'string') {
-        // Text input
-        await inworldRealtimeService.sendMessage(inputData)
-      }
-
-      // Listen for responses
-      let responseText = ''
-
-      inworldRealtimeService.on('text-response', (data) => {
-        if (data.text) {
-          responseText += data.text + ' '
-          setResponse(responseText.trim())
-        }
-      })
-
-      inworldRealtimeService.on('audio-complete', () => {
-        console.log('Audio playback complete')
-      })
-
-      inworldRealtimeService.on('response-complete', () => {
-        console.log('Response complete')
-        setIsLoading(false)
-      })
-
-      inworldRealtimeService.on('error', (error) => {
-        console.error('Session error:', error)
-        setResponse('Error: ' + error?.message || 'Unknown error')
-        setIsLoading(false)
-      })
-
+      await ensureBotSession()
+      await inworldRealtimeService.sendMessage(text.trim())
     } catch (err) {
       console.error('Error invoking bot:', err)
-      setResponse('Error: ' + err.message)
+      setResponse(`Error: ${err.message}`)
       setIsLoading(false)
     }
   }
 
   const handleTextSubmit = async () => {
-    if (!inputText.trim()) return
     const textToSend = inputText
     setInputText('')
     await invokeBot(textToSend)
   }
 
-  const playResponse = () => {
-    if (responseAudioRef.current) {
-      isPlayingResponse ? responseAudioRef.current.pause() : responseAudioRef.current.play()
+  const handleRetryAudio = async () => {
+    try {
+      await inworldRealtimeService.resumeOutputAudio()
+    } catch (err) {
+      console.error('Error resuming audio:', err)
     }
   }
 
@@ -160,10 +189,9 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
         ? 'bg-[#1a1a2e] border-cyan-400/30'
         : 'bg-white border-indigo-200 shadow-sm'
     }`}>
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className={`text-sm font-bold ${darkMode ? 'text-cyan-300' : 'text-indigo-600'}`}>
-          🎤 Llamar a Asistente
+          Llamar a Asistente
         </h3>
         <button
           onClick={onClose}
@@ -173,7 +201,6 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
         </button>
       </div>
 
-      {/* Character Selector */}
       <select
         value={selectedCharacterId || ''}
         onChange={(e) => setSelectedCharacterId(e.target.value)}
@@ -191,7 +218,6 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
         ))}
       </select>
 
-      {/* Input Mode Toggle */}
       <div className="flex gap-2">
         <button
           onClick={() => setInputMode('microphone')}
@@ -201,7 +227,7 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
               : darkMode ? 'bg-[#0f0f23] text-gray-400' : 'bg-gray-100 text-gray-600'
           }`}
         >
-          🎙️ Micrófono
+          Micrófono
         </button>
         <button
           onClick={() => setInputMode('text')}
@@ -211,11 +237,10 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
               : darkMode ? 'bg-[#0f0f23] text-gray-400' : 'bg-gray-100 text-gray-600'
           }`}
         >
-          💬 Texto
+          Texto
         </button>
       </div>
 
-      {/* Microphone Input */}
       {inputMode === 'microphone' && (
         <button
           onClick={isRecording ? stopRecording : startRecording}
@@ -227,18 +252,17 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
           }`}
         >
           <Mic2 className="w-5 h-5" />
-          {isRecording ? 'GRABANDO...' : 'PUSH TO TALK'}
+          {isRecording ? 'SOLTAR PARA ENVIAR' : 'PUSH TO TALK'}
         </button>
       )}
 
-      {/* Text Input */}
       {inputMode === 'text' && (
         <div className="flex gap-2">
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleTextSubmit()}
+            onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
             placeholder="Escribe un mensaje..."
             className={`flex-1 p-2 rounded text-sm ${
               darkMode
@@ -256,14 +280,12 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
         </div>
       )}
 
-      {/* Loading Indicator */}
       {isLoading && (
         <div className={`text-center text-sm ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`}>
-          ⏳ Procesando...
+          Procesando...
         </div>
       )}
 
-      {/* Response */}
       {response && (
         <div className={`rounded p-3 text-sm ${
           darkMode
@@ -273,22 +295,18 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
           <p className="font-bold mb-2">Respuesta del Bot:</p>
           <p>{response}</p>
 
-          {responseAudio && (
+          {hasVoiceResponse && (
             <div className="mt-3 flex items-center gap-2">
-              <audio
-                ref={responseAudioRef}
-                src={responseAudio}
-                onPlay={() => setIsPlayingResponse(true)}
-                onPause={() => setIsPlayingResponse(false)}
-                className="hidden"
-              />
               <button
-                onClick={playResponse}
+                onClick={handleRetryAudio}
                 className="p-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full hover:shadow-lg text-white transition-all"
+                title="Reintentar audio"
               >
                 <Volume2 className="w-4 h-4" />
               </button>
-              <span className="text-xs text-gray-400">Escuchar respuesta</span>
+              <span className="text-xs text-gray-400">
+                {isPlayingResponse ? 'La respuesta de voz se está reproduciendo' : 'Si no se oyó, toca este botón para reactivar el audio'}
+              </span>
             </div>
           )}
         </div>
