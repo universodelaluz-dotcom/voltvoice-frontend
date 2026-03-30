@@ -463,61 +463,21 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               updateConfig={updateConfig}
             />
 
-            {/* Tokens Dashboard */}
-            <div className={`${darkMode ? "bg-[#1a1a2e] border border-cyan-400/20 rounded-xl p-5 backdrop-blur-sm" : "bg-white border border-indigo-200 rounded-xl p-5 shadow-sm"}`}>
-              <h3 className="text-sm font-semibold text-cyan-300 uppercase tracking-wide mb-4">Tokens</h3>
-              <div className="flex justify-center mb-4">
-                <div className="relative w-32 h-32">
-                  <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
-                    <circle cx="60" cy="60" r="50" stroke="currentColor" strokeWidth="8" fill="none" className="text-gray-700" />
-                    <circle cx="60" cy="60" r="50" stroke="url(#tokenGradient)" strokeWidth="8" fill="none" strokeLinecap="round"
-                      strokeDasharray={`${Math.min(100, (tokens / (totalTokensUsed + tokens || 1)) * 100) * 3.14} 314`}
-                      className="transition-all duration-1000 ease-out" />
-                    <defs>
-                      <linearGradient id="tokenGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#06b6d4" />
-                        <stop offset="100%" stopColor="#a855f7" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className={`${darkMode ? "text-2xl font-black text-white" : "text-2xl font-black text-gray-900"}`}>{tokens}</span>
-                    <span className={`${darkMode ? "text-[10px] text-gray-400 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>restantes</span>
-                  </div>
-                </div>
+            {/* Tokens — minimalista */}
+            <div className={`${darkMode ? "bg-[#1a1a2e] border border-cyan-400/20 rounded-xl p-4" : "bg-white border border-indigo-200 rounded-xl p-4 shadow-sm"}`}>
+              <div className="flex items-baseline justify-between mb-3">
+                <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/70' : 'text-indigo-400'}`}>Tokens</span>
+                <span className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{tokens.toLocaleString()}</span>
               </div>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className={`${darkMode ? "bg-gradient-to-br from-green-500/15 to-green-600/10 border border-green-400/25" : "bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20"} rounded-lg p-3 text-center`}>
-                  <div className="text-lg font-black text-green-400">{tokens}</div>
-                  <div className={`${darkMode ? "text-[10px] text-gray-300 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Disponibles</div>
-                </div>
-                <div className={`${darkMode ? "bg-gradient-to-br from-purple-500/15 to-purple-600/10 border border-purple-400/25" : "bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20"} rounded-lg p-3 text-center`}>
-                  <div className="text-lg font-black text-purple-400">{totalTokensUsed}</div>
-                  <div className={`${darkMode ? "text-[10px] text-gray-300 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Usados</div>
-                </div>
-                <div className={`${darkMode ? "bg-gradient-to-br from-cyan-500/15 to-cyan-600/10 border border-cyan-400/25" : "bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 border border-cyan-500/20"} rounded-lg p-3 text-center`}>
-                  <div className="text-lg font-black text-cyan-400">{synthesisCount}</div>
-                  <div className={`${darkMode ? "text-[10px] text-gray-300 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Síntesis</div>
-                </div>
-                <div className={`${darkMode ? "bg-gradient-to-br from-yellow-500/15 to-yellow-600/10 border border-yellow-400/25" : "bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20"} rounded-lg p-3 text-center`}>
-                  <div className="text-lg font-black text-yellow-400">{synthesisCount > 0 ? (totalTokensUsed / synthesisCount).toFixed(0) : 0}</div>
-                  <div className={`${darkMode ? "text-[10px] text-gray-300 uppercase" : "text-[10px] text-gray-500 uppercase"}`}>Promedio</div>
-                </div>
+              <div className={`rounded-full h-2 overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-indigo-100'}`}>
+                <div
+                  className="bg-gradient-to-r from-cyan-500 to-purple-500 h-full rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${Math.min(100, Math.round((tokens / (totalTokensUsed + tokens || 1)) * 100))}%` }}
+                />
               </div>
-              <div className="space-y-2">
-                <div className={`${darkMode ? "flex justify-between text-xs text-gray-400" : "flex justify-between text-xs text-gray-500"}`}>
-                  <span>Uso de tokens</span>
-                  <span className="text-cyan-400 font-bold">{Math.min(100, Math.round((totalTokensUsed / (totalTokensUsed + tokens || 1)) * 100))}%</span>
-                </div>
-                <div className={`${darkMode ? "bg-gray-800 rounded-full h-3 overflow-hidden relative" : "bg-indigo-100 rounded-full h-3 overflow-hidden relative"}`}>
-                  <div className="bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden"
-                    style={{ width: `${Math.min(100, (totalTokensUsed / (totalTokensUsed + tokens || 1)) * 100)}%` }}>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
-                  </div>
-                </div>
-                <p className="text-[10px] text-gray-500 text-center">
-                  {totalTokensUsed.toLocaleString()} de {(totalTokensUsed + tokens).toLocaleString()} tokens usados
-                </p>
+              <div className="flex justify-between mt-2">
+                <span className={`text-[11px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{totalTokensUsed.toLocaleString()} usados</span>
+                <span className="text-[11px] font-semibold text-cyan-400">{Math.min(100, Math.round((tokens / (totalTokensUsed + tokens || 1)) * 100))}% restante</span>
               </div>
             </div>
 
