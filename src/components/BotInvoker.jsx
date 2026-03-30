@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Mic2, Send, X, Volume2 } from 'lucide-react'
 import inworldRealtimeService from '../services/inworldRealtimeService'
+import chatStore from '../services/chatStore.js'
 
 export default function BotInvoker({ darkMode = true, onClose, config }) {
   const [characters, setCharacters] = useState([])
@@ -25,6 +26,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
   const transcriptBufferRef = useRef('')
   const transcriptCompleteRef = useRef('')
   const transcriptDeltaTimerRef = useRef(null)
+  const localAudioRef = useRef(null)
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   const setChatSuppressed = (active) => {
@@ -57,6 +59,156 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       setChatSuppressed(false)
       setResponse((current) => current || 'La IA tardó demasiado en responder. Intenta de nuevo.')
     }, 35000)
+  }
+
+  const normalizeIntentText = (text) => {
+    return String(text || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim()
+  }
+
+  const resolveChatIntent = (text) => {
+    const normalized = normalizeIntentText(text)
+
+    const banMatch = normalized.match(/(?:bloquea|ban(?:ea)?|banea|silencia|ignora)\s+a\s+@?([a-z0-9._-]+)/i)
+    if (banMatch) {
+      return { type: 'ban_user', username: banMatch[1] }
+    }
+
+    const unbanMatch = normalized.match(/(?:desbloquea|desban(?:ea)?|desbanea|quita\s+ban)\s+a\s+@?([a-z0-9._-]+)/i)
+    if (unbanMatch) {
+      return { type: 'unban_user', username: unbanMatch[1] }
+    }
+
+    const nickMatch = normalized.match(/(?:ponle|cambia(?:le)?|asigna)\s+(?:apodo|nickname)\s+a\s+@?([a-z0-9._-]+)\s+(?:por|a)\s+(.+)/i)
+    if (nickMatch) {
+      return { type: 'set_nickname', username: nickMatch[1], nickname: nickMatch[2].trim() }
+    }
+
+    if ((normalized.includes('quien') || normalized.includes('quien es')) &&
+        (normalized.includes('mas frecuente') || normalized.includes('comenta mas') || normalized.includes('mas activo'))) {
+      return { type: 'get_active_users', minutes: 5 }
+    }
+
+    if (normalized.includes('usuarios activos') || normalized.includes('mas activos del chat')) {
+      return { type: 'get_active_users', minutes: 5 }
+    }
+
+    if (normalized.includes('estadisticas del chat') || normalized.includes('stats del chat') || normalized.includes('resumen del chat')) {
+      return { type: 'get_chat_stats' }
+    }
+
+    if (normalized.includes('preguntas del chat') || normalized.includes('que preguntas hay') || normalized.includes('quien esta preguntando')) {
+      return { type: 'get_questions', count: 5 }
+    }
+
+    if (normalized.includes('lee el chat') || normalized.includes('que estan diciendo') || normalized.includes('leer chat')) {
+      return { type: 'read_chat', count: 5 }
+    }
+
+    return null
+  }
+
+  const speakLocalResponse = async (text, voiceId) => {
+    const response = await fetch(`${API_URL}/api/inworld/tts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        text,
+        voiceId: voiceId || selectedRealtimeVoiceId || 'Clive'
+      })
+    })
+
+    const data = await response.json()
+    if (!response.ok || !(data.audio || data.audioUrl)) {
+      throw new Error(data?.error || 'No se pudo sintetizar audio local')
+    }
+
+    if (localAudioRef.current) {
+      localAudioRef.current.pause()
+      localAudioRef.current = null
+    }
+
+    const audio = new Audio(data.audio || data.audioUrl)
+    localAudioRef.current = audio
+
+    audio.onplay = () => {
+      setHasVoiceResponse(true)
+      setIsPlayingResponse(true)
+      setIsLoading(false)
+      clearResponseTimeout()
+    }
+
+    audio.onended = () => {
+      setIsPlayingResponse(false)
+      setChatSuppressed(false)
+      localAudioRef.current = null
+    }
+
+    audio.onerror = () => {
+      setIsPlayingResponse(false)
+      setChatSuppressed(false)
+      localAudioRef.current = null
+    }
+
+    await audio.play()
+  }
+
+  const executeLocalIntent = async (intent, originalText) => {
+    switch (intent.type) {
+      case 'ban_user': {
+        const result = await chatStore.banUser(intent.username)
+        return result.success
+          ? `Listo, ya bloquee a ${intent.username} del chat.`
+          : result.message || `No pude bloquear a ${intent.username}.`
+      }
+      case 'unban_user': {
+        const result = await chatStore.unbanUser(intent.username)
+        return result.success
+          ? `Listo, ya quite el bloqueo de ${intent.username}.`
+          : result.message || `No pude desbloquear a ${intent.username}.`
+      }
+      case 'set_nickname': {
+        const result = await chatStore.setNickname(intent.username, intent.nickname)
+        return result.success
+          ? `Listo, ahora le dire ${intent.nickname} a ${intent.username}.`
+          : result.message || `No pude cambiar el apodo de ${intent.username}.`
+      }
+      case 'get_active_users': {
+        const users = chatStore.getActiveUsers(intent.minutes || 5)
+        if (!users.length) {
+          return 'No veo usuarios activos suficientes en el chat todavia.'
+        }
+        const topUser = users[0]
+        return `La persona mas activa del chat en los ultimos ${intent.minutes || 5} minutos es ${topUser.user} con ${topUser.messageCount} mensajes.`
+      }
+      case 'get_chat_stats': {
+        const stats = chatStore.getChatStats()
+        return `Llevamos ${stats.totalMessages} mensajes totales, ${stats.recentMessages} recientes, ${stats.activeUsers} usuarios activos, ${stats.bannedCount} baneados y ${stats.highlightedCount} resaltados.`
+      }
+      case 'get_questions': {
+        const questions = chatStore.getQuestions(intent.count || 5)
+        if (!questions.length) {
+          return 'No detecto preguntas recientes en el chat.'
+        }
+        const preview = questions.slice(0, 2).map((item) => `${item.user} pregunto: ${item.text}`).join(' ')
+        return `Estas son las preguntas mas recientes. ${preview}`
+      }
+      case 'read_chat': {
+        const msgs = chatStore.getRecentMessages(intent.count || 5)
+        if (!msgs.length) {
+          return 'Aun no tengo mensajes recientes del chat para leer.'
+        }
+        const preview = msgs.slice(-3).map((item) => `${item.user} dijo ${item.text}`).join('. ')
+        return `En el chat reciente, ${preview}.`
+      }
+      default:
+        return originalText
+    }
   }
 
   useEffect(() => {
@@ -160,6 +312,10 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       inworldRealtimeService.off('input-transcript-delta', handleInputTranscriptDelta)
       inworldRealtimeService.off('input-transcript-complete', handleInputTranscriptComplete)
       inworldRealtimeService.off('error', handleError)
+      if (localAudioRef.current) {
+        localAudioRef.current.pause()
+        localAudioRef.current = null
+      }
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(track => track.stop())
       }
@@ -368,6 +524,19 @@ After using a tool, summarize the result conversationally.`
         setIsLoading(false)
         setChatSuppressed(false)
         setResponse('No se detecto voz suficiente. Intenta hablar un poco mas claro o mantener presionado un poco mas.')
+        return
+      }
+
+      const localIntent = resolveChatIntent(transcriptFromSpeech)
+      if (localIntent) {
+        const localResponse = await executeLocalIntent(localIntent, transcriptFromSpeech)
+        setResponse(localResponse)
+        setHasActiveResponse(true)
+        hasActiveResponseRef.current = true
+        setVoiceLabel(getVoiceDisplayName(selectedRealtimeVoiceId || resolveRealtimeVoice(characters.find((item) => item.id === selectedCharacterId)) || 'Clive'))
+        armResponseTimeout()
+        console.log('[Bot] Handling intent locally:', localIntent.type, localIntent)
+        await speakLocalResponse(localResponse, selectedRealtimeVoiceId || resolveRealtimeVoice(characters.find((item) => item.id === selectedCharacterId)))
         return
       }
 
