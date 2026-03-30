@@ -409,56 +409,6 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 <span className="text-xs font-bold uppercase tracking-widest">🤖 Asistente de IA</span>
               </div>
 
-              {/* Card 1 — Taller de Roleplay (tono violeta/morado) */}
-              <div className="px-4 pb-3">
-                <button
-                  onClick={() => onGoAIRoleplay?.()}
-                  className={`w-full rounded-xl p-4 text-left transition-all group border ${
-                    darkMode
-                      ? 'bg-gradient-to-br from-purple-900/40 to-pink-900/30 border-purple-500/40 hover:border-purple-400/70 hover:shadow-lg hover:shadow-purple-500/20'
-                      : 'bg-gradient-to-br from-purple-50 to-pink-50 border-purple-300/60 hover:border-purple-400 hover:shadow-md'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">🎭</span>
-                    <div>
-                      <p className={`font-bold text-sm ${darkMode ? 'text-purple-200 group-hover:text-white' : 'text-purple-800'} transition-colors`}>
-                        Taller de Asistentes de IA Roleplay
-                      </p>
-                      <p className={`text-xs mt-0.5 ${darkMode ? 'text-purple-400/80' : 'text-purple-500'}`}>
-                        Crea y personaliza tus personajes de IA
-                      </p>
-                    </div>
-                    <ChevronRight className={`ml-auto w-4 h-4 ${darkMode ? 'text-purple-400 group-hover:text-purple-200' : 'text-purple-400'} transition-colors`} />
-                  </div>
-                </button>
-              </div>
-
-              {/* Card 2 — Probar voz (tono cyan/teal) */}
-              <div className="px-4 pb-3">
-                <button
-                  onClick={() => onGoSynthesis?.()}
-                  className={`w-full rounded-xl p-4 text-left transition-all group border ${
-                    darkMode
-                      ? 'bg-gradient-to-br from-cyan-900/40 to-teal-900/30 border-cyan-500/40 hover:border-cyan-400/70 hover:shadow-lg hover:shadow-cyan-500/20'
-                      : 'bg-gradient-to-br from-cyan-50 to-teal-50 border-cyan-300/60 hover:border-cyan-400 hover:shadow-md'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">🎤</span>
-                    <div>
-                      <p className={`font-bold text-sm ${darkMode ? 'text-cyan-200 group-hover:text-white' : 'text-cyan-800'} transition-colors`}>
-                        Probar voz
-                      </p>
-                      <p className={`text-xs mt-0.5 ${darkMode ? 'text-cyan-400/80' : 'text-cyan-600'}`}>
-                        Sintetiza audio y escucha tus voces
-                      </p>
-                    </div>
-                    <ChevronRight className={`ml-auto w-4 h-4 ${darkMode ? 'text-cyan-400 group-hover:text-cyan-200' : 'text-cyan-400'} transition-colors`} />
-                  </div>
-                </button>
-              </div>
-
               {/* === SHORTCUT PUSH-TO-TALK === */}
               <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
                 <button
