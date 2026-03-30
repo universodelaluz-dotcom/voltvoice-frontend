@@ -1099,6 +1099,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     const handleError = (error) => {
       console.error('Session error:', error)
       markSessionBroken()
+      restartSessionIfRecording()
       setResponse(`Error: ${error?.message || 'Unknown error'}`)
       setIsLoading(false)
       setIsRecording(false)
