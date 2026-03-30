@@ -22,6 +22,8 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
   const chatSuppressedRef = useRef(false)
   const responseTimeoutRef = useRef(null)
   const hasActiveResponseRef = useRef(false)
+  const transcriptBufferRef = useRef('')
+  const transcriptCompleteRef = useRef('')
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   const setChatSuppressed = (active) => {
@@ -77,6 +79,23 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       console.log('[Bot] Response created, waiting for actual content')
     }
 
+    const handleInputTranscriptDelta = (data) => {
+      if (!data?.text) {
+        return
+      }
+
+      transcriptBufferRef.current += data.text
+    }
+
+    const handleInputTranscriptComplete = (data) => {
+      if (!data?.text) {
+        return
+      }
+
+      transcriptCompleteRef.current = data.text
+      transcriptBufferRef.current = data.text
+    }
+
     const handleResponseComplete = () => {
       if (!hasActiveResponseRef.current) {
         setResponse((current) => current || 'La IA no devolvio contenido. Intenta de nuevo.')
@@ -117,6 +136,8 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     inworldRealtimeService.on('response-complete', handleResponseComplete)
     inworldRealtimeService.on('audio-started', handleAudioStarted)
     inworldRealtimeService.on('audio-complete', handleAudioComplete)
+    inworldRealtimeService.on('input-transcript-delta', handleInputTranscriptDelta)
+    inworldRealtimeService.on('input-transcript-complete', handleInputTranscriptComplete)
     inworldRealtimeService.on('error', handleError)
 
     return () => {
@@ -125,6 +146,8 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       inworldRealtimeService.off('response-complete', handleResponseComplete)
       inworldRealtimeService.off('audio-started', handleAudioStarted)
       inworldRealtimeService.off('audio-complete', handleAudioComplete)
+      inworldRealtimeService.off('input-transcript-delta', handleInputTranscriptDelta)
+      inworldRealtimeService.off('input-transcript-complete', handleInputTranscriptComplete)
       inworldRealtimeService.off('error', handleError)
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(track => track.stop())
@@ -273,11 +296,13 @@ After using a tool, summarize the result conversationally.`
     try {
       setIsLoading(true)
       setResponse(null)
-      setHasVoiceResponse(false)
-      setHasActiveResponse(false)
-      hasActiveResponseRef.current = false
-      setChatSuppressed(true)
-      await ensureBotSession()
+    setHasVoiceResponse(false)
+    setHasActiveResponse(false)
+    hasActiveResponseRef.current = false
+    transcriptBufferRef.current = ''
+    transcriptCompleteRef.current = ''
+    setChatSuppressed(true)
+    await ensureBotSession()
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       mediaStreamRef.current = stream
@@ -305,15 +330,27 @@ After using a tool, summarize the result conversationally.`
 
       setIsRecording(false)
       setIsLoading(true)
-      armResponseTimeout()
-      await inworldRealtimeService.requestResponse()
+      const transcriptFromSpeech = (transcriptCompleteRef.current || transcriptBufferRef.current).trim()
+      transcriptBufferRef.current = ''
+      transcriptCompleteRef.current = ''
       stream.getAudioTracks().forEach(track => track.stop())
       setTimeout(() => {
         inworldRealtimeService.removeAudioTracks().catch((error) => {
-          console.error('Error removing audio tracks after commit:', error)
+          console.error('Error removing audio tracks after speech capture:', error)
         })
-      }, 500)
-      console.log('[Bot] Microphone deactivated, requesting response')
+      }, 300)
+
+      if (!transcriptFromSpeech) {
+        setIsLoading(false)
+        setChatSuppressed(false)
+        setResponse('No se detecto voz suficiente. Intenta hablar un poco mas claro o mantener presionado un poco mas.')
+        return
+      }
+
+      armResponseTimeout()
+      console.log('[Bot] Sending speech transcript as text:', transcriptFromSpeech)
+      await inworldRealtimeService.sendMessage(transcriptFromSpeech)
+      console.log('[Bot] Microphone deactivated, transcript sent as text')
     } catch (err) {
       console.error('Error stopping recording:', err)
       setIsLoading(false)
