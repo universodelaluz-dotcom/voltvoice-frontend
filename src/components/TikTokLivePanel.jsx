@@ -459,6 +459,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           // Feed message to chatStore for bot access
           chatStore.addMessage({
             user: msg.username,
+            nickname: msg.nickname,
             text: msg.text,
             timestamp: Date.now(),
             isModerator: msg.isModerator || false,

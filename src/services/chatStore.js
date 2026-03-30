@@ -18,11 +18,54 @@ class ChatStore {
     this._actionCallbacks = {}
   }
 
+  _normalize(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, '')
+  }
+
+  resolveUserReference(reference) {
+    const normalizedRef = this._normalize(reference)
+    if (!normalizedRef) {
+      return null
+    }
+
+    const candidates = [...this.messages].reverse()
+    for (const message of candidates) {
+      const username = message.user || ''
+      const nickname = message.nickname || this.nickOverrides[username] || ''
+      const normalizedUser = this._normalize(username)
+      const normalizedNick = this._normalize(nickname)
+
+      if (
+        normalizedUser === normalizedRef ||
+        normalizedNick === normalizedRef ||
+        normalizedUser.includes(normalizedRef) ||
+        normalizedNick.includes(normalizedRef) ||
+        normalizedRef.includes(normalizedUser) ||
+        normalizedRef.includes(normalizedNick)
+      ) {
+        return {
+          username,
+          nickname: nickname || username
+        }
+      }
+    }
+
+    return {
+      username: reference,
+      nickname: reference
+    }
+  }
+
   // === WRITE METHODS (called by TikTokLivePanel) ===
 
   addMessage(msg) {
     this.messages.push({
       user: msg.user || msg.username || 'unknown',
+      nickname: msg.nickname || '',
       text: msg.text || msg.comment || '',
       timestamp: msg.timestamp || Date.now(),
       isModerator: msg.isModerator || false,
@@ -110,22 +153,24 @@ class ChatStore {
 
   async banUser(username) {
     try {
+      const resolved = this.resolveUserReference(username)
+      const targetUsername = resolved?.username || username
       const res = await fetch(`${API_URL}/api/bans`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, reason: 'Banned by AI assistant' })
+        body: JSON.stringify({ username: targetUsername, reason: 'Banned by AI assistant' })
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      this.bannedUsers.add(username)
+      this.bannedUsers.add(targetUsername)
 
       // Notify UI
       if (this._actionCallbacks.onBan) {
-        this._actionCallbacks.onBan(username)
+        this._actionCallbacks.onBan(targetUsername)
       }
-      return { success: true, message: `Usuario "${username}" baneado del chat` }
+      return { success: true, message: `Usuario "${resolved?.nickname || targetUsername}" baneado del chat`, username: targetUsername, nickname: resolved?.nickname || targetUsername }
     } catch (err) {
       return { success: false, message: `Error al banear: ${err.message}` }
     }
@@ -133,55 +178,63 @@ class ChatStore {
 
   async unbanUser(username) {
     try {
-      const res = await fetch(`${API_URL}/api/bans/${username}`, {
+      const resolved = this.resolveUserReference(username)
+      const targetUsername = resolved?.username || username
+      const res = await fetch(`${API_URL}/api/bans/${targetUsername}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${getAuthToken()}` }
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      this.bannedUsers.delete(username)
+      this.bannedUsers.delete(targetUsername)
 
       if (this._actionCallbacks.onUnban) {
-        this._actionCallbacks.onUnban(username)
+        this._actionCallbacks.onUnban(targetUsername)
       }
-      return { success: true, message: `Usuario "${username}" desbaneado` }
+      return { success: true, message: `Usuario "${resolved?.nickname || targetUsername}" desbaneado`, username: targetUsername, nickname: resolved?.nickname || targetUsername }
     } catch (err) {
       return { success: false, message: `Error al desbanear: ${err.message}` }
     }
   }
 
   highlightUser(username, color = '#06b6d4') {
-    this.highlightedUsers[username] = color
+    const resolved = this.resolveUserReference(username)
+    const targetUsername = resolved?.username || username
+    this.highlightedUsers[targetUsername] = color
     if (this._actionCallbacks.onHighlight) {
-      this._actionCallbacks.onHighlight(username, color)
+      this._actionCallbacks.onHighlight(targetUsername, color)
     }
-    return { success: true, message: `Usuario "${username}" resaltado con color ${color}` }
+    return { success: true, message: `Usuario "${resolved?.nickname || targetUsername}" resaltado con color ${color}`, username: targetUsername, nickname: resolved?.nickname || targetUsername }
   }
 
   removeHighlight(username) {
-    delete this.highlightedUsers[username]
+    const resolved = this.resolveUserReference(username)
+    const targetUsername = resolved?.username || username
+    delete this.highlightedUsers[targetUsername]
     if (this._actionCallbacks.onRemoveHighlight) {
-      this._actionCallbacks.onRemoveHighlight(username)
+      this._actionCallbacks.onRemoveHighlight(targetUsername)
     }
-    return { success: true, message: `Resaltado de "${username}" removido` }
+    return { success: true, message: `Resaltado de "${resolved?.nickname || targetUsername}" removido`, username: targetUsername, nickname: resolved?.nickname || targetUsername }
   }
 
   async setNickname(username, nickname) {
     try {
+      const resolved = this.resolveUserReference(username)
+      const targetUsername = resolved?.username || username
       const res = await fetch(`${API_URL}/api/nicks`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, newNickname: nickname })
+        body: JSON.stringify({ username: targetUsername, newNickname: nickname })
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      this.nickOverrides[username] = nickname
+      this.nickOverrides[targetUsername] = nickname
 
       if (this._actionCallbacks.onSetNick) {
-        this._actionCallbacks.onSetNick(username, nickname)
+        this._actionCallbacks.onSetNick(targetUsername, nickname)
       }
-      return { success: true, message: `Apodo de "${username}" cambiado a "${nickname}"` }
+      return { success: true, message: `Apodo de "${resolved?.nickname || targetUsername}" cambiado a "${nickname}"`, username: targetUsername, nickname: resolved?.nickname || targetUsername }
     } catch (err) {
       return { success: false, message: `Error al cambiar apodo: ${err.message}` }
     }

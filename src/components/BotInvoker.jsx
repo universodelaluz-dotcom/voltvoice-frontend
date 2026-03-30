@@ -87,6 +87,16 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       return { type: 'set_nickname', username: nickMatch[1], nickname: nickMatch[2].trim() }
     }
 
+    const highlightMatch = normalized.match(/(?:remarca|resalta|destaca|marca)\s+(?:a\s+)?@?([a-z0-9._-]+)/i)
+    if (highlightMatch) {
+      return { type: 'highlight_user', username: highlightMatch[1] }
+    }
+
+    const removeHighlightMatch = normalized.match(/(?:quita\s+resaltado|deja\s+de\s+resaltar|desmarca)\s+(?:a\s+)?@?([a-z0-9._-]+)/i)
+    if (removeHighlightMatch) {
+      return { type: 'remove_highlight', username: removeHighlightMatch[1] }
+    }
+
     if ((normalized.includes('quien') || normalized.includes('quien es')) &&
         (normalized.includes('mas frecuente') || normalized.includes('comenta mas') || normalized.includes('mas activo'))) {
       return { type: 'get_active_users', minutes: 5 }
@@ -180,8 +190,20 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       case 'set_nickname': {
         const result = await chatStore.setNickname(intent.username, intent.nickname)
         return result.success
-          ? `Listo, ahora le dire ${intent.nickname} a ${intent.username}.`
+          ? `Listo, ahora le dire ${intent.nickname} a ${result.nickname || intent.username}.`
           : result.message || `No pude cambiar el apodo de ${intent.username}.`
+      }
+      case 'highlight_user': {
+        const result = chatStore.highlightUser(intent.username, intent.color || '#06b6d4')
+        return result.success
+          ? `Listo, ya resalte a ${result.nickname || intent.username}.`
+          : result.message || `No pude resaltar a ${intent.username}.`
+      }
+      case 'remove_highlight': {
+        const result = chatStore.removeHighlight(intent.username)
+        return result.success
+          ? `Listo, ya quite el resaltado de ${result.nickname || intent.username}.`
+          : result.message || `No pude quitar el resaltado de ${intent.username}.`
       }
       case 'get_active_users': {
         const users = chatStore.getActiveUsers(intent.minutes || 5)
