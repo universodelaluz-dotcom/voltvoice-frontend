@@ -1296,39 +1296,62 @@ After using a tool, summarize the result conversationally.`
         </button>
       </div>
 
-      <select
-        value={selectedCharacterId || ''}
-        onChange={(e) => setSelectedCharacterId(e.target.value)}
-        className={`w-full p-2 rounded text-sm ${
-          darkMode
-            ? 'bg-[#0f0f23] border border-cyan-400/30 text-white'
-            : 'bg-gray-50 border border-indigo-300 text-gray-900'
-        }`}
-      >
-        <option value="">Selecciona personaje...</option>
-        {characters.map(char => (
-          <option key={char.id} value={char.id}>
-            {char.name}
-          </option>
-        ))}
-      </select>
+      {/* Selector de personalidad */}
+      <div>
+        <label className={`block text-xs font-bold mb-1 ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`}>
+          🎭 Personalidad
+        </label>
+        <select
+          value={selectedCharacterId || ''}
+          onChange={(e) => setSelectedCharacterId(e.target.value)}
+          className={`w-full p-2 rounded text-sm ${
+            darkMode
+              ? 'bg-[#0f0f23] border border-cyan-400/30 text-white'
+              : 'bg-gray-50 border border-indigo-300 text-gray-900'
+          }`}
+        >
+          <option value="">— Elige una personalidad —</option>
+          {characters.map(char => (
+            <option key={char.id} value={char.id}>
+              {char.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <select
-        value={selectedRealtimeVoiceId}
-        onChange={(e) => setSelectedRealtimeVoiceId(e.target.value)}
-        className={`w-full p-2 rounded text-sm ${
-          darkMode
-            ? 'bg-[#0f0f23] border border-cyan-400/30 text-white'
-            : 'bg-gray-50 border border-indigo-300 text-gray-900'
-        }`}
-      >
-        <option value="">Usar voz resuelta automáticamente</option>
-        {userVoices.map((voice) => (
-          <option key={voice.id} value={voice.voice_id}>
-            {voice.voice_name}
-          </option>
-        ))}
-      </select>
+      {/* Selector de voz */}
+      <div>
+        <label className={`block text-xs font-bold mb-1 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+          🔊 Voz a utilizar
+        </label>
+        <select
+          value={selectedRealtimeVoiceId}
+          onChange={(e) => setSelectedRealtimeVoiceId(e.target.value)}
+          className={`w-full p-2 rounded text-sm ${
+            darkMode
+              ? 'bg-[#0f0f23] border border-purple-400/30 text-white'
+              : 'bg-gray-50 border border-purple-300 text-gray-900'
+          }`}
+        >
+          <option value="">— Automática según personalidad —</option>
+          <optgroup label="Voces base">
+            <option value="Clive">Clive (voz base)</option>
+            <option value="Diego">Diego (voz base)</option>
+            <option value="Lupita">Lupita (voz base)</option>
+            <option value="Miguel">Miguel (voz base)</option>
+            <option value="Rafael">Rafael (voz base)</option>
+          </optgroup>
+          {userVoices.length > 0 && (
+            <optgroup label="Mis voces clonadas">
+              {userVoices.map((voice) => (
+                <option key={voice.id} value={voice.voice_id}>
+                  {voice.voice_name}
+                </option>
+              ))}
+            </optgroup>
+          )}
+        </select>
+      </div>
 
       <div className="flex gap-2">
         <button
