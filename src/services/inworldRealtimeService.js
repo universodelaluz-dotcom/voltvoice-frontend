@@ -236,8 +236,12 @@ export class InworldRealtimeService {
     this.dataChannel.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data)
-        console.log('[Inworld] Received event:', message.type || 'unknown')
-        this._handleInworldEvent(message)
+        if (message && message.type) {
+          console.log('[Inworld] Received event:', message.type)
+          this._handleInworldEvent(message)
+        } else {
+          console.warn('[Inworld] Received message without type:', message)
+        }
       } catch (err) {
         console.error('[Inworld] Error parsing message:', err)
       }
@@ -284,9 +288,34 @@ export class InworldRealtimeService {
    * Handle incoming Inworld events
    */
   _handleInworldEvent(event) {
+    if (!event || typeof event !== 'object') {
+      console.warn('[Inworld] Invalid event:', event)
+      return
+    }
+
     switch (event.type) {
+      // Session events
+      case 'session.created':
+        console.log('[Inworld] Session created')
+        break
+
+      case 'session.updated':
+        console.log('[Inworld] Session updated')
+        this._emit('session-updated', event)
+        break
+
+      // Response events
+      case 'response.created':
+        console.log('[Inworld] Response created')
+        break
+
+      case 'response.done':
+        console.log('[Inworld] Response done')
+        this._emit('response-complete', event)
+        break
+
+      // Audio output events
       case 'response.output_audio.delta':
-        // Audio chunk received
         if (event.delta) {
           this.audioQueue.push(event.delta)
           this._processAudioQueue()
@@ -294,44 +323,43 @@ export class InworldRealtimeService {
         break
 
       case 'response.output_audio.done':
-        // Audio response complete
         console.log('[Inworld] Audio response complete')
         this._emit('audio-complete')
         break
 
-      case 'conversation.item.created':
-        // New conversation item
-        console.log('[Inworld] Conversation item created')
-        break
-
-      case 'conversation.item.done':
-        // Conversation item complete
-        console.log('[Inworld] Conversation item done')
-        this._emit('response-complete', event)
+      // Text output events
+      case 'response.text.delta':
+        if (event.delta) {
+          console.log('[Inworld] Text delta:', event.delta)
+        }
         break
 
       case 'response.text.done':
-        // Text response complete
         if (event.text) {
           console.log('[Inworld] Text response:', event.text)
           this._emit('text-response', { text: event.text })
         }
         break
 
-      case 'session.updated':
-        // Session update
-        console.log('[Inworld] Session updated')
-        this._emit('session-updated', event)
+      // Conversation events
+      case 'conversation.item.created':
+        console.log('[Inworld] Conversation item created')
         break
 
+      case 'conversation.item.done':
+        console.log('[Inworld] Conversation item done')
+        break
+
+      // Error handling
       case 'error':
-        // Error event
-        console.error('[Inworld] Error event:', event.error)
-        this._emit('error', event.error)
+        const errorMsg = event.error?.message || event.error || 'Unknown error'
+        console.error('[Inworld] Error event:', errorMsg)
+        this._emit('error', { message: errorMsg })
         break
 
       default:
-        console.log('[Inworld] Unknown event type:', event.type)
+        // Log unknown events but don't fail
+        console.debug('[Inworld] Unknown event type:', event.type)
     }
   }
 
