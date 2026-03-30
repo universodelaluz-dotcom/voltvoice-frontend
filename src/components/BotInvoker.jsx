@@ -12,6 +12,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
   const [isLoading, setIsLoading] = useState(false)
   const [hasVoiceResponse, setHasVoiceResponse] = useState(false)
   const [isPlayingResponse, setIsPlayingResponse] = useState(false)
+  const [voiceLabel, setVoiceLabel] = useState('Clive')
 
   const mediaStreamRef = useRef(null)
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
@@ -71,8 +72,10 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     setResponse(null)
     setHasVoiceResponse(false)
     setIsPlayingResponse(false)
+    const currentCharacter = characters.find((item) => item.id === selectedCharacterId)
+    setVoiceLabel(currentCharacter?.voice_id || 'Clive')
     inworldRealtimeService.closeSession()
-  }, [selectedCharacterId])
+  }, [selectedCharacterId, characters])
 
   const loadCharacters = async () => {
     try {
@@ -98,13 +101,15 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     }
 
     const character = characters.find((item) => item.id === selectedCharacterId)
+    const realtimeVoice = character?.voice_id || null
+    setVoiceLabel(realtimeVoice || 'Clive')
 
     await inworldRealtimeService.startSession(
       selectedCharacterId,
       character?.system_prompt || '',
       null,
       API_URL,
-      character?.voice_id || config?.generalVoiceId || null
+      realtimeVoice
     )
 
     await inworldRealtimeService.waitForDataChannel(5000)
@@ -295,6 +300,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
         }`}>
           <p className="font-bold mb-2">Respuesta del Bot:</p>
           <p>{response}</p>
+          <p className="mt-2 text-xs text-gray-400">Voz realtime: {voiceLabel}</p>
 
           {hasVoiceResponse && (
             <div className="mt-3 flex items-center gap-2">

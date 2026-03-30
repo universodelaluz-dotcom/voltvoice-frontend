@@ -27,6 +27,20 @@ export class InworldRealtimeService {
     this.pendingAudioResponseTimer = null
   }
 
+  _isSupportedRealtimeVoice(voiceId = '') {
+    const normalized = String(voiceId || '').trim()
+    if (!normalized) {
+      return false
+    }
+
+    // Inworld realtime accepts Inworld voice names/ids, not Google fallback voices like es-ES.
+    if (/^[a-z]{2}-[A-Z]{2}$/.test(normalized)) {
+      return false
+    }
+
+    return true
+  }
+
   _normalizeApiUrl(apiUrl = '') {
     if (!apiUrl || apiUrl.startsWith('http://') || apiUrl.startsWith('https://') || apiUrl.startsWith('/')) {
       return apiUrl
@@ -127,7 +141,7 @@ export class InworldRealtimeService {
   async startSession(characterId, systemPrompt, workspaceId, apiUrl = '', voiceId = null) {
     try {
       this.sessionInstructions = systemPrompt?.trim() || this.sessionInstructions
-      this.sessionVoice = voiceId?.trim() || 'Clive'
+      this.sessionVoice = this._isSupportedRealtimeVoice(voiceId) ? voiceId.trim() : 'Clive'
 
       if (this.peerConnection && this.dataChannelReady && this.sessionId) {
         return this.sessionId
