@@ -22,6 +22,8 @@ export class InworldRealtimeService {
     this.outputAudioElement = null
     this.remoteAudioStream = null
     this.sessionInstructions = 'You are a helpful voice assistant. Respond in Spanish. Keep responses concise.'
+    this.pendingAudioResponse = false
+    this.pendingAudioResponseTimer = null
   }
 
   _normalizeApiUrl(apiUrl = '') {
@@ -71,6 +73,23 @@ export class InworldRealtimeService {
 
     this.outputAudioElement = audioElement
     return audioElement
+  }
+
+  _sendResponseCreate(overrides = {}) {
+    if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
+      throw new Error('Data channel not ready for response request')
+    }
+
+    const payload = {
+      type: 'response.create',
+      response: {
+        output_modalities: ['audio', 'text'],
+        ...overrides
+      }
+    }
+
+    this.dataChannel.send(JSON.stringify(payload))
+    console.log('[Inworld] Response requested')
   }
 
   /**
@@ -426,6 +445,13 @@ export class InworldRealtimeService {
         this._emit('audio-complete')
         break
 
+      case 'response.output_audio_transcript.delta':
+        if (event.delta) {
+          console.log('[Inworld] Audio transcript delta:', event.delta)
+          this._emit('text-delta', { text: event.delta })
+        }
+        break
+
       // Text output events
       case 'response.output_text.delta':
         if (event.delta) {
@@ -448,6 +474,24 @@ export class InworldRealtimeService {
         }
         break
 
+      case 'conversation.item.input_audio_transcription.delta':
+        if (event.delta) {
+          console.log('[Inworld] Input transcription delta:', event.delta)
+          this._emit('input-transcript-delta', { text: event.delta })
+        }
+        break
+
+      case 'conversation.item.input_audio_transcription.completed':
+        console.log('[Inworld] Input transcription complete:', event.transcript)
+        this._emit('input-transcript-complete', { text: event.transcript, itemId: event.item_id })
+        if (this.pendingAudioResponse) {
+          clearTimeout(this.pendingAudioResponseTimer)
+          this.pendingAudioResponseTimer = null
+          this.pendingAudioResponse = false
+          this._sendResponseCreate()
+        }
+        break
+
       // Conversation events
       case 'conversation.item.created':
         console.log('[Inworld] Conversation item created')
@@ -459,6 +503,19 @@ export class InworldRealtimeService {
 
       case 'conversation.item.done':
         console.log('[Inworld] Conversation item done')
+        break
+
+      case 'input_audio_buffer.speech_started':
+        console.log('[Inworld] Speech started')
+        break
+
+      case 'input_audio_buffer.speech_stopped':
+        console.log('[Inworld] Speech stopped')
+        break
+
+      case 'input_audio_buffer.committed':
+        console.log('[Inworld] Input audio committed:', event.item_id)
+        this._emit('input-audio-committed', { itemId: event.item_id })
         break
 
       // Error handling - Inworld may send errors in various formats
@@ -585,10 +642,7 @@ export class InworldRealtimeService {
         console.log('[Inworld] Message sent:', text.substring(0, 50))
 
         // Request response
-        this.dataChannel.send(JSON.stringify({
-          type: 'response.create'
-        }))
-        console.log('[Inworld] Response requested')
+        this._sendResponseCreate()
         return // Success
       } catch (err) {
         lastError = err
@@ -741,10 +795,23 @@ export class InworldRealtimeService {
     }
 
     try {
-      this.dataChannel.send(JSON.stringify({
-        type: 'response.create'
-      }))
-      console.log('[Inworld] Response requested')
+      this.pendingAudioResponse = true
+      console.log('[Inworld] Queued audio response request')
+      clearTimeout(this.pendingAudioResponseTimer)
+      this.pendingAudioResponseTimer = setTimeout(() => {
+        if (!this.pendingAudioResponse) {
+          return
+        }
+
+        try {
+          console.log('[Inworld] Audio response fallback triggered')
+          this.pendingAudioResponse = false
+          this.pendingAudioResponseTimer = null
+          this._sendResponseCreate()
+        } catch (error) {
+          console.error('[Inworld] Fallback response request failed:', error)
+        }
+      }, 800)
     } catch (err) {
       console.error('[Inworld] Error requesting response:', err)
       throw err
@@ -777,6 +844,9 @@ export class InworldRealtimeService {
     this.dataChannel = null
     this.audioQueue = []
     this.remoteAudioStream = null
+    this.pendingAudioResponse = false
+    clearTimeout(this.pendingAudioResponseTimer)
+    this.pendingAudioResponseTimer = null
 
     if (this.outputAudioElement) {
       this.outputAudioElement.pause()
