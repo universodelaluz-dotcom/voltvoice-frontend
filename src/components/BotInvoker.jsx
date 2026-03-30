@@ -1335,11 +1335,12 @@ After using a tool, summarize the result conversationally.`
         >
           <option value="">— Automática según personalidad —</option>
           <optgroup label="Voces base">
-            <option value="Clive">Clive (voz base)</option>
-            <option value="Diego">Diego (voz base)</option>
-            <option value="Lupita">Lupita (voz base)</option>
-            <option value="Miguel">Miguel (voz base)</option>
-            <option value="Rafael">Rafael (voz base)</option>
+            <option value="es-ES">Voz Básica Español (ilimitada)</option>
+            <option value="en-US">Voz Básica Inglés (ilimitada)</option>
+            <option value="Diego">Voz natural de Luis - Premium</option>
+            <option value="Lupita">Voz natural de Sofia - Premium</option>
+            <option value="Miguel">Voz natural de Gustavo - Premium</option>
+            <option value="Rafael">Voz natural de Leonel - Premium</option>
           </optgroup>
           {userVoices.length > 0 && (
             <optgroup label="Mis voces clonadas">
