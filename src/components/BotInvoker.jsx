@@ -4,6 +4,7 @@ import inworldRealtimeService from '../services/inworldRealtimeService'
 
 export default function BotInvoker({ darkMode = true, onClose, config }) {
   const [characters, setCharacters] = useState([])
+  const [userVoices, setUserVoices] = useState([])
   const [selectedCharacterId, setSelectedCharacterId] = useState(null)
   const [inputMode, setInputMode] = useState('microphone')
   const [inputText, setInputText] = useState('')
@@ -19,6 +20,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
 
   useEffect(() => {
     loadCharacters()
+    loadUserVoices()
   }, [])
 
   useEffect(() => {
@@ -73,9 +75,9 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     setHasVoiceResponse(false)
     setIsPlayingResponse(false)
     const currentCharacter = characters.find((item) => item.id === selectedCharacterId)
-    setVoiceLabel(currentCharacter?.voice_id || 'Clive')
+    setVoiceLabel(resolveRealtimeVoice(currentCharacter) || 'Clive')
     inworldRealtimeService.closeSession()
-  }, [selectedCharacterId, characters])
+  }, [selectedCharacterId, characters, userVoices])
 
   const loadCharacters = async () => {
     try {
@@ -95,13 +97,50 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     }
   }
 
+  const loadUserVoices = async () => {
+    try {
+      const token = localStorage.getItem('sv-token')
+      const res = await fetch(`${API_URL}/api/settings/voices`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setUserVoices(data.voices || [])
+      }
+    } catch (err) {
+      console.error('Error loading user voices:', err)
+    }
+  }
+
+  const normalizeVoiceKey = (value) => {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9]+/g, '')
+      .toLowerCase()
+  }
+
+  const resolveRealtimeVoice = (character) => {
+    if (character?.voice_id) {
+      return character.voice_id
+    }
+
+    const characterKey = normalizeVoiceKey(character?.name)
+    if (!characterKey) {
+      return null
+    }
+
+    const matchedVoice = userVoices.find((voice) => normalizeVoiceKey(voice.voice_name) === characterKey)
+    return matchedVoice?.voice_id || null
+  }
+
   const ensureBotSession = async () => {
     if (!selectedCharacterId) {
       throw new Error('Selecciona un personaje')
     }
 
     const character = characters.find((item) => item.id === selectedCharacterId)
-    const realtimeVoice = character?.voice_id || null
+    const realtimeVoice = resolveRealtimeVoice(character)
     setVoiceLabel(realtimeVoice || 'Clive')
 
     await inworldRealtimeService.startSession(
