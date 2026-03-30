@@ -41,6 +41,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     const handleTextResponse = (data) => {
       if (data?.text) {
         setResponse(data.text)
+        setIsLoading(false)
       }
     }
 
@@ -53,6 +54,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     const handleAudioStarted = () => {
       setHasVoiceResponse(true)
       setIsPlayingResponse(true)
+      setIsLoading(false)
     }
 
     const handleAudioComplete = () => {
@@ -261,6 +263,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     setIsLoading(true)
     setResponse(null)
     setHasVoiceResponse(false)
+    setChatSuppressed(true)
 
     try {
       await ensureBotSession()
