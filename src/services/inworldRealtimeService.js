@@ -457,6 +457,7 @@ export class InworldRealtimeService {
       // Response events
       case 'response.created':
         console.log('[Inworld] Response created')
+        this._emit('response-created', event)
         break
 
       case 'response.done':

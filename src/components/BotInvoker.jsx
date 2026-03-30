@@ -16,10 +16,12 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
   const [hasVoiceResponse, setHasVoiceResponse] = useState(false)
   const [isPlayingResponse, setIsPlayingResponse] = useState(false)
   const [voiceLabel, setVoiceLabel] = useState('Clive')
+  const [hasActiveResponse, setHasActiveResponse] = useState(false)
 
   const mediaStreamRef = useRef(null)
   const chatSuppressedRef = useRef(false)
   const responseTimeoutRef = useRef(null)
+  const hasActiveResponseRef = useRef(false)
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   const setChatSuppressed = (active) => {
@@ -43,12 +45,15 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
   const armResponseTimeout = () => {
     clearResponseTimeout()
     responseTimeoutRef.current = setTimeout(() => {
+      if (hasActiveResponseRef.current) {
+        return
+      }
       console.warn('[Bot] Response timeout reached, restoring UI state')
       setIsLoading(false)
       setIsRecording(false)
       setChatSuppressed(false)
       setResponse((current) => current || 'La IA tardó demasiado en responder. Intenta de nuevo.')
-    }, 20000)
+    }, 35000)
   }
 
   useEffect(() => {
@@ -59,10 +64,18 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
   useEffect(() => {
     const handleTextResponse = (data) => {
       if (data?.text) {
+        setHasActiveResponse(true)
+        hasActiveResponseRef.current = true
         setResponse(data.text)
         setIsLoading(false)
         clearResponseTimeout()
       }
+    }
+
+    const handleResponseCreated = () => {
+      setHasActiveResponse(true)
+      hasActiveResponseRef.current = true
+      clearResponseTimeout()
     }
 
     const handleResponseComplete = () => {
@@ -73,10 +86,13 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     }
 
     const handleAudioStarted = () => {
+      setHasActiveResponse(true)
+      hasActiveResponseRef.current = true
       setHasVoiceResponse(true)
       setIsPlayingResponse(true)
       setIsLoading(false)
       clearResponseTimeout()
+      setResponse((current) => current === 'La IA tardó demasiado en responder. Intenta de nuevo.' ? null : current)
     }
 
     const handleAudioComplete = () => {
@@ -95,6 +111,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     }
 
     inworldRealtimeService.on('text-response', handleTextResponse)
+    inworldRealtimeService.on('response-created', handleResponseCreated)
     inworldRealtimeService.on('response-complete', handleResponseComplete)
     inworldRealtimeService.on('audio-started', handleAudioStarted)
     inworldRealtimeService.on('audio-complete', handleAudioComplete)
@@ -102,6 +119,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
 
     return () => {
       inworldRealtimeService.off('text-response', handleTextResponse)
+      inworldRealtimeService.off('response-created', handleResponseCreated)
       inworldRealtimeService.off('response-complete', handleResponseComplete)
       inworldRealtimeService.off('audio-started', handleAudioStarted)
       inworldRealtimeService.off('audio-complete', handleAudioComplete)
@@ -119,6 +137,8 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     setResponse(null)
     setHasVoiceResponse(false)
     setIsPlayingResponse(false)
+    setHasActiveResponse(false)
+    hasActiveResponseRef.current = false
     const currentCharacter = characters.find((item) => item.id === selectedCharacterId)
     const resolvedVoice = resolveRealtimeVoice(currentCharacter) || ''
     setSelectedRealtimeVoiceId((current) => current || resolvedVoice)
@@ -242,6 +262,8 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       setIsLoading(true)
       setResponse(null)
       setHasVoiceResponse(false)
+      setHasActiveResponse(false)
+      hasActiveResponseRef.current = false
       setChatSuppressed(true)
       await ensureBotSession()
 
@@ -290,6 +312,8 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     setIsLoading(true)
     setResponse(null)
     setHasVoiceResponse(false)
+    setHasActiveResponse(false)
+    hasActiveResponseRef.current = false
     setChatSuppressed(true)
     armResponseTimeout()
 
