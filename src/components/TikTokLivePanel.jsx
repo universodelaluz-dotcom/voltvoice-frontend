@@ -239,6 +239,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const configRef = useRef(config)
   const volumeRef = useRef(0.8)
   const pttSnapshotRef = useRef({ wasPaused: false, hadCurrentAudio: false })
+  const pttRestoreTimerRef = useRef(null)
   // Cooldown por tipo de notificación (timestamp del último anuncio)
   const lastNotifTime = useRef({ like: 0, viewer_count: 0, share: 0, follow: 0, gift: 0 })
 
@@ -281,6 +282,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       if (active) {
         if (isPttSuppressedRef.current) return
 
+        if (pttRestoreTimerRef.current) {
+          clearTimeout(pttRestoreTimerRef.current)
+          pttRestoreTimerRef.current = null
+        }
+
         pttSnapshotRef.current = {
           wasPaused: isPausedRef.current,
           hadCurrentAudio: !!currentAudioRef.current
@@ -301,17 +307,25 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       isPttSuppressedRef.current = false
       console.log('[TikTok] Restoring chat audio after push-to-talk')
 
-      if (!pttSnapshotRef.current.wasPaused) {
-        if (currentAudioRef.current) {
-          currentAudioRef.current.play().catch(() => {})
-        } else {
-          processQueue()
+      pttRestoreTimerRef.current = setTimeout(() => {
+        pttRestoreTimerRef.current = null
+        if (!pttSnapshotRef.current.wasPaused) {
+          if (currentAudioRef.current) {
+            currentAudioRef.current.play().catch(() => {})
+          } else {
+            processQueue()
+          }
         }
-      }
+      }, 1500)
     }
 
     window.addEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
-    return () => window.removeEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
+    return () => {
+      window.removeEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
+      if (pttRestoreTimerRef.current) {
+        clearTimeout(pttRestoreTimerRef.current)
+      }
+    }
   }, [])
 
   // Conectar a WebSocket cuando el usuario se conecte a TikTok

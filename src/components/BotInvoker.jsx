@@ -248,6 +248,13 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       .trim()
   }
 
+  const tokenizeIntentText = (text) => {
+    return normalizeIntentText(text)
+      .replace(/[^a-z0-9._\s-]+/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean)
+  }
+
   const detectDesiredBooleanState = (normalized) => {
     if (/(?:desactiva|apaga|deshabilita|quita|remueve|cancela|deja de|ya no|desmarca)/i.test(normalized)) {
       return false
@@ -264,7 +271,14 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     const explicitState = detectDesiredBooleanState(normalized)
 
     for (const command of CONFIG_COMMANDS) {
-      if (command.aliases.some((alias) => normalized.includes(alias))) {
+      const commandMatched = command.aliases.some((alias) => normalized.includes(alias))
+      const aliasTokenMatched = !commandMatched && command.aliases.some((alias) => {
+        const aliasTokens = tokenizeIntentText(alias)
+        const normalizedTokens = tokenizeIntentText(normalized)
+        return aliasTokens.length > 0 && aliasTokens.every((token) => normalizedTokens.includes(token))
+      })
+
+      if (commandMatched || aliasTokenMatched) {
         return {
           type: 'set_config_boolean',
           key: command.key,
@@ -888,6 +902,13 @@ After using a tool, summarize the result conversationally.`
         armResponseTimeout()
         console.log('[Bot] Handling intent locally:', localIntent.type, localIntent)
         await speakLocalResponse(localResponse, selectedRealtimeVoiceId || resolveRealtimeVoice(characters.find((item) => item.id === selectedCharacterId)))
+        return
+      }
+
+      if (looksLikePlatformRequest(transcriptFromSpeech)) {
+        setIsLoading(false)
+        setResponse('Entendi que eso suena a una accion o ajuste real de la plataforma, pero no lo pude resolver con suficiente certeza. Intenta decirlo de otra forma un poco mas directa.')
+        setChatSuppressed(false)
         return
       }
 
