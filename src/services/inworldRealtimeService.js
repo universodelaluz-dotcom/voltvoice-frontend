@@ -463,6 +463,17 @@ export class InworldRealtimeService {
         this._emit('response-created', event)
         break
 
+      case 'response.output_item.added':
+        if (event.item?.type === 'function_call') {
+          this._pendingToolCall = {
+            callId: event.item.call_id || event.call_id,
+            name: event.item.name || event.name,
+            args: ''
+          }
+          console.log('[Inworld] Tool call started:', this._pendingToolCall.name, this._pendingToolCall.callId)
+        }
+        break
+
       case 'response.done':
         console.log('[Inworld] Response done - Full event:')
         console.log('[Inworld] Status:', event.response?.status)
@@ -546,6 +557,12 @@ export class InworldRealtimeService {
         // Accumulate function call arguments
         if (!this._pendingToolCall) {
           this._pendingToolCall = { callId: event.call_id, name: event.name, args: '' }
+        }
+        if (event.call_id && !this._pendingToolCall.callId) {
+          this._pendingToolCall.callId = event.call_id
+        }
+        if (event.name && !this._pendingToolCall.name) {
+          this._pendingToolCall.name = event.name
         }
         if (event.delta) {
           this._pendingToolCall.args += event.delta
