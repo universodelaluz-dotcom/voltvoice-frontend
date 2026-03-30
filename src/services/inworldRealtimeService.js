@@ -349,15 +349,33 @@ export class InworldRealtimeService {
         console.log('[Inworld] Conversation item created')
         break
 
+      case 'conversation.item.added':
+        console.log('[Inworld] Conversation item added')
+        break
+
       case 'conversation.item.done':
         console.log('[Inworld] Conversation item done')
         break
 
       // Error handling
       case 'error':
-        const errorMsg = event.error?.message || event.error || 'Unknown error'
-        console.error('[Inworld] Error event:', errorMsg)
-        this._emit('error', { message: errorMsg })
+        try {
+          let errorMsg = 'Unknown error'
+          if (event.error) {
+            if (typeof event.error === 'string') {
+              errorMsg = event.error
+            } else if (event.error.message) {
+              errorMsg = event.error.message
+            } else {
+              errorMsg = JSON.stringify(event.error).substring(0, 100)
+            }
+          }
+          console.error('[Inworld] Error event:', errorMsg)
+          this._emit('error', { message: errorMsg })
+        } catch (parseErr) {
+          console.error('[Inworld] Error parsing error event:', parseErr)
+          this._emit('error', { message: 'Error parsing error event' })
+        }
         break
 
       default:
