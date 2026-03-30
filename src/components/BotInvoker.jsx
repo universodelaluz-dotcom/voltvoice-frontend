@@ -92,12 +92,12 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
     try {
       const character = characters.find(c => c.id === selectedCharacterId)
 
-      // Start WebRTC session
+      // Start WebRTC session (API key fetched securely from backend)
       await inworldRealtimeService.startSession(
         selectedCharacterId,
         character?.system_prompt || '',
         INWORLD_WORKSPACE_ID,
-        INWORLD_API_KEY
+        API_URL
       )
 
       // Wait for data channel to be ready

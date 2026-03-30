@@ -14,27 +14,63 @@ export class InworldRealtimeService {
     this.dataChannel = null
     this.isConnected = false
     this.dataChannelReady = false
-    this.dataChannelPromise = null
     this.dataChannelResolve = null
     this.audioContext = null
     this.mediaStream = null
     this.audioQueue = []
     this.isPlayingAudio = false
     this.eventCallbacks = {}
+    this.config = null  // Store config from backend
+  }
+
+  /**
+   * Fetch config from backend (API key + ICE servers)
+   */
+  async getConfig(apiUrl = '') {
+    try {
+      const configUrl = apiUrl ? `${apiUrl}/api/inworld/config` : '/api/inworld/config'
+      console.log('[Inworld] Fetching config from:', configUrl)
+
+      const response = await fetch(configUrl)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch config: ${response.status}`)
+      }
+
+      this.config = await response.json()
+      console.log('[Inworld] Config loaded:', {
+        hasApiKey: !!this.config.api_key,
+        iceServers: this.config.ice_servers?.length || 0,
+        url: this.config.url
+      })
+
+      return this.config
+    } catch (err) {
+      console.error('[Inworld] Error fetching config:', err)
+      throw err
+    }
   }
 
   /**
    * Start WebRTC session with Inworld
    */
-  async startSession(characterId, systemPrompt, workspaceId, apiKey) {
+  async startSession(characterId, systemPrompt, workspaceId, apiUrl = '') {
     try {
-      // Create RTCPeerConnection
-      this.peerConnection = new RTCPeerConnection({
-        iceServers: [
-          { urls: ['stun:stun.l.google.com:19302'] },
-          { urls: ['stun:stun1.l.google.com:19302'] }
-        ]
-      })
+      // Fetch config from backend (includes API key + ICE servers)
+      if (!this.config) {
+        await this.getConfig(apiUrl)
+      }
+
+      if (!this.config || !this.config.api_key) {
+        throw new Error('No Inworld API key available - check backend config endpoint')
+      }
+
+      // Create RTCPeerConnection with ICE servers from config
+      const iceServers = this.config.ice_servers || [
+        { urls: ['stun:stun.l.google.com:19302'] },
+        { urls: ['stun:stun1.l.google.com:19302'] }
+      ]
+
+      this.peerConnection = new RTCPeerConnection({ iceServers })
 
       // Create audio context for audio processing
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)()
@@ -43,22 +79,43 @@ export class InworldRealtimeService {
       const offer = await this.peerConnection.createOffer()
       await this.peerConnection.setLocalDescription(offer)
 
-      // Send offer to Inworld
-      console.log('[Inworld] Sending SDP offer to /v1/realtime/calls')
+      // Wait for ICE gathering to complete
+      await new Promise((resolve) => {
+        if (this.peerConnection.iceGatheringState === 'complete') {
+          resolve()
+          return
+        }
 
-      // Create Basic auth header (username:password format, username is empty)
-      const authString = `:${apiKey}`
-      const encodedAuth = btoa(authString)
+        let timeout
+        const done = () => {
+          clearTimeout(timeout)
+          resolve()
+        }
 
-      const response = await fetch('https://api.inworld.ai/v1/realtime/calls', {
+        this.peerConnection.onicecandidate = (e) => {
+          if (e.candidate) {
+            clearTimeout(timeout)
+            timeout = setTimeout(done, 500)
+          }
+        }
+
+        this.peerConnection.onicegatheringstatechange = () => {
+          if (this.peerConnection.iceGatheringState === 'complete') done()
+        }
+
+        setTimeout(done, 3000)
+      })
+
+      console.log('[Inworld] Sending SDP offer (', this.peerConnection.localDescription.sdp.length, 'bytes)')
+
+      // Send offer to Inworld - IMPORTANT: Content-Type is application/sdp, body is raw SDP text
+      const response = await fetch(this.config.url, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/sdp',
+          'Authorization': `Bearer ${this.config.api_key}`
         },
-        body: JSON.stringify({
-          offer: offer.sdp
-        })
+        body: this.peerConnection.localDescription.sdp
       })
 
       if (!response.ok) {
@@ -67,24 +124,16 @@ export class InworldRealtimeService {
         throw new Error(`Inworld API error: ${response.status}`)
       }
 
-      const answerData = await response.json()
-      console.log('[Inworld] Received answer from API', answerData)
+      // Receive SDP answer as plain text
+      const answerSdp = await response.text()
+      console.log('[Inworld] Received SDP answer (', answerSdp.length, 'bytes)')
 
       // Set remote SDP answer
-      if (answerData.answer) {
-        const answer = {
-          type: 'answer',
-          sdp: answerData.answer
-        }
-        await this.peerConnection.setRemoteDescription(answer)
+      const answer = {
+        type: 'answer',
+        sdp: answerSdp
       }
-
-      // Add ICE servers from response if provided
-      if (answerData.iceServers && Array.isArray(answerData.iceServers)) {
-        answerData.iceServers.forEach(server => {
-          this.peerConnection.addIceServer(server)
-        })
-      }
+      await this.peerConnection.setRemoteDescription(answer)
 
       // Set up connection event handlers
       this.peerConnection.onconnectionstatechange = () => {
