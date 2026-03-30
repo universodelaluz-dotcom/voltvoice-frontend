@@ -342,6 +342,7 @@ export class InworldRealtimeService {
 
       case 'response.done':
         console.log('[Inworld] Response done')
+        console.log('[Inworld] Full response event:', JSON.stringify(event).substring(0, 500))
         this._emit('response-complete', event)
         break
 
