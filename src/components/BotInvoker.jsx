@@ -14,8 +14,7 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
   const [responseAudio, setResponseAudio] = useState(null)
   const [isPlayingResponse, setIsPlayingResponse] = useState(false)
 
-  const mediaRecorderRef = useRef(null)
-  const audioChunksRef = useRef([])
+  const mediaStreamRef = useRef(null)
   const responseAudioRef = useRef(null)
 
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
@@ -47,31 +46,39 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
 
   const startRecording = async () => {
     try {
+      // Get microphone stream and add audio tracks to WebRTC connection
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      mediaRecorderRef.current = new MediaRecorder(stream)
-      audioChunksRef.current = []
+      mediaStreamRef.current = stream
 
-      mediaRecorderRef.current.ondataavailable = (e) => {
-        audioChunksRef.current.push(e.data)
-      }
+      // Add audio tracks to active Inworld session
+      inworldRealtimeService.addAudioTracks(stream)
 
-      mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' })
-        invokeBot(audioBlob)
-      }
-
-      mediaRecorderRef.current.start()
       setIsRecording(true)
+      console.log('[Bot] Microphone activated')
     } catch (err) {
       console.error('Error accessing microphone:', err)
       alert('No se pudo acceder al micrófono')
     }
   }
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop()
-      setIsRecording(false)
+  const stopRecording = async () => {
+    try {
+      if (mediaStreamRef.current) {
+        // Stop all audio tracks
+        mediaStreamRef.current.getAudioTracks().forEach(track => track.stop())
+        mediaStreamRef.current = null
+
+        // Remove audio tracks from WebRTC connection
+        await inworldRealtimeService.removeAudioTracks()
+
+        // Request response from bot
+        await inworldRealtimeService.requestResponse()
+
+        setIsRecording(false)
+        console.log('[Bot] Microphone deactivated, requesting response')
+      }
+    } catch (err) {
+      console.error('Error stopping recording:', err)
     }
   }
 
@@ -104,12 +111,7 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
       await inworldRealtimeService.waitForDataChannel(5000)
 
       // Handle input based on type
-      if (inputData instanceof Blob) {
-        // Audio input - convert to base64 PCM
-        const audioBase64 = await blobToBase64(inputData)
-        await inworldRealtimeService.sendAudio(audioBase64)
-        await inworldRealtimeService.commitAudio()
-      } else if (typeof inputData === 'string') {
+      if (typeof inputData === 'string') {
         // Text input
         await inworldRealtimeService.sendMessage(inputData)
       }
@@ -144,18 +146,6 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
       setResponse('Error: ' + err.message)
       setIsLoading(false)
     }
-  }
-
-  const blobToBase64 = (blob) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const base64 = reader.result.split(',')[1]
-        resolve(base64)
-      }
-      reader.onerror = reject
-      reader.readAsDataURL(blob)
-    })
   }
 
   const handleTextSubmit = async () => {

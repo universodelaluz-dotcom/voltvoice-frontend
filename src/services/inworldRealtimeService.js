@@ -17,6 +17,7 @@ export class InworldRealtimeService {
     this.dataChannelResolve = null
     this.audioContext = null
     this.mediaStream = null
+    this.audioTracks = []  // Store audio tracks added to peer connection
     this.audioQueue = []
     this.isPlayingAudio = false
     this.eventCallbacks = {}
@@ -604,6 +605,62 @@ export class InworldRealtimeService {
   }
 
   /**
+   * Add audio tracks from microphone to WebRTC connection
+   */
+  addAudioTracks(stream) {
+    if (!this.peerConnection || !stream) {
+      console.error('[Inworld] Cannot add audio tracks - no peer connection or stream')
+      return
+    }
+
+    try {
+      stream.getAudioTracks().forEach(track => {
+        const sender = this.peerConnection.addTrack(track, stream)
+        this.audioTracks.push({ track, sender })
+        console.log('[Inworld] Audio track added to connection')
+      })
+    } catch (err) {
+      console.error('[Inworld] Error adding audio tracks:', err)
+    }
+  }
+
+  /**
+   * Remove audio tracks from WebRTC connection
+   */
+  async removeAudioTracks() {
+    try {
+      for (const { sender } of this.audioTracks) {
+        if (sender && this.peerConnection) {
+          await this.peerConnection.removeTrack(sender)
+        }
+      }
+      this.audioTracks = []
+      console.log('[Inworld] Audio tracks removed')
+    } catch (err) {
+      console.error('[Inworld] Error removing audio tracks:', err)
+    }
+  }
+
+  /**
+   * Request response from bot (for voice input)
+   */
+  async requestResponse() {
+    if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
+      throw new Error('Data channel not ready for response request')
+    }
+
+    try {
+      this.dataChannel.send(JSON.stringify({
+        type: 'response.create'
+      }))
+      console.log('[Inworld] Response requested')
+    } catch (err) {
+      console.error('[Inworld] Error requesting response:', err)
+      throw err
+    }
+  }
+
+  /**
    * Close WebRTC session
    */
   closeSession() {
@@ -621,6 +678,7 @@ export class InworldRealtimeService {
       this.mediaStream = null
     }
 
+    this.audioTracks = []
     this.isConnected = false
     this.sessionId = null
     this.dataChannel = null
