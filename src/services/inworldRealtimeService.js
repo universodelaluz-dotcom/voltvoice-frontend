@@ -75,38 +75,54 @@ export class InworldRealtimeService {
       // Create audio context for audio processing
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)()
 
+      // IMPORTANT: Create data channel BEFORE creating offer
+      this.dataChannel = this.peerConnection.createDataChannel('oai-events', { ordered: true })
+      this._setupDataChannel()
+      console.log('[Inworld] Data channel created (before offer)')
+
       // Generate SDP offer
       const offer = await this.peerConnection.createOffer()
       await this.peerConnection.setLocalDescription(offer)
 
       // Wait for ICE gathering to complete
-      await new Promise((resolve) => {
+      console.log('[Inworld] ICE gathering state:', this.peerConnection.iceGatheringState)
+
+      await new Promise((resolve, reject) => {
+        // If already complete, resolve immediately
         if (this.peerConnection.iceGatheringState === 'complete') {
+          console.log('[Inworld] ICE gathering already complete')
           resolve()
           return
         }
 
-        let timeout
+        let completed = false
         const done = () => {
-          clearTimeout(timeout)
+          if (completed) return
+          completed = true
+          console.log('[Inworld] ICE gathering complete, SDP size:', this.peerConnection.localDescription?.sdp?.length || 0)
           resolve()
         }
 
-        this.peerConnection.onicecandidate = (e) => {
-          if (e.candidate) {
-            clearTimeout(timeout)
-            timeout = setTimeout(done, 500)
+        // Wait for ICE gathering state change to complete
+        this.peerConnection.onicegatheringstatechange = () => {
+          console.log('[Inworld] ICE gathering state changed to:', this.peerConnection.iceGatheringState)
+          if (this.peerConnection.iceGatheringState === 'complete') {
+            done()
           }
         }
 
-        this.peerConnection.onicegatheringstatechange = () => {
-          if (this.peerConnection.iceGatheringState === 'complete') done()
-        }
+        // Safety timeout - don't wait forever
+        const timeoutId = setTimeout(() => {
+          console.warn('[Inworld] ICE gathering timeout, proceeding with current SDP')
+          done()
+        }, 5000)
 
-        setTimeout(done, 3000)
+        // Store timeout ID to clear if done early
+        this._iceTimeout = timeoutId
       })
 
-      console.log('[Inworld] Sending SDP offer (', this.peerConnection.localDescription.sdp.length, 'bytes)')
+      console.log('[Inworld] Final SDP size:', this.peerConnection.localDescription.sdp.length, 'bytes')
+      console.log('[Inworld] SDP preview:', this.peerConnection.localDescription.sdp.substring(0, 200))
 
       // Send offer to Inworld - IMPORTANT: Content-Type is application/sdp, body is raw SDP text
       const response = await fetch(this.config.url, {
@@ -178,10 +194,13 @@ export class InworldRealtimeService {
    * Setup data channel event handlers
    */
   _setupDataChannel() {
-    if (!this.dataChannel) return
+    if (!this.dataChannel) {
+      console.warn('[Inworld] No data channel to setup')
+      return
+    }
 
     this.dataChannel.onopen = () => {
-      console.log('[Inworld] Data channel opened')
+      console.log('[Inworld] Data channel opened (state:', this.dataChannel.readyState, ')')
       this.isConnected = true
       this.dataChannelReady = true
       if (this.dataChannelResolve) {
