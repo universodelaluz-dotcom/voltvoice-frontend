@@ -27,6 +27,7 @@ export class InworldRealtimeService {
     this.sessionVoice = 'Clive'
     this.pendingAudioResponse = false
     this.pendingAudioResponseTimer = null
+    this.pendingAudioComplete = false
   }
 
   _isSupportedRealtimeVoice(voiceId = '') {
@@ -495,7 +496,8 @@ export class InworldRealtimeService {
 
       case 'response.output_audio.done':
         console.log('[Inworld] Audio response complete')
-        this._emit('audio-complete')
+        this.pendingAudioComplete = true
+        this._maybeEmitAudioComplete()
         break
 
       case 'response.output_audio_transcript.delta':
@@ -664,6 +666,8 @@ export class InworldRealtimeService {
         this.isPlayingAudio = false
         if (this.audioQueue.length > 0) {
           this._processAudioQueue()
+        } else {
+          this._maybeEmitAudioComplete()
         }
       }
 
@@ -672,6 +676,8 @@ export class InworldRealtimeService {
         this.isPlayingAudio = false
         if (this.audioQueue.length > 0) {
           this._processAudioQueue()
+        } else {
+          this._maybeEmitAudioComplete()
         }
       }
 
@@ -680,6 +686,8 @@ export class InworldRealtimeService {
         this.isPlayingAudio = false
         if (this.audioQueue.length > 0) {
           this._processAudioQueue()
+        } else {
+          this._maybeEmitAudioComplete()
         }
       })
     } catch (err) {
@@ -687,7 +695,16 @@ export class InworldRealtimeService {
       this.isPlayingAudio = false
       if (this.audioQueue.length > 0) {
         this._processAudioQueue()
+      } else {
+        this._maybeEmitAudioComplete()
       }
+    }
+  }
+
+  _maybeEmitAudioComplete() {
+    if (this.pendingAudioComplete && !this.isPlayingAudio && this.audioQueue.length === 0) {
+      this.pendingAudioComplete = false
+      this._emit('audio-complete')
     }
   }
 
@@ -1202,6 +1219,7 @@ export class InworldRealtimeService {
     clearTimeout(this.pendingAudioResponseTimer)
     this.pendingAudioResponseTimer = null
     this.sessionVoice = 'Clive'
+    this.pendingAudioComplete = false
 
     if (this.outputAudioElement) {
       this.outputAudioElement.pause()

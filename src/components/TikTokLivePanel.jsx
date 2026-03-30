@@ -752,19 +752,45 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     lastPlayingIdRef.current = null
   }
 
-  const keepReadMessageVisible = () => {
+  const preservePageScroll = (fn) => {
+    if (typeof window === 'undefined') {
+      fn()
+      return
+    }
+    const scrollX = window.scrollX || window.pageXOffset || 0
+    const scrollY = window.scrollY || window.pageYOffset || 0
+    fn()
+    window.scrollTo(scrollX, scrollY)
+  }
+
+  const scrollPlayingMessageIntoView = (container, messageElement) => {
+    if (!container || !messageElement) return
+    const margin = Math.max(0, (container.clientHeight - messageElement.clientHeight) / 2)
+    const targetTop = Math.max(0, messageElement.offsetTop - margin)
+    preservePageScroll(() => {
+      container.scrollTo({ top: targetTop, behavior: 'smooth' })
+    })
+  }
+
+  const keepReadMessageVisible = ({ force = false } = {}) => {
     requestAnimationFrame(() => {
       const container = chatContainerRef.current
       if (!container) return
 
       const currentPlaying = container.querySelector('[data-playing="true"]')
       if (currentPlaying) {
-        currentPlaying.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+        scrollPlayingMessageIntoView(container, currentPlaying)
         return
       }
 
-      if (autoScrollPinnedRef.current) {
-        container.scrollTop = container.scrollHeight
+      if (force) {
+        autoScrollPinnedRef.current = true
+      }
+
+      if (force || autoScrollPinnedRef.current) {
+        preservePageScroll(() => {
+          container.scrollTop = container.scrollHeight
+        })
       }
     })
   }
@@ -782,14 +808,14 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         currentAudioRef.current.src = ''
         currentAudioRef.current = null
       }
-      keepReadMessageVisible()
+      keepReadMessageVisible({ force: true })
     } else {
       // Reanudar: limpiar cola vieja y arrancar desde cero
       isPausedRef.current = false
       setIsPaused(false)
       speakQueueRef.current = []
       isProcessingRef.current = false
-      keepReadMessageVisible()
+      keepReadMessageVisible({ force: true })
     }
   }
 
@@ -807,7 +833,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       isPausedRef.current = false
       setIsPaused(false)
     }
-    keepReadMessageVisible()
+    keepReadMessageVisible({ force: true })
   }
 
   const handleDisconnect = async () => {

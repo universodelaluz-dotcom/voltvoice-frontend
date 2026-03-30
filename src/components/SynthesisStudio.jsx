@@ -320,7 +320,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 pt-8 pb-16">
         {/* TikTok Live Section */}
         <TikTokLivePanel config={config} updateConfig={updateConfig} />
 
