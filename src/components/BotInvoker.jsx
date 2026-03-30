@@ -200,6 +200,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const chatSuppressedRef = useRef(false)
   const responseTimeoutRef = useRef(null)
   const hasActiveResponseRef = useRef(false)
+  const shortcutFnRef = useRef({}) // refs to latest recording fns for shortcut handler
   const hasVoiceResponseRef = useRef(false)
   const responsePlaybackStartedRef = useRef(false)
   const transcriptBufferRef = useRef('')
@@ -570,6 +571,44 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     loadCharacters()
     loadUserVoices()
   }, [])
+
+  // Keep shortcutFnRef updated with latest values so the listener never has stale closures
+  useEffect(() => {
+    shortcutFnRef.current = { isRecording, isLoading, startRecording, stopRecording, setInputMode }
+  })
+
+  // === SHORTCUT DE TECLADO PARA PUSH-TO-TALK ===
+  useEffect(() => {
+    if (!config?.botShortcutEnabled) return
+    const shortcutKey = config?.botShortcutKey || 'F9'
+    let isHolding = false
+
+    const onKeyDown = (e) => {
+      const tag = document.activeElement?.tagName?.toLowerCase()
+      if (tag === 'input' || tag === 'textarea' || document.activeElement?.isContentEditable) return
+      if (e.key !== shortcutKey || isHolding) return
+      isHolding = true
+      const fn = shortcutFnRef.current
+      if (!fn.isRecording && !fn.isLoading) {
+        fn.setInputMode('microphone')
+        fn.startRecording()
+      }
+    }
+
+    const onKeyUp = (e) => {
+      if (e.key !== shortcutKey || !isHolding) return
+      isHolding = false
+      const fn = shortcutFnRef.current
+      if (fn.isRecording) fn.stopRecording()
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+    }
+  }, [config?.botShortcutEnabled, config?.botShortcutKey])
 
   useEffect(() => {
     const handleTextResponse = (data) => {

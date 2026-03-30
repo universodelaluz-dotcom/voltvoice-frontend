@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { ArrowLeft, Check, HelpCircle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { ArrowLeft, Check, HelpCircle, Keyboard } from 'lucide-react'
 
 function Hint({ text, darkMode }) {
   return (
@@ -62,6 +62,63 @@ function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeh
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+
+function BotShortcutCapture({ darkMode, onCapture }) {
+  const [capturing, setCapturing] = useState(false)
+  const captureRef = useRef(null)
+
+  const startCapture = () => {
+    setCapturing(true)
+    setTimeout(() => captureRef.current?.focus(), 50)
+  }
+
+  const handleKeyDown = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Ignore modifier-only keys
+    if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return
+    const displayKey = e.key === ' ' ? 'Space' : e.key
+    onCapture(displayKey)
+    setCapturing(false)
+  }
+
+  const handleBlur = () => {
+    setCapturing(false)
+  }
+
+  return (
+    <>
+      {capturing ? (
+        <input
+          ref={captureRef}
+          type="text"
+          readOnly
+          autoFocus
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          placeholder="Presiona una tecla..."
+          className={`w-40 px-3 py-1.5 text-sm rounded-lg border-2 outline-none animate-pulse ${
+            darkMode
+              ? 'bg-cyan-500/10 border-cyan-400 text-cyan-300 placeholder-cyan-500'
+              : 'bg-cyan-50 border-cyan-400 text-cyan-700 placeholder-cyan-400'
+          }`}
+        />
+      ) : (
+        <button
+          onClick={startCapture}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
+            darkMode
+              ? 'border-cyan-400/40 text-cyan-400 hover:bg-cyan-400/10'
+              : 'border-cyan-500/40 text-cyan-600 hover:bg-cyan-50'
+          }`}
+        >
+          <Keyboard className="w-3.5 h-3.5" />
+          Cambiar tecla
+        </button>
+      )}
+    </>
+  )
+}
 
 export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) {
   const speed = config.audioSpeed || 1.0
@@ -391,6 +448,48 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                 darkMode={darkMode}
                 hint="El asistente analiza el chat y sugiere acciones automáticamente"
               />
+
+              {/* === SHORTCUT PUSH-TO-TALK === */}
+              <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
+                <button
+                  onClick={() => updateConfig('botShortcutEnabled', !config.botShortcutEnabled)}
+                  className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity"
+                >
+                  <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                    config.botShortcutEnabled ? 'bg-cyan-500/30 border-cyan-400' : darkMode ? 'border-gray-500' : 'border-gray-400'
+                  }`}>
+                    {config.botShortcutEnabled && <Check className="w-4 h-4 text-cyan-400" />}
+                  </div>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${config.botShortcutEnabled ? 'font-semibold' : 'font-medium'}`}>
+                    Activar shortcut de teclado (Push-to-Talk)
+                    <Hint text="Mantén presionada la tecla para hablar con el bot sin usar el mouse" darkMode={darkMode} />
+                  </span>
+                </button>
+
+                {config.botShortcutEnabled && (
+                  <div className="mt-3 ml-8 space-y-2">
+                    <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Tecla actual:
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <kbd className={`px-3 py-1.5 text-sm font-bold rounded-lg border-2 ${
+                        darkMode
+                          ? 'bg-gray-900 border-cyan-400/50 text-cyan-300'
+                          : 'bg-gray-100 border-gray-400 text-gray-800'
+                      }`}>
+                        {config.botShortcutKey || 'F9'}
+                      </kbd>
+                      <BotShortcutCapture
+                        darkMode={darkMode}
+                        onCapture={(key) => updateConfig('botShortcutKey', key)}
+                      />
+                    </div>
+                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      💡 Sugerida: <code className="text-cyan-400">F9</code> — no interfiere con OBS ni TikTok, fácil de alcanzar
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
           </div>
