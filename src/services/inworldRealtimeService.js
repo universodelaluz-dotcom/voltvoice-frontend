@@ -357,24 +357,29 @@ export class InworldRealtimeService {
         console.log('[Inworld] Conversation item done')
         break
 
-      // Error handling
+      // Error handling - Inworld may send errors in various formats
       case 'error':
         try {
-          let errorMsg = 'Unknown error'
-          if (event.error) {
-            if (typeof event.error === 'string') {
-              errorMsg = event.error
-            } else if (event.error.message) {
-              errorMsg = event.error.message
-            } else {
-              errorMsg = JSON.stringify(event.error).substring(0, 100)
-            }
+          let errorMsg = 'Unknown error from Inworld'
+
+          // Try to extract error message from various possible formats
+          if (!event.error) {
+            // No error object, use generic message
+          } else if (typeof event.error === 'string') {
+            errorMsg = event.error
+          } else if (typeof event.error === 'object') {
+            // Try different possible error message properties
+            errorMsg = event.error.message ||
+                      event.error.text ||
+                      event.error.description ||
+                      JSON.stringify(event.error).substring(0, 100)
           }
-          console.error('[Inworld] Error event:', errorMsg)
-          this._emit('error', { message: errorMsg })
+
+          console.warn('[Inworld] Server error:', errorMsg)
+          // Don't emit as fatal error - continue processing
         } catch (parseErr) {
-          console.error('[Inworld] Error parsing error event:', parseErr)
-          this._emit('error', { message: 'Error parsing error event' })
+          console.warn('[Inworld] Could not parse error event (non-fatal)')
+          // Silently ignore - this is often informational
         }
         break
 
