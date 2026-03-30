@@ -611,10 +611,12 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   }
 
   const speakLocalResponse = async (text, voiceId) => {
+    const token = localStorage.getItem('sv-token')
     const response = await fetch(`${API_URL}/api/inworld/tts`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
       body: JSON.stringify({
         text,
