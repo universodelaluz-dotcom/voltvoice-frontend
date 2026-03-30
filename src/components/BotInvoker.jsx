@@ -73,9 +73,8 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     }
 
     const handleResponseCreated = () => {
-      setHasActiveResponse(true)
-      hasActiveResponseRef.current = true
-      clearResponseTimeout()
+      // Wait for real content (text/audio) before considering the response active.
+      console.log('[Bot] Response created, waiting for actual content')
     }
 
     const handleResponseComplete = () => {

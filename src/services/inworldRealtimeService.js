@@ -874,7 +874,7 @@ export class InworldRealtimeService {
         } catch (error) {
           console.error('[Inworld] Fallback response request failed:', error)
         }
-      }, 800)
+      }, 2500)
     } catch (err) {
       console.error('[Inworld] Error requesting response:', err)
       throw err
