@@ -26,37 +26,103 @@ class ChatStore {
       .replace(/[^a-z0-9._-]+/g, '')
   }
 
-  resolveUserReference(reference) {
+  _tokenize(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9._-\s]+/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean)
+  }
+
+  _scoreReferenceMatch(reference, username, nickname = '') {
     const normalizedRef = this._normalize(reference)
-    if (!normalizedRef) {
-      return null
+    const normalizedUser = this._normalize(username)
+    const normalizedNick = this._normalize(nickname)
+    if (!normalizedRef) return 0
+
+    let score = 0
+    if (normalizedUser === normalizedRef || normalizedNick === normalizedRef) score += 100
+    if (normalizedUser.startsWith(normalizedRef) || normalizedNick.startsWith(normalizedRef)) score += 65
+    if (normalizedUser.includes(normalizedRef) || normalizedNick.includes(normalizedRef)) score += 45
+    if (normalizedRef.includes(normalizedUser) || normalizedRef.includes(normalizedNick)) score += 35
+
+    const refTokens = this._tokenize(reference)
+    const userTokens = this._tokenize(username)
+    const nickTokens = this._tokenize(nickname)
+    for (const token of refTokens) {
+      if (userTokens.includes(token) || nickTokens.includes(token)) {
+        score += 20
+      }
     }
 
-    const candidates = [...this.messages].reverse()
-    for (const message of candidates) {
+    return score
+  }
+
+  resolveUserReferenceDetailed(reference) {
+    const normalizedRef = this._normalize(reference)
+    if (!normalizedRef) {
+      return { confidence: 'none', match: null, candidates: [] }
+    }
+
+    const seen = new Map()
+    for (const message of [...this.messages].reverse()) {
       const username = message.user || ''
       const nickname = message.nickname || this.nickOverrides[username] || ''
-      const normalizedUser = this._normalize(username)
-      const normalizedNick = this._normalize(nickname)
+      if (!username || seen.has(username)) continue
 
-      if (
-        normalizedUser === normalizedRef ||
-        normalizedNick === normalizedRef ||
-        normalizedUser.includes(normalizedRef) ||
-        normalizedNick.includes(normalizedRef) ||
-        normalizedRef.includes(normalizedUser) ||
-        normalizedRef.includes(normalizedNick)
-      ) {
-        return {
-          username,
-          nickname: nickname || username
-        }
+      const score = this._scoreReferenceMatch(reference, username, nickname)
+      if (score <= 0) continue
+
+      seen.set(username, {
+        username,
+        nickname: nickname || username,
+        score,
+        lastMessageAt: message.timestamp || 0
+      })
+    }
+
+    const candidates = [...seen.values()].sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score
+      return b.lastMessageAt - a.lastMessageAt
+    })
+
+    if (!candidates.length) {
+      return { confidence: 'none', match: null, candidates: [] }
+    }
+
+    const best = candidates[0]
+    const second = candidates[1]
+    const confidence = best.score >= 90
+      ? 'high'
+      : best.score >= 55 && (!second || best.score - second.score >= 15)
+        ? 'medium'
+        : 'low'
+
+    return {
+      confidence,
+      match: best,
+      candidates: candidates.slice(0, 5)
+    }
+  }
+
+  resolveUserReference(reference) {
+    const resolution = this.resolveUserReferenceDetailed(reference)
+    if (resolution.match) {
+      return {
+        username: resolution.match.username,
+        nickname: resolution.match.nickname,
+        confidence: resolution.confidence,
+        candidates: resolution.candidates
       }
     }
 
     return {
       username: reference,
-      nickname: reference
+      nickname: reference,
+      confidence: 'none',
+      candidates: []
     }
   }
 
@@ -146,6 +212,94 @@ class ChatStore {
       activeUsers: uniqueUsers.size,
       bannedCount: this.bannedUsers.size,
       highlightedCount: Object.keys(this.highlightedUsers).length
+    }
+  }
+
+  getUserActivitySummary(minutes = 5) {
+    const since = Date.now() - (minutes * 60 * 1000)
+    const summary = new Map()
+    for (const message of this.messages.filter((m) => m.timestamp >= since)) {
+      const key = message.user
+      if (!summary.has(key)) {
+        summary.set(key, {
+          username: message.user,
+          nickname: message.nickname || this.nickOverrides[message.user] || message.user,
+          messageCount: 0,
+          recentMessages: [],
+          positiveScore: 0,
+          negativeScore: 0,
+          funnyScore: 0
+        })
+      }
+
+      const item = summary.get(key)
+      item.messageCount += 1
+      item.recentMessages.push(message.text)
+
+      const text = String(message.text || '').toLowerCase()
+      if (/(gracias|hermosa|linda|bonita|amor|jaja|jajaja|jajajja|xd|jeje|genial|buena onda|te amo|apoyo|bella|simpatica|simpatico)/i.test(text)) {
+        item.positiveScore += 1
+      }
+      if (/(odio|callate|pendej|imbecil|menso|mensa|asco|morbo|feo|fea|hueva|vete|largarte|lárgate|esclavizando|pioj)/i.test(text)) {
+        item.negativeScore += 1
+      }
+      if (/(jaja|jajaja|jajajja|xd|jeje|🤣|😂|achis)/i.test(text)) {
+        item.funnyScore += 1
+      }
+    }
+
+    return [...summary.values()].sort((a, b) => b.messageCount - a.messageCount)
+  }
+
+  findGroundedChatAnswer(kind, options = {}) {
+    const users = this.getUserActivitySummary(options.minutes || 10)
+    if (!users.length) {
+      return null
+    }
+
+    switch (kind) {
+      case 'most_active': {
+        const top = users[0]
+        return {
+          text: `La persona mas activa del chat en los ultimos ${options.minutes || 10} minutos es ${top.nickname} con ${top.messageCount} mensajes.`,
+          grounded: true
+        }
+      }
+      case 'nicest_user': {
+        const ranked = [...users]
+          .filter((u) => u.positiveScore > 0)
+          .sort((a, b) => (b.positiveScore - a.positiveScore) || (b.messageCount - a.messageCount))
+        if (!ranked.length) return null
+        const top = ranked[0]
+        return {
+          text: `Diria que ${top.nickname} se ve de las personas mas buena onda del chat ahorita. Ha dejado ${top.messageCount} mensajes y varios suenan positivos o amigables.`,
+          grounded: true
+        }
+      }
+      case 'most_negative_user': {
+        const ranked = [...users]
+          .filter((u) => u.negativeScore > 0)
+          .sort((a, b) => (b.negativeScore - a.negativeScore) || (b.messageCount - a.messageCount))
+        if (!ranked.length) return null
+        const top = ranked[0]
+        return {
+          text: `La persona que mas se ve tirando mala vibra ahorita es ${top.nickname}. Lo digo por el tono de varios de sus mensajes recientes.`,
+          grounded: true
+        }
+      }
+      case 'funniest_user': {
+        const ranked = [...users]
+          .filter((u) => u.funnyScore > 0)
+          .sort((a, b) => (b.funnyScore - a.funnyScore) || (b.messageCount - a.messageCount))
+        if (!ranked.length) return null
+        const top = ranked[0]
+        return {
+          text: `La persona que mas vibra de cotorreo trae ahorita es ${top.nickname}. Se nota por sus mensajes y el tono relajado que ha estado dejando.`,
+          grounded: true
+        }
+      }
+      default:
+        return null
     }
   }
 

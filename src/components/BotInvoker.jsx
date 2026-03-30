@@ -72,27 +72,27 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
   const resolveChatIntent = (text) => {
     const normalized = normalizeIntentText(text)
 
-    const banMatch = normalized.match(/(?:bloque(?:a|ame|alo|ala|alo\s+a|en)|bane(?:a|ame|alo|ala|en)?|ban(?:ea|ear)?|silencia|ignora|mutea|calla)\s+(?:a\s+)?@?([a-z0-9._-]+)/i)
+    const banMatch = normalized.match(/(?:bloque(?:a|ame|alo|ala|alos|alas|alo\s+a|en)|bane(?:a|ame|alo|ala|alos|alas|en)?|ban(?:ea|ear|eame)?|silencia|ignora|mutea|calla)\s+(?:a\s+)?@?([a-z0-9._\s-]+)/i)
     if (banMatch) {
       return { type: 'ban_user', username: banMatch[1] }
     }
 
-    const unbanMatch = normalized.match(/(?:desbloque(?:a|ame|alo|ala)?|desban(?:ea|eame|ealo|eala)?|quita\s+ban|quita\s+el\s+ban|desmutea)\s+(?:a\s+)?@?([a-z0-9._-]+)/i)
+    const unbanMatch = normalized.match(/(?:desbloque(?:a|ame|alo|ala)?|desban(?:ea|eame|ealo|eala)?|quita\s+ban|quita\s+el\s+ban|desmutea)\s+(?:a\s+)?@?([a-z0-9._\s-]+)/i)
     if (unbanMatch) {
       return { type: 'unban_user', username: unbanMatch[1] }
     }
 
-    const nickMatch = normalized.match(/(?:ponle|cambia(?:le)?|asigna)\s+(?:apodo|nickname)\s+a\s+@?([a-z0-9._-]+)\s+(?:por|a)\s+(.+)/i)
+    const nickMatch = normalized.match(/(?:ponle|cambia(?:le)?|asigna|dile\s+ahora)\s+(?:apodo|nickname)?\s*(?:a\s+)?@?([a-z0-9._\s-]+)\s+(?:por|a)\s+(.+)/i)
     if (nickMatch) {
       return { type: 'set_nickname', username: nickMatch[1], nickname: nickMatch[2].trim() }
     }
 
-    const highlightMatch = normalized.match(/(?:remarca|resalta|destaca|marca)\s+(?:a\s+)?@?([a-z0-9._-]+)/i)
+    const highlightMatch = normalized.match(/(?:remarca|remarcame|resalta|resaltame|destaca|destacame|marca|marcame|pon(?:lo|la)?\s+en\s+color|haz(?:lo|la)?\s+notar)\s+(?:a\s+)?@?([a-z0-9._\s-]+)/i)
     if (highlightMatch) {
       return { type: 'highlight_user', username: highlightMatch[1] }
     }
 
-    const removeHighlightMatch = normalized.match(/(?:quita\s+resaltado|deja\s+de\s+resaltar|desmarca)\s+(?:a\s+)?@?([a-z0-9._-]+)/i)
+    const removeHighlightMatch = normalized.match(/(?:quita\s+resaltado|deja\s+de\s+resaltar|desmarca|quitale\s+el\s+color)\s+(?:a\s+)?@?([a-z0-9._\s-]+)/i)
     if (removeHighlightMatch) {
       return { type: 'remove_highlight', username: removeHighlightMatch[1] }
     }
@@ -123,7 +123,47 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       return { type: 'read_chat', count: 5 }
     }
 
+    if ((normalized.includes('usuario') || normalized.includes('persona') || normalized.includes('quien')) &&
+        (normalized.includes('simpatic') || normalized.includes('agradable') || normalized.includes('buena onda') || normalized.includes('lindo') || normalized.includes('linda'))) {
+      return { type: 'nicest_user' }
+    }
+
+    if ((normalized.includes('usuario') || normalized.includes('persona') || normalized.includes('quien')) &&
+        (normalized.includes('hater') || normalized.includes('mala vibra') || normalized.includes('toxico') || normalized.includes('grosero') || normalized.includes('pesado'))) {
+      return { type: 'most_negative_user' }
+    }
+
+    if ((normalized.includes('usuario') || normalized.includes('persona') || normalized.includes('quien')) &&
+        (normalized.includes('chistos') || normalized.includes('simpatico') || normalized.includes('gracioso') || normalized.includes('cotorreo'))) {
+      return { type: 'funniest_user' }
+    }
+
     return null
+  }
+
+  const resolveActionTarget = (rawReference) => {
+    const resolution = chatStore.resolveUserReferenceDetailed(rawReference)
+    if (!resolution.match) {
+      return {
+        ok: false,
+        message: `No pude identificar con claridad a "${rawReference}" dentro del chat actual.`
+      }
+    }
+
+    if (resolution.confidence === 'low' && resolution.candidates.length > 1) {
+      const options = resolution.candidates.slice(0, 3).map((item) => item.nickname).join(', ')
+      return {
+        ok: false,
+        message: `No estoy completamente seguro de quien es "${rawReference}". Mis mejores opciones son: ${options}.`
+      }
+    }
+
+    return {
+      ok: true,
+      username: resolution.match.username,
+      nickname: resolution.match.nickname,
+      confidence: resolution.confidence
+    }
   }
 
   const speakLocalResponse = async (text, voiceId) => {
@@ -176,33 +216,43 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
   const executeLocalIntent = async (intent, originalText) => {
     switch (intent.type) {
       case 'ban_user': {
-        const result = await chatStore.banUser(intent.username)
+        const target = resolveActionTarget(intent.username)
+        if (!target.ok) return target.message
+        const result = await chatStore.banUser(target.username)
         return result.success
-          ? `Listo, ya bloquee a ${intent.username} del chat.`
+          ? `Listo, ya bloquee a ${result.nickname || target.nickname} del chat.`
           : result.message || `No pude bloquear a ${intent.username}.`
       }
       case 'unban_user': {
-        const result = await chatStore.unbanUser(intent.username)
+        const target = resolveActionTarget(intent.username)
+        if (!target.ok) return target.message
+        const result = await chatStore.unbanUser(target.username)
         return result.success
-          ? `Listo, ya quite el bloqueo de ${intent.username}.`
+          ? `Listo, ya quite el bloqueo de ${result.nickname || target.nickname}.`
           : result.message || `No pude desbloquear a ${intent.username}.`
       }
       case 'set_nickname': {
-        const result = await chatStore.setNickname(intent.username, intent.nickname)
+        const target = resolveActionTarget(intent.username)
+        if (!target.ok) return target.message
+        const result = await chatStore.setNickname(target.username, intent.nickname)
         return result.success
-          ? `Listo, ahora le dire ${intent.nickname} a ${result.nickname || intent.username}.`
+          ? `Listo, ahora le dire ${intent.nickname} a ${result.nickname || target.nickname}.`
           : result.message || `No pude cambiar el apodo de ${intent.username}.`
       }
       case 'highlight_user': {
-        const result = chatStore.highlightUser(intent.username, intent.color || '#06b6d4')
+        const target = resolveActionTarget(intent.username)
+        if (!target.ok) return target.message
+        const result = chatStore.highlightUser(target.username, intent.color || '#06b6d4')
         return result.success
-          ? `Listo, ya resalte a ${result.nickname || intent.username}.`
+          ? `Listo, ya resalte a ${result.nickname || target.nickname}.`
           : result.message || `No pude resaltar a ${intent.username}.`
       }
       case 'remove_highlight': {
-        const result = chatStore.removeHighlight(intent.username)
+        const target = resolveActionTarget(intent.username)
+        if (!target.ok) return target.message
+        const result = chatStore.removeHighlight(target.username)
         return result.success
-          ? `Listo, ya quite el resaltado de ${result.nickname || intent.username}.`
+          ? `Listo, ya quite el resaltado de ${result.nickname || target.nickname}.`
           : result.message || `No pude quitar el resaltado de ${intent.username}.`
       }
       case 'get_active_users': {
@@ -232,6 +282,18 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
         }
         const preview = msgs.slice(-3).map((item) => `${item.user} dijo ${item.text}`).join('. ')
         return `En el chat reciente, ${preview}.`
+      }
+      case 'nicest_user': {
+        const grounded = chatStore.findGroundedChatAnswer('nicest_user', { minutes: 10 })
+        return grounded?.text || 'Todavia no tengo suficiente contexto real para decir quien se ve mas simpatico en el chat.'
+      }
+      case 'most_negative_user': {
+        const grounded = chatStore.findGroundedChatAnswer('most_negative_user', { minutes: 10 })
+        return grounded?.text || 'No veo suficiente mala vibra clara en el chat como para senalar a alguien con certeza.'
+      }
+      case 'funniest_user': {
+        const grounded = chatStore.findGroundedChatAnswer('funniest_user', { minutes: 10 })
+        return grounded?.text || 'Todavia no tengo suficiente contexto para decidir quien trae mas cotorreo en el chat.'
       }
       default:
         return originalText
