@@ -395,6 +395,127 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     }
   }
 
+  // Filtros por tipo de voz
+  const clonedVoices = userVoices.filter(v => v.provider === 'inworld')
+  const generatedVoices = userVoices.filter(v => v.provider === 'inworld-generated')
+
+  // Renderiza la sección "Mis Voces Creadas" filtrada
+  const renderVoiceList = (voices) => (
+    <div className={`${darkMode ? 'bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6' : 'bg-white border border-indigo-200 rounded-lg p-6 shadow-sm'}`}>
+      <div className="flex items-center gap-3 mb-4">
+        <Mic2 className="w-6 h-6 text-purple-400" />
+        <h2 className={darkMode ? 'text-xl font-bold text-white' : 'text-xl font-bold text-gray-900'}>Mis Voces Creadas</h2>
+        <span className={`ml-auto text-xs font-semibold px-2 py-1 rounded-full ${darkMode ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-50 text-purple-600'}`}>
+          {voices.length}/10
+        </span>
+      </div>
+      {loadingVoices ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader className="w-5 h-5 animate-spin text-cyan-400" />
+        </div>
+      ) : voices.length === 0 ? (
+        <p className={`text-sm py-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          Aún no tienes voces de este tipo. ¡Crea tu primera voz arriba!
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {voices.map((voice) => (
+            <div
+              key={voice.id}
+              className={`flex items-center justify-between px-4 py-3 rounded-lg ${darkMode ? 'bg-gray-800/60 border border-gray-700/50' : 'bg-gray-50 border border-gray-200'}`}
+            >
+              <div className="flex-1">
+                {editingVoiceId === voice.id ? (
+                  <input
+                    type="text"
+                    value={editingVoiceName}
+                    onChange={(e) => setEditingVoiceName(e.target.value)}
+                    autoFocus
+                    className={`w-full mb-1 px-2 py-1 rounded ${darkMode ? 'bg-[#0f0f23] border border-cyan-400/30 text-white focus:outline-none focus:border-cyan-400' : 'bg-white border border-indigo-300 text-gray-900 focus:outline-none focus:border-indigo-500'}`}
+                  />
+                ) : (
+                  <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{voice.voice_name}</p>
+                )}
+                <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  {new Date(voice.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {editingVoiceId === voice.id ? (
+                  <>
+                    <button onClick={handleSaveVoiceEdit} className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded text-xs font-semibold transition-colors flex-shrink-0">Guardar</button>
+                    <button onClick={() => { setEditingVoiceId(null); setEditingVoiceName('') }} className="px-2 py-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 rounded text-xs font-semibold transition-colors flex-shrink-0">Cancelar</button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => handleEditVoice(voice)} className="p-1.5 rounded hover:bg-cyan-500/20 transition-colors flex-shrink-0" title="Renombrar voz">
+                      <Edit2 className="w-4 h-4 text-cyan-400" />
+                    </button>
+                    <button onClick={() => handleDeleteVoice(voice.id, voice.voice_name)} className="p-1.5 rounded hover:bg-red-500/20 transition-colors flex-shrink-0" title="Eliminar voz">
+                      <Trash2 className="w-4 h-4 text-red-400" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
+  // Renderiza la sección "Probar Voz" filtrada
+  const renderTestVoice = (voices) => (
+    voices.length > 0 && (
+      <div className={darkMode ? 'bg-amber-900/20 border-2 border-amber-500/30 rounded-lg p-6' : 'bg-amber-50 border-2 border-amber-200 rounded-lg p-6 shadow-sm'}>
+        <div className="flex items-center gap-3 mb-4">
+          <Mic2 className="w-6 h-6 text-amber-500" />
+          <h2 className={darkMode ? 'text-xl font-bold text-amber-300' : 'text-xl font-bold text-amber-900'}>Probar Voz</h2>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className={darkMode ? 'block text-sm font-medium text-amber-300 mb-2' : 'block text-sm font-medium text-amber-700 mb-2'}>Selecciona una voz</label>
+            <select
+              value={testVoiceId || ''}
+              onChange={(e) => setTestVoiceId(e.target.value)}
+              className={darkMode ? 'w-full bg-[#0f0f23] border border-amber-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-amber-500' : 'w-full bg-white border border-amber-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-amber-500'}
+            >
+              <option value="">-- Elige una voz --</option>
+              {voices.map(voice => (
+                <option key={voice.id} value={voice.voice_id}>{voice.voice_name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={darkMode ? 'block text-sm font-medium text-amber-300 mb-2' : 'block text-sm font-medium text-amber-700 mb-2'}>Escribe un texto para probar</label>
+            <textarea
+              value={testText}
+              onChange={(e) => setTestText(e.target.value)}
+              placeholder="Ej: Hola, esto es una prueba de mi voz personalizada"
+              className={darkMode ? 'w-full bg-[#0f0f23] border border-amber-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-amber-500 min-h-20' : 'w-full bg-white border border-amber-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-amber-500 min-h-20'}
+            />
+            <p className={`text-xs mt-1 ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>{testText.length} caracteres</p>
+          </div>
+          <button
+            onClick={handleTestVoice}
+            disabled={testingVoice || !testVoiceId || !testText.trim()}
+            className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+          >
+            {testingVoice ? <><Loader className="w-5 h-5 animate-spin" />Generando audio...</> : <><Mic2 className="w-5 h-5" />Probar voz</>}
+          </button>
+          {testAudioUrl && (
+            <div className={darkMode ? 'bg-amber-900/30 border border-amber-700/50 rounded-lg p-4' : 'bg-amber-100 border border-amber-300 rounded-lg p-4'}>
+              <p className={`text-sm mb-2 ${darkMode ? 'text-amber-300' : 'text-amber-900'}`}>🔊 Escucha el resultado:</p>
+              <audio controls className="w-full" style={{ accentColor: '#f59e0b' }} autoPlay>
+                <source src={testAudioUrl} type="audio/mpeg" />
+              </audio>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  )
+
   return (
     <div className="space-y-6">
       {/* Tabs */}
@@ -446,97 +567,9 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         </button>
       </div>
 
-      {/* Mis Voces Creadas — oculto en tab Asistente IA */}
-      <div className={`${activeTab === 'ai-assistant' ? 'hidden' : ''} ${darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}`}>
-        <div className="flex items-center gap-3 mb-4">
-          <Mic2 className="w-6 h-6 text-purple-400" />
-          <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Mis Voces Creadas</h2>
-          <span className={`ml-auto text-xs font-semibold px-2 py-1 rounded-full ${darkMode ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-50 text-purple-600'}`}>
-            {userVoices.length}/10
-          </span>
-        </div>
-
-        {loadingVoices ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader className="w-5 h-5 animate-spin text-cyan-400" />
-          </div>
-        ) : userVoices.length === 0 ? (
-          <p className={`text-sm py-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            Aún no tienes voces creadas. ¡Crea tu primera voz abajo!
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {userVoices.map((voice) => (
-              <div
-                key={voice.id}
-                className={`flex items-center justify-between px-4 py-3 rounded-lg ${
-                  darkMode ? 'bg-gray-800/60 border border-gray-700/50' : 'bg-gray-50 border border-gray-200'
-                }`}
-              >
-                <div className="flex-1">
-                  {editingVoiceId === voice.id ? (
-                    <input
-                      type="text"
-                      value={editingVoiceName}
-                      onChange={(e) => setEditingVoiceName(e.target.value)}
-                      autoFocus
-                      className={`w-full mb-1 px-2 py-1 rounded ${darkMode ? 'bg-[#0f0f23] border border-cyan-400/30 text-white focus:outline-none focus:border-cyan-400' : 'bg-white border border-indigo-300 text-gray-900 focus:outline-none focus:border-indigo-500'}`}
-                    />
-                  ) : (
-                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{voice.voice_name}</p>
-                  )}
-                  <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                    {new Date(voice.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {editingVoiceId === voice.id ? (
-                    <>
-                      <button
-                        onClick={handleSaveVoiceEdit}
-                        className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded text-xs font-semibold transition-colors flex-shrink-0"
-                        title="Guardar"
-                      >
-                        Guardar
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingVoiceId(null)
-                          setEditingVoiceName('')
-                        }}
-                        className="px-2 py-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 rounded text-xs font-semibold transition-colors flex-shrink-0"
-                        title="Cancelar"
-                      >
-                        Cancelar
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => handleEditVoice(voice)}
-                        className="p-1.5 rounded hover:bg-cyan-500/20 transition-colors flex-shrink-0"
-                        title="Renombrar voz"
-                      >
-                        <Edit2 className="w-4 h-4 text-cyan-400" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteVoice(voice.id, voice.voice_name)}
-                        className="p-1.5 rounded hover:bg-red-500/20 transition-colors flex-shrink-0"
-                        title="Eliminar voz"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-400" />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Clonar Nueva Voz */}
       {activeTab === 'clone' && (
+        <>
         <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
           <div className="flex items-center gap-3 mb-4">
             <Zap className="w-6 h-6 text-cyan-400" />
@@ -650,10 +683,18 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           )}
         </form>
       </div>
+
+      {/* Probar Voz — solo clonadas */}
+      {renderTestVoice(clonedVoices)}
+
+      {/* Mis Voces Creadas — solo clonadas */}
+      {renderVoiceList(clonedVoices)}
+        </>
       )}
 
       {/* Generar Voz Personalizada */}
       {activeTab === 'generate' && (
+        <>
         <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
           <div className="flex items-center gap-3 mb-4">
             <Sparkles className="w-6 h-6 text-cyan-400" />
@@ -805,6 +846,13 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
             )}
           </form>
         </div>
+
+        {/* Probar Voz — solo generadas */}
+        {renderTestVoice(generatedVoices)}
+
+        {/* Mis Voces Creadas — solo generadas */}
+        {renderVoiceList(generatedVoices)}
+        </>
       )}
 
       {/* Modal de Preview de Voz Generada */}
@@ -899,90 +947,6 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
               <div className="p-3 bg-red-500/20 border border-red-400/50 rounded-lg flex gap-2">
                 <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                 <p className="text-red-100 text-sm">{error}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Probar Voz - oculto en tab Asistente IA (se muestra dentro del tab) */}
-      {userVoices.length > 0 && activeTab !== 'ai-assistant' && (
-        <div className={darkMode ? "bg-amber-900/20 border-2 border-amber-500/30 rounded-lg p-6" : "bg-amber-50 border-2 border-amber-200 rounded-lg p-6 shadow-sm"}>
-          <div className="flex items-center gap-3 mb-4">
-            <Mic2 className="w-6 h-6 text-amber-500" />
-            <h2 className={darkMode ? "text-xl font-bold text-amber-300" : "text-xl font-bold text-amber-900"}>Probar Voz</h2>
-          </div>
-
-          <div className="space-y-4">
-            {/* Selector de voz */}
-            <div>
-              <label className={darkMode ? "block text-sm font-medium text-amber-300 mb-2" : "block text-sm font-medium text-amber-700 mb-2"}>
-                Selecciona una voz
-              </label>
-              <select
-                value={testVoiceId || ''}
-                onChange={(e) => setTestVoiceId(e.target.value)}
-                className={darkMode ? "w-full bg-[#0f0f23] border border-amber-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-amber-500" : "w-full bg-white border border-amber-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-amber-500"}
-              >
-                <option value="">-- Elige una voz --</option>
-                {userVoices.map(voice => (
-                  <option key={voice.id} value={voice.voice_id}>
-                    {voice.voice_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Textarea */}
-            <div>
-              <label className={darkMode ? "block text-sm font-medium text-amber-300 mb-2" : "block text-sm font-medium text-amber-700 mb-2"}>
-                Escribe un texto para probar
-              </label>
-              <textarea
-                value={testText}
-                onChange={(e) => setTestText(e.target.value)}
-                placeholder="Ej: Hola, esto es una prueba de mi voz personalizada"
-                className={darkMode ? "w-full bg-[#0f0f23] border border-amber-500/30 rounded-lg p-3 text-white focus:outline-none focus:border-amber-500 min-h-20" : "w-full bg-white border border-amber-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-amber-500 min-h-20"}
-              />
-              <p className={`text-xs mt-1 ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>
-                {testText.length} caracteres
-              </p>
-            </div>
-
-            {/* Botón de prueba */}
-            <button
-              onClick={handleTestVoice}
-              disabled={testingVoice || !testVoiceId || !testText.trim()}
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
-            >
-              {testingVoice ? (
-                <>
-                  <Loader className="w-5 h-5 animate-spin" />
-                  Generando audio...
-                </>
-              ) : (
-                <>
-                  <Mic2 className="w-5 h-5" />
-                  Probar voz
-                </>
-              )}
-            </button>
-
-            {/* Reproductor */}
-            {testAudioUrl && (
-              <div className={darkMode ? "bg-amber-900/30 border border-amber-700/50 rounded-lg p-4" : "bg-amber-100 border border-amber-300 rounded-lg p-4"}>
-                <p className={`text-sm mb-2 ${darkMode ? 'text-amber-300' : 'text-amber-900'}`}>
-                  🔊 Escucha el resultado:
-                </p>
-                <audio
-                  controls
-                  className="w-full"
-                  style={{ accentColor: '#f59e0b' }}
-                  autoPlay
-                >
-                  <source src={testAudioUrl} type="audio/mpeg" />
-                  Tu navegador no soporta el reproductor
-                </audio>
               </div>
             )}
           </div>
