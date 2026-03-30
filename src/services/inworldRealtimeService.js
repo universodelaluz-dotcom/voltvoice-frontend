@@ -3,6 +3,8 @@
  * Handles WebRTC connection with Inworld for speech-to-speech interactions
  */
 
+import chatStore from './chatStore.js'
+
 export class InworldRealtimeService {
   constructor() {
     this.peerConnection = null
@@ -362,11 +364,12 @@ export class InworldRealtimeService {
                 voice: this.sessionVoice,
                 model: 'inworld-tts-1.5-mini'
               }
-            }
+            },
+            tools: this._getToolDefinitions()
           }
         }
         this.dataChannel.send(JSON.stringify(sessionConfig))
-        console.log('[Inworld] Session config sent with model:', sessionConfig.session.model, 'voice:', this.sessionVoice)
+        console.log('[Inworld] Session config sent with model:', sessionConfig.session.model, 'voice:', this.sessionVoice, 'tools:', sessionConfig.session.tools.length)
       } catch (err) {
         console.error('[Inworld] Error sending session config:', err)
       }
@@ -529,6 +532,27 @@ export class InworldRealtimeService {
           this.pendingAudioResponse = false
           this._sendResponseCreate()
         }
+        break
+
+      // Tool call events (function calling)
+      case 'response.function_call_arguments.delta':
+        // Accumulate function call arguments
+        if (!this._pendingToolCall) {
+          this._pendingToolCall = { callId: event.call_id, name: event.name, args: '' }
+        }
+        if (event.delta) {
+          this._pendingToolCall.args += event.delta
+        }
+        break
+
+      case 'response.function_call_arguments.done':
+        console.log('[Inworld] Tool call complete:', event.name, event.arguments)
+        this._executeToolCall(
+          event.call_id || this._pendingToolCall?.callId,
+          event.name || this._pendingToolCall?.name,
+          event.arguments || this._pendingToolCall?.args || '{}'
+        )
+        this._pendingToolCall = null
         break
 
       // Conversation events
@@ -855,6 +879,264 @@ export class InworldRealtimeService {
       console.error('[Inworld] Error requesting response:', err)
       throw err
     }
+  }
+
+  /**
+   * Get tool definitions for Inworld session
+   */
+  _getToolDefinitions() {
+    return [
+      {
+        type: 'function',
+        name: 'read_chat',
+        description: 'Lee los mensajes recientes del chat de TikTok. Usa esto cuando el streamer pregunte sobre el chat, quién dijo algo, o qué están diciendo.',
+        parameters: {
+          type: 'object',
+          properties: {
+            count: { type: 'number', description: 'Cantidad de mensajes a leer (default 20, max 50)' }
+          }
+        }
+      },
+      {
+        type: 'function',
+        name: 'search_chat',
+        description: 'Busca mensajes en el chat que contengan una palabra o frase específica.',
+        parameters: {
+          type: 'object',
+          properties: {
+            keyword: { type: 'string', description: 'Palabra o frase a buscar en el chat' },
+            count: { type: 'number', description: 'Cantidad máxima de resultados (default 10)' }
+          },
+          required: ['keyword']
+        }
+      },
+      {
+        type: 'function',
+        name: 'get_questions',
+        description: 'Obtiene las preguntas recientes del chat (mensajes con signos de interrogación o palabras interrogativas).',
+        parameters: {
+          type: 'object',
+          properties: {
+            count: { type: 'number', description: 'Cantidad de preguntas a obtener (default 10)' }
+          }
+        }
+      },
+      {
+        type: 'function',
+        name: 'get_user_messages',
+        description: 'Obtiene los mensajes de un usuario específico del chat.',
+        parameters: {
+          type: 'object',
+          properties: {
+            username: { type: 'string', description: 'Nombre de usuario de TikTok' },
+            count: { type: 'number', description: 'Cantidad de mensajes (default 10)' }
+          },
+          required: ['username']
+        }
+      },
+      {
+        type: 'function',
+        name: 'get_chat_stats',
+        description: 'Obtiene estadísticas del chat: total de mensajes, usuarios activos, baneados, etc.',
+        parameters: {
+          type: 'object',
+          properties: {}
+        }
+      },
+      {
+        type: 'function',
+        name: 'get_active_users',
+        description: 'Obtiene la lista de usuarios más activos en el chat en los últimos minutos.',
+        parameters: {
+          type: 'object',
+          properties: {
+            minutes: { type: 'number', description: 'Ventana de tiempo en minutos (default 5)' }
+          }
+        }
+      },
+      {
+        type: 'function',
+        name: 'ban_user',
+        description: 'Banea a un usuario del chat de TikTok. El usuario no podrá ser leído por el TTS.',
+        parameters: {
+          type: 'object',
+          properties: {
+            username: { type: 'string', description: 'Nombre de usuario a banear' }
+          },
+          required: ['username']
+        }
+      },
+      {
+        type: 'function',
+        name: 'unban_user',
+        description: 'Desbanea a un usuario previamente baneado del chat.',
+        parameters: {
+          type: 'object',
+          properties: {
+            username: { type: 'string', description: 'Nombre de usuario a desbanear' }
+          },
+          required: ['username']
+        }
+      },
+      {
+        type: 'function',
+        name: 'highlight_user',
+        description: 'Resalta los mensajes de un usuario en el chat con un color específico para que destaquen visualmente.',
+        parameters: {
+          type: 'object',
+          properties: {
+            username: { type: 'string', description: 'Nombre de usuario a resaltar' },
+            color: { type: 'string', description: 'Color hexadecimal (default #06b6d4). Opciones: #06b6d4 cyan, #a855f7 morado, #f59e0b dorado, #ef4444 rojo, #22c55e verde, #ec4899 rosa' }
+          },
+          required: ['username']
+        }
+      },
+      {
+        type: 'function',
+        name: 'remove_highlight',
+        description: 'Remueve el resaltado de un usuario en el chat.',
+        parameters: {
+          type: 'object',
+          properties: {
+            username: { type: 'string', description: 'Nombre de usuario' }
+          },
+          required: ['username']
+        }
+      },
+      {
+        type: 'function',
+        name: 'set_nickname',
+        description: 'Cambia el apodo/nickname con el que se lee un usuario en el TTS. Útil para nombres difíciles de pronunciar.',
+        parameters: {
+          type: 'object',
+          properties: {
+            username: { type: 'string', description: 'Nombre de usuario original de TikTok' },
+            nickname: { type: 'string', description: 'Nuevo apodo para el TTS' }
+          },
+          required: ['username', 'nickname']
+        }
+      }
+    ]
+  }
+
+  /**
+   * Execute a tool call from Inworld and return the result
+   */
+  async _executeToolCall(callId, name, argsString) {
+    let args = {}
+    try {
+      args = JSON.parse(argsString)
+    } catch (e) {
+      console.error('[Inworld] Invalid tool call args:', argsString)
+    }
+
+    console.log('[Inworld] Executing tool:', name, args)
+    let result = { error: 'Unknown tool' }
+
+    try {
+      switch (name) {
+        case 'read_chat': {
+          const count = Math.min(args.count || 20, 50)
+          const msgs = chatStore.getRecentMessages(count)
+          result = {
+            messages: msgs.map(m => ({
+              user: m.user,
+              text: m.text,
+              isQuestion: m.isQuestion,
+              isModerator: m.isModerator,
+              timeAgo: Math.round((Date.now() - m.timestamp) / 1000) + 's ago'
+            })),
+            total: msgs.length
+          }
+          break
+        }
+
+        case 'search_chat': {
+          const msgs = chatStore.searchMessages(args.keyword, args.count || 10)
+          result = {
+            keyword: args.keyword,
+            messages: msgs.map(m => ({ user: m.user, text: m.text })),
+            total: msgs.length
+          }
+          break
+        }
+
+        case 'get_questions': {
+          const questions = chatStore.getQuestions(args.count || 10)
+          result = {
+            questions: questions.map(m => ({ user: m.user, text: m.text })),
+            total: questions.length
+          }
+          break
+        }
+
+        case 'get_user_messages': {
+          const msgs = chatStore.getUserMessages(args.username, args.count || 10)
+          result = {
+            username: args.username,
+            messages: msgs.map(m => ({ text: m.text, timeAgo: Math.round((Date.now() - m.timestamp) / 1000) + 's ago' })),
+            total: msgs.length
+          }
+          break
+        }
+
+        case 'get_chat_stats':
+          result = chatStore.getChatStats()
+          break
+
+        case 'get_active_users':
+          result = { users: chatStore.getActiveUsers(args.minutes || 5) }
+          break
+
+        case 'ban_user':
+          result = await chatStore.banUser(args.username)
+          break
+
+        case 'unban_user':
+          result = await chatStore.unbanUser(args.username)
+          break
+
+        case 'highlight_user':
+          result = chatStore.highlightUser(args.username, args.color || '#06b6d4')
+          break
+
+        case 'remove_highlight':
+          result = chatStore.removeHighlight(args.username)
+          break
+
+        case 'set_nickname':
+          result = await chatStore.setNickname(args.username, args.nickname)
+          break
+
+        default:
+          result = { error: `Tool "${name}" not found` }
+      }
+    } catch (err) {
+      console.error('[Inworld] Tool execution error:', err)
+      result = { error: err.message }
+    }
+
+    console.log('[Inworld] Tool result:', name, result)
+
+    // Send tool result back to Inworld
+    if (this.dataChannel && this.dataChannel.readyState === 'open') {
+      // Send function call output
+      this.dataChannel.send(JSON.stringify({
+        type: 'conversation.item.create',
+        item: {
+          type: 'function_call_output',
+          call_id: callId,
+          output: JSON.stringify(result)
+        }
+      }))
+
+      // Request a new response so the bot speaks the result
+      this._sendResponseCreate()
+      console.log('[Inworld] Tool result sent back, requesting response')
+    }
+
+    // Emit event for UI
+    this._emit('tool-executed', { name, args, result })
   }
 
   /**

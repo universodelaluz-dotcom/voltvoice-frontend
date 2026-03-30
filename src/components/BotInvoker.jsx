@@ -246,9 +246,19 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     setVoiceLabel(getVoiceDisplayName(realtimeVoice || 'Clive'))
     console.log('[Bot] Using realtime voice:', realtimeVoice || 'Clive')
 
+    const basePrompt = character?.system_prompt || ''
+    const toolInstructions = `
+
+IMPORTANT: You are the streamer's AI assistant with access to the TikTok live chat.
+You have tools to: read chat messages, search chat, get questions from chat, ban/unban users, highlight users, set nicknames.
+When the streamer asks about the chat, USE the tools to get real data. Do not make up chat messages.
+When the streamer asks to ban someone, highlight someone, or change a nickname, USE the corresponding tool.
+Always respond in Spanish unless told otherwise.
+After using a tool, summarize the result conversationally.`
+
     await inworldRealtimeService.startSession(
       selectedCharacterId,
-      character?.system_prompt || '',
+      basePrompt + toolInstructions,
       null,
       API_URL,
       realtimeVoice

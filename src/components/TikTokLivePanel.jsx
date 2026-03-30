@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X } from 'lucide-react'
+import chatStore from '../services/chatStore.js'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
@@ -269,8 +270,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   useEffect(() => { configRef.current = config }, [config])
   useEffect(() => { isPausedRef.current = isPaused }, [isPaused])
   useEffect(() => { volumeRef.current = volume }, [volume])
-  useEffect(() => { bannedRef.current = bannedUsers }, [bannedUsers])
-  useEffect(() => { nickOverridesRef.current = nickOverrides }, [nickOverrides])
+  useEffect(() => { bannedRef.current = bannedUsers; chatStore.syncBannedUsers(bannedUsers) }, [bannedUsers])
+  useEffect(() => { nickOverridesRef.current = nickOverrides; chatStore.syncNickOverrides(nickOverrides) }, [nickOverrides])
+  useEffect(() => { chatStore.syncHighlightedUsers(highlightedUsers) }, [highlightedUsers])
 
   useEffect(() => {
     const handlePttAudioState = (event) => {
@@ -331,8 +333,30 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       const bans = await apiBans.getAll()
       const nicks = await apiNicks.getAll()
 
-      setBannedUsers(new Set(bans.map(b => b.banned_username)))
+      const bannedSet = new Set(bans.map(b => b.banned_username))
+      setBannedUsers(bannedSet)
       setNickOverrides(nicks)
+
+      // Sync to chatStore for bot access
+      chatStore.syncBannedUsers(bannedSet)
+      chatStore.syncNickOverrides(nicks)
+
+      // Register action callbacks so bot tools can update UI state
+      chatStore.registerAction('onBan', (username) => {
+        setBannedUsers(prev => { const next = new Set(prev); next.add(username); return next })
+      })
+      chatStore.registerAction('onUnban', (username) => {
+        setBannedUsers(prev => { const next = new Set(prev); next.delete(username); return next })
+      })
+      chatStore.registerAction('onHighlight', (username, color) => {
+        setHighlightedUsers(prev => ({ ...prev, [username]: color }))
+      })
+      chatStore.registerAction('onRemoveHighlight', (username) => {
+        setHighlightedUsers(prev => { const next = { ...prev }; delete next[username]; return next })
+      })
+      chatStore.registerAction('onSetNick', (username, nickname) => {
+        setNickOverrides(prev => ({ ...prev, [username]: nickname }))
+      })
     }
 
     ws.onmessage = async (event) => {
@@ -431,6 +455,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               isBanned
             }
           ])
+
+          // Feed message to chatStore for bot access
+          chatStore.addMessage({
+            user: msg.username,
+            text: msg.text,
+            timestamp: Date.now(),
+            isModerator: msg.isModerator || false,
+            isSubscriber: msg.isSubscriber || false,
+            isTopGifter: msg.topGifterRank > 0,
+            isDonor: msg.isDonor || donors.has(msg.username),
+            isQuestion: isQuestion(msg.text)
+          })
+
           // Sumar al contador de comentarios
           setStats(prev => ({ ...prev, count: prev.count + 1 }))
 
