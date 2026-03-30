@@ -170,6 +170,32 @@ export class InworldRealtimeService {
         }
       }
 
+      // Handle audio tracks from Inworld (RTP, not data channel)
+      this.peerConnection.ontrack = (event) => {
+        console.log('[Inworld] Audio track received:', event.track.kind)
+        if (event.track.kind === 'audio') {
+          // Create audio element and attach the track
+          const audioElement = new Audio()
+          audioElement.autoplay = true
+          audioElement.srcObject = new MediaStream([event.track])
+
+          // Log when audio plays/ends
+          audioElement.onplay = () => {
+            console.log('[Inworld] Audio playing')
+            this._emit('audio-started')
+          }
+
+          audioElement.onended = () => {
+            console.log('[Inworld] Audio ended')
+            this._emit('audio-complete')
+          }
+
+          audioElement.onerror = (err) => {
+            console.error('[Inworld] Audio error:', err)
+          }
+        }
+      }
+
       // Store session info (generate ID if not provided)
       this.sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       console.log('[Inworld] Session started:', this.sessionId)
