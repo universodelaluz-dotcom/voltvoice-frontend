@@ -227,13 +227,14 @@ export class InworldRealtimeService {
         console.error('[Inworld] Error sending session config:', err)
       }
 
-      // Small delay to ensure channel is truly ready before resolving
+      // Larger delay to ensure channel is truly ready before resolving
+      // WebRTC channels need time to transition to fully open state
       setTimeout(() => {
         if (this.dataChannelResolve) {
           this.dataChannelResolve()
         }
         this._emit('channel-open')
-      }, 100)
+      }, 300)
     }
 
     this.dataChannel.onmessage = (event) => {
@@ -444,78 +445,136 @@ export class InworldRealtimeService {
   }
 
   /**
-   * Send text message to Inworld
+   * Send text message to Inworld (with retry logic)
    */
-  sendMessage(text) {
-    if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
-      throw new Error(`Data channel not ready (state: ${this.dataChannel?.readyState || 'null'})`)
-    }
+  async sendMessage(text) {
+    const maxRetries = 3
+    let lastError
 
-    try {
-      const event = {
-        type: 'conversation.item.create',
-        item: {
-          type: 'message',
-          role: 'user',
-          content: {
-            content_type: 'text',
-            text: text
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Check if channel is ready
+        if (!this.dataChannel || !['open', 'connecting'].includes(this.dataChannel.readyState)) {
+          throw new Error(`Data channel state: ${this.dataChannel?.readyState || 'null'}`)
+        }
+
+        // If still connecting, wait a bit more
+        if (this.dataChannel.readyState === 'connecting' && attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+          continue
+        }
+
+        const event = {
+          type: 'conversation.item.create',
+          item: {
+            type: 'message',
+            role: 'user',
+            content: {
+              content_type: 'text',
+              text: text
+            }
           }
         }
+
+        this.dataChannel.send(JSON.stringify(event))
+        console.log('[Inworld] Message sent:', text.substring(0, 50))
+
+        // Request response
+        this.dataChannel.send(JSON.stringify({
+          type: 'response.create'
+        }))
+        console.log('[Inworld] Response requested')
+        return // Success
+      } catch (err) {
+        lastError = err
+        console.warn(`[Inworld] Send attempt ${attempt + 1}/${maxRetries} failed:`, err.message)
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
       }
-
-      this.dataChannel.send(JSON.stringify(event))
-      console.log('[Inworld] Message sent:', text.substring(0, 50))
-
-      // Request response
-      this.dataChannel.send(JSON.stringify({
-        type: 'response.create'
-      }))
-      console.log('[Inworld] Response requested')
-    } catch (err) {
-      console.error('[Inworld] Error sending message:', err)
-      throw err
     }
+
+    console.error('[Inworld] Failed to send message after', maxRetries, 'attempts')
+    throw lastError
   }
 
   /**
-   * Send audio data to Inworld
+   * Send audio data to Inworld (with retry logic)
    */
-  sendAudio(audioBase64) {
-    if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
-      throw new Error(`Data channel not ready (state: ${this.dataChannel?.readyState || 'null'})`)
-    }
+  async sendAudio(audioBase64) {
+    const maxRetries = 3
+    let lastError
 
-    try {
-      const event = {
-        type: 'input_audio_buffer.append',
-        audio: audioBase64
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        if (!this.dataChannel || !['open', 'connecting'].includes(this.dataChannel.readyState)) {
+          throw new Error(`Data channel state: ${this.dataChannel?.readyState || 'null'}`)
+        }
+
+        if (this.dataChannel.readyState === 'connecting' && attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+          continue
+        }
+
+        const event = {
+          type: 'input_audio_buffer.append',
+          audio: audioBase64
+        }
+
+        this.dataChannel.send(JSON.stringify(event))
+        console.log('[Inworld] Audio sent:', audioBase64.length, 'bytes')
+        return // Success
+      } catch (err) {
+        lastError = err
+        console.warn(`[Inworld] Audio send attempt ${attempt + 1}/${maxRetries} failed:`, err.message)
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
       }
-
-      this.dataChannel.send(JSON.stringify(event))
-      console.log('[Inworld] Audio sent:', audioBase64.length, 'bytes')
-    } catch (err) {
-      console.error('[Inworld] Error sending audio:', err)
-      throw err
     }
+
+    throw lastError
   }
 
   /**
    * Commit audio input buffer
    */
-  commitAudio() {
-    if (!this.isConnected || !this.dataChannel) {
-      throw new Error('WebRTC connection not established')
+  async commitAudio() {
+    const maxRetries = 3
+    let lastError
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        if (!this.dataChannel || !['open', 'connecting'].includes(this.dataChannel.readyState)) {
+          throw new Error(`Data channel state: ${this.dataChannel?.readyState || 'null'}`)
+        }
+
+        if (this.dataChannel.readyState === 'connecting' && attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+          continue
+        }
+
+        this.dataChannel.send(JSON.stringify({
+          type: 'input_audio_buffer.commit'
+        }))
+        console.log('[Inworld] Audio committed')
+
+        // Request response
+        this.dataChannel.send(JSON.stringify({
+          type: 'response.create'
+        }))
+        console.log('[Inworld] Response requested')
+        return // Success
+      } catch (err) {
+        lastError = err
+        console.warn(`[Inworld] Commit attempt ${attempt + 1}/${maxRetries} failed:`, err.message)
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+      }
     }
 
-    this.dataChannel.send(JSON.stringify({
-      type: 'input_audio_buffer.commit'
-    }))
-
-    // Request response
-    this.dataChannel.send(JSON.stringify({
-      type: 'response.create'
-    }))
+    throw lastError
   }
 
   /**

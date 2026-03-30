@@ -107,11 +107,11 @@ export default function BotInvoker({ darkMode = true, onClose, tiktokUsername, c
       if (inputData instanceof Blob) {
         // Audio input - convert to base64 PCM
         const audioBase64 = await blobToBase64(inputData)
-        inworldRealtimeService.sendAudio(audioBase64)
-        inworldRealtimeService.commitAudio()
+        await inworldRealtimeService.sendAudio(audioBase64)
+        await inworldRealtimeService.commitAudio()
       } else if (typeof inputData === 'string') {
         // Text input
-        inworldRealtimeService.sendMessage(inputData)
+        await inworldRealtimeService.sendMessage(inputData)
       }
 
       // Listen for responses
