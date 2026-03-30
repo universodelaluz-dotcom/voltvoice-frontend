@@ -1162,7 +1162,9 @@ export class InworldRealtimeService {
       }))
 
       // Request a new response so the bot speaks the result
-      this._sendResponseCreate()
+      this._sendResponseCreate({
+        instructions: 'Resume brevemente el resultado de la herramienta en espanol para el streamer. Da una confirmacion clara y corta de la accion o del hallazgo.'
+      })
       console.log('[Inworld] Tool result sent back, requesting response')
     }
 

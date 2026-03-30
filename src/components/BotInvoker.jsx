@@ -24,6 +24,7 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
   const hasActiveResponseRef = useRef(false)
   const transcriptBufferRef = useRef('')
   const transcriptCompleteRef = useRef('')
+  const transcriptDeltaTimerRef = useRef(null)
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   const setChatSuppressed = (active) => {
@@ -85,6 +86,12 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       }
 
       transcriptBufferRef.current += data.text
+      if (transcriptDeltaTimerRef.current) {
+        clearTimeout(transcriptDeltaTimerRef.current)
+      }
+      transcriptDeltaTimerRef.current = setTimeout(() => {
+        transcriptCompleteRef.current = transcriptBufferRef.current.trim()
+      }, 450)
     }
 
     const handleInputTranscriptComplete = (data) => {
@@ -94,6 +101,10 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
 
       transcriptCompleteRef.current = data.text
       transcriptBufferRef.current = data.text
+      if (transcriptDeltaTimerRef.current) {
+        clearTimeout(transcriptDeltaTimerRef.current)
+        transcriptDeltaTimerRef.current = null
+      }
     }
 
     const handleResponseComplete = () => {
@@ -154,6 +165,9 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       }
       clearResponseTimeout()
       setChatSuppressed(false)
+      if (transcriptDeltaTimerRef.current) {
+        clearTimeout(transcriptDeltaTimerRef.current)
+      }
       inworldRealtimeService.closeSession()
     }
   }, [])
@@ -301,6 +315,10 @@ After using a tool, summarize the result conversationally.`
     hasActiveResponseRef.current = false
     transcriptBufferRef.current = ''
     transcriptCompleteRef.current = ''
+    if (transcriptDeltaTimerRef.current) {
+      clearTimeout(transcriptDeltaTimerRef.current)
+      transcriptDeltaTimerRef.current = null
+    }
     setChatSuppressed(true)
     await ensureBotSession()
 
@@ -330,15 +348,21 @@ After using a tool, summarize the result conversationally.`
 
       setIsRecording(false)
       setIsLoading(true)
-      const transcriptFromSpeech = (transcriptCompleteRef.current || transcriptBufferRef.current).trim()
-      transcriptBufferRef.current = ''
-      transcriptCompleteRef.current = ''
       stream.getAudioTracks().forEach(track => track.stop())
       setTimeout(() => {
         inworldRealtimeService.removeAudioTracks().catch((error) => {
           console.error('Error removing audio tracks after speech capture:', error)
         })
       }, 300)
+
+      await new Promise((resolve) => setTimeout(resolve, 650))
+      const transcriptFromSpeech = (transcriptCompleteRef.current || transcriptBufferRef.current).trim()
+      transcriptBufferRef.current = ''
+      transcriptCompleteRef.current = ''
+      if (transcriptDeltaTimerRef.current) {
+        clearTimeout(transcriptDeltaTimerRef.current)
+        transcriptDeltaTimerRef.current = null
+      }
 
       if (!transcriptFromSpeech) {
         setIsLoading(false)
