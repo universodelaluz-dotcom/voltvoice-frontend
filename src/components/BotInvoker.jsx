@@ -5,6 +5,7 @@ import inworldRealtimeService from '../services/inworldRealtimeService'
 export default function BotInvoker({ darkMode = true, onClose, config }) {
   const [characters, setCharacters] = useState([])
   const [userVoices, setUserVoices] = useState([])
+  const [voicesLoaded, setVoicesLoaded] = useState(false)
   const [selectedCharacterId, setSelectedCharacterId] = useState(null)
   const [inputMode, setInputMode] = useState('microphone')
   const [inputText, setInputText] = useState('')
@@ -106,9 +107,12 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       const data = await res.json()
       if (data.success) {
         setUserVoices(data.voices || [])
+        setVoicesLoaded(true)
       }
     } catch (err) {
       console.error('Error loading user voices:', err)
+    } finally {
+      setVoicesLoaded(true)
     }
   }
 
@@ -130,7 +134,27 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
       return null
     }
 
-    const matchedVoice = userVoices.find((voice) => normalizeVoiceKey(voice.voice_name) === characterKey)
+    const normalizedVoices = userVoices.map((voice) => ({
+      ...voice,
+      normalizedName: normalizeVoiceKey(voice.voice_name)
+    }))
+
+    const matchedVoice = normalizedVoices.find((voice) => voice.normalizedName === characterKey) ||
+      normalizedVoices.find((voice) => voice.normalizedName.includes(characterKey) || characterKey.includes(voice.normalizedName))
+
+    if (matchedVoice) {
+      console.log('[Bot] Resolved realtime voice from user library:', {
+        character: character?.name,
+        voiceName: matchedVoice.voice_name,
+        voiceId: matchedVoice.voice_id
+      })
+    } else {
+      console.warn('[Bot] No realtime voice match found for character:', {
+        character: character?.name,
+        availableVoices: normalizedVoices.map((voice) => voice.voice_name)
+      })
+    }
+
     return matchedVoice?.voice_id || null
   }
 
@@ -140,6 +164,10 @@ export default function BotInvoker({ darkMode = true, onClose, config }) {
     }
 
     const character = characters.find((item) => item.id === selectedCharacterId)
+    if (!voicesLoaded) {
+      await loadUserVoices()
+    }
+
     const realtimeVoice = resolveRealtimeVoice(character)
     setVoiceLabel(realtimeVoice || 'Clive')
 
