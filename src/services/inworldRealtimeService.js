@@ -940,7 +940,13 @@ export class InworldRealtimeService {
         description: 'Obtiene estadísticas del chat: total de mensajes, usuarios activos, baneados, etc.',
         parameters: {
           type: 'object',
-          properties: {}
+          properties: {
+            include_banned: {
+              type: 'boolean',
+              description: 'Si es true, incluye usuarios baneados en el resumen de estadisticas.'
+            }
+          },
+          additionalProperties: false
         }
       },
       {
