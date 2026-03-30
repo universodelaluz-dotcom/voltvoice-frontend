@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { ArrowLeft, Check, HelpCircle, Keyboard } from 'lucide-react'
+import { ArrowLeft, Check, HelpCircle, Keyboard, ChevronRight } from 'lucide-react'
 
 function Hint({ text, darkMode }) {
   return (
@@ -120,7 +120,7 @@ function BotShortcutCapture({ darkMode, onCapture }) {
   )
 }
 
-export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) {
+export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode, config, updateConfig, user }) {
   const speed = config.audioSpeed || 1.0
   const [userVoices, setUserVoices] = useState([])
 
@@ -409,45 +409,55 @@ export function ControlPanel({ onClose, darkMode, config, updateConfig, user }) 
                 <span className="text-xs font-bold uppercase tracking-widest">🤖 Asistente de IA</span>
               </div>
 
-              {/* Modo de respuesta */}
-              <div className={`px-4 py-2 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>
-                <span className={`text-[13px] font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Modo de respuesta</span>
-                <div className="mt-2 space-y-1">
-                  {[
-                    { value: 'audio', label: 'Solo audio', hint: 'El personaje responde con voz sintetizada' },
-                    { value: 'text', label: 'Solo texto', hint: 'El personaje responde con texto escrito' },
-                    { value: 'both', label: 'Audio + texto', hint: 'Responde con voz y muestra el texto al mismo tiempo' },
-                  ].map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={() => updateConfig('bot_response_mode', opt.value)}
-                      className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity"
-                    >
-                      <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                        (config.bot_response_mode || 'audio') === opt.value
-                          ? 'bg-purple-500/30 border-purple-400'
-                          : darkMode ? 'border-gray-500' : 'border-gray-400'
-                      }`}>
-                        {(config.bot_response_mode || 'audio') === opt.value && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-purple-400" />
-                        )}
-                      </div>
-                      <span className={`text-[14px] ${darkMode ? 'text-white' : 'text-gray-900'} ${(config.bot_response_mode || 'audio') === opt.value ? 'font-semibold' : 'font-medium'}`}>
-                        {opt.label}
-                        <Hint text={opt.hint} darkMode={darkMode} />
-                      </span>
-                    </button>
-                  ))}
-                </div>
+              {/* Card 1 — Taller de Roleplay (tono violeta/morado) */}
+              <div className="px-4 pb-3">
+                <button
+                  onClick={() => onGoAIRoleplay?.()}
+                  className={`w-full rounded-xl p-4 text-left transition-all group border ${
+                    darkMode
+                      ? 'bg-gradient-to-br from-purple-900/40 to-pink-900/30 border-purple-500/40 hover:border-purple-400/70 hover:shadow-lg hover:shadow-purple-500/20'
+                      : 'bg-gradient-to-br from-purple-50 to-pink-50 border-purple-300/60 hover:border-purple-400 hover:shadow-md'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🎭</span>
+                    <div>
+                      <p className={`font-bold text-sm ${darkMode ? 'text-purple-200 group-hover:text-white' : 'text-purple-800'} transition-colors`}>
+                        Taller de Asistentes de IA Roleplay
+                      </p>
+                      <p className={`text-xs mt-0.5 ${darkMode ? 'text-purple-400/80' : 'text-purple-500'}`}>
+                        Crea y personaliza tus personajes de IA
+                      </p>
+                    </div>
+                    <ChevronRight className={`ml-auto w-4 h-4 ${darkMode ? 'text-purple-400 group-hover:text-purple-200' : 'text-purple-400'} transition-colors`} />
+                  </div>
+                </button>
               </div>
 
-              <CheckOption
-                label="Chequeos automáticos de spam"
-                checked={!!config.bot_auto_spam_check}
-                onChange={() => updateConfig('bot_auto_spam_check', !config.bot_auto_spam_check)}
-                darkMode={darkMode}
-                hint="El asistente analiza el chat y sugiere acciones automáticamente"
-              />
+              {/* Card 2 — Probar voz (tono cyan/teal) */}
+              <div className="px-4 pb-3">
+                <button
+                  onClick={() => onGoSynthesis?.()}
+                  className={`w-full rounded-xl p-4 text-left transition-all group border ${
+                    darkMode
+                      ? 'bg-gradient-to-br from-cyan-900/40 to-teal-900/30 border-cyan-500/40 hover:border-cyan-400/70 hover:shadow-lg hover:shadow-cyan-500/20'
+                      : 'bg-gradient-to-br from-cyan-50 to-teal-50 border-cyan-300/60 hover:border-cyan-400 hover:shadow-md'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🎤</span>
+                    <div>
+                      <p className={`font-bold text-sm ${darkMode ? 'text-cyan-200 group-hover:text-white' : 'text-cyan-800'} transition-colors`}>
+                        Probar voz
+                      </p>
+                      <p className={`text-xs mt-0.5 ${darkMode ? 'text-cyan-400/80' : 'text-cyan-600'}`}>
+                        Sintetiza audio y escucha tus voces
+                      </p>
+                    </div>
+                    <ChevronRight className={`ml-auto w-4 h-4 ${darkMode ? 'text-cyan-400 group-hover:text-cyan-200' : 'text-cyan-400'} transition-colors`} />
+                  </div>
+                </button>
+              </div>
 
               {/* === SHORTCUT PUSH-TO-TALK === */}
               <div className={`px-4 py-3 ${darkMode ? "border-b border-gray-800/50" : "border-b border-gray-200"}`}>

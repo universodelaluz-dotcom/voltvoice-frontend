@@ -333,6 +333,19 @@ export function App() {
     )
   }
 
+  // AI Roleplay Workshop
+  if (currentPage === 'ai-roleplay') {
+    return (
+      <AIRoleplayWorkshop
+        onClose={() => setCurrentPage('control-panel')}
+        darkMode={darkMode}
+        user={user}
+        config={config}
+        updateConfig={updateConfig}
+      />
+    )
+  }
+
   // Studio + ControlPanel: ambos montados, se ocultan con CSS para no perder el WebSocket
   if (currentPage === 'studio' || currentPage === 'control-panel') {
     return (
@@ -351,7 +364,15 @@ export function App() {
           />
         </div>
         <div style={{ display: currentPage === 'control-panel' ? 'block' : 'none' }}>
-          <ControlPanel onClose={() => setCurrentPage('studio')} darkMode={darkMode} config={config} updateConfig={updateConfig} user={user} />
+          <ControlPanel
+            onClose={() => setCurrentPage('studio')}
+            onGoAIRoleplay={() => setCurrentPage('ai-roleplay')}
+            onGoSynthesis={() => setCurrentPage('studio')}
+            darkMode={darkMode}
+            config={config}
+            updateConfig={updateConfig}
+            user={user}
+          />
         </div>
       </>
     )
