@@ -3,6 +3,15 @@ import { Plus, Trash2, Edit2, CheckCircle, AlertCircle, Loader } from 'lucide-re
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
+const BASE_VOICES = [
+  { id: 'es-ES', name: 'Voz Básica Español (ilimitada)' },
+  { id: 'en-US', name: 'Voz Básica Inglés (ilimitada)' },
+  { id: 'Diego',  name: 'Voz natural de Luis - Premium' },
+  { id: 'Lupita', name: 'Voz natural de Sofia - Premium' },
+  { id: 'Miguel', name: 'Voz natural de Gustavo - Premium' },
+  { id: 'Rafael', name: 'Voz natural de Leonel - Premium' },
+]
+
 export default function AIRoleplayWorkshop({ darkMode = true }) {
   const [characters, setCharacters] = useState([])
   const [loadingCharacters, setLoadingCharacters] = useState(true)
@@ -268,11 +277,20 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
               className={`w-full px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'} border`}
             >
               <option value="">Sin voz asignada (usar default)</option>
-              {userVoices.map(voice => (
-                <option key={voice.id} value={voice.voice_id}>
-                  {voice.voice_name}
-                </option>
-              ))}
+              <optgroup label="Voces base">
+                {BASE_VOICES.map(v => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </optgroup>
+              {userVoices.length > 0 && (
+                <optgroup label="Mis voces clonadas">
+                  {userVoices.map(voice => (
+                    <option key={voice.id} value={voice.voice_id}>
+                      {voice.voice_name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
 
             <div className="flex gap-3">
@@ -340,6 +358,27 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
                     onChange={(e) => setEditSystemPrompt(e.target.value)}
                     className={`w-full px-3 py-2 rounded text-sm h-20 resize-none ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-900'}`}
                   />
+                  <select
+                    value={editVoiceId}
+                    onChange={(e) => setEditVoiceId(e.target.value)}
+                    className={`w-full px-3 py-2 rounded text-sm ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-gray-100 text-gray-900 border-gray-300'} border`}
+                  >
+                    <option value="">Sin voz asignada (usar default)</option>
+                    <optgroup label="Voces base">
+                      {BASE_VOICES.map(v => (
+                        <option key={v.id} value={v.id}>{v.name}</option>
+                      ))}
+                    </optgroup>
+                    {userVoices.length > 0 && (
+                      <optgroup label="Mis voces clonadas">
+                        {userVoices.map(voice => (
+                          <option key={voice.id} value={voice.voice_id}>
+                            {voice.voice_name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
                   <div className="flex gap-2">
                     <button
                       onClick={handleSaveEdit}
