@@ -724,16 +724,23 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
   const speakLocalResponse = async (text, voiceId) => {
     const token = localStorage.getItem('sv-token')
-    const response = await fetch(`${API_URL}/api/inworld/tts`, {
+    const selectedVoice = voiceId || selectedRealtimeVoiceId || 'Clive'
+
+    // Detectar si es una voz básica de Google (no Inworld)
+    const isBasicVoice = selectedVoice === 'es-ES' || selectedVoice === 'en-US'
+    const endpoint = isBasicVoice ? '/api/tts/say' : '/api/inworld/tts'
+
+    const bodyData = isBasicVoice
+      ? { text, voice: selectedVoice }
+      : { text, voiceId: selectedVoice }
+
+    const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
-      body: JSON.stringify({
-        text,
-        voiceId: voiceId || selectedRealtimeVoiceId || 'Clive'
-      })
+      body: JSON.stringify(bodyData)
     })
 
     const data = await response.json()
