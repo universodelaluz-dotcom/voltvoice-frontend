@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Sparkles, Edit2, Bot } from 'lucide-react'
 import AIRoleplayWorkshop from './AIRoleplayWorkshop'
 
@@ -47,6 +47,9 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   const [testText, setTestText] = useState('Hola, esta es una prueba de mi voz personalizada.')
   const [testingVoice, setTestingVoice] = useState(false)
   const [testAudioUrl, setTestAudioUrl] = useState(null)
+  const testAudioRef = useRef(null)
+  const testRequestRef = useRef(0)
+  const testingVoiceRef = useRef(false)
 
   const languageOptions = [
     { code: 'es-ES', label: 'Voz en Español' },
@@ -205,42 +208,57 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   }
 
   const handleTestVoice = async () => {
+    if (testingVoiceRef.current) return
+
     if (!testVoiceId || !testText.trim()) {
       setError('Selecciona una voz y escribe un texto para probar')
       return
     }
 
+    testingVoiceRef.current = true
+    const requestId = ++testRequestRef.current
     setTestingVoice(true)
     setError(null)
+    setTestAudioUrl(null)
+
+    if (testAudioRef.current) {
+      testAudioRef.current.pause()
+      testAudioRef.current.currentTime = 0
+    }
 
     try {
-      const payload = {
-        username: (config?.lastTiktokUser || 'preview_studio').trim(),
-        messageUsername: 'preview',
-        messageText: testText.trim(),
-        voiceId: testVoiceId
-      }
-
-      // Mismo flujo del chat: el backend decide Google/Inworld por voiceId.
-      let response = await fetch(`${API_URL}/api/tiktok/message`, {
+      const token = localStorage.getItem('sv-token')
+      let response = await fetch(`${API_URL}/api/inworld/tts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          text: testText.trim(),
+          voiceId: testVoiceId
+        })
       })
 
       let data = await response.json().catch(() => ({}))
 
-      // Fallback para backends viejos que no tengan /api/tiktok/message.
+      // Fallback para backends que no tengan ruta directa.
       if (!response.ok && response.status === 404) {
-        response = await fetch(`${API_URL}/api/inworld/tts`, {
+        response = await fetch(`${API_URL}/api/tiktok/message`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            text: payload.messageText,
-            voiceId: payload.voiceId
+            username: (config?.lastTiktokUser || 'preview_studio').trim(),
+            messageUsername: 'preview',
+            messageText: testText.trim(),
+            voiceId: testVoiceId
           })
         })
         data = await response.json().catch(() => ({}))
+      }
+
+      if (requestId !== testRequestRef.current) {
+        return
       }
 
       if (response.ok && (data.audio || data.audioUrl)) {
@@ -253,7 +271,10 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     } catch (err) {
       setError(`Error: ${err.message}`)
     } finally {
-      setTestingVoice(false)
+      if (requestId === testRequestRef.current) {
+        testingVoiceRef.current = false
+        setTestingVoice(false)
+      }
     }
   }
 
@@ -521,7 +542,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           {testAudioUrl && (
             <div className={darkMode ? 'bg-gray-800/60 border border-gray-700/50 rounded-lg p-4' : 'bg-gray-50 border border-gray-200 rounded-lg p-4'}>
               <p className={`text-sm mb-2 ${darkMode ? 'text-cyan-300' : 'text-gray-700'}`}>🔊 Escucha el resultado:</p>
-              <audio controls className="w-full" autoPlay>
+              <audio key={testAudioUrl} ref={testAudioRef} controls className="w-full" autoPlay>
                 <source src={testAudioUrl} type="audio/mpeg" />
               </audio>
             </div>
