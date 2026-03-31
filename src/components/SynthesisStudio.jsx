@@ -39,6 +39,8 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const [totalTokensUsed, setTotalTokensUsed] = useState(0)
   const [synthesisCount, setSynthesisCount] = useState(0)
 
+  const getAuthToken = () => localStorage.getItem('sv-token') || ''
+
   // Chat simulation
   const [chatMessages, setChatMessages] = useState([
     { id: 1, user: 'maria_streams', message: '¡Hola! ¿Cómo estás?', timestamp: new Date(Date.now() - 30000) },
@@ -82,8 +84,13 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   // Cargar voces del usuario desde la API
   const loadUserVoices = async () => {
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = getAuthToken()
       if (!token) return
+
+      await fetch(`${API_URL}/api/settings/voices/migrate`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).catch(() => {})
 
       const res = await fetch(`${API_URL}/api/settings/voices`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -176,6 +183,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     try {
       const selectedVoiceObj = voices.find(v => v.id === selectedVoice)
       const isWebSpeech = selectedVoiceObj && selectedVoiceObj.engine === "webspeech"
+      const isGoogleVoice = selectedVoiceObj && selectedVoiceObj.engine === "google"
 
       if (isWebSpeech) {
         // Usar Web Speech API (voces locales del sistema operativo)
@@ -208,19 +216,15 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
         // Simular tokens (Web Speech es gratis)
         setTokensUsed(0)
         setSynthesisCount(prev => prev + 1)
-      } else {
-        // Replicar exactamente el flujo del lector de chat:
-        // /api/tiktok/message resuelve Google/Inworld según voiceId.
-        const response = await fetch(`${API_URL}/api/tiktok/message`, {
+      } else if (isGoogleVoice) {
+        const response = await fetch(`${API_URL}/api/tts/say`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            username: (config?.lastTiktokUser || "preview_studio").trim(),
-            messageUsername: "preview",
-            messageText: text,
-            voiceId: selectedVoice
+            text,
+            voice: selectedVoice
           })
         })
 
@@ -228,9 +232,55 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
         if (response.ok && (data.audio || data.success)) {
           setAudioUrl(data.audio || data.audioUrl)
+          setTokensUsed(0)
+          setSynthesisCount(prev => prev + 1)
+          setSuccess(true)
+          setTimeout(() => setSuccess(false), 3000)
+        } else {
+          setError(data.error || "Error al sintetizar la voz básica")
+        }
+      } else {
+        const token = getAuthToken()
+        let response = await fetch(`${API_URL}/api/inworld/tts`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            text,
+            voiceId: selectedVoice
+          })
+        })
+
+        if (!response.ok && response.status === 404) {
+          response = await fetch(`${API_URL}/api/tiktok/message`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              username: (config?.lastTiktokUser || "preview_studio").trim(),
+              messageUsername: "preview",
+              messageText: text,
+              voiceId: selectedVoice
+            })
+          })
+        }
+
+        const data = await response.json()
+
+        if (response.ok && (data.audio || data.success)) {
+          setAudioUrl(data.audio || data.audioUrl)
           const estTokens = Math.ceil(text.length / 100)
-          setTokensUsed(data.tokensUsed || estTokens)
-          setTokens(prev => data.remainingTokens || prev - estTokens)
+          const usedTokens = Number(data.tokensUsed || estTokens)
+          const remainingTokens = Number(data.remainingTokens)
+          setTokensUsed(usedTokens)
+          if (Number.isFinite(remainingTokens)) {
+            setTokens(remainingTokens)
+          } else if (token) {
+            setTokens(prev => prev - usedTokens)
+          }
           setTotalTokensUsed(prev => prev + (data.tokensUsed || estTokens))
           setSynthesisCount(prev => prev + 1)
           setSuccess(true)
@@ -273,6 +323,9 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
   const charCount = text.length
   const estimatedTokens = Math.ceil(charCount / 100)
+  const selectedVoiceObj = voices.find(v => v.id === selectedVoice)
+  const requiresPaidTokens = selectedVoiceObj && !["google", "webspeech"].includes(selectedVoiceObj.engine)
+  const hasInsufficientTokens = requiresPaidTokens && estimatedTokens > tokens
 
   return (
     <div className={`${darkMode ? "min-h-screen bg-gradient-to-br from-[#0a0a1a] via-[#111827] to-[#0f172a] text-white" : "min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 text-gray-900"}`}>
@@ -411,9 +464,9 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             <div className="flex gap-3">
               <button
                 onClick={handleSynthesize}
-                disabled={loading || estimatedTokens > tokens}
+                disabled={loading || hasInsufficientTokens}
                 className={`flex-1 py-4 rounded-lg font-bold uppercase tracking-wide transition-all duration-300 flex items-center justify-center gap-2 ${
-                  loading || estimatedTokens > tokens
+                  loading || hasInsufficientTokens
                     ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                     : 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-400 hover:to-purple-500 shadow-lg shadow-cyan-500/50 hover:shadow-cyan-500/75'
                 }`}
@@ -433,7 +486,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               <audio ref={audioRef} src={audioUrl || ''} className="hidden" />
             </div>
 
-            {estimatedTokens > tokens && (
+            {hasInsufficientTokens && (
               <p className="text-sm text-yellow-400 text-center bg-yellow-500/10 p-3 rounded border border-yellow-500/30">
                 No tienes suficientes tokens. Necesitas {estimatedTokens} pero solo tienes {tokens}.
               </p>
