@@ -773,8 +773,25 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
   const scrollPlayingMessageIntoView = (container, messageElement) => {
     if (!container || !messageElement) return
-    const margin = Math.max(0, (container.clientHeight - messageElement.clientHeight) / 2)
-    const targetTop = Math.max(0, messageElement.offsetTop - margin)
+    const topPadding = 24
+    const bottomPadding = 48
+    const messageTop = messageElement.offsetTop
+    const messageBottom = messageTop + messageElement.offsetHeight
+    const viewTop = container.scrollTop
+    const viewBottom = viewTop + container.clientHeight
+
+    const fullyVisible =
+      messageTop >= viewTop + topPadding &&
+      messageBottom <= viewBottom - bottomPadding
+
+    if (fullyVisible) {
+      return
+    }
+
+    const targetTop = messageTop < viewTop + topPadding
+      ? Math.max(0, messageTop - topPadding)
+      : Math.max(0, messageBottom - container.clientHeight + bottomPadding)
+
     preservePageScroll(() => {
       container.scrollTop = targetTop
     })
