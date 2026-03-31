@@ -214,19 +214,34 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     setError(null)
 
     try {
-      const response = await fetch(`${API_URL}/api/inworld/tts`, {
+      const payload = {
+        username: (config?.lastTiktokUser || 'preview_studio').trim(),
+        messageUsername: 'preview',
+        messageText: testText.trim(),
+        voiceId: testVoiceId
+      }
+
+      // Mismo flujo del chat: el backend decide Google/Inworld por voiceId.
+      let response = await fetch(`${API_URL}/api/tiktok/message`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': localStorage.getItem('sv-token') ? 'authenticated' : 'guest'
-        },
-        body: JSON.stringify({
-          text: testText.trim(),
-          voiceId: testVoiceId
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       })
 
-      const data = await response.json()
+      let data = await response.json().catch(() => ({}))
+
+      // Fallback para backends viejos que no tengan /api/tiktok/message.
+      if (!response.ok && response.status === 404) {
+        response = await fetch(`${API_URL}/api/inworld/tts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: payload.messageText,
+            voiceId: payload.voiceId
+          })
+        })
+        data = await response.json().catch(() => ({}))
+      }
 
       if (response.ok && (data.audio || data.audioUrl)) {
         setTestAudioUrl(data.audio || data.audioUrl)

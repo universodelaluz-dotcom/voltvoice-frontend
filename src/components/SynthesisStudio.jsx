@@ -15,7 +15,6 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     setDarkMode(newMode === 'dark')
   }
 
-    const [userId, setUserId] = useState('1')
   const [streamChannel, setStreamChannel] = useState('mi_canal')
   const [isStreamActive, setIsStreamActive] = useState(false)
 
@@ -176,8 +175,6 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
     try {
       const selectedVoiceObj = voices.find(v => v.id === selectedVoice)
-      const isInworld = selectedVoiceObj && selectedVoiceObj.engine === "inworld"
-      const isGoogle = selectedVoiceObj && selectedVoiceObj.engine === "google"
       const isWebSpeech = selectedVoiceObj && selectedVoiceObj.engine === "webspeech"
 
       if (isWebSpeech) {
@@ -212,27 +209,19 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
         setTokensUsed(0)
         setSynthesisCount(prev => prev + 1)
       } else {
-        // Usar Inworld AI o Google TTS (requiere servidor)
-        let url, body
-        if (isInworld) {
-          // Usar Inworld AI ($5 por millón de caracteres - 8x más barato que ElevenLabs)
-          url = "https://voltvoice-backend.onrender.com/api/inworld/tts"
-          body = JSON.stringify({ text, voiceId: selectedVoice })
-        } else if (isGoogle) {
-          // Usar Google TTS (gratis, alto rendimiento)
-          url = "https://voltvoice-backend.onrender.com/api/synthesis/synthesize"
-          body = JSON.stringify({ text, voiceId: selectedVoice })
-        } else {
-          throw new Error("Engine no soportado")
-        }
-
-        const response = await fetch(url, {
+        // Replicar exactamente el flujo del lector de chat:
+        // /api/tiktok/message resuelve Google/Inworld según voiceId.
+        const response = await fetch(`${API_URL}/api/tiktok/message`, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
-            "x-user-id": userId
+            "Content-Type": "application/json"
           },
-          body: body
+          body: JSON.stringify({
+            username: (config?.lastTiktokUser || "preview_studio").trim(),
+            messageUsername: "preview",
+            messageText: text,
+            voiceId: selectedVoice
+          })
         })
 
         const data = await response.json()
