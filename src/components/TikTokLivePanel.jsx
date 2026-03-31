@@ -976,7 +976,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
           <div
             ref={chatContainerRef}
-            style={{ overflowAnchor: 'none', overscrollBehavior: 'contain', scrollBehavior: 'auto' }}
+            style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain', scrollBehavior: 'smooth' }}
             className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-96 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-96 overflow-y-auto space-y-2"}
           >
             {messages.length === 0 ? (
