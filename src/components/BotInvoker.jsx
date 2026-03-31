@@ -4,8 +4,6 @@ import inworldRealtimeService from '../services/inworldRealtimeService'
 import chatStore from '../services/chatStore.js'
 
 const BUILTIN_VOICE_OPTIONS = [
-  { id: 'es-ES', name: 'Voz Basica Espanol' },
-  { id: 'en-US', name: 'Voz Basica Ingles' },
   { id: 'Diego', name: 'Diego' },
   { id: 'Lupita', name: 'Lupita' },
   { id: 'Miguel', name: 'Miguel' },
@@ -1505,9 +1503,7 @@ After using a tool, summarize the result conversationally.`
           }`}
         >
           <option value="">— Automática según personalidad —</option>
-          <optgroup label="Voces base">
-            <option value="es-ES">Voz Básica Español (ilimitada)</option>
-            <option value="en-US">Voz Básica Inglés (ilimitada)</option>
+          <optgroup label="Voces Premium">
             <option value="Diego">Voz natural de Luis - Premium</option>
             <option value="Lupita">Voz natural de Sofia - Premium</option>
             <option value="Miguel">Voz natural de Gustavo - Premium</option>
