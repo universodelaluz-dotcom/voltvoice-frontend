@@ -405,16 +405,15 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           const data = await response.json()
 
           if (response.ok && data.success) {
-            setMessage(`Voz "${voiceName}" clonada exitosamente`)
+            setMessage(`✅ ¡LISTO! Voz "${voiceName}" clonada exitosamente. Inworld está entrenando tu voz (60 segundos).`)
             setVoiceName('')
             setAudioFile(null)
             // Recargar lista de voces
-            loadUserVoices()
+            setTimeout(() => loadUserVoices(), 1000)
             // Notificar a otros componentes que se agregó una voz
             window.dispatchEvent(new CustomEvent('voice-added'))
-            if (onCloneSuccess) {
-              onCloneSuccess(data.voice.voice_id, voiceName)
-            }
+            // Auto-limpiar mensaje después de 5 segundos
+            setTimeout(() => setMessage(null), 5000)
           } else {
             setError(data.error || data.details || 'Error al clonar la voz')
           }

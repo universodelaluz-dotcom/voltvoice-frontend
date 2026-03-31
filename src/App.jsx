@@ -313,7 +313,7 @@ export function App() {
             <p className={`text-lg mb-12 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               Aquí puedes clonar y preparar tus voces personalizadas antes de usarlas en el Studio.
             </p>
-            <VoiceWorkshopPanel onCloneSuccess={() => window.location.reload()} darkModeOverride={darkMode} config={config} updateConfig={updateConfig} user={user} />
+            <VoiceWorkshopPanel onCloneSuccess={() => {/* Success message shown in panel, no reload */}} darkModeOverride={darkMode} config={config} updateConfig={updateConfig} user={user} />
           </div>
         </div>
       </div>
