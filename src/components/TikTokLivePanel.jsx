@@ -256,11 +256,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       // Solo scroll al mensaje playing si es uno NUEVO (evita rebotes)
       if (playingId !== lastPlayingIdRef.current) {
         lastPlayingIdRef.current = playingId
-        playing.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+        const targetTop = Math.max(
+          0,
+          playing.offsetTop - Math.max(0, (container.clientHeight - playing.clientHeight) / 2)
+        )
+        preservePageScroll(() => {
+          container.scrollTop = targetTop
+        })
       }
     } else if (autoScrollPinnedRef.current) {
       lastPlayingIdRef.current = null
-      container.scrollTop = container.scrollHeight
+      preservePageScroll(() => {
+        container.scrollTop = container.scrollHeight
+      })
     }
   }, [messages])
 
@@ -768,7 +776,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     const margin = Math.max(0, (container.clientHeight - messageElement.clientHeight) / 2)
     const targetTop = Math.max(0, messageElement.offsetTop - margin)
     preservePageScroll(() => {
-      container.scrollTo({ top: targetTop, behavior: 'smooth' })
+      container.scrollTop = targetTop
     })
   }
 
@@ -949,7 +957,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             </button>
           </div>
 
-          <div ref={chatContainerRef} className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-96 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-96 overflow-y-auto space-y-2"}>
+          <div
+            ref={chatContainerRef}
+            style={{ overflowAnchor: 'none', overscrollBehavior: 'contain', scrollBehavior: 'auto' }}
+            className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-96 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-96 overflow-y-auto space-y-2"}
+          >
             {messages.length === 0 ? (
               <div className="text-center text-gray-400 py-8">
                 <Loader className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
