@@ -405,11 +405,11 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           const data = await response.json()
 
           if (response.ok && data.success) {
-            setMessage(`✅ ¡LISTO! Voz "${voiceName}" clonada exitosamente. Inworld está entrenando tu voz (60 segundos).`)
+            setMessage(`✅ ¡LISTO! Voz "${voiceName}" clonada exitosamente.`)
             setVoiceName('')
             setAudioFile(null)
-            // Recargar lista de voces
-            setTimeout(() => loadUserVoices(), 1000)
+            // Recargar lista de voces inmediatamente
+            await loadUserVoices()
             // Notificar a otros componentes que se agregó una voz
             window.dispatchEvent(new CustomEvent('voice-added'))
             // Auto-limpiar mensaje después de 5 segundos
@@ -431,7 +431,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   }
 
   // Filtros por tipo de voz
-  const clonedVoices = userVoices.filter(v => v.provider === 'inworld')
+  const clonedVoices = userVoices.filter(v => v.provider === 'inworld' || v.provider === 'inworld-cloned')
   const generatedVoices = userVoices.filter(v => v.provider === 'inworld-generated')
 
   // Renderiza la sección "Mis Voces Creadas" filtrada
