@@ -41,6 +41,8 @@ export function App() {
     readOnlyMessage: false,
     skipRepeated: false,
     onlyDonors: false,
+    onlySubscribers: false,
+    onlyCommunityMembers: false,
     onlyQuestions: false,
     announceFollowers: false,
     announceGifts: false,
@@ -239,7 +241,7 @@ export function App() {
     // Reset config a defaults
     setConfig({
       audioSpeed: 1.0, readOnlyMessage: false, skipRepeated: false,
-      onlyDonors: false, onlyQuestions: false, announceFollowers: false,
+      onlyDonors: false, onlySubscribers: false, onlyCommunityMembers: false, onlyQuestions: false, announceFollowers: false,
       announceGifts: false, ignoreLinks: false, ignoreExcessiveEmojis: false, maxEmojisAllowed: 3, onlyPlainNicks: false,
       onlyModerators: false, announceViewers: false, announceLikes: false,
       announceShares: false, announceBattles: false, announcePolls: false,

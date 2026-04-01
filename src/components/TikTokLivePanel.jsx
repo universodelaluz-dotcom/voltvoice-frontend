@@ -65,6 +65,8 @@ const removeEmojis = (text) => {
   return text.replace(emojiFullRegex, '').trim()
 }
 
+const normalizeTikTokUsername = (value) => String(value || '').trim().replace(/^@+/, '')
+
 // Obtener token del localStorage
 const getAuthToken = () => localStorage.getItem('sv-token') || ''
 
@@ -176,6 +178,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const [tiktokUser, setTiktokUser] = useState(config.lastTiktokUser || '')
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
+  const [isWaitingForLive, setIsWaitingForLive] = useState(false)
+  const [waitingStatus, setWaitingStatus] = useState('')
   const [messages, setMessages] = useState([])
   const [error, setError] = useState(null)
   const [stats, setStats] = useState({ count: 0, uptime: 0 })
@@ -195,6 +199,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const [chatNickColor, setChatNickColor] = useState(config.chatNickColor || '#22d3ee')
   const [chatMsgColor, setChatMsgColor] = useState(config.chatMsgColor || '#d1d5db')
   const [showFontPanel, setShowFontPanel] = useState(false)
+  const [smartChatEnabled, setSmartChatEnabled] = useState(config.smartChatEnabled || false)
   const [highlightRules, setHighlightRules] = useState(config.highlightRules || {
     moderators: { enabled: false, color: '#a855f7' },
     donors: { enabled: false, color: '#f59e0b' },
@@ -221,6 +226,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   }, [chatMsgColor])
   useEffect(() => {
     if (updateConfig) {
+      updateConfig('smartChatEnabled', smartChatEnabled)
+    }
+  }, [smartChatEnabled])
+  useEffect(() => {
+    if (updateConfig) {
       updateConfig('highlightRules', highlightRules)
     }
   }, [highlightRules])
@@ -241,31 +251,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const pttSnapshotRef = useRef({ wasPaused: false, hadCurrentAudio: false })
   const pttRestoreTimerRef = useRef(null)
   const autoScrollPinnedRef = useRef(true)
+  const liveRetryTimerRef = useRef(null)
   // Cooldown por tipo de notificación (timestamp del último anuncio)
   const lastNotifTime = useRef({ like: 0, viewer_count: 0, share: 0, follow: 0, gift: 0 })
 
   // Auto-scroll suave: solo scroll al fondo si el usuario está cerca del fondo
-  const lastPlayingIdRef = useRef(null)
   useEffect(() => {
     if (!chatContainerRef.current) return
     const container = chatContainerRef.current
-    const playing = container.querySelector('[data-playing="true"]')
-
-    if (playing) {
-      const playingId = playing.getAttribute('data-playing-id')
-      // Solo scroll al mensaje playing si es uno NUEVO (evita rebotes)
-      if (playingId !== lastPlayingIdRef.current) {
-        lastPlayingIdRef.current = playingId
-        const targetTop = Math.max(
-          0,
-          playing.offsetTop - Math.max(0, (container.clientHeight - playing.clientHeight) / 2)
-        )
-        preservePageScroll(() => {
-          container.scrollTop = targetTop
-        })
-      }
-    } else if (autoScrollPinnedRef.current) {
-      lastPlayingIdRef.current = null
+    if (autoScrollPinnedRef.current) {
       preservePageScroll(() => {
         container.scrollTop = container.scrollHeight
       })
@@ -291,6 +285,97 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   useEffect(() => { bannedRef.current = bannedUsers; chatStore.syncBannedUsers(bannedUsers) }, [bannedUsers])
   useEffect(() => { nickOverridesRef.current = nickOverrides; chatStore.syncNickOverrides(nickOverrides) }, [nickOverrides])
   useEffect(() => { chatStore.syncHighlightedUsers(highlightedUsers) }, [highlightedUsers])
+
+  useEffect(() => {
+    return () => {
+      if (liveRetryTimerRef.current) {
+        clearTimeout(liveRetryTimerRef.current)
+      }
+    }
+  }, [])
+
+  const cancelWaitingForLive = ({ clearError = false } = {}) => {
+    if (liveRetryTimerRef.current) {
+      clearTimeout(liveRetryTimerRef.current)
+      liveRetryTimerRef.current = null
+    }
+    setIsWaitingForLive(false)
+    setWaitingStatus('')
+    if (clearError) {
+      setError(null)
+    }
+  }
+
+  const connectToTikTok = async (rawUsername, { fromAutoRetry = false } = {}) => {
+    const normalizedUsername = normalizeTikTokUsername(rawUsername)
+
+    if (!normalizedUsername) {
+      setError('Ingresa un usuario de TikTok valido')
+      return { success: false, cancelled: false }
+    }
+
+    setTiktokUser(normalizedUsername)
+    disconnectedRef.current = false
+    setIsConnecting(true)
+    if (!fromAutoRetry) {
+      setError(null)
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/tiktok/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: normalizedUsername })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        disconnectedRef.current = false
+        connectedAtRef.current = Date.now()
+        setStats({ count: 0, uptime: 0 })
+        setIsConnected(true)
+        setMessages([])
+        cancelWaitingForLive({ clearError: true })
+        if (updateConfig) updateConfig('lastTiktokUser', normalizedUsername)
+        return { success: true, cancelled: false }
+      }
+
+      if (data.notLive) {
+        setError('No esta en linea. Quedara a la espera y reintentara cada 10 segundos.')
+        setIsWaitingForLive(true)
+        setWaitingStatus(fromAutoRetry ? 'Reintentando conexion al live...' : 'Esperando a que el live inicie...')
+        return { success: false, notLive: true, cancelled: false }
+      }
+
+      setError(data.error || 'Error conectando a TikTok')
+      cancelWaitingForLive()
+      return { success: false, cancelled: false }
+    } catch (err) {
+      setError(`Error: ${err.message}`)
+      cancelWaitingForLive()
+      return { success: false, cancelled: false }
+    } finally {
+      setIsConnecting(false)
+    }
+  }
+
+  const scheduleLiveRetry = (username) => {
+    if (liveRetryTimerRef.current) {
+      clearTimeout(liveRetryTimerRef.current)
+    }
+
+    liveRetryTimerRef.current = setTimeout(async () => {
+      liveRetryTimerRef.current = null
+      if (disconnectedRef.current || !isWaitingForLive) return
+      setWaitingStatus('Reintentando conexion al live...')
+      const result = await connectToTikTok(username, { fromAutoRetry: true })
+      if (result.notLive && !result.cancelled) {
+        setWaitingStatus('Aun no esta en linea. Seguimos intentando...')
+        scheduleLiveRetry(username)
+      }
+    }, 10000)
+  }
 
   useEffect(() => {
     const handlePttAudioState = (event) => {
@@ -495,6 +580,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               isDonor: msg.isDonor || donors.has(msg.username),
               isModerator: msg.isModerator || false,
               isSubscriber: msg.isSubscriber || false,
+              isCommunityMember: msg.isCommunityMember || false,
               isTopGifter: msg.topGifterRank > 0,
               isBanned
             }
@@ -508,6 +594,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             timestamp: Date.now(),
             isModerator: msg.isModerator || false,
             isSubscriber: msg.isSubscriber || false,
+            isCommunityMember: msg.isCommunityMember || false,
             isTopGifter: msg.topGifterRank > 0,
             isDonor: msg.isDonor || donors.has(msg.username),
             isQuestion: isQuestion(msg.text)
@@ -524,6 +611,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
           // Filtro: solo moderadores
           if (c.onlyModerators && !msg.isModerator) return
+
+          // Filtro: solo suscriptores
+          if (c.onlySubscribers && !msg.isSubscriber) return
+
+          // Filtro: solo miembros de comunidad / Fan Club
+          if (c.onlyCommunityMembers && !msg.isCommunityMember) return
 
           // Filtro: solo preguntas
           if (c.onlyQuestions && !isQuestion(msg.text)) return
@@ -757,7 +850,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         ? { ...msg, status: 'done' }
         : msg
     )))
-    lastPlayingIdRef.current = null
+  }
+
+  const handleConnectSubmit = async (e) => {
+    e.preventDefault()
+    const normalizedUsername = normalizeTikTokUsername(tiktokUser)
+    const result = await connectToTikTok(normalizedUsername)
+    if (result.notLive) {
+      scheduleLiveRetry(normalizedUsername)
+    }
   }
 
   const preservePageScroll = (fn) => {
@@ -771,42 +872,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     window.scrollTo(scrollX, scrollY)
   }
 
-  const scrollPlayingMessageIntoView = (container, messageElement) => {
-    if (!container || !messageElement) return
-    const topPadding = 24
-    const bottomPadding = 48
-    const messageTop = messageElement.offsetTop
-    const messageBottom = messageTop + messageElement.offsetHeight
-    const viewTop = container.scrollTop
-    const viewBottom = viewTop + container.clientHeight
-
-    const fullyVisible =
-      messageTop >= viewTop + topPadding &&
-      messageBottom <= viewBottom - bottomPadding
-
-    if (fullyVisible) {
-      return
-    }
-
-    const targetTop = messageTop < viewTop + topPadding
-      ? Math.max(0, messageTop - topPadding)
-      : Math.max(0, messageBottom - container.clientHeight + bottomPadding)
-
-    preservePageScroll(() => {
-      container.scrollTop = targetTop
-    })
-  }
-
   const keepReadMessageVisible = ({ force = false } = {}) => {
     requestAnimationFrame(() => {
       const container = chatContainerRef.current
       if (!container) return
-
-      const currentPlaying = container.querySelector('[data-playing="true"]')
-      if (currentPlaying) {
-        scrollPlayingMessageIntoView(container, currentPlaying)
-        return
-      }
 
       if (force) {
         autoScrollPinnedRef.current = true
@@ -819,6 +888,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       }
     })
   }
+
+  const currentReadingMessage = messages.find((msg) => msg.status === 'playing') || null
 
   const handlePause = () => {
     if (!isPaused) {
@@ -863,6 +934,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
   const handleDisconnect = async () => {
     try {
+      cancelWaitingForLive({ clearError: true })
       // Detener todo el audio inmediatamente
       disconnectedRef.current = true
       speakQueueRef.current = []
@@ -901,27 +973,29 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           className={`ml-auto px-3 py-1 rounded-full text-xs font-semibold ${
             isConnected
               ? 'bg-green-500/20 border border-green-500/50 text-green-300'
-              : 'bg-gray-700/50 border border-gray-600/50 text-gray-300'
+              : isWaitingForLive
+                ? 'bg-red-500/15 border border-red-500/60 text-red-300 animate-pulse'
+                : 'bg-gray-700/50 border border-gray-600/50 text-gray-300'
           }`}
         >
-          {isConnected ? '🔴 EN VIVO' : 'DESCONECTADO'}
+          {isConnected ? '🔴 EN VIVO' : isWaitingForLive ? 'ESPERANDO LIVE' : 'DESCONECTADO'}
         </span>
       </div>
 
       {!isConnected ? (
-        <form onSubmit={handleConnect} className="space-y-4">
+        <form onSubmit={handleConnectSubmit} className="space-y-4">
           <div className="flex gap-2">
             <input
               type="text"
               value={tiktokUser}
-              onChange={(e) => setTiktokUser(e.target.value)}
-              placeholder="Usuario de TikTok (sin @)"
+              onChange={(e) => setTiktokUser(normalizeTikTokUsername(e.target.value))}
+              placeholder="Usuario de TikTok (con @ o sin @)"
               className={darkMode ? "flex-1 bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400" : "flex-1 bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
-              disabled={isConnecting}
+              disabled={isConnecting || isWaitingForLive}
             />
             <button
               type="submit"
-              disabled={isConnecting || !tiktokUser}
+              disabled={isConnecting || isWaitingForLive || !tiktokUser}
               className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold px-6 rounded-lg transition flex items-center justify-center gap-2"
             >
               {isConnecting ? (
@@ -931,12 +1005,27 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               )}
               {isConnecting ? 'Conectando...' : 'Conectar'}
             </button>
+            {isWaitingForLive && (
+              <button
+                type="button"
+                onClick={() => cancelWaitingForLive({ clearError: true })}
+                className="bg-red-500/15 hover:bg-red-500/25 border border-red-500/50 text-red-300 font-semibold px-4 rounded-lg transition flex items-center justify-center gap-2 whitespace-nowrap"
+              >
+                <X className="w-4 h-4" />
+                Cancelar
+              </button>
+            )}
           </div>
 
           {error && (
-            <div className="p-3 bg-red-900/20 border border-red-500/30 rounded flex gap-2">
+            <div className={`p-3 border rounded flex gap-2 ${isWaitingForLive ? 'bg-red-950/30 border-red-500/50 animate-pulse' : 'bg-red-900/20 border-red-500/30'}`}>
               <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-red-200">{error}</p>
+              <div className="text-red-200">
+                <p>{error}</p>
+                {isWaitingForLive && waitingStatus && (
+                  <p className="text-xs text-red-300/90 mt-1">{waitingStatus}</p>
+                )}
+              </div>
             </div>
           )}
 
@@ -974,18 +1063,53 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             </button>
           </div>
 
-          <div
-            ref={chatContainerRef}
-            style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain', scrollBehavior: 'smooth' }}
-            className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-96 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-96 overflow-y-auto space-y-2"}
-          >
-            {messages.length === 0 ? (
-              <div className="text-center text-gray-400 py-8">
-                <Loader className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
-                <p>Esperando comentarios en vivo...</p>
-              </div>
-            ) : (
-              messages.map((msg, idx) => {
+          <div className="space-y-3">
+            <div className={darkMode ? "bg-cyan-500/10 border border-cyan-400/30 rounded-lg p-4 min-h-[96px]" : "bg-cyan-50 border border-cyan-200 rounded-lg p-4 min-h-[96px]"}>
+              {currentReadingMessage ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className={darkMode ? "text-[11px] uppercase tracking-[0.2em] text-cyan-300 font-semibold" : "text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold"}>
+                      Mensaje en curso
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400" />
+                      </span>
+                      <Volume2 className="w-4 h-4 text-cyan-400 animate-pulse" />
+                    </span>
+                  </div>
+                  <p className="font-semibold" style={{ color: chatNickColor }}>
+                    {nickOverrides[currentReadingMessage.user] || currentReadingMessage.nickname || currentReadingMessage.user}
+                  </p>
+                  <p className={darkMode ? "text-white/90 font-medium" : "text-slate-800 font-medium"}>
+                    {currentReadingMessage.text}
+                  </p>
+                </div>
+              ) : (
+                <div className="h-full flex flex-col justify-center">
+                  <span className={darkMode ? "text-[11px] uppercase tracking-[0.2em] text-cyan-300 font-semibold mb-2" : "text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-2"}>
+                    Mensaje en curso
+                  </span>
+                  <p className={darkMode ? "text-gray-400" : "text-slate-500"}>
+                    Cuando se empiece a leer un comentario, aparecera aqui fijo.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div
+              ref={chatContainerRef}
+              style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain', scrollBehavior: 'smooth' }}
+              className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-96 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-96 overflow-y-auto space-y-2"}
+            >
+              {messages.length === 0 ? (
+                <div className="text-center text-gray-400 py-8">
+                  <Loader className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
+                  <p>Esperando comentarios en vivo...</p>
+                </div>
+              ) : (
+                messages.map((msg, idx) => {
                 // Color: primero reglas por tipo, luego override manual
                 const autoColor = (highlightRules.moderators.enabled && msg.isModerator) ? highlightRules.moderators.color
                   : (highlightRules.topFans.enabled && msg.isTopGifter) ? highlightRules.topFans.color
@@ -1015,9 +1139,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 const badgeLabel = msg.isModerator ? '⚔️ MOD' : msg.isTopGifter ? '🏆 TOP' : msg.isDonor ? '🎁 DONOR' : msg.isSubscriber ? '⭐ SUB' : null
                 return (
                 <div
-                  key={idx}
-                  data-playing={msg.status === 'playing' ? 'true' : undefined}
-                  data-playing-id={msg.status === 'playing' ? msg.id : undefined}
+                  key={msg.id || `${msg.user}-${idx}-${msg.text}`}
                   style={{ fontSize: `${chatFontSize}px`, ...(hlColor ? { backgroundColor: `${hlColor}40`, borderLeftColor: hlColor, borderLeftWidth: '4px' } : {}) }}
                   className={`pl-3 py-2 rounded-r transition-all duration-300 relative ${
                     msg.status === 'playing'
@@ -1137,19 +1259,24 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 )
               })
             )}
+            </div>
           </div>
 
           {/* Controles */}
-          <div className="flex items-center gap-1.5 justify-between">
-            <div className="flex items-center gap-1.5">
+          <div className={`flex flex-col gap-3 rounded-xl border px-3 py-3 md:flex-row md:items-center md:justify-between ${
+            darkMode
+              ? 'border-white/10 bg-white/[0.03] shadow-[0_10px_35px_rgba(0,0,0,0.18)]'
+              : 'border-slate-200 bg-white/85 shadow-[0_10px_30px_rgba(148,163,184,0.18)]'
+          }`}>
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={handlePause}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold tracking-wide transition-all ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide border transition-all shadow-sm ${
                   isPaused
-                    ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-300'
+                    ? 'border-yellow-300 bg-yellow-300 text-gray-900 hover:bg-yellow-200 hover:border-yellow-200'
                     : darkMode
-                      ? 'bg-gray-600 text-gray-200 hover:bg-gray-500'
-                      : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                      ? 'border-white/10 bg-slate-800 text-slate-100 hover:bg-slate-700'
+                      : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
                 title={isPaused ? 'Reanudar lectura' : 'Pausar lectura'}
               >
@@ -1160,23 +1287,54 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               </button>
               <button
                 onClick={handleRefresh}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold tracking-wide transition-all ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide border shadow-sm transition-all ${
                   darkMode
-                    ? 'bg-cyan-600 text-white hover:bg-cyan-500'
-                    : 'bg-cyan-500 text-white hover:bg-cyan-400'
+                    ? 'border-cyan-400/30 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25'
+                    : 'border-cyan-300 bg-cyan-50 text-cyan-700 hover:bg-cyan-100'
                 }`}
                 title="Saltar cola y continuar desde el próximo mensaje"
               >
                 <RotateCcw className="w-3.5 h-3.5" /> Refrescar
               </button>
               <button
-                onClick={() => setShowHighlightPanel(!showHighlightPanel)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold tracking-wide transition-all ${
-                  showHighlightPanel || highlightMode
-                    ? 'bg-amber-400 text-gray-900 hover:bg-amber-300'
+                onClick={() => setSmartChatEnabled((prev) => !prev)}
+                className={`group flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide border shadow-sm transition-all ${
+                  smartChatEnabled
+                    ? 'border-fuchsia-300 bg-gradient-to-r from-fuchsia-400 to-violet-400 text-slate-950 hover:from-fuchsia-300 hover:to-violet-300 shadow-[0_10px_24px_rgba(217,70,239,0.28)]'
                     : darkMode
-                      ? 'bg-amber-600 text-white hover:bg-amber-500'
-                      : 'bg-amber-500 text-white hover:bg-amber-400'
+                      ? 'border-fuchsia-400/25 bg-fuchsia-500/12 text-fuchsia-100 hover:bg-fuchsia-500/18'
+                      : 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700 hover:bg-fuchsia-100'
+                }`}
+                title="Activa el modo de chat inteligente para pruebas"
+              >
+                <span className="relative flex h-3 w-3 items-center justify-center">
+                  <span className={`absolute inline-flex h-full w-full rounded-full ${
+                    smartChatEnabled ? 'animate-ping bg-emerald-400/70' : 'bg-transparent'
+                  }`} />
+                  <span className={`relative inline-flex h-2.5 w-2.5 rounded-full border ${
+                    smartChatEnabled
+                      ? 'border-emerald-200 bg-emerald-400 shadow-[0_0_12px_rgba(74,222,128,0.9)]'
+                      : darkMode
+                        ? 'border-fuchsia-200/30 bg-fuchsia-200/20'
+                        : 'border-fuchsia-300 bg-fuchsia-200/60'
+                  }`} />
+                </span>
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>Chat inteligente</span>
+                {smartChatEnabled && (
+                  <span className="rounded-full bg-black/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em]">
+                    On
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setShowHighlightPanel(!showHighlightPanel)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide border shadow-sm transition-all ${
+                  showHighlightPanel || highlightMode
+                    ? 'border-amber-300 bg-amber-300 text-gray-900 hover:bg-amber-200'
+                    : darkMode
+                      ? 'border-amber-400/25 bg-amber-500/12 text-amber-100 hover:bg-amber-500/18'
+                      : 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
                 }`}
                 title="Remarcar usuarios con color"
               >
@@ -1185,22 +1343,26 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               {/* Botón para abrir panel de estilo del chat */}
               <button
                 onClick={() => setShowFontPanel(!showFontPanel)}
-                className={`flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-bold tracking-wide transition-all ${
+                className={`flex items-center justify-center gap-1 px-3 py-2.5 rounded-xl text-xs font-semibold tracking-wide border shadow-sm transition-all min-w-[52px] ${
                   showFontPanel
-                    ? 'bg-cyan-400 text-gray-900 hover:bg-cyan-300'
+                    ? 'border-cyan-300 bg-cyan-300 text-gray-900 hover:bg-cyan-200'
                     : darkMode
-                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600'
-                      : 'bg-gray-200 text-gray-600 hover:bg-gray-300 border border-gray-300'
+                      ? 'border-white/10 bg-slate-800 text-slate-200 hover:bg-slate-700'
+                      : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
                 title="Tamaño y colores del chat"
               >
                 <span style={{ fontSize: '13px' }}>Aa</span>
               </button>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className={`flex items-center gap-2 rounded-xl px-3 py-2 ${
+              darkMode ? 'bg-black/20' : 'bg-slate-50'
+            }`}>
               <button
                 onClick={() => setVolume(v => v > 0 ? 0 : 0.8)}
-                className="hover:opacity-80 transition-opacity"
+                className={`rounded-lg p-1.5 transition-all ${
+                  darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-200'
+                }`}
               >
                 {volume === 0
                   ? <VolumeX className="w-3.5 h-3.5 text-red-400" />
