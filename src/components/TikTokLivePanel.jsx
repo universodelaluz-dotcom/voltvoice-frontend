@@ -906,6 +906,16 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   }
 
   const currentReadingMessage = messages.find((msg) => msg.status === 'playing') || null
+  const oneMinuteAgo = Date.now() - 60000
+  const messagesPerMinute = messages.reduce((count, msg) => {
+    const timestamp = Number(msg.timestamp || 0)
+    return timestamp >= oneMinuteAgo ? count + 1 : count
+  }, 0)
+  const chatIntensity = messagesPerMinute >= 20
+    ? { color: '#ef4444', label: 'Alto' }
+    : messagesPerMinute >= 8
+      ? { color: '#f59e0b', label: 'Medio' }
+      : { color: '#22c55e', label: 'Leve' }
 
   const handlePause = () => {
     if (!isPaused) {
@@ -1066,14 +1076,30 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       ) : (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className="grid grid-cols-2 gap-3 flex-1 mr-4">
-              <div className="bg-cyan-500/10 border border-cyan-500/30 rounded p-2">
-                <p className="text-xs text-gray-400">Comentarios</p>
-                <p className="text-lg font-bold text-cyan-300">{stats.count}</p>
-              </div>
-              <div className="bg-purple-500/10 border border-purple-500/30 rounded p-2">
-                <p className="text-xs text-gray-400">Tiempo</p>
-                <p className="text-lg font-bold text-purple-300">
+              <div className="grid grid-cols-3 gap-3 flex-1 mr-4">
+                <div className="bg-cyan-500/10 border border-cyan-500/30 rounded p-2">
+                  <p className="text-xs text-gray-400">Comentarios</p>
+                  <p className="text-lg font-bold text-cyan-300">{stats.count}</p>
+                </div>
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded p-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-gray-400">Msgs/min</p>
+                    <span
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide"
+                      style={{ color: chatIntensity.color }}
+                    >
+                      <span
+                        className="inline-block w-2 h-2 rounded-full"
+                        style={{ backgroundColor: chatIntensity.color }}
+                      />
+                      {chatIntensity.label}
+                    </span>
+                  </div>
+                  <p className="text-lg font-bold text-emerald-300">{messagesPerMinute}</p>
+                </div>
+                <div className="bg-purple-500/10 border border-purple-500/30 rounded p-2">
+                  <p className="text-xs text-gray-400">Tiempo</p>
+                  <p className="text-lg font-bold text-purple-300">
                   {stats.uptime < 60
                     ? `${stats.uptime}s`
                     : `${Math.floor(stats.uptime / 60)}m ${stats.uptime % 60}s`}
@@ -1105,23 +1131,26 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                       <Volume2 className="w-4 h-4 text-cyan-400 animate-pulse" />
                     </span>
                   </div>
-                  <p className="font-semibold" style={{ color: chatNickColor }}>
-                    {nickOverrides[currentReadingMessage.user] || currentReadingMessage.nickname || currentReadingMessage.user}
-                  </p>
-                  <p className={darkMode ? "text-white/90 font-medium" : "text-slate-800 font-medium"}>
-                    {currentReadingMessage.text}
-                  </p>
-                </div>
-              ) : (
-                <div className="h-full flex flex-col justify-center">
+                    <p className="font-semibold" style={{ color: chatNickColor, fontSize: `${chatFontSize}px` }}>
+                      {nickOverrides[currentReadingMessage.user] || currentReadingMessage.nickname || currentReadingMessage.user}
+                    </p>
+                    <p
+                      className="font-medium"
+                      style={{ color: chatMsgColor, fontSize: `${chatFontSize}px` }}
+                    >
+                      {currentReadingMessage.text}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="h-full flex flex-col justify-center">
                   <span className={darkMode ? "text-[11px] uppercase tracking-[0.2em] text-cyan-300 font-semibold mb-2" : "text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-2"}>
                     Mensaje en curso
                   </span>
-                  <p className={darkMode ? "text-gray-400" : "text-slate-500"}>
-                    Cuando se empiece a leer un comentario, aparecera aqui fijo.
-                  </p>
-                </div>
-              )}
+                    <p style={{ color: chatMsgColor, fontSize: `${chatFontSize}px` }}>
+                      Cuando se empiece a leer un comentario, aparecera aqui fijo.
+                    </p>
+                  </div>
+                )}
             </div>
 
             <div
