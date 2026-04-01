@@ -908,6 +908,25 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           const smartChatActive = !!smartChatEnabledRef.current
           const bypassManualChecks = freeModeNoChecks && !smartChatActive
 
+          if (bypassManualChecks) {
+            const freeModeText = verbalizeEmojisForSpeech(msg.text)
+            const freeModeDisplayName = nickOverridesRef.current[msg.username] || msg.nickname || msg.username
+            const finalFreeModeText = c.readOnlyMessage
+              ? freeModeText
+              : verbalizeEmojisForSpeech(`${freeModeDisplayName}: ${freeModeText}`)
+
+            queueMessage(finalFreeModeText, msg.username, {
+              id: msg.id,
+              isDonor: msg.isDonor || donors.has(msg.username),
+              isModerator: msg.isModerator,
+              isSubscriber: msg.isSubscriber || false,
+              isCommunityMember: msg.isCommunityMember || false,
+              isTopGifter: msg.topGifterRank > 0,
+              isQuestion: isQuestion(msg.text)
+            })
+            return
+          }
+
           // Si está baneado, no leer en voz
           if (isBanned) { markFilteredMessage(); return }
 
