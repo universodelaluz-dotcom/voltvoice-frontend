@@ -65,6 +65,44 @@ const removeEmojis = (text) => {
   return text.replace(emojiFullRegex, '').trim()
 }
 
+const emojiSpeechMap = {
+  '❤️': ' corazon ',
+  '❤': ' corazon ',
+  '🔥': ' fuego ',
+  '😂': ' risa ',
+  '🤣': ' risa fuerte ',
+  '😍': ' enamorado ',
+  '🥰': ' amor ',
+  '😘': ' beso ',
+  '😭': ' llorando ',
+  '😢': ' triste ',
+  '😎': ' cool ',
+  '🥳': ' fiesta ',
+  '🎉': ' celebracion ',
+  '👏': ' aplausos ',
+  '🙌': ' manos arriba ',
+  '🙏': ' bendiciones ',
+  '👍': ' like ',
+  '💪': ' fuerza ',
+  '💀': ' calavera ',
+  '✨': ' brillo ',
+  '🌹': ' rosa ',
+  '🥵': ' intenso ',
+  '😈': ' diablito ',
+  '😡': ' enojado ',
+  '🤔': ' pensando ',
+  '👀': ' mirando ',
+  '💯': ' cien ',
+  '🎁': ' regalo ',
+  '💸': ' dinero ',
+  '👑': ' corona ',
+}
+
+const verbalizeEmojisForSpeech = (text = '') => String(text || '')
+  .replace(emojiFullRegex, (emoji) => emojiSpeechMap[emoji] || ' emoji ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
 const isPriorityUser = (meta = {}) => Boolean(
   meta.isDonor
   || meta.isModerator
@@ -820,16 +858,18 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             if (!textToProcess.trim()) { markFilteredMessage(); return }
           }
 
-          // Filtro: Normalizar Unicode y detectar intentos de evasión
-          const unicodeCheck = normalizeUnicode(textToProcess)
-          if (unicodeCheck.suspicious) {
-            console.log(`[TikTok] ⚠️ Mensaje sospechoso detectado: ${unicodeCheck.reason}`)
-            console.log(`[TikTok] Usuario: ${msg.username}, Texto original: ${textToProcess.substring(0, 50)}...`)
-            // Silenciosamente usar el texto normalizado, pero alertar en logs
-            textToProcess = unicodeCheck.text
-          } else if (unicodeCheck.text !== textToProcess) {
-            // Si hay normalización pero no es sospechoso, usar el texto normalizado
-            textToProcess = unicodeCheck.text
+          // Normalizar Unicode solo cuando hay filtros manuales o chat inteligente activos
+          if (!bypassManualChecks || smartChatActive) {
+            const unicodeCheck = normalizeUnicode(textToProcess)
+            if (unicodeCheck.suspicious) {
+              console.log(`[TikTok] ⚠️ Mensaje sospechoso detectado: ${unicodeCheck.reason}`)
+              console.log(`[TikTok] Usuario: ${msg.username}, Texto original: ${textToProcess.substring(0, 50)}...`)
+              // Silenciosamente usar el texto normalizado, pero alertar en logs
+              textToProcess = unicodeCheck.text
+            } else if (unicodeCheck.text !== textToProcess) {
+              // Si hay normalización pero no es sospechoso, usar el texto normalizado
+              textToProcess = unicodeCheck.text
+            }
           }
           if (!textToProcess.trim()) { markFilteredMessage(); return }
           if (smartChatActive && !priorityUser && textToProcess.trim().length < 7) { markFilteredMessage(); return }
@@ -846,8 +886,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
           // Limitar caracteres en todos los mensajes
           let textToSpeak = textToProcess
-          if (c.donorCharLimitEnabled) {
+          if (!bypassManualChecks && c.donorCharLimitEnabled) {
             textToSpeak = textToProcess.substring(0, c.donorCharLimit)
+          }
+
+          if (bypassManualChecks) {
+            textToSpeak = verbalizeEmojisForSpeech(textToSpeak)
           }
 
           // Construir texto final (usar nickname para lectura, no el username técnico)
