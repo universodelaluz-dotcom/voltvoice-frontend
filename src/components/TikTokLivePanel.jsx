@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X, Users, Clock3, TrendingUp, Filter, Trophy, Sparkles } from 'lucide-react'
 import chatStore from '../services/chatStore.js'
+import emojiLibrary from 'emojilib/dist/emoji-en-US.json'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
@@ -98,8 +99,102 @@ const emojiSpeechMap = {
   '👑': ' corona ',
 }
 
+const emojiWordTranslations = {
+  grinning: 'sonriendo',
+  smile: 'sonrisa',
+  smiling: 'sonriendo',
+  smiley: 'carita sonriente',
+  face: 'cara',
+  happy: 'feliz',
+  joy: 'alegria',
+  laughing: 'riendo',
+  laugh: 'risa',
+  tears: 'lagrimas',
+  crying: 'llorando',
+  sad: 'triste',
+  angry: 'enojado',
+  fire: 'fuego',
+  heart: 'corazon',
+  red: 'rojo',
+  blue: 'azul',
+  green: 'verde',
+  yellow: 'amarillo',
+  black: 'negro',
+  white: 'blanco',
+  broken: 'roto',
+  sparkles: 'brillos',
+  sparkle: 'brillo',
+  star: 'estrella',
+  stars: 'estrellas',
+  skull: 'calavera',
+  crown: 'corona',
+  eyes: 'ojos',
+  eye: 'ojo',
+  kiss: 'beso',
+  love: 'amor',
+  party: 'fiesta',
+  celebration: 'celebracion',
+  clap: 'aplausos',
+  hands: 'manos',
+  hand: 'mano',
+  raised: 'arriba',
+  gift: 'regalo',
+  money: 'dinero',
+  cash: 'dinero',
+  hundred: 'cien',
+  thinking: 'pensando',
+  cool: 'cool',
+  devil: 'diablito',
+  rose: 'rosa',
+  thumbs: 'pulgar',
+  thumb: 'pulgar',
+  up: 'arriba',
+  strong: 'fuerte',
+  muscle: 'musculo',
+  rocket: 'cohete',
+  bomb: 'bomba',
+  poop: 'popo',
+  ok: 'ok',
+  warning: 'alerta',
+  check: 'palomita',
+  mark: 'marca',
+  sleeping: 'durmiendo',
+  cat: 'gato',
+  dog: 'perro',
+  monkey: 'mono',
+  sun: 'sol',
+  moon: 'luna',
+  cloud: 'nube',
+  rain: 'lluvia',
+  snow: 'nieve',
+  car: 'carro',
+  truck: 'camion',
+  airplane: 'avion',
+  plane: 'avion',
+  phone: 'telefono',
+  camera: 'camara',
+  video: 'video',
+  microphone: 'microfono',
+  music: 'musica',
+}
+
+const getEmojiSpeechLabel = (emoji) => {
+  if (emojiSpeechMap[emoji]) return emojiSpeechMap[emoji]
+  const keywords = emojiLibrary[emoji]
+  if (!keywords?.length) return ' emoji '
+
+  const primaryLabel = keywords[0]
+    .split('_')
+    .filter((token) => !['with', 'of', 'and', 'the'].includes(token))
+    .map((token) => emojiWordTranslations[token] || token)
+    .join(' ')
+    .trim()
+
+  return primaryLabel ? ` ${primaryLabel} ` : ' emoji '
+}
+
 const verbalizeEmojisForSpeech = (text = '') => String(text || '')
-  .replace(emojiFullRegex, (emoji) => emojiSpeechMap[emoji] || ' emoji ')
+  .replace(emojiFullRegex, (emoji) => getEmojiSpeechLabel(emoji))
   .replace(/\s+/g, ' ')
   .trim()
 
