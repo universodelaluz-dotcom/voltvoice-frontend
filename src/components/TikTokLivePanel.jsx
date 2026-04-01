@@ -70,6 +70,15 @@ const normalizeTikTokUsername = (value) => String(value || '').trim().replace(/^
 // Obtener token del localStorage
 const getAuthToken = () => localStorage.getItem('sv-token') || ''
 
+const defaultHighlightRules = {
+  moderators: { enabled: false, color: '#a855f7' },
+  donors: { enabled: false, color: '#f59e0b' },
+  banned: { enabled: false, color: '#ef4444' },
+  subscribers: { enabled: false, color: '#ec4899' },
+  communityMembers: { enabled: false, color: '#22c55e' },
+  topFans: { enabled: false, color: '#06b6d4' },
+}
+
 // Funciones para interactuar con API de bans y nicks
 const apiBans = {
   async getAll() {
@@ -200,13 +209,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const [chatMsgColor, setChatMsgColor] = useState(config.chatMsgColor || '#d1d5db')
   const [showFontPanel, setShowFontPanel] = useState(false)
   const [smartChatEnabled, setSmartChatEnabled] = useState(config.smartChatEnabled || false)
-  const [highlightRules, setHighlightRules] = useState(config.highlightRules || {
-    moderators: { enabled: false, color: '#a855f7' },
-    donors: { enabled: false, color: '#f59e0b' },
-    banned: { enabled: false, color: '#ef4444' },
-    subscribers: { enabled: false, color: '#ec4899' },
-    communityMembers: { enabled: false, color: '#22c55e' },
-    topFans: { enabled: false, color: '#06b6d4' },
+  const [highlightRules, setHighlightRules] = useState({
+    ...defaultHighlightRules,
+    ...(config.highlightRules || {})
   })
 
   // Sincronizar cambios de estilo y remarcar al config del usuario (auto-save)
@@ -235,6 +240,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       updateConfig('highlightRules', highlightRules)
     }
   }, [highlightRules])
+  useEffect(() => {
+    setHighlightRules(prev => ({
+      ...defaultHighlightRules,
+      ...(config.highlightRules || {}),
+      ...prev
+    }))
+  }, [config.highlightRules])
   const isPausedRef = useRef(false)
   const isPttSuppressedRef = useRef(false)
   const wsRef = useRef(null)
@@ -1111,13 +1123,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 </div>
               ) : (
                 messages.map((msg, idx) => {
+                const effectiveHighlightRules = {
+                  ...defaultHighlightRules,
+                  ...(highlightRules || {})
+                }
                 // Color: primero reglas por tipo, luego override manual
-                const autoColor = (highlightRules.moderators.enabled && msg.isModerator) ? highlightRules.moderators.color
-                  : (highlightRules.topFans.enabled && msg.isTopGifter) ? highlightRules.topFans.color
-                  : (highlightRules.donors.enabled && (msg.isDonor || donors.has(msg.user))) ? highlightRules.donors.color
-                  : (highlightRules.subscribers.enabled && msg.isSubscriber) ? highlightRules.subscribers.color
-                  : (highlightRules.communityMembers.enabled && msg.isCommunityMember) ? highlightRules.communityMembers.color
-                  : (highlightRules.banned.enabled && bannedUsers.has(msg.user)) ? highlightRules.banned.color
+                const autoColor = (effectiveHighlightRules.moderators.enabled && msg.isModerator) ? effectiveHighlightRules.moderators.color
+                  : (effectiveHighlightRules.topFans.enabled && msg.isTopGifter) ? effectiveHighlightRules.topFans.color
+                  : (effectiveHighlightRules.donors.enabled && (msg.isDonor || donors.has(msg.user))) ? effectiveHighlightRules.donors.color
+                  : (effectiveHighlightRules.subscribers.enabled && msg.isSubscriber) ? effectiveHighlightRules.subscribers.color
+                  : (effectiveHighlightRules.communityMembers.enabled && msg.isCommunityMember) ? effectiveHighlightRules.communityMembers.color
+                  : (effectiveHighlightRules.banned.enabled && bannedUsers.has(msg.user)) ? effectiveHighlightRules.banned.color
                   : null
                 const hlColor = highlightedUsers[msg.user] || autoColor
                 // DEBUG: Log para test messages
@@ -1128,11 +1144,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                     isSubscriber: msg.isSubscriber,
                     isTopGifter: msg.isTopGifter,
                     rules: {
-                      modEnabled: highlightRules.moderators.enabled,
-                      donorEnabled: highlightRules.donors.enabled,
-                      subEnabled: highlightRules.subscribers.enabled,
-                      communityEnabled: highlightRules.communityMembers.enabled,
-                      topEnabled: highlightRules.topFans.enabled,
+                      modEnabled: effectiveHighlightRules.moderators.enabled,
+                      donorEnabled: effectiveHighlightRules.donors.enabled,
+                      subEnabled: effectiveHighlightRules.subscribers.enabled,
+                      communityEnabled: effectiveHighlightRules.communityMembers.enabled,
+                      topEnabled: effectiveHighlightRules.topFans.enabled,
                     },
                     autoColor,
                     hlColor
@@ -1487,18 +1503,20 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 { key: 'communityMembers', label: 'Miembros de comunidad' },
                 { key: 'topFans', label: 'Top Fans / Gifters' },
                 { key: 'banned', label: 'Baneados (silenciados)' },
-              ].map(({ key, label }) => (
+              ].map(({ key, label }) => {
+                const rule = highlightRules[key] || defaultHighlightRules[key]
+                return (
                 <div key={key} className="flex items-center gap-2">
                   <button
                     onClick={() => setHighlightRules(prev => ({
                       ...prev,
-                      [key]: { ...prev[key], enabled: !prev[key].enabled }
+                      [key]: { ...(prev[key] || defaultHighlightRules[key]), enabled: !((prev[key] || defaultHighlightRules[key]).enabled) }
                     }))}
                     className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                      highlightRules[key].enabled ? 'border-amber-400 bg-amber-400/30' : darkMode ? 'border-gray-500' : 'border-gray-400'
+                      rule.enabled ? 'border-amber-400 bg-amber-400/30' : darkMode ? 'border-gray-500' : 'border-gray-400'
                     }`}
                   >
-                    {highlightRules[key].enabled && <span className="text-amber-300 text-[10px] font-bold">✓</span>}
+                    {rule.enabled && <span className="text-amber-300 text-[10px] font-bold">✓</span>}
                   </button>
                   <span className={`text-xs font-medium flex-1 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{label}</span>
                   <div className="flex gap-1">
@@ -1507,17 +1525,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                         key={c}
                         onClick={() => setHighlightRules(prev => ({
                           ...prev,
-                          [key]: { ...prev[key], color: c, enabled: true }
+                          [key]: { ...(prev[key] || defaultHighlightRules[key]), color: c, enabled: true }
                         }))}
                         className={`w-4 h-4 rounded-full transition-transform ${
-                          highlightRules[key].color === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-110'
+                          rule.color === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-110'
                         }`}
                         style={{ backgroundColor: c }}
                       />
                     ))}
                   </div>
                 </div>
-              ))}
+              )})}
 
               {/* Botón de prueba para verificar resaltado */}
               <div className={`pt-2 border-t ${darkMode ? 'border-gray-700' : 'border-amber-200'}`}>
