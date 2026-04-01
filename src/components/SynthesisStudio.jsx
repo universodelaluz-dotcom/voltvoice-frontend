@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import TikTokLivePanel from './TikTokLivePanel'
 import AudioVisualizer from './AudioVisualizer'
 import BotInvoker from './BotInvoker'
-import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3 } from 'lucide-react'
+import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Shield } from 'lucide-react'
 
-export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, darkMode, setDarkMode, config, updateConfig, user }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAdmin, darkMode, setDarkMode, config, updateConfig, user }) {
   const audioSpeed = config.audioSpeed || 1.0
   const [showBotInvoker, setShowBotInvoker] = useState(false)
 
@@ -357,6 +357,15 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             >
               {darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-indigo-600" />}
             </button>
+            {user?.role === 'admin' && onGoAdmin && (
+              <button
+                onClick={onGoAdmin}
+                title="Panel Admin"
+                className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/30 transition-all"
+              >
+                <Shield className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
       </div>

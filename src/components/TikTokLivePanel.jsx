@@ -66,6 +66,16 @@ const removeEmojis = (text) => {
 }
 
 const normalizeTikTokUsername = (value) => String(value || '').trim().replace(/^@+/, '')
+const getThemeChatNickColor = (config = {}, darkMode = true) => (
+  darkMode
+    ? (config.chatNickColorDark || config.chatNickColor || '#22d3ee')
+    : (config.chatNickColorLight || '#0f766e')
+)
+const getThemeChatMsgColor = (config = {}, darkMode = true) => (
+  darkMode
+    ? (config.chatMsgColorDark || config.chatMsgColor || '#d1d5db')
+    : (config.chatMsgColorLight || '#1f2937')
+)
 
 const pruneRecentTimestamps = (timestamps, windowMs = 60000) => {
   const cutoff = Date.now() - windowMs
@@ -273,8 +283,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const [selectedColor, setSelectedColor] = useState('#06b6d4')
   const [showHighlightPanel, setShowHighlightPanel] = useState(false)
   const [chatFontSize, setChatFontSize] = useState(config.chatFontSize || 14)
-  const [chatNickColor, setChatNickColor] = useState(config.chatNickColor || '#22d3ee')
-  const [chatMsgColor, setChatMsgColor] = useState(config.chatMsgColor || '#d1d5db')
+  const [chatNickColor, setChatNickColor] = useState(() => getThemeChatNickColor(config, localStorage.getItem('voltvoice-theme') !== 'light'))
+  const [chatMsgColor, setChatMsgColor] = useState(() => getThemeChatMsgColor(config, localStorage.getItem('voltvoice-theme') !== 'light'))
   const [showFontPanel, setShowFontPanel] = useState(false)
   const [smartChatEnabled, setSmartChatEnabled] = useState(config.smartChatEnabled || false)
   const [showSessionSummary, setShowSessionSummary] = useState(false)
@@ -292,14 +302,14 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   }, [chatFontSize])
   useEffect(() => {
     if (updateConfig) {
-      updateConfig('chatNickColor', chatNickColor)
+      updateConfig(darkMode ? 'chatNickColorDark' : 'chatNickColorLight', chatNickColor)
     }
-  }, [chatNickColor])
+  }, [chatNickColor, darkMode])
   useEffect(() => {
     if (updateConfig) {
-      updateConfig('chatMsgColor', chatMsgColor)
+      updateConfig(darkMode ? 'chatMsgColorDark' : 'chatMsgColorLight', chatMsgColor)
     }
-  }, [chatMsgColor])
+  }, [chatMsgColor, darkMode])
   useEffect(() => {
     if (updateConfig) {
       updateConfig('smartChatEnabled', smartChatEnabled)
@@ -317,6 +327,24 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       ...prev
     }))
   }, [config.highlightRules])
+  useEffect(() => {
+    setChatFontSize(config.chatFontSize || 14)
+  }, [config.chatFontSize])
+  useEffect(() => {
+    setSmartChatEnabled(config.smartChatEnabled || false)
+  }, [config.smartChatEnabled])
+  useEffect(() => {
+    setChatNickColor(getThemeChatNickColor(config, darkMode))
+  }, [config.chatNickColor, config.chatNickColorDark, config.chatNickColorLight, darkMode])
+  useEffect(() => {
+    setChatMsgColor(getThemeChatMsgColor(config, darkMode))
+  }, [config.chatMsgColor, config.chatMsgColorDark, config.chatMsgColorLight, darkMode])
+  useEffect(() => {
+    const savedLastUser = config.lastTiktokUser || ''
+    if (!isConnected && normalizeTikTokUsername(savedLastUser) !== normalizeTikTokUsername(tiktokUser)) {
+      setTiktokUser(savedLastUser)
+    }
+  }, [config.lastTiktokUser, isConnected])
   const isPausedRef = useRef(false)
   const isPttSuppressedRef = useRef(false)
   const wsRef = useRef(null)

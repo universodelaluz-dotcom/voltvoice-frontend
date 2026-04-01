@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Check } from 'lucide-react'
 
-export function PricingCards({ darkMode, showToggle = true }) {
+export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
   const [billingCycle, setBillingCycle] = useState('monthly')
   const [exchangeRates, setExchangeRates] = useState(null)
   const [userCurrency, setUserCurrency] = useState('USD')
@@ -284,6 +284,7 @@ export function PricingCards({ darkMode, showToggle = true }) {
 
             {/* CTA Button */}
             <button
+              onClick={() => onPlanAction?.(plan, { billingCycle })}
               className={`w-full py-3.5 rounded-lg font-bold text-base transition-all mb-6 ${
                 plan.popular
                   ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white hover:shadow-lg hover:shadow-cyan-400/50'

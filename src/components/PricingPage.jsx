@@ -1,7 +1,7 @@
 import { ArrowLeft } from 'lucide-react'
 import { PricingCards } from './PricingCards'
 
-export function PricingPage({ onGoHome, darkMode }) {
+export function PricingPage({ onGoHome, darkMode, onPlanAction }) {
   return (
     <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 text-gray-900"}>
       {/* Header */}
@@ -35,7 +35,7 @@ export function PricingPage({ onGoHome, darkMode }) {
           </div>
 
           {/* Pricing Cards Component */}
-          <PricingCards darkMode={darkMode} showToggle={true} />
+          <PricingCards darkMode={darkMode} showToggle={true} onPlanAction={onPlanAction} />
 
           {/* FAQ */}
           <div className="text-center mt-16">

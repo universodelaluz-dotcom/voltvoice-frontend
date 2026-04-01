@@ -3,16 +3,17 @@ import { X, Zap } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
-const packages = [
+const tokenPackages = [
   { tokens: 100000,  price: 3.00,  label: '100K', size: 'Peque\u00f1o'              },
   { tokens: 250000,  price: 7.00,  label: '250K', size: 'Mediano', popular: true },
   { tokens: 500000,  price: 12.00, label: '500K', size: 'Grande'               },
   { tokens: 1000000, price: 20.00, label: '1M',   size: 'M\u00e1ximo'               },
 ]
 
-export function StripePayment({ isOpen, onClose }) {
+export function StripePayment({ isOpen, onClose, initialPackageTokens = null, initialCheckoutItem = null }) {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
-  const [selectedPackage, setSelectedPackage] = useState(packages[1])
+  const [selectedPackage, setSelectedPackage] = useState(tokenPackages[1])
+  const [checkoutItem, setCheckoutItem] = useState(() => initialCheckoutItem || { type: 'tokens', package: tokenPackages[1] })
   const [loading, setLoading] = useState(null)
 
   useEffect(() => {
@@ -22,13 +23,57 @@ export function StripePayment({ isOpen, onClose }) {
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    if (!isOpen) return
+
+    if (initialCheckoutItem?.type === 'plan') {
+      setCheckoutItem(initialCheckoutItem)
+      return
+    }
+
+    const matchedPackage = tokenPackages.find((pkg) => pkg.tokens === initialPackageTokens) || tokenPackages[1]
+    setSelectedPackage(matchedPackage)
+    setCheckoutItem({ type: 'tokens', package: matchedPackage })
+  }, [isOpen, initialPackageTokens, initialCheckoutItem])
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('sv-token')
+    if (!token) return null
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    }
+  }
+
+  const currentItem = checkoutItem?.type === 'plan'
+    ? checkoutItem
+    : { type: 'tokens', package: selectedPackage }
+
+  const requestPayload = currentItem.type === 'plan'
+    ? {
+        planId: currentItem.planId,
+        billingCycle: currentItem.billingCycle,
+        itemType: 'plan'
+      }
+    : {
+        tokensPackage: currentItem.package.tokens,
+        itemType: 'tokens'
+      }
+
   const handleMercadoPago = async () => {
     setLoading('mercadopago')
     try {
+      const headers = getAuthHeaders()
+      if (!headers) {
+        alert('Inicia sesion para continuar con el pago.')
+        setLoading(null)
+        return
+      }
+
       const res = await fetch(API_URL + '/api/mercadopago/create-preference', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': 'user-123' },
-        body: JSON.stringify({ tokensPackage: selectedPackage.tokens }),
+        headers,
+        body: JSON.stringify(requestPayload),
       })
       const data = await res.json()
       if (data.checkoutUrl) window.location.href = data.checkoutUrl
@@ -44,10 +89,17 @@ export function StripePayment({ isOpen, onClose }) {
   const handlePayPal = async () => {
     setLoading('paypal')
     try {
+      const headers = getAuthHeaders()
+      if (!headers) {
+        alert('Inicia sesion para continuar con el pago.')
+        setLoading(null)
+        return
+      }
+
       const res = await fetch(API_URL + '/api/paypal/create-order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': 'user-123' },
-        body: JSON.stringify({ tokensPackage: selectedPackage.tokens }),
+        headers,
+        body: JSON.stringify(requestPayload),
       })
       const data = await res.json()
       if (data.approvalUrl) {
@@ -90,7 +142,7 @@ export function StripePayment({ isOpen, onClose }) {
           <div className="flex items-center gap-2">
             <Zap className="w-6 h-6 text-cyan-400" />
             <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-              Comprar Tokens
+              {currentItem.type === 'plan' ? 'Comprar Plan' : 'Comprar Tokens'}
             </h2>
           </div>
           <button onClick={onClose} className={dm ? "p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400" : "p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500"}>
@@ -98,8 +150,9 @@ export function StripePayment({ isOpen, onClose }) {
           </button>
         </div>
 
+        {currentItem.type !== 'plan' && (
         <div className="grid grid-cols-2 gap-3 mb-6">
-          {packages.map((pkg) => {
+          {tokenPackages.map((pkg) => {
             const sel = selectedPackage.tokens === pkg.tokens
             return (
               <button
@@ -122,12 +175,23 @@ export function StripePayment({ isOpen, onClose }) {
             )
           })}
         </div>
+        )}
 
         <div className={`rounded-xl p-3 mb-5 flex items-center gap-2 ${dm ? 'bg-white/5 border border-white/10' : 'bg-indigo-50 border border-indigo-100'}`}>
           <Zap className="w-4 h-4 text-cyan-400 flex-shrink-0" />
           <p className={`text-sm ${dm ? 'text-gray-300' : 'text-gray-600'}`}>
-            <span className="font-bold text-cyan-400">{selectedPackage.label} tokens</span>{' '}por{' '}
-            <span className="font-bold">${selectedPackage.price} USD</span> - 1 token = 1 caracter
+            {currentItem.type === 'plan' ? (
+              <>
+                <span className="font-bold text-cyan-400">{currentItem.label}</span>{' '}por{' '}
+                <span className="font-bold">${currentItem.price} USD</span>{' '}
+                <span>- facturacion {currentItem.billingCycle === 'annual' ? 'anual' : 'mensual'}</span>
+              </>
+            ) : (
+              <>
+                <span className="font-bold text-cyan-400">{selectedPackage.label} tokens</span>{' '}por{' '}
+                <span className="font-bold">${selectedPackage.price} USD</span> - 1 token = 1 caracter
+              </>
+            )}
           </p>
         </div>
 

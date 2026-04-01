@@ -9,12 +9,87 @@ import { StatisticsDashboard } from './components/StatisticsDashboard'
 import { AuthPage } from './components/AuthPage'
 import BotPanel from './components/BotPanel'
 import AIRoleplayWorkshop from './components/AIRoleplayWorkshop'
+import AdminPanel from './components/AdminPanel'
 import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft, LogOut } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
+const DEFAULT_CONFIG = {
+  audioSpeed: 1.0,
+  readOnlyMessage: false,
+  skipRepeated: false,
+  onlyDonors: false,
+  onlySubscribers: false,
+  onlyCommunityMembers: false,
+  onlyQuestions: false,
+  announceFollowers: false,
+  announceGifts: false,
+  ignoreLinks: false,
+  ignoreExcessiveEmojis: false,
+  maxEmojisAllowed: 3,
+  onlyPlainNicks: false,
+  onlyModerators: false,
+  announceViewers: false,
+  announceLikes: false,
+  announceShares: false,
+  announceBattles: false,
+  announcePolls: false,
+  announceGoals: false,
+  donorCharLimitEnabled: false,
+  donorCharLimit: 200,
+  minMessageLengthEnabled: false,
+  minMessageLength: 3,
+  maxQueueEnabled: false,
+  maxQueueSize: 20,
+  donorVoiceEnabled: false,
+  donorVoiceId: 'Diego',
+  modVoiceEnabled: false,
+  modVoiceId: 'Lupita',
+  generalVoiceId: 'es-ES',
+  notifVoiceEnabled: false,
+  notifVoiceId: 'Lupita',
+  likeCooldown: 60,
+  viewerCooldown: 120,
+  followCooldown: 10,
+  shareCooldown: 15,
+  giftCooldown: 5,
+  chatFontSize: 14,
+  chatNickColorDark: '#22d3ee',
+  chatNickColorLight: '#0f766e',
+  chatMsgColorDark: '#d1d5db',
+  chatMsgColorLight: '#1f2937',
+  themeMode: 'dark',
+  lastTiktokUser: '',
+  highlightRules: {
+    moderators: { enabled: false, color: '#a855f7' },
+    donors: { enabled: false, color: '#f59e0b' },
+    banned: { enabled: false, color: '#ef4444' },
+    subscribers: { enabled: false, color: '#ec4899' },
+    communityMembers: { enabled: false, color: '#22c55e' },
+    topFans: { enabled: false, color: '#06b6d4' },
+  },
+}
+
+const normalizeUserConfig = (rawConfig = {}) => {
+  const config = rawConfig && typeof rawConfig === 'object' ? rawConfig : {}
+
+  return {
+    ...DEFAULT_CONFIG,
+    ...config,
+    chatNickColorDark: config.chatNickColorDark || config.chatNickColor || DEFAULT_CONFIG.chatNickColorDark,
+    chatNickColorLight: config.chatNickColorLight || DEFAULT_CONFIG.chatNickColorLight,
+    chatMsgColorDark: config.chatMsgColorDark || config.chatMsgColor || DEFAULT_CONFIG.chatMsgColorDark,
+    chatMsgColorLight: config.chatMsgColorLight || DEFAULT_CONFIG.chatMsgColorLight,
+    themeMode: config.themeMode || DEFAULT_CONFIG.themeMode,
+    highlightRules: {
+      ...DEFAULT_CONFIG.highlightRules,
+      ...(config.highlightRules || {}),
+    },
+  }
+}
+
 export function App() {
-  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-workshop', 'pricing', 'control-panel', 'statistics', 'auth'
+  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-workshop', 'pricing', 'control-panel', 'statistics', 'auth', 'admin'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
@@ -24,6 +99,8 @@ export function App() {
   const [cookieConsent, setCookieConsent] = useState(() => {
     return localStorage.getItem('cookieConsent') === 'true'
   })
+  const [selectedPaymentPackage, setSelectedPaymentPackage] = useState(250000)
+  const [selectedCheckoutItem, setSelectedCheckoutItem] = useState(null)
 
   // Auth state
   const [user, setUser] = useState(null)
@@ -36,57 +113,8 @@ export function App() {
   const [userCountry, setUserCountry] = useState(null)
 
   // Config centralizado para todas las opciones
-  const [config, setConfig] = useState({
-    audioSpeed: 1.0,
-    readOnlyMessage: false,
-    skipRepeated: false,
-    onlyDonors: false,
-    onlySubscribers: false,
-    onlyCommunityMembers: false,
-    onlyQuestions: false,
-    announceFollowers: false,
-    announceGifts: false,
-    ignoreLinks: false,
-    ignoreExcessiveEmojis: false,
-    maxEmojisAllowed: 3,
-    onlyPlainNicks: false,
-    onlyModerators: false,
-    announceViewers: false,
-    announceLikes: false,
-    announceShares: false,
-    announceBattles: false,
-    announcePolls: false,
-    announceGoals: false,
-    donorCharLimitEnabled: false,
-    donorCharLimit: 200,
-    minMessageLengthEnabled: false,
-    minMessageLength: 3,
-    maxQueueEnabled: false,
-    maxQueueSize: 20,
-    donorVoiceEnabled: false,
-    donorVoiceId: 'Diego',
-    modVoiceEnabled: false,
-    modVoiceId: 'Lupita',
-    generalVoiceId: 'es-ES',
-    notifVoiceEnabled: false,
-    notifVoiceId: 'Lupita',
-    likeCooldown: 60,
-    viewerCooldown: 120,
-    followCooldown: 10,
-    shareCooldown: 15,
-    giftCooldown: 5,
-    chatFontSize: 14,
-    chatNickColor: '#22d3ee',
-    chatMsgColor: '#d1d5db',
-    highlightRules: {
-      moderators: { enabled: false, color: '#a855f7' },
-      donors: { enabled: false, color: '#f59e0b' },
-      banned: { enabled: false, color: '#ef4444' },
-      subscribers: { enabled: false, color: '#ec4899' },
-      communityMembers: { enabled: false, color: '#22c55e' },
-      topFans: { enabled: false, color: '#06b6d4' },
-    },
-  })
+  const [config, setConfig] = useState(DEFAULT_CONFIG)
+  const [configReady, setConfigReady] = useState(false)
 
   const updateConfig = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
 
@@ -109,15 +137,20 @@ export function App() {
             setTokens(data.user.tokens || 100)
             localStorage.setItem('sv-user', JSON.stringify(data.user))
             // Cargar config guardada del usuario
-            loadUserConfig(savedToken)
+            loadAndApplyUserConfig(savedToken)
           } else {
             handleLogout()
           }
-        }).catch(() => {})
+        }).catch(() => {
+          setConfigReady(true)
+        })
       } catch {
         localStorage.removeItem('sv-token')
         localStorage.removeItem('sv-user')
+        setConfigReady(true)
       }
+    } else {
+      setConfigReady(true)
     }
   }, [])
 
@@ -170,6 +203,25 @@ export function App() {
     }
   }
 
+  const loadAndApplyUserConfig = async (token) => {
+    try {
+      const res = await fetch(`${API_URL}/api/settings`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        const normalizedConfig = normalizeUserConfig(data.config)
+        setConfig(normalizedConfig)
+        setDarkMode(normalizedConfig.themeMode !== 'light')
+        console.log('[Config] Configuracion del usuario cargada')
+      }
+    } catch (err) {
+      console.error('[Config] Error cargando config:', err)
+    } finally {
+      setConfigReady(true)
+    }
+  }
+
   // Convertir precio USD a moneda local
   const convertPrice = (usdPrice) => {
     if (!exchangeRates || userCurrency === 'USD') {
@@ -207,7 +259,7 @@ export function App() {
   const saveTimerRef = useRef(null)
   useEffect(() => {
     const token = localStorage.getItem('sv-token')
-    if (!token || !user) return
+    if (!token || !user || !configReady) return
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(() => {
@@ -224,13 +276,14 @@ export function App() {
     }, 2000) // Espera 2 segundos después del último cambio
 
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
-  }, [config, user])
+  }, [config, user, configReady])
 
   const handleLogin = (userData, token) => {
     setUser(userData)
     setAuthToken(token)
     setTokens(userData.tokens || 100)
-    loadUserConfig(token)
+    setConfigReady(false)
+    loadAndApplyUserConfig(token)
     setCurrentPage('studio')
   }
 
@@ -239,22 +292,48 @@ export function App() {
     setAuthToken(null)
     localStorage.removeItem('sv-token')
     localStorage.removeItem('sv-user')
+    setConfigReady(true)
     // Reset config a defaults
-    setConfig({
-      audioSpeed: 1.0, readOnlyMessage: false, skipRepeated: false,
-      onlyDonors: false, onlySubscribers: false, onlyCommunityMembers: false, onlyQuestions: false, announceFollowers: false,
-      announceGifts: false, ignoreLinks: false, ignoreExcessiveEmojis: false, maxEmojisAllowed: 3, onlyPlainNicks: false,
-      onlyModerators: false, announceViewers: false, announceLikes: false,
-      announceShares: false, announceBattles: false, announcePolls: false,
-      announceGoals: false, donorCharLimitEnabled: false, donorCharLimit: 200,
-      minMessageLengthEnabled: false, minMessageLength: 3,
-      maxQueueEnabled: false, maxQueueSize: 20,
-      donorVoiceEnabled: false, donorVoiceId: 'Diego',
-      modVoiceEnabled: false, modVoiceId: 'Lupita',
-      generalVoiceId: 'es-ES', notifVoiceEnabled: false, notifVoiceId: 'Lupita',
-      likeCooldown: 60, viewerCooldown: 120, followCooldown: 10, shareCooldown: 15, giftCooldown: 5,
-    })
+    setConfig(DEFAULT_CONFIG)
+    setDarkMode(DEFAULT_CONFIG.themeMode !== 'light')
     setCurrentPage('landing')
+  }
+
+  const handlePlanAction = (plan, meta = {}) => {
+    if (!plan) return
+
+    if (plan.price === 0) {
+      setCurrentPage(user ? 'studio' : 'auth')
+      return
+    }
+
+    if (!user) {
+      setCurrentPage('auth')
+      return
+    }
+
+    const planMapping = {
+      CREATOR: 'creator',
+      PRO: 'pro',
+      ELITE: 'elite',
+    }
+
+    const billingCycle = meta.billingCycle || 'monthly'
+    const recommendedPackages = {
+      CREATOR: 250000,
+      PRO: 500000,
+      ELITE: 1000000,
+    }
+
+    setSelectedPaymentPackage(recommendedPackages[plan.name] || 250000)
+    setSelectedCheckoutItem({
+      type: 'plan',
+      planId: planMapping[plan.name] || plan.name.toLowerCase(),
+      billingCycle,
+      label: `${plan.name} ${billingCycle === 'annual' ? 'Anual' : 'Mensual'}`,
+      price: billingCycle === 'monthly' ? Number(plan.price).toFixed(2) : Number(plan.price).toFixed(2),
+    })
+    setIsPaymentOpen(true)
   }
 
   const [darkMode, setDarkMode] = useState(() => {
@@ -274,6 +353,26 @@ export function App() {
     }
   }, [darkMode])
 
+  useEffect(() => {
+    if (!user || !configReady) return
+    const nextThemeMode = darkMode ? 'dark' : 'light'
+    if (config.themeMode !== nextThemeMode) {
+      updateConfig('themeMode', nextThemeMode)
+    }
+  }, [darkMode, user, configReady, config.themeMode])
+
+  // Admin Panel (solo para admins)
+  if (currentPage === 'admin' && user?.role === 'admin') {
+    return (
+      <AdminPanel
+        onClose={() => setCurrentPage('studio')}
+        darkMode={darkMode}
+        user={user}
+        authToken={authToken}
+      />
+    )
+  }
+
   // Auth Page
   if (currentPage === 'auth') {
     return <AuthPage onLogin={handleLogin} onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} />
@@ -281,7 +380,7 @@ export function App() {
 
   // Pricing Page
   if (currentPage === 'pricing') {
-    return <PricingPage onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} />
+    return <PricingPage onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} onPlanAction={handlePlanAction} />
   }
 
   // Voice Workshop Page (se desmonta al salir, no tiene estado persistente crítico)
@@ -359,6 +458,7 @@ export function App() {
             onGoVoiceCloning={() => setCurrentPage('voice-workshop')}
             onGoControlPanel={() => setCurrentPage('control-panel')}
             onGoStatistics={() => setCurrentPage('statistics')}
+            onGoAdmin={user?.role === 'admin' ? () => setCurrentPage('admin') : undefined}
             darkMode={darkMode}
             setDarkMode={setDarkMode}
             config={config}
@@ -512,6 +612,15 @@ export function App() {
         >
           Studio
         </button>
+        {user?.role === 'admin' && (
+          <button
+            onClick={() => setCurrentPage('admin')}
+            title="Panel Admin"
+            className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/30 transition-all"
+          >
+            <Shield className="w-4 h-4" />
+          </button>
+        )}
       </div>
       <div className="fixed top-4 right-4 z-40 flex items-center gap-3">
         {user ? (
@@ -645,7 +754,7 @@ export function App() {
             </h3>
             <p className={darkMode ? "text-gray-400" : "text-gray-600"}>Elige el plan perfecto para tu stream</p>
           </div>
-          <PricingCards darkMode={darkMode} showToggle={true} />
+          <PricingCards darkMode={darkMode} showToggle={true} onPlanAction={handlePlanAction} />
         </div>
       </section>
 
@@ -682,7 +791,12 @@ export function App() {
                 key={idx}
                 className={"relative group rounded-2xl p-px transition-all duration-300 cursor-pointer " + (isPopular ? "scale-105 shadow-2xl shadow-purple-500/20" : "hover:scale-102 hover:shadow-xl")}
                 style={{ background: isPopular ? 'linear-gradient(135deg, #a855f7, #ec4899)' : undefined }}
-                onClick={() => setIsPaymentOpen(true)}
+                onClick={() => {
+                  setSelectedCheckoutItem(null)
+                  const tokenPackageMap = { S: 100000, M: 250000, L: 1000000, XL: 1000000 }
+                  setSelectedPaymentPackage(tokenPackageMap[pkg.size] || 250000)
+                  setIsPaymentOpen(true)
+                }}
               >
                 <div className={"rounded-2xl p-6 h-full flex flex-col " + (darkMode ? "bg-[#0f0f23]" : "bg-white") + " " + (!isPopular ? ("border " + (darkMode ? "border-white/10" : "border-gray-200")) : "")}>
 
@@ -825,7 +939,12 @@ export function App() {
       </footer>
 
       {/* Payment Modal */}
-      <StripePayment isOpen={isPaymentOpen} onClose={() => setIsPaymentOpen(false)} />
+      <StripePayment
+        isOpen={isPaymentOpen}
+        onClose={() => setIsPaymentOpen(false)}
+        initialPackageTokens={selectedPaymentPackage}
+        initialCheckoutItem={selectedCheckoutItem}
+      />
 
       {/* Términos Modal */}
       {showTerms && (
