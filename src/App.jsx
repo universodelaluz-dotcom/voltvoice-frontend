@@ -83,6 +83,7 @@ export function App() {
       donors: { enabled: false, color: '#f59e0b' },
       banned: { enabled: false, color: '#ef4444' },
       subscribers: { enabled: false, color: '#ec4899' },
+      communityMembers: { enabled: false, color: '#22c55e' },
       topFans: { enabled: false, color: '#06b6d4' },
     },
   })

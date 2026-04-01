@@ -205,6 +205,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     donors: { enabled: false, color: '#f59e0b' },
     banned: { enabled: false, color: '#ef4444' },
     subscribers: { enabled: false, color: '#ec4899' },
+    communityMembers: { enabled: false, color: '#22c55e' },
     topFans: { enabled: false, color: '#06b6d4' },
   })
 
@@ -1115,6 +1116,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   : (highlightRules.topFans.enabled && msg.isTopGifter) ? highlightRules.topFans.color
                   : (highlightRules.donors.enabled && (msg.isDonor || donors.has(msg.user))) ? highlightRules.donors.color
                   : (highlightRules.subscribers.enabled && msg.isSubscriber) ? highlightRules.subscribers.color
+                  : (highlightRules.communityMembers.enabled && msg.isCommunityMember) ? highlightRules.communityMembers.color
                   : (highlightRules.banned.enabled && bannedUsers.has(msg.user)) ? highlightRules.banned.color
                   : null
                 const hlColor = highlightedUsers[msg.user] || autoColor
@@ -1129,6 +1131,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                       modEnabled: highlightRules.moderators.enabled,
                       donorEnabled: highlightRules.donors.enabled,
                       subEnabled: highlightRules.subscribers.enabled,
+                      communityEnabled: highlightRules.communityMembers.enabled,
                       topEnabled: highlightRules.topFans.enabled,
                     },
                     autoColor,
@@ -1136,7 +1139,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   })
                 }
                 // Tipo de badge para mostrar
-                const badgeLabel = msg.isModerator ? '⚔️ MOD' : msg.isTopGifter ? '🏆 TOP' : msg.isDonor ? '🎁 DONOR' : msg.isSubscriber ? '⭐ SUB' : null
+                const badgeLabel = msg.isModerator ? '⚔️ MOD' : msg.isTopGifter ? '🏆 TOP' : msg.isDonor ? '🎁 DONOR' : msg.isSubscriber ? '⭐ SUB' : msg.isCommunityMember ? '💚 CLUB' : null
                 return (
                 <div
                   key={msg.id || `${msg.user}-${idx}-${msg.text}`}
@@ -1481,6 +1484,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 { key: 'moderators', label: 'Moderadores' },
                 { key: 'donors', label: 'Donadores' },
                 { key: 'subscribers', label: 'Suscriptores' },
+                { key: 'communityMembers', label: 'Miembros de comunidad' },
                 { key: 'topFans', label: 'Top Fans / Gifters' },
                 { key: 'banned', label: 'Baneados (silenciados)' },
               ].map(({ key, label }) => (
@@ -1523,6 +1527,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                       { id: `test-mod-${Date.now()}`, user: 'test_moderador', nickname: 'Moderador Test', text: '🧪 Soy moderador de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: true, isSubscriber: false, isTopGifter: false, isBanned: false },
                       { id: `test-donor-${Date.now()}`, user: 'test_donador', nickname: 'Donador Test', text: '🧪 Soy donador de prueba', status: 'received', timestamp: new Date(), isDonor: true, isModerator: false, isSubscriber: false, isTopGifter: false, isBanned: false },
                       { id: `test-sub-${Date.now()}`, user: 'test_suscriptor', nickname: 'Suscriptor Test', text: '🧪 Soy suscriptor de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: true, isTopGifter: false, isBanned: false },
+                      { id: `test-community-${Date.now()}`, user: 'test_comunidad', nickname: 'Comunidad Test', text: '🧪 Soy fan o superfan de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: false, isCommunityMember: true, isTopGifter: false, isBanned: false },
                       { id: `test-topfan-${Date.now()}`, user: 'test_topfan', nickname: 'Top Fan Test', text: '🧪 Soy top fan de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: false, isTopGifter: true, isBanned: false },
                     ]
                     setMessages(prev => [...prev, ...testMessages])
