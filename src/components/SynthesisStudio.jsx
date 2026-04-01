@@ -114,9 +114,9 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   // Cargar voces disponibles de Inworld AI + Google TTS + Voces del usuario
   useEffect(() => {
     const allVoices = [
-      // === GOOGLE TTS (Sin tokens) ===
-      { id: "es-ES", name: "Voz Básica Español (ilimitada)", category: "google", engine: "google" },
-      { id: "en-US", name: "Voz Básica Inglés (ilimitada)", category: "google", engine: "google" },
+      // === VOCES LOCALES (Sin tokens, sin backend) ===
+      { id: "es-ES", name: "🔊 Voz Local Español (ilimitada)", category: "webspeech", engine: "webspeech" },
+      { id: "en-US", name: "🔊 Voz Local Inglés (ilimitada)", category: "webspeech", engine: "webspeech" },
 
       // === Voces Premium - Naturales ===
       { id: "Diego", name: "🎙️ Voz natural de Luis - Premium", category: "premium", engine: "inworld" },
@@ -183,62 +183,31 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     try {
       const selectedVoiceObj = voices.find(v => v.id === selectedVoice)
       const isWebSpeech = selectedVoiceObj && selectedVoiceObj.engine === "webspeech"
-      const isGoogleVoice = selectedVoiceObj && selectedVoiceObj.engine === "google"
 
       if (isWebSpeech) {
-        // Usar Web Speech API (voces locales del sistema operativo)
+        // Usar Web Speech API — voces locales del navegador/OS, gratis, sin backend
+        const lang = selectedVoice === "en-US" ? "en-US" : "es-ES"
         const utterance = new SpeechSynthesisUtterance(text)
         utterance.rate = audioSpeed
         utterance.pitch = 1.0
         utterance.volume = 1.0
+        utterance.lang = lang
 
-        // Seleccionar idioma según voiceId
-        if (selectedVoice === "web-speech-es") {
-          utterance.lang = "es-ES"
-        } else if (selectedVoice === "web-speech-en") {
-          utterance.lang = "en-US"
-        }
+        // Buscar voz del idioma correcto instalada en el sistema
+        const availableVoices = window.speechSynthesis.getVoices()
+        const matchVoice =
+          availableVoices.find(v => v.lang === lang) ||
+          availableVoices.find(v => v.lang.startsWith(lang.split('-')[0])) ||
+          availableVoices[0]
+        if (matchVoice) utterance.voice = matchVoice
 
-        // Usar primera voz disponible del sistema
-        const voices = window.speechSynthesis.getVoices()
-        if (voices.length > 0) {
-          utterance.voice = voices[0]
-        }
-
-        // Feedback visual
-        setSuccess(true)
-        setTimeout(() => setSuccess(false), 3000)
-
-        // Reproducir
-        window.speechSynthesis.cancel() // Cancelar cualquier reproducción anterior
+        window.speechSynthesis.cancel()
         window.speechSynthesis.speak(utterance)
 
-        // Simular tokens (Web Speech es gratis)
         setTokensUsed(0)
         setSynthesisCount(prev => prev + 1)
-      } else if (isGoogleVoice) {
-        const response = await fetch(`${API_URL}/api/tts/say`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            text,
-            voice: selectedVoice
-          })
-        })
-
-        const data = await response.json()
-
-        if (response.ok && (data.audio || data.success)) {
-          setAudioUrl(data.audio || data.audioUrl)
-          setTokensUsed(0)
-          setSynthesisCount(prev => prev + 1)
-          setSuccess(true)
-          setTimeout(() => setSuccess(false), 3000)
-        } else {
-          setError(data.error || "Error al sintetizar la voz básica")
-        }
+        setSuccess(true)
+        setTimeout(() => setSuccess(false), 3000)
       } else {
         const token = getAuthToken()
         let response = await fetch(`${API_URL}/api/inworld/tts`, {
@@ -324,7 +293,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const charCount = text.length
   const estimatedTokens = Math.ceil(charCount / 100)
   const selectedVoiceObj = voices.find(v => v.id === selectedVoice)
-  const requiresPaidTokens = selectedVoiceObj && !["google", "webspeech"].includes(selectedVoiceObj.engine)
+  const requiresPaidTokens = selectedVoiceObj && selectedVoiceObj.engine !== "webspeech"
   const hasInsufficientTokens = requiresPaidTokens && estimatedTokens > tokens
 
   return (

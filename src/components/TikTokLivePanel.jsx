@@ -1058,6 +1058,50 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       if (c.notifVoiceEnabled && item.isNotification) voiceId = c.notifVoiceId || 'Lupita'
 
       try {
+        const isLocalVoice = voiceId === 'es-ES' || voiceId === 'en-US'
+
+        if (isLocalVoice) {
+          // Voz local — Web Speech API, sin backend, sin costo
+          setMessages((prev) => prev.map((msg) => msg.id === item.id ? { ...msg, status: 'playing' } : msg))
+          const lang = voiceId === 'en-US' ? 'en-US' : 'es-ES'
+          await new Promise((resolve) => {
+            if (disconnectedRef.current) { resolve(); return }
+            const utterance = new SpeechSynthesisUtterance(text)
+            utterance.lang = lang
+            utterance.rate = c.audioSpeed || 1.0
+            utterance.pitch = 1.0
+            utterance.volume = volumeRef.current
+
+            const availableVoices = window.speechSynthesis.getVoices()
+            const matchVoice =
+              availableVoices.find(v => v.lang === lang) ||
+              availableVoices.find(v => v.lang.startsWith(lang.split('-')[0])) ||
+              availableVoices[0]
+            if (matchVoice) utterance.voice = matchVoice
+
+            utterance.onend = () => {
+              const estimatedDuration = estimateSpeakSeconds(item.rawText || item.text, c.audioSpeed || 1.0)
+              recentPlaybackDurationsRef.current = [...recentPlaybackDurationsRef.current, estimatedDuration].slice(-20)
+              sessionReadCountRef.current += 1
+              userLastSpokenAtRef.current[item.username] = Date.now()
+              const spokenKeywords = extractKeywords(item.rawText || item.text)
+              if (spokenKeywords.length) recentTopicKeywordsRef.current = [...spokenKeywords, ...recentTopicKeywordsRef.current].slice(0, 24)
+              const normalizedSpoken = normalizeMessageForMatching(item.rawText || item.text)
+              if (normalizedSpoken) {
+                recentNormalizedMessagesRef.current = [...recentNormalizedMessagesRef.current, { text: normalizedSpoken, timestamp: Date.now() }]
+                  .filter(e => e.timestamp >= Date.now() - 180000).slice(-80)
+              }
+              setMessages((prev) => prev.map((msg) => msg.id === item.id ? { ...msg, status: 'done' } : msg))
+              resolve()
+            }
+            utterance.onerror = () => resolve()
+
+            if (isPttSuppressedRef.current) { resolve(); return }
+            window.speechSynthesis.cancel()
+            window.speechSynthesis.speak(utterance)
+          })
+        } else {
+        // Voz Inworld/clonada — llamada al backend
         const response = await fetch(`${API_URL}/api/tiktok/message`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1122,6 +1166,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             audio.play().catch(() => { currentAudioRef.current = null; resolve() })
           })
         }
+        } // fin else voz backend
       } catch (err) {
         console.error('[TikTok] Error sintetizando:', err)
         await new Promise((r) => setTimeout(r, 500))
