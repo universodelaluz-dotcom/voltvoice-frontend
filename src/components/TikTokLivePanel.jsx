@@ -67,6 +67,16 @@ const removeEmojis = (text) => {
 
 const normalizeTikTokUsername = (value) => String(value || '').trim().replace(/^@+/, '')
 
+const pruneRecentTimestamps = (timestamps, windowMs = 60000) => {
+  const cutoff = Date.now() - windowMs
+  return timestamps.filter((ts) => ts >= cutoff)
+}
+
+const average = (values = [], fallback = 0) => {
+  if (!values.length) return fallback
+  return values.reduce((sum, value) => sum + value, 0) / values.length
+}
+
 // Obtener token del localStorage
 const getAuthToken = () => localStorage.getItem('sv-token') || ''
 
@@ -266,6 +276,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const pttRestoreTimerRef = useRef(null)
   const autoScrollPinnedRef = useRef(true)
   const liveRetryTimerRef = useRef(null)
+  const recentIncomingTimestampsRef = useRef([])
+  const recentPlaybackDurationsRef = useRef([])
   // Cooldown por tipo de notificación (timestamp del último anuncio)
   const lastNotifTime = useRef({ like: 0, viewer_count: 0, share: 0, follow: 0, gift: 0 })
 
@@ -580,10 +592,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           console.log(`  → isDonor: ${msg.isDonor}, isModerator: ${msg.isModerator}, isSubscriber: ${msg.isSubscriber}, topGifterRank: ${msg.topGifterRank}`)
           console.log(`  → Full msg object:`, JSON.stringify(msg, null, 2))
 
+          recentIncomingTimestampsRef.current = pruneRecentTimestamps([
+            ...recentIncomingTimestampsRef.current,
+            Date.now()
+          ])
+
           const isBanned = bannedRef.current.has(msg.username)
 
           // Siempre mostrar el mensaje en el chat visual
-          setMessages((prev) => [
+          setMessages((prev) => ([
             ...prev,
             {
               id: msg.id,
@@ -599,7 +616,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               isTopGifter: msg.topGifterRank > 0,
               isBanned
             }
-          ])
+          ]).slice(-220))
 
           // Feed message to chatStore for bot access
           chatStore.addMessage({
@@ -695,7 +712,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
           const finalText = c.readOnlyMessage ? textToSpeak : `${displayName}: ${textToSpeak}`
 
-          queueMessage(finalText, msg.username, { id: msg.id, isDonor: msg.isDonor || donors.has(msg.username), isModerator: msg.isModerator })
+          queueMessage(finalText, msg.username, {
+            id: msg.id,
+            isDonor: msg.isDonor || donors.has(msg.username),
+            isModerator: msg.isModerator,
+            isSubscriber: msg.isSubscriber || false,
+            isCommunityMember: msg.isCommunityMember || false,
+            isTopGifter: msg.topGifterRank > 0,
+            isQuestion: isQuestion(msg.text)
+          })
 
         } else if (data.type === 'status') {
           // Stats manejados localmente (timer + contador de mensajes)
@@ -738,8 +763,64 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   }, [isConnected])
 
   // Cola de audio
+  const estimateSpeakSeconds = (text = '', speed = 1) => {
+    const normalizedSpeed = Math.max(0.7, Number(speed) || 1)
+    const chars = String(text || '').trim().length
+    const base = Math.max(1.8, chars / 18)
+    return base / normalizedSpeed
+  }
+
+  const getSmartMetrics = () => {
+    recentIncomingTimestampsRef.current = pruneRecentTimestamps(recentIncomingTimestampsRef.current)
+    const incomingPerMinute = recentIncomingTimestampsRef.current.length
+    const avgPlaybackSeconds = average(recentPlaybackDurationsRef.current, 4.8)
+    const readCapacityPerMinute = Math.max(6, 60 / Math.max(1.8, avgPlaybackSeconds))
+    const queueDepth = speakQueueRef.current.length
+    const pressure = incomingPerMinute / Math.max(1, readCapacityPerMinute)
+    return { incomingPerMinute, avgPlaybackSeconds, readCapacityPerMinute, queueDepth, pressure }
+  }
+
+  const getAdaptiveSkipCount = (metrics) => {
+    if (metrics.pressure <= 1.05) return 0
+    const overflow = Math.max(0, metrics.incomingPerMinute - metrics.readCapacityPerMinute)
+    return Math.max(0, Math.round(overflow / Math.max(1, metrics.readCapacityPerMinute / 3)))
+  }
+
   const queueMessage = (text, username, extra = {}) => {
-    speakQueueRef.current.push({ text: text.toLowerCase(), username, ...extra })
+    const item = {
+      text: text.toLowerCase(),
+      rawText: text,
+      username,
+      queuedAt: Date.now(),
+      estimatedSpeakSeconds: estimateSpeakSeconds(text, configRef.current?.audioSpeed || 1.0),
+      ...extra
+    }
+
+    if (configRef.current?.smartChatEnabled) {
+      const metrics = getSmartMetrics()
+      const targetQueueSize = Math.max(1, Math.ceil(metrics.readCapacityPerMinute / 18))
+      const adaptiveSkip = getAdaptiveSkipCount(metrics)
+
+      if (adaptiveSkip > 0 && speakQueueRef.current.length > 0) {
+        const keepCount = Math.max(0, targetQueueSize - 1)
+        speakQueueRef.current = speakQueueRef.current.slice(-(keepCount + 1))
+      }
+
+      speakQueueRef.current.push(item)
+
+      if (speakQueueRef.current.length > targetQueueSize) {
+        speakQueueRef.current = speakQueueRef.current.slice(-targetQueueSize)
+      }
+
+      console.log(
+        `[TikTok] Smart chat -> ${metrics.incomingPerMinute.toFixed(0)} msg/min, ` +
+        `${metrics.readCapacityPerMinute.toFixed(1)} lecturas/min, ` +
+        `skip aprox ${adaptiveSkip}, cola objetivo ${targetQueueSize}`
+      )
+    } else {
+      speakQueueRef.current.push(item)
+    }
+
     console.log(`[TikTok] Agregado a cola (${speakQueueRef.current.length} pendientes)`)
     processQueue()
   }
@@ -797,6 +878,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             audio.onended = () => {
               currentAudioRef.current = null
               console.log(`[TikTok] Audio terminado`)
+              const duration = Number(audio.duration)
+              const effectiveDuration = Number.isFinite(duration) && duration > 0
+                ? duration
+                : (item.estimatedSpeakSeconds || estimateSpeakSeconds(item.rawText || item.text, c.audioSpeed || 1.0))
+              recentPlaybackDurationsRef.current = [...recentPlaybackDurationsRef.current, effectiveDuration].slice(-20)
               setMessages((prev) =>
                 prev.map((msg) =>
                   msg.id === item.id ? { ...msg, status: 'done' } : msg
@@ -1115,10 +1201,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             </button>
           </div>
 
-          <div className="space-y-3">
-            <div className={darkMode ? "bg-cyan-500/10 border border-cyan-400/30 rounded-lg p-4 min-h-[96px]" : "bg-cyan-50 border border-cyan-200 rounded-lg p-4 min-h-[96px]"}>
-              {currentReadingMessage ? (
-                <div className="space-y-2">
+            <div className="space-y-3">
+              <div className={darkMode ? "bg-cyan-500/10 border border-cyan-400/30 rounded-lg p-4 h-[172px] overflow-hidden" : "bg-cyan-50 border border-cyan-200 rounded-lg p-4 h-[172px] overflow-hidden"}>
+                {currentReadingMessage ? (
+                <div className="space-y-2 h-full flex flex-col">
                   <div className="flex items-center justify-between gap-3">
                     <span className={darkMode ? "text-[11px] uppercase tracking-[0.2em] text-cyan-300 font-semibold" : "text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold"}>
                       Mensaje en curso
@@ -1131,22 +1217,22 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                       <Volume2 className="w-4 h-4 text-cyan-400 animate-pulse" />
                     </span>
                   </div>
-                    <p className="font-semibold" style={{ color: chatNickColor, fontSize: `${chatFontSize}px` }}>
+                    <p className="font-semibold leading-tight shrink-0" style={{ color: chatNickColor, fontSize: `${chatFontSize}px` }}>
                       {nickOverrides[currentReadingMessage.user] || currentReadingMessage.nickname || currentReadingMessage.user}
                     </p>
                     <p
-                      className="font-medium"
+                      className="font-medium overflow-y-auto pr-1 leading-snug"
                       style={{ color: chatMsgColor, fontSize: `${chatFontSize}px` }}
                     >
                       {currentReadingMessage.text}
                     </p>
                   </div>
                 ) : (
-                  <div className="h-full flex flex-col justify-center">
+                  <div className="h-full flex flex-col justify-center overflow-hidden">
                   <span className={darkMode ? "text-[11px] uppercase tracking-[0.2em] text-cyan-300 font-semibold mb-2" : "text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-2"}>
                     Mensaje en curso
                   </span>
-                    <p style={{ color: chatMsgColor, fontSize: `${chatFontSize}px` }}>
+                    <p className="overflow-y-auto pr-1 leading-snug" style={{ color: chatMsgColor, fontSize: `${chatFontSize}px` }}>
                       Cuando se empiece a leer un comentario, aparecera aqui fijo.
                     </p>
                   </div>
