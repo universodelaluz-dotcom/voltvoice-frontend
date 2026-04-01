@@ -185,6 +185,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   }, [])
 
   const [tiktokUser, setTiktokUser] = useState(config.lastTiktokUser || '')
+  const [connectedTikTokUser, setConnectedTikTokUser] = useState(() => normalizeTikTokUsername(config.lastTiktokUser || ''))
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [isWaitingForLive, setIsWaitingForLive] = useState(false)
@@ -321,13 +322,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
   const connectToTikTok = async (rawUsername, { fromAutoRetry = false } = {}) => {
     const normalizedUsername = normalizeTikTokUsername(rawUsername)
+    const rawInputUsername = String(rawUsername || '').trim()
 
     if (!normalizedUsername) {
       setError('Ingresa un usuario de TikTok valido')
       return { success: false, cancelled: false }
     }
 
-    setTiktokUser(normalizedUsername)
     disconnectedRef.current = false
     setIsConnecting(true)
     if (!fromAutoRetry) {
@@ -348,16 +349,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         connectedAtRef.current = Date.now()
         setStats({ count: 0, uptime: 0 })
         setIsConnected(true)
+        setConnectedTikTokUser(normalizedUsername)
         setMessages([])
         cancelWaitingForLive({ clearError: true })
-        if (updateConfig) updateConfig('lastTiktokUser', normalizedUsername)
+        if (updateConfig) updateConfig('lastTiktokUser', rawInputUsername || normalizedUsername)
         return { success: true, cancelled: false }
       }
 
       if (data.notLive) {
-        setError('No esta en linea. Quedara a la espera y reintentara cada 10 segundos.')
+        setError(null)
         setIsWaitingForLive(true)
-        setWaitingStatus(fromAutoRetry ? 'Reintentando conexion al live...' : 'Esperando a que el live inicie...')
+        setWaitingStatus(fromAutoRetry ? 'Aun no esta en linea. Seguimos intentando cada 10 segundos.' : 'No esta en linea. Quedara a la espera y reintentara cada 10 segundos.')
         return { success: false, notLive: true, cancelled: false }
       }
 
@@ -445,7 +447,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
   // Conectar a WebSocket cuando el usuario se conecte a TikTok
   useEffect(() => {
-    if (!isConnected || !tiktokUser) return
+    if (!isConnected || !connectedTikTokUser) return
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const wsURL = `${protocol}//${API_URL.replace(/^https?:\/\//, '')}/api/tiktok/ws`
@@ -456,7 +458,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
     ws.onopen = async () => {
       console.log('[TikTok] WebSocket conectado')
-      ws.send(JSON.stringify({ type: 'subscribe', username: tiktokUser }))
+      ws.send(JSON.stringify({ type: 'subscribe', username: connectedTikTokUser }))
 
       // Cargar bans y nicks desde BD
       const bans = await apiBans.getAll()
@@ -711,6 +713,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     ws.onclose = () => {
       console.log('[TikTok] WebSocket cerrado')
       setIsConnected(false)
+      setConnectedTikTokUser('')
     }
 
     wsRef.current = ws
@@ -721,7 +724,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         wsRef.current.close()
       }
     }
-  }, [isConnected, tiktokUser])
+  }, [isConnected, connectedTikTokUser])
 
   // Timer local de uptime — sube 1 segundo cada segundo mientras está conectado
   useEffect(() => {
@@ -769,7 +772,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            username: tiktokUser,
+            username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
             messageUsername: username,
             messageText: text,
             voiceId
@@ -961,7 +964,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       await fetch(`${API_URL}/api/tiktok/disconnect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: tiktokUser })
+        body: JSON.stringify({ username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser) })
       })
 
       if (wsRef.current) {
@@ -969,6 +972,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       }
 
       setIsConnected(false)
+      setConnectedTikTokUser('')
       setMessages([])
       setStats({ count: 0, uptime: 0 })
       connectedAtRef.current = null
@@ -1001,7 +1005,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             <input
               type="text"
               value={tiktokUser}
-              onChange={(e) => setTiktokUser(normalizeTikTokUsername(e.target.value))}
+              onChange={(e) => setTiktokUser(e.target.value)}
               placeholder="Usuario de TikTok (con @ o sin @)"
               className={darkMode ? "flex-1 bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400" : "flex-1 bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
               disabled={isConnecting || isWaitingForLive}
@@ -1029,6 +1033,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               </button>
             )}
           </div>
+
+          {isWaitingForLive && waitingStatus && !error && (
+            <div className={`p-3 border rounded flex gap-2 ${darkMode ? 'bg-amber-500/10 border-amber-400/40' : 'bg-amber-50 border-amber-300'}`}>
+              <Loader className="w-5 h-5 flex-shrink-0 mt-0.5 animate-spin text-amber-400" />
+              <div className={darkMode ? 'text-amber-100' : 'text-amber-800'}>
+                <p>{waitingStatus}</p>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className={`p-3 border rounded flex gap-2 ${isWaitingForLive ? 'bg-red-950/30 border-red-500/50 animate-pulse' : 'bg-red-900/20 border-red-500/30'}`}>
