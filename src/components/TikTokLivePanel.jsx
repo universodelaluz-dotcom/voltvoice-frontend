@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X } from 'lucide-react'
+import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X, Users, Clock3, TrendingUp, Filter, Trophy, Sparkles } from 'lucide-react'
 import chatStore from '../services/chatStore.js'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
@@ -118,6 +118,32 @@ const defaultHighlightRules = {
   subscribers: { enabled: false, color: '#ec4899' },
   communityMembers: { enabled: false, color: '#22c55e' },
   topFans: { enabled: false, color: '#06b6d4' },
+}
+
+function AnimatedCount({ value, duration = 900, decimals = 0, suffix = '' }) {
+  const [displayValue, setDisplayValue] = useState(0)
+
+  useEffect(() => {
+    let frameId
+    const start = performance.now()
+    const initial = displayValue
+    const target = Number(value || 0)
+
+    const step = (now) => {
+      const progress = Math.min(1, (now - start) / duration)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      const next = initial + (target - initial) * eased
+      setDisplayValue(next)
+      if (progress < 1) {
+        frameId = requestAnimationFrame(step)
+      }
+    }
+
+    frameId = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(frameId)
+  }, [value])
+
+  return `${displayValue.toFixed(decimals)}${suffix}`
 }
 
 // Funciones para interactuar con API de bans y nicks
@@ -251,6 +277,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const [chatMsgColor, setChatMsgColor] = useState(config.chatMsgColor || '#d1d5db')
   const [showFontPanel, setShowFontPanel] = useState(false)
   const [smartChatEnabled, setSmartChatEnabled] = useState(config.smartChatEnabled || false)
+  const [showSessionSummary, setShowSessionSummary] = useState(false)
+  const [sessionSummary, setSessionSummary] = useState(null)
   const [highlightRules, setHighlightRules] = useState({
     ...defaultHighlightRules,
     ...(config.highlightRules || {})
@@ -313,6 +341,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const userLastSpokenAtRef = useRef({})
   const recentTopicKeywordsRef = useRef([])
   const recentNormalizedMessagesRef = useRef([])
+  const sessionReceivedCountRef = useRef(0)
+  const sessionReadCountRef = useRef(0)
+  const sessionFilteredCountRef = useRef(0)
+  const sessionUniqueUsersRef = useRef(new Set())
+  const sessionUserCountsRef = useRef({})
+  const sessionPeakMessagesPerMinuteRef = useRef(0)
   // Cooldown por tipo de notificación (timestamp del último anuncio)
   const lastNotifTime = useRef({ like: 0, viewer_count: 0, share: 0, follow: 0, gift: 0 })
 
@@ -394,6 +428,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       if (response.ok && data.success) {
         disconnectedRef.current = false
         connectedAtRef.current = Date.now()
+        resetSessionTracking()
+        setShowSessionSummary(false)
+        setSessionSummary(null)
         setStats({ count: 0, uptime: 0 })
         setIsConnected(true)
         setConnectedTikTokUser(normalizedUsername)
@@ -632,6 +669,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             ...recentIncomingTimestampsRef.current,
             Date.now()
           ])
+          sessionReceivedCountRef.current += 1
+          sessionUniqueUsersRef.current.add(msg.username)
+          sessionUserCountsRef.current[msg.username] = (sessionUserCountsRef.current[msg.username] || 0) + 1
+          sessionPeakMessagesPerMinuteRef.current = Math.max(
+            sessionPeakMessagesPerMinuteRef.current,
+            recentIncomingTimestampsRef.current.length
+          )
           const normalizedIncoming = normalizeMessageForMatching(msg.text)
           if (normalizedIncoming) {
             recentNormalizedMessagesRef.current = [
@@ -679,42 +723,42 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           setStats(prev => ({ ...prev, count: prev.count + 1 }))
 
           // Si está baneado, no leer en voz
-          if (isBanned) return
+          if (isBanned) { markFilteredMessage(); return }
 
           // Filtro: solo donadores
-          if (c.onlyDonors && !msg.isDonor && !donors.has(msg.username)) return
+          if (c.onlyDonors && !msg.isDonor && !donors.has(msg.username)) { markFilteredMessage(); return }
 
           // Filtro: solo moderadores
-          if (c.onlyModerators && !msg.isModerator) return
+          if (c.onlyModerators && !msg.isModerator) { markFilteredMessage(); return }
 
           // Filtro: solo suscriptores
-          if (c.onlySubscribers && !msg.isSubscriber) return
+          if (c.onlySubscribers && !msg.isSubscriber) { markFilteredMessage(); return }
 
           // Filtro: solo miembros de comunidad / Fan Club
-          if (c.onlyCommunityMembers && !msg.isCommunityMember) return
+          if (c.onlyCommunityMembers && !msg.isCommunityMember) { markFilteredMessage(); return }
 
           // Filtro: solo preguntas
-          if (c.onlyQuestions && !isQuestion(msg.text)) return
+          if (c.onlyQuestions && !isQuestion(msg.text)) { markFilteredMessage(); return }
 
           // Filtro: saltar repetidos (por usuario, no global)
           const normalizedText = msg.text.trim().toLowerCase()
-          if (c.skipRepeated && normalizedText === lastMessageRef.current[msg.username]) return
+          if (c.skipRepeated && normalizedText === lastMessageRef.current[msg.username]) { markFilteredMessage(); return }
           lastMessageRef.current[msg.username] = normalizedText
 
           // Filtro: ignorar enlaces
-          if (c.ignoreLinks && hasLinks(msg.text)) return
+          if (c.ignoreLinks && hasLinks(msg.text)) { markFilteredMessage(); return }
 
           // Filtro: no leer emojis en chat (quitar todos los emojis del texto)
           let textToProcess = msg.text
           if (c.stripChatEmojis) {
             textToProcess = removeEmojis(textToProcess)
-            if (!textToProcess.trim()) return
+            if (!textToProcess.trim()) { markFilteredMessage(); return }
           }
 
           // Filtro: limpiar emojis excesivos del texto (no ignorar el mensaje)
           if (c.ignoreExcessiveEmojis && hasExcessiveEmojis(textToProcess, parseInt(c.maxEmojisAllowed) || 3)) {
             textToProcess = removeEmojis(textToProcess)
-            if (!textToProcess.trim()) return
+            if (!textToProcess.trim()) { markFilteredMessage(); return }
           }
 
           // Filtro: Normalizar Unicode y detectar intentos de evasión
@@ -728,14 +772,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             // Si hay normalización pero no es sospechoso, usar el texto normalizado
             textToProcess = unicodeCheck.text
           }
-          if (!textToProcess.trim()) return
+          if (!textToProcess.trim()) { markFilteredMessage(); return }
 
           // Filtro: largo mínimo
-          if (c.minMessageLengthEnabled && textToProcess.trim().length < c.minMessageLength) return
+          if (c.minMessageLengthEnabled && textToProcess.trim().length < c.minMessageLength) { markFilteredMessage(); return }
 
           // Limitar cola máxima
           if (c.maxQueueEnabled && speakQueueRef.current.length >= c.maxQueueSize) {
             console.log(`[TikTok] Cola llena (${c.maxQueueSize}), descartando mensaje`)
+            markFilteredMessage()
             return
           }
 
@@ -915,6 +960,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       const metrics = getSmartMetrics()
       if (shouldHardDropSmartMessage(item, metrics)) {
         console.log('[TikTok] Smart chat descartó mensaje por filtros duros adaptativos')
+        markFilteredMessage()
         return
       }
       const adaptiveSkip = getAdaptiveSkipCount(metrics)
@@ -924,6 +970,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       item.smartScore = scoreSmartMessage(item, metrics)
       if (item.smartScore < threshold) {
         console.log(`[TikTok] Smart chat descartó mensaje (score ${item.smartScore.toFixed(2)} < ${threshold.toFixed(2)})`)
+        markFilteredMessage()
         return
       }
 
@@ -967,6 +1014,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         const metrics = getSmartMetrics()
         if (shouldHardDropSmartMessage(item, metrics)) {
           console.log('[TikTok] Smart chat saltó un pendiente viejo o ilegible para mantenerse fresco')
+          markFilteredMessage()
           continue
         }
       }
@@ -1016,6 +1064,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 ? duration
                 : (item.estimatedSpeakSeconds || estimateSpeakSeconds(item.rawText || item.text, c.audioSpeed || 1.0))
               recentPlaybackDurationsRef.current = [...recentPlaybackDurationsRef.current, effectiveDuration].slice(-20)
+              sessionReadCountRef.current += 1
               userLastSpokenAtRef.current[item.username] = Date.now()
               const spokenKeywords = extractKeywords(item.rawText || item.text)
               if (spokenKeywords.length) {
@@ -1137,7 +1186,56 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     })
   }
 
+  const resetSessionTracking = () => {
+    recentIncomingTimestampsRef.current = []
+    recentPlaybackDurationsRef.current = []
+    recentGiftSendersRef.current = {}
+    userLastSpokenAtRef.current = {}
+    recentTopicKeywordsRef.current = []
+    recentNormalizedMessagesRef.current = []
+    sessionReceivedCountRef.current = 0
+    sessionReadCountRef.current = 0
+    sessionFilteredCountRef.current = 0
+    sessionUniqueUsersRef.current = new Set()
+    sessionUserCountsRef.current = {}
+    sessionPeakMessagesPerMinuteRef.current = 0
+  }
+
+  const buildSessionSummary = () => {
+    const uniqueUsers = Array.from(sessionUniqueUsersRef.current)
+    const mostActiveEntry = Object.entries(sessionUserCountsRef.current)
+      .sort((a, b) => b[1] - a[1])[0]
+    const receivedCount = sessionReceivedCountRef.current
+    const readCount = sessionReadCountRef.current
+    const filteredCount = sessionFilteredCountRef.current
+    return {
+      receivedCount,
+      readCount,
+      filteredCount,
+      uptimeSeconds: stats.uptime,
+      peakMessagesPerMinute: sessionPeakMessagesPerMinuteRef.current,
+      uniqueUsers: uniqueUsers.length,
+      readPercentage: receivedCount > 0 ? (readCount / receivedCount) * 100 : 0,
+      filteredPercentage: receivedCount > 0 ? (filteredCount / receivedCount) * 100 : 0,
+      mostActiveUser: mostActiveEntry ? { username: mostActiveEntry[0], count: mostActiveEntry[1] } : null
+    }
+  }
+
+  const closeSessionSummary = () => {
+    setShowSessionSummary(false)
+    setSessionSummary(null)
+    setMessages([])
+    setStats({ count: 0, uptime: 0 })
+    connectedAtRef.current = null
+    resetSessionTracking()
+  }
+
+  const markFilteredMessage = () => {
+    sessionFilteredCountRef.current += 1
+  }
+
   const currentReadingMessage = messages.find((msg) => msg.status === 'playing') || null
+  const showConnectedView = isConnected || showSessionSummary
   const oneMinuteAgo = Date.now() - 60000
   const messagesPerMinute = messages.reduce((count, msg) => {
     const timestamp = Number(msg.timestamp || 0)
@@ -1148,6 +1246,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     : messagesPerMinute >= 8
       ? { color: '#f59e0b', label: 'Medio' }
       : { color: '#22c55e', label: 'Leve' }
+  const summaryTone = sessionSummary?.peakMessagesPerMinute >= 35
+    ? 'Sesion explosiva'
+    : sessionSummary?.peakMessagesPerMinute >= 15
+      ? 'Sesion activa'
+      : 'Sesion fluida'
 
   const handlePause = () => {
     if (!isPaused) {
@@ -1213,18 +1316,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         wsRef.current.close()
       }
 
+      setSessionSummary(buildSessionSummary())
+      setShowSessionSummary(true)
       setIsConnected(false)
       setConnectedTikTokUser('')
-      setMessages([])
-      setStats({ count: 0, uptime: 0 })
-      connectedAtRef.current = null
     } catch (err) {
       console.error('[TikTok] Error desconectando:', err)
     }
   }
 
   return (
-    <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6 mb-6" : "bg-white border border-indigo-200 rounded-lg p-6 mb-6 shadow-sm"}>
+    <div className={`relative overflow-hidden ${darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6 mb-6" : "bg-white border border-indigo-200 rounded-lg p-6 mb-6 shadow-sm"}`}>
       <div className="flex items-center gap-3 mb-4">
         <MessageCircle className="w-6 h-6 text-cyan-300" />
         <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>TikTok LIVE en Tiempo Real</h2>
@@ -1241,7 +1343,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         </span>
       </div>
 
-      {!isConnected ? (
+      {!showConnectedView ? (
         <form onSubmit={handleConnectSubmit} className="space-y-4">
           <div className="flex gap-2">
             <input
@@ -1901,6 +2003,130 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {showSessionSummary && sessionSummary && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-slate-950/55 backdrop-blur-md" />
+          <div className={`relative w-full max-w-4xl rounded-[28px] border shadow-2xl overflow-hidden ${
+            darkMode
+              ? 'bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_rgba(15,23,42,0.96)_48%,_rgba(2,6,23,0.98)_100%)] border-cyan-400/25'
+              : 'bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_rgba(255,255,255,0.96)_45%,_rgba(241,245,249,0.98)_100%)] border-cyan-200'
+          }`}>
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute -top-16 right-10 h-40 w-40 rounded-full bg-cyan-400/20 blur-3xl" />
+              <div className="absolute bottom-0 left-10 h-40 w-40 rounded-full bg-fuchsia-500/15 blur-3xl" />
+            </div>
+            <div className="relative p-6 sm:p-8">
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-300 text-xs font-semibold uppercase tracking-[0.2em]">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Resumen premium
+                  </div>
+                  <h3 className={`mt-3 text-3xl sm:text-4xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                    Cierre del directo
+                  </h3>
+                  <p className={`mt-2 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                    {summaryTone}. Asi se movio tu chat en esta sesion.
+                  </p>
+                </div>
+                <button
+                  onClick={closeSessionSummary}
+                  className={`rounded-full p-2 border transition-colors ${
+                    darkMode ? 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10' : 'border-slate-200 bg-white/70 text-slate-700 hover:bg-white'
+                  }`}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { label: 'Mensajes recibidos', value: sessionSummary.receivedCount, icon: MessageCircle, color: 'text-cyan-300' },
+                    { label: 'Mensajes leidos', value: sessionSummary.readCount, icon: Volume2, color: 'text-emerald-300' },
+                    { label: 'Tiempo de transmision', value: sessionSummary.uptimeSeconds, icon: Clock3, color: 'text-violet-300', format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s` },
+                    { label: 'Pico mensajes/min', value: sessionSummary.peakMessagesPerMinute, icon: TrendingUp, color: 'text-amber-300' },
+                  ].map((stat, index) => {
+                    const Icon = stat.icon
+                    return (
+                      <div
+                        key={stat.label}
+                        className={`rounded-2xl border px-4 py-5 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-200'}`}
+                        >
+                        <div className="flex items-center gap-2 mb-3">
+                          <Icon className={`w-4 h-4 ${stat.color}`} />
+                          <span className={`text-xs uppercase tracking-[0.18em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{stat.label}</span>
+                        </div>
+                        <div className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                          {stat.format ? stat.format(stat.value) : <AnimatedCount value={stat.value} />}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="space-y-4">
+                  <div className={`rounded-2xl border p-5 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-200'}`}>
+                    <div className="grid grid-cols-2 gap-4">
+                      {[
+                        { label: 'Porcentaje leido', value: sessionSummary.readPercentage, accent: '#22c55e' },
+                        { label: 'Mensajes filtrados', value: sessionSummary.filteredPercentage, accent: '#f59e0b' },
+                      ].map((ring) => (
+                        <div key={ring.label} className="flex flex-col items-center gap-3">
+                          <div
+                            className="relative h-24 w-24 rounded-full"
+                            style={{ background: `conic-gradient(${ring.accent} ${Math.min(100, ring.value)}%, rgba(148,163,184,0.18) 0)` }}
+                          >
+                            <div className={`absolute inset-[10px] rounded-full flex items-center justify-center ${darkMode ? 'bg-slate-950/90' : 'bg-white/95'}`}>
+                              <span className={`text-lg font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                <AnimatedCount value={ring.value} decimals={0} suffix="%" />
+                              </span>
+                            </div>
+                          </div>
+                          <span className={`text-xs text-center uppercase tracking-[0.18em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{ring.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className={`rounded-2xl border p-5 space-y-4 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-200'}`}>
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-cyan-300" />
+                      <span className={`text-xs uppercase tracking-[0.18em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Insights</span>
+                    </div>
+                    <div className="grid gap-3">
+                      <div>
+                        <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Usuarios unicos que escribieron</p>
+                        <p className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}><AnimatedCount value={sessionSummary.uniqueUsers} /></p>
+                      </div>
+                      <div>
+                        <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Usuario mas activo</p>
+                        <p className={`text-base font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                          {sessionSummary.mostActiveUser ? `${sessionSummary.mostActiveUser.username} (${sessionSummary.mostActiveUser.count})` : 'Sin datos'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Mensajes filtrados</p>
+                        <p className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}><AnimatedCount value={sessionSummary.filteredCount} /></p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={closeSessionSummary}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-slate-950 font-bold hover:opacity-90 transition"
+                >
+                  Cerrar resumen
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
