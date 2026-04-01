@@ -77,6 +77,37 @@ const average = (values = [], fallback = 0) => {
   return values.reduce((sum, value) => sum + value, 0) / values.length
 }
 
+const normalizeMessageForMatching = (text = '') => String(text || '')
+  .toLowerCase()
+  .normalize('NFKD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9\s]/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const isEmojiOrSymbolOnly = (text = '') => {
+  const withoutEmoji = String(text || '').replace(emojiFullRegex, '').replace(/[\s\W_]+/g, '')
+  return withoutEmoji.length === 0
+}
+
+const hasLowLegibility = (text = '') => {
+  const normalized = normalizeMessageForMatching(text)
+  if (!normalized) return true
+  if (/([a-z])\1{4,}/i.test(normalized)) return true
+  if (/(ja){4,}|(ha){4,}|(xd){3,}/i.test(normalized)) return true
+  const alphaCount = (normalized.match(/[a-z]/gi) || []).length
+  const wordCount = normalized.split(' ').filter(Boolean).length
+  return alphaCount < 2 || wordCount === 0
+}
+
+const extractKeywords = (text = '') => {
+  const stopwords = new Set(['que', 'como', 'para', 'pero', 'porque', 'por', 'con', 'sin', 'una', 'unos', 'unas', 'the', 'and', 'you', 'y', 'de', 'del', 'las', 'los', 'pero', 'esta', 'este', 'eso', 'esa', 'al', 'el', 'la', 'un', 'me', 'te', 'se', 'lo', 'le'])
+  return normalizeMessageForMatching(text)
+    .split(' ')
+    .filter((word) => word.length >= 4 && !stopwords.has(word))
+    .slice(0, 8)
+}
+
 // Obtener token del localStorage
 const getAuthToken = () => localStorage.getItem('sv-token') || ''
 
@@ -278,6 +309,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const liveRetryTimerRef = useRef(null)
   const recentIncomingTimestampsRef = useRef([])
   const recentPlaybackDurationsRef = useRef([])
+  const recentGiftSendersRef = useRef({})
+  const userLastSpokenAtRef = useRef({})
+  const recentTopicKeywordsRef = useRef([])
+  const recentNormalizedMessagesRef = useRef([])
   // Cooldown por tipo de notificación (timestamp del último anuncio)
   const lastNotifTime = useRef({ like: 0, viewer_count: 0, share: 0, follow: 0, gift: 0 })
 
@@ -526,6 +561,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           const giftData = data.data
           console.log(`[TikTok] 🎁 Regalo de @${giftData.username}: ${giftData.giftName}`)
           setDonors(prev => new Set([...prev, giftData.username]))
+          recentGiftSendersRef.current[giftData.username] = Date.now()
           chatStore.trackEvent({
             type: 'gift',
             username: giftData.username,
@@ -596,6 +632,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             ...recentIncomingTimestampsRef.current,
             Date.now()
           ])
+          const normalizedIncoming = normalizeMessageForMatching(msg.text)
+          if (normalizedIncoming) {
+            recentNormalizedMessagesRef.current = [
+              ...recentNormalizedMessagesRef.current,
+              { text: normalizedIncoming, timestamp: Date.now() }
+            ].filter((entry) => entry.timestamp >= Date.now() - 180000).slice(-120)
+          }
 
           const isBanned = bannedRef.current.has(msg.username)
 
@@ -786,6 +829,78 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     return Math.max(0, Math.round(overflow / Math.max(1, metrics.readCapacityPerMinute / 3)))
   }
 
+  const getTopicRelevanceScore = (text = '') => {
+    const keywords = extractKeywords(text)
+    if (!keywords.length || !recentTopicKeywordsRef.current.length) return 0
+    const overlap = keywords.filter((word) => recentTopicKeywordsRef.current.includes(word)).length
+    return overlap > 0 ? Math.min(3.5, overlap * 1.2) : 0
+  }
+
+  const getEmotionalScore = (text = '') => {
+    const lower = String(text || '').toLowerCase()
+    let score = 0
+    if (/[!?]{2,}/.test(lower)) score += 1.2
+    if (/(😭|😢|🥹|❤️|💔|😱|😂|🤣|😍|🥰|😡|😳|🫶)/u.test(text)) score += 1.3
+    if (/\b(ay|wow|no manches|que paso|qué pasó|contexto|urgente|help|ayuda|triste|miedo|amor|lloro|llorar|emocion|emoción)\b/i.test(lower)) score += 1.4
+    return score
+  }
+
+  const getUniquenessPenalty = (normalizedText = '') => {
+    const matches = recentNormalizedMessagesRef.current.filter((entry) => entry.text === normalizedText)
+    return matches.length >= 3 ? 4 : matches.length === 2 ? 2.4 : matches.length === 1 ? 0.8 : 0
+  }
+
+  const scoreSmartMessage = (item, metrics) => {
+    const rawText = String(item.rawText || item.text || '').trim()
+    const normalizedText = normalizeMessageForMatching(rawText)
+    const ageSeconds = (Date.now() - item.queuedAt) / 1000
+    const lastGiftAt = recentGiftSendersRef.current[item.username] || 0
+    const secondsSinceGift = lastGiftAt ? (Date.now() - lastGiftAt) / 1000 : Infinity
+    const lastSpokenAt = userLastSpokenAtRef.current[item.username] || 0
+    const secondsSinceUserSpoken = lastSpokenAt ? (Date.now() - lastSpokenAt) / 1000 : Infinity
+    const mentionsStreamer = connectedTikTokUser && normalizedText.includes(normalizeTikTokUsername(connectedTikTokUser).toLowerCase())
+
+    let score = 0
+    if (item.isNotification) score += 9
+    if (item.isDonor) score += 8
+    if (secondsSinceGift <= 45) score += 7
+    if (item.isSubscriber || item.isCommunityMember) score += 6
+    if (item.isModerator) score += 5
+    if (item.isQuestion || isQuestion(rawText)) score += 4.5
+    if (mentionsStreamer || /(^|\s)@[\w._-]+/i.test(rawText)) score += 3.4
+    score += getTopicRelevanceScore(rawText)
+    score += getEmotionalScore(rawText)
+    if (secondsSinceUserSpoken > 120) score += 2.8
+    else if (secondsSinceUserSpoken > 45) score += 1.2
+    if (rawText.length >= 8 && rawText.length <= 120) score += 2
+    if (rawText.length > 180) score -= metrics.pressure > 1.2 ? 4 : 1.6
+    if (rawText.length < 3) score -= 2.2
+    score += Math.max(0, 3 - (ageSeconds / 12))
+    score -= getUniquenessPenalty(normalizedText)
+    if (hasLinks(rawText)) score -= 2.5
+    if (hasExcessiveEmojis(rawText, 3)) score -= 2.4
+    if (isEmojiOrSymbolOnly(rawText)) score -= 8
+    if (hasLowLegibility(rawText)) score -= 5
+    if (/([a-z])\1{4,}/i.test(normalizedText)) score -= 3.5
+    if (/(jaja){3,}|(haha){3,}|(xd){3,}/i.test(normalizedText)) score -= 2.5
+
+    return score
+  }
+
+  const shouldHardDropSmartMessage = (item, metrics) => {
+    const rawText = String(item.rawText || '').trim()
+    const normalizedText = normalizeMessageForMatching(rawText)
+    const ageSeconds = (Date.now() - item.queuedAt) / 1000
+    if (!rawText) return true
+    if (metrics.pressure >= 1.2 && isEmojiOrSymbolOnly(rawText)) return true
+    if (metrics.pressure >= 1.15 && hasLowLegibility(rawText)) return true
+    if (metrics.pressure >= 1.25 && /(jaja){4,}|(haha){4,}|(xd){4,}/i.test(normalizedText)) return true
+    if (metrics.pressure >= 1.3 && getUniquenessPenalty(normalizedText) >= 2.4) return true
+    if (metrics.pressure >= 1.35 && rawText.length > 220) return true
+    if (metrics.pressure >= 1.2 && ageSeconds > 30) return true
+    return false
+  }
+
   const queueMessage = (text, username, extra = {}) => {
     const item = {
       text: text.toLowerCase(),
@@ -798,24 +913,35 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
     if (configRef.current?.smartChatEnabled) {
       const metrics = getSmartMetrics()
-      const targetQueueSize = Math.max(1, Math.ceil(metrics.readCapacityPerMinute / 18))
+      if (shouldHardDropSmartMessage(item, metrics)) {
+        console.log('[TikTok] Smart chat descartó mensaje por filtros duros adaptativos')
+        return
+      }
       const adaptiveSkip = getAdaptiveSkipCount(metrics)
+      const targetQueueSize = Math.max(2, Math.round(metrics.readCapacityPerMinute / (metrics.pressure > 1.25 ? 22 : 16)))
+      const threshold = metrics.pressure > 2 ? 10 : metrics.pressure > 1.5 ? 6 : metrics.pressure > 1.15 ? 2.5 : -999
 
-      if (adaptiveSkip > 0 && speakQueueRef.current.length > 0) {
-        const keepCount = Math.max(0, targetQueueSize - 1)
-        speakQueueRef.current = speakQueueRef.current.slice(-(keepCount + 1))
+      item.smartScore = scoreSmartMessage(item, metrics)
+      if (item.smartScore < threshold) {
+        console.log(`[TikTok] Smart chat descartó mensaje (score ${item.smartScore.toFixed(2)} < ${threshold.toFixed(2)})`)
+        return
       }
 
-      speakQueueRef.current.push(item)
+      const existing = speakQueueRef.current.filter((candidate) => !shouldHardDropSmartMessage(candidate, metrics))
+      const rescored = [...existing, item].map((candidate) => ({
+        ...candidate,
+        smartScore: scoreSmartMessage(candidate, metrics)
+      }))
 
-      if (speakQueueRef.current.length > targetQueueSize) {
-        speakQueueRef.current = speakQueueRef.current.slice(-targetQueueSize)
-      }
+      speakQueueRef.current = rescored
+        .sort((a, b) => (b.smartScore - a.smartScore) || (b.queuedAt - a.queuedAt))
+        .slice(0, Math.max(2, targetQueueSize + (adaptiveSkip > 0 ? 1 : 0)))
+        .sort((a, b) => a.queuedAt - b.queuedAt)
 
       console.log(
         `[TikTok] Smart chat -> ${metrics.incomingPerMinute.toFixed(0)} msg/min, ` +
         `${metrics.readCapacityPerMinute.toFixed(1)} lecturas/min, ` +
-        `skip aprox ${adaptiveSkip}, cola objetivo ${targetQueueSize}`
+        `skip aprox ${adaptiveSkip}, cola objetivo ${targetQueueSize}, score ${item.smartScore.toFixed(2)}`
       )
     } else {
       speakQueueRef.current.push(item)
@@ -837,6 +963,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       if (disconnectedRef.current) break
       if (isPausedRef.current || isPttSuppressedRef.current) break
       const item = speakQueueRef.current.shift()
+      if (configRef.current?.smartChatEnabled) {
+        const metrics = getSmartMetrics()
+        if (shouldHardDropSmartMessage(item, metrics)) {
+          console.log('[TikTok] Smart chat saltó un pendiente viejo o ilegible para mantenerse fresco')
+          continue
+        }
+      }
       const { text, username } = item
       const remaining = speakQueueRef.current.length
       console.log(`[TikTok] REPRODUCIENDO: "${text.substring(0, 50)}" (pendientes: ${remaining})`)
@@ -883,6 +1016,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 ? duration
                 : (item.estimatedSpeakSeconds || estimateSpeakSeconds(item.rawText || item.text, c.audioSpeed || 1.0))
               recentPlaybackDurationsRef.current = [...recentPlaybackDurationsRef.current, effectiveDuration].slice(-20)
+              userLastSpokenAtRef.current[item.username] = Date.now()
+              const spokenKeywords = extractKeywords(item.rawText || item.text)
+              if (spokenKeywords.length) {
+                recentTopicKeywordsRef.current = [...spokenKeywords, ...recentTopicKeywordsRef.current]
+                  .slice(0, 24)
+              }
+              const normalizedSpoken = normalizeMessageForMatching(item.rawText || item.text)
+              if (normalizedSpoken) {
+                recentNormalizedMessagesRef.current = [
+                  ...recentNormalizedMessagesRef.current,
+                  { text: normalizedSpoken, timestamp: Date.now() }
+                ].filter((entry) => entry.timestamp >= Date.now() - 180000).slice(-80)
+              }
               setMessages((prev) =>
                 prev.map((msg) =>
                   msg.id === item.id ? { ...msg, status: 'done' } : msg
