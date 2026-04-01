@@ -16,6 +16,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
 
 const DEFAULT_CONFIG = {
   audioSpeed: 1.0,
+  freeModeNoChecks: false,
   readOnlyMessage: false,
   skipRepeated: false,
   onlyDonors: false,

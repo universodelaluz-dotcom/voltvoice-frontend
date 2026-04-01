@@ -47,6 +47,18 @@ const CONFIG_COMMANDS = [
     ]
   },
   {
+    key: 'freeModeNoChecks',
+    label: 'modo libre de checks',
+    aliases: [
+      'modo libre de checks',
+      'sin checks',
+      'sin filtros',
+      'modo libre',
+      'leer todo sin checks',
+      'leer todo sin filtros'
+    ]
+  },
+  {
     key: 'readOnlyMessage',
     label: 'leer solo mensajes sin nombre',
     aliases: [

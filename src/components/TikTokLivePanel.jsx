@@ -65,6 +65,22 @@ const removeEmojis = (text) => {
   return text.replace(emojiFullRegex, '').trim()
 }
 
+const isPriorityUser = (meta = {}) => Boolean(
+  meta.isDonor
+  || meta.isModerator
+  || meta.isSubscriber
+  || meta.isCommunityMember
+)
+
+const trivialSmartChatPattern = /^(hola+|holi+|holis+|hello+|hi+|hey+|eh+|e+h+m*|ok+|oki+|xd+|x+d+x*d*|j+a+j+a+|jajaja+|haha+|jeje+|aaa+|aaah+|lol+|sip+|nop+|yes+|noo+|bro+|contexto+)\b[\s!?.,]*$/i
+const hasTrivialSmartChatContent = (text = '') => {
+  const normalized = normalizeMessageForMatching(text)
+  if (!normalized) return true
+  if (trivialSmartChatPattern.test(normalized)) return true
+  if (normalized.split(' ').length <= 2 && /^(hola|holi|hello|hi|hey|eh|ok|xd|jajaja|haha|jeje|aaa|lol|bro|contexto)$/.test(normalized)) return true
+  return false
+}
+
 const normalizeTikTokUsername = (value) => String(value || '').trim().replace(/^@+/, '')
 const getThemeChatNickColor = (config = {}, darkMode = true) => (
   darkMode
@@ -358,6 +374,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const bannedRef = useRef(new Set())
   const nickOverridesRef = useRef({})
   const configRef = useRef(config)
+  const smartChatEnabledRef = useRef(config.smartChatEnabled || false)
   const volumeRef = useRef(0.8)
   const pttSnapshotRef = useRef({ wasPaused: false, hadCurrentAudio: false })
   const pttRestoreTimerRef = useRef(null)
@@ -403,6 +420,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
   // Mantener refs actualizados para acceso en callbacks del WebSocket
   useEffect(() => { configRef.current = config }, [config])
+  useEffect(() => {
+    smartChatEnabledRef.current = smartChatEnabled
+    configRef.current = { ...configRef.current, smartChatEnabled }
+  }, [smartChatEnabled])
   useEffect(() => { isPausedRef.current = isPaused }, [isPaused])
   useEffect(() => { volumeRef.current = volume }, [volume])
   useEffect(() => { bannedRef.current = bannedUsers; chatStore.syncBannedUsers(bannedUsers) }, [bannedUsers])
@@ -750,41 +771,51 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           // Sumar al contador de comentarios
           setStats(prev => ({ ...prev, count: prev.count + 1 }))
 
+          const freeModeNoChecks = !!c.freeModeNoChecks
+          const smartChatActive = !!smartChatEnabledRef.current
+          const bypassManualChecks = freeModeNoChecks && !smartChatActive
+
           // Si está baneado, no leer en voz
           if (isBanned) { markFilteredMessage(); return }
 
-          // Filtro: solo donadores
-          if (c.onlyDonors && !msg.isDonor && !donors.has(msg.username)) { markFilteredMessage(); return }
+          // Filtros manuales solo aplican fuera del modo libre
+          if (!bypassManualChecks && c.onlyDonors && !msg.isDonor && !donors.has(msg.username)) { markFilteredMessage(); return }
 
           // Filtro: solo moderadores
-          if (c.onlyModerators && !msg.isModerator) { markFilteredMessage(); return }
+          if (!bypassManualChecks && c.onlyModerators && !msg.isModerator) { markFilteredMessage(); return }
 
           // Filtro: solo suscriptores
-          if (c.onlySubscribers && !msg.isSubscriber) { markFilteredMessage(); return }
+          if (!bypassManualChecks && c.onlySubscribers && !msg.isSubscriber) { markFilteredMessage(); return }
 
           // Filtro: solo miembros de comunidad / Fan Club
-          if (c.onlyCommunityMembers && !msg.isCommunityMember) { markFilteredMessage(); return }
+          if (!bypassManualChecks && c.onlyCommunityMembers && !msg.isCommunityMember) { markFilteredMessage(); return }
 
           // Filtro: solo preguntas
-          if (c.onlyQuestions && !isQuestion(msg.text)) { markFilteredMessage(); return }
+          if (!bypassManualChecks && c.onlyQuestions && !isQuestion(msg.text)) { markFilteredMessage(); return }
 
           // Filtro: saltar repetidos (por usuario, no global)
           const normalizedText = msg.text.trim().toLowerCase()
-          if (c.skipRepeated && normalizedText === lastMessageRef.current[msg.username]) { markFilteredMessage(); return }
+          if (!bypassManualChecks && c.skipRepeated && normalizedText === lastMessageRef.current[msg.username]) { markFilteredMessage(); return }
           lastMessageRef.current[msg.username] = normalizedText
 
           // Filtro: ignorar enlaces
-          if (c.ignoreLinks && hasLinks(msg.text)) { markFilteredMessage(); return }
+          if (!bypassManualChecks && c.ignoreLinks && hasLinks(msg.text)) { markFilteredMessage(); return }
+          const priorityUser = isPriorityUser({
+            isDonor: msg.isDonor || donors.has(msg.username),
+            isModerator: msg.isModerator,
+            isSubscriber: msg.isSubscriber || false,
+            isCommunityMember: msg.isCommunityMember || false
+          })
 
           // Filtro: no leer emojis en chat (quitar todos los emojis del texto)
           let textToProcess = msg.text
-          if (c.stripChatEmojis) {
+          if (!bypassManualChecks && (c.stripChatEmojis || smartChatActive)) {
             textToProcess = removeEmojis(textToProcess)
             if (!textToProcess.trim()) { markFilteredMessage(); return }
           }
 
           // Filtro: limpiar emojis excesivos del texto (no ignorar el mensaje)
-          if (c.ignoreExcessiveEmojis && hasExcessiveEmojis(textToProcess, parseInt(c.maxEmojisAllowed) || 3)) {
+          if (!bypassManualChecks && c.ignoreExcessiveEmojis && hasExcessiveEmojis(textToProcess, parseInt(c.maxEmojisAllowed) || 3)) {
             textToProcess = removeEmojis(textToProcess)
             if (!textToProcess.trim()) { markFilteredMessage(); return }
           }
@@ -801,12 +832,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             textToProcess = unicodeCheck.text
           }
           if (!textToProcess.trim()) { markFilteredMessage(); return }
+          if (smartChatActive && !priorityUser && textToProcess.trim().length < 7) { markFilteredMessage(); return }
 
           // Filtro: largo mínimo
-          if (c.minMessageLengthEnabled && textToProcess.trim().length < c.minMessageLength) { markFilteredMessage(); return }
+          if (!bypassManualChecks && c.minMessageLengthEnabled && textToProcess.trim().length < c.minMessageLength) { markFilteredMessage(); return }
 
           // Limitar cola máxima
-          if (c.maxQueueEnabled && speakQueueRef.current.length >= c.maxQueueSize) {
+          if (!bypassManualChecks && c.maxQueueEnabled && speakQueueRef.current.length >= c.maxQueueSize) {
             console.log(`[TikTok] Cola llena (${c.maxQueueSize}), descartando mensaje`)
             markFilteredMessage()
             return
@@ -822,7 +854,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           let displayName = nickOverridesRef.current[msg.username] || msg.nickname || msg.username
 
           // Si está activado, eliminar emojis y caracteres especiales del nickname
-          if (c.onlyPlainNicks && !nickOverridesRef.current[msg.username]) {
+          if (!bypassManualChecks && (c.onlyPlainNicks || smartChatActive) && !nickOverridesRef.current[msg.username]) {
             displayName = getPlainNick(displayName)
           }
 
@@ -935,11 +967,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
     let score = 0
     if (item.isNotification) score += 9
-    if (item.isDonor) score += 8
+    if (item.isDonor) score += 10
     if (secondsSinceGift <= 45) score += 7
-    if (item.isSubscriber || item.isCommunityMember) score += 6
-    if (item.isModerator) score += 5
-    if (item.isQuestion || isQuestion(rawText)) score += 4.5
+    if (item.isQuestion || isQuestion(rawText)) score += 8.5
+    if (item.isModerator) score += 7
+    if (item.isSubscriber) score += 6.5
+    if (item.isCommunityMember) score += 6
     if (mentionsStreamer || /(^|\s)@[\w._-]+/i.test(rawText)) score += 3.4
     score += getTopicRelevanceScore(rawText)
     score += getEmotionalScore(rawText)
@@ -965,6 +998,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     const normalizedText = normalizeMessageForMatching(rawText)
     const ageSeconds = (Date.now() - item.queuedAt) / 1000
     if (!rawText) return true
+    if (!isPriorityUser(item) && hasTrivialSmartChatContent(rawText)) return true
     if (metrics.pressure >= 1.2 && isEmojiOrSymbolOnly(rawText)) return true
     if (metrics.pressure >= 1.15 && hasLowLegibility(rawText)) return true
     if (metrics.pressure >= 1.25 && /(jaja){4,}|(haha){4,}|(xd){4,}/i.test(normalizedText)) return true
@@ -984,7 +1018,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       ...extra
     }
 
-    if (configRef.current?.smartChatEnabled) {
+    if (smartChatEnabledRef.current) {
       const metrics = getSmartMetrics()
       if (shouldHardDropSmartMessage(item, metrics)) {
         console.log('[TikTok] Smart chat descartó mensaje por filtros duros adaptativos')
@@ -1038,7 +1072,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       if (disconnectedRef.current) break
       if (isPausedRef.current || isPttSuppressedRef.current) break
       const item = speakQueueRef.current.shift()
-      if (configRef.current?.smartChatEnabled) {
+      if (smartChatEnabledRef.current) {
         const metrics = getSmartMetrics()
         if (shouldHardDropSmartMessage(item, metrics)) {
           console.log('[TikTok] Smart chat saltó un pendiente viejo o ilegible para mantenerse fresco')
