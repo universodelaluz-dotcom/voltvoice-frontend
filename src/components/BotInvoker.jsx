@@ -1568,11 +1568,12 @@ Extras obligatorios:
       }
 
       responseCompletedRef.current = true
-      if (!assistantResponseHadAudioRef.current) {
+      if (!responsePlaybackStartedRef.current) {
+        // Audio playback never started, safe to restore chat now
         botIsAudiblySpeakingRef.current = false
         tryRestoreChatAudio()
       }
-      // If there was audio, wait for handleAudioPlaybackEnded() or handleAudioComplete()
+      // If playback already started, wait for handleAudioPlaybackEnded() or handleAudioComplete()
     }
 
     const handleAudioStarted = () => {
