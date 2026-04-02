@@ -318,7 +318,8 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   }
 
   const restoreChatAudioImmediate = () => {
-    endAssistantResponseWindow()
+    // Don't end response window here - let RMS detection do it
+    // endAssistantResponseWindow() should only be called when RMS confirms audio has truly ended
     unlockChatSuppression()
     dispatchChatPlaybackControl('resume')
   }
@@ -1508,6 +1509,7 @@ Extras obligatorios:
       }
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = false
+      endAssistantResponseWindow()  // End response only when RMS confirms silence
       tryRestoreChatAudio()
     }
 
@@ -1569,11 +1571,13 @@ Extras obligatorios:
 
       responseCompletedRef.current = true
       if (!responsePlaybackStartedRef.current) {
-        // Audio playback never started, safe to restore chat now
+        // Audio playback never started, safe to restore chat now and end response window
         botIsAudiblySpeakingRef.current = false
+        endAssistantResponseWindow()
         tryRestoreChatAudio()
       }
-      // If playback already started, wait for handleAudioPlaybackEnded() or handleAudioComplete()
+      // If playback already started, wait for RMS-based handlers (audio-energy-silent or audio-complete)
+      // to confirm audio has truly ended and call endAssistantResponseWindow()
     }
 
     const handleAudioStarted = () => {
@@ -1596,6 +1600,7 @@ Extras obligatorios:
       responsePlaybackStartedRef.current = false
       setIsPlayingResponse(false)
       clearResponseTimeout()
+      endAssistantResponseWindow()
       tryRestoreChatAudio()
     }
 
