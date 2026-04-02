@@ -35,7 +35,7 @@ export class InworldRealtimeService {
     this.remoteSilenceFrames = 0
     this.remoteStartThreshold = 0.02
     this.remoteStopThreshold = 0.008
-    this.remoteSilenceFrameTarget = 25
+    this.remoteSilenceFrameTarget = 3
     this._assistantResponseState = {
       active: false,
       hasAudio: false,
@@ -223,7 +223,7 @@ export class InworldRealtimeService {
 
       this.remoteSourceNode = this.audioContext.createMediaStreamSource(analyzedStream)
       this.remoteAnalyser = this.audioContext.createAnalyser()
-      this.remoteAnalyser.fftSize = 1024
+      this.remoteAnalyser.fftSize = 8192
       this.remoteSourceNode.connect(this.remoteAnalyser)
       this.remoteSilenceFrames = 0
 
