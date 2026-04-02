@@ -28,6 +28,61 @@ export class InworldRealtimeService {
     this.pendingAudioResponse = false
     this.pendingAudioResponseTimer = null
     this.pendingAudioComplete = false
+    this.remoteAnalyser = null
+    this.remoteSourceNode = null
+    this.remoteAnalysisFrameId = null
+    this.remoteSpeaking = false
+    this.remoteSilenceFrames = 0
+    this.remoteStartThreshold = 0.02
+    this.remoteStopThreshold = 0.008
+    this.remoteSilenceFrameTarget = 3
+    this._assistantResponseState = {
+      active: false,
+      hasAudio: false,
+      audioDone: false,
+      responseDone: false
+    }
+  }
+
+  _beginAssistantResponse() {
+    this._assistantResponseState = {
+      active: true,
+      hasAudio: false,
+      audioDone: false,
+      responseDone: false
+    }
+    this._emit('assistant-response-start')
+  }
+
+  _markAssistantResponseHasAudio() {
+    if (!this._assistantResponseState.active) return
+    this._assistantResponseState.hasAudio = true
+  }
+
+  _markAssistantResponseAudioDone() {
+    if (!this._assistantResponseState.active) return
+    this._assistantResponseState.audioDone = true
+    this._maybeCompleteAssistantResponse()
+  }
+
+  _markAssistantResponseDone() {
+    if (!this._assistantResponseState.active) return
+    this._assistantResponseState.responseDone = true
+    this._maybeCompleteAssistantResponse()
+  }
+
+  _maybeCompleteAssistantResponse() {
+    const s = this._assistantResponseState
+    if (!s.active) return
+    if (!s.responseDone) return
+    if (s.hasAudio && !s.audioDone) return
+    this._assistantResponseState = {
+      active: false,
+      hasAudio: false,
+      audioDone: false,
+      responseDone: false
+    }
+    this._emit('assistant-response-end')
   }
 
   _isSupportedRealtimeVoice(voiceId = '') {
@@ -82,6 +137,12 @@ export class InworldRealtimeService {
     audioElement.onended = () => {
       console.log('[Inworld] Audio ended')
       this._emit('audio-complete')
+      this._emit('audio-playback-ended')
+    }
+
+    audioElement.onpause = () => {
+      console.log('[Inworld] Audio paused')
+      this._emit('audio-playback-ended')
     }
 
     audioElement.onerror = (err) => {
@@ -108,6 +169,99 @@ export class InworldRealtimeService {
 
     this.dataChannel.send(JSON.stringify(payload))
     console.log('[Inworld] Response requested')
+  }
+
+  _setRemoteSpeaking(isSpeaking, rms = 0) {
+    if (this.remoteSpeaking === isSpeaking) {
+      return
+    }
+    this.remoteSpeaking = isSpeaking
+    if (isSpeaking) {
+      console.log('[RMS] SPEAKING detected, RMS:', rms.toFixed(4))
+      this._emit('audio-energy-speaking', { rms })
+    } else {
+      console.log('[RMS] SILENT detected, RMS:', rms.toFixed(4))
+      this._emit('audio-energy-silent', { rms })
+    }
+  }
+
+  _stopRemoteAudioEnergyMonitor() {
+    if (this.remoteAnalysisFrameId) {
+      cancelAnimationFrame(this.remoteAnalysisFrameId)
+      this.remoteAnalysisFrameId = null
+    }
+
+    if (this.remoteSourceNode) {
+      try { this.remoteSourceNode.disconnect() } catch (error) { /* noop */ }
+      this.remoteSourceNode = null
+    }
+
+    if (this.remoteAnalyser) {
+      try { this.remoteAnalyser.disconnect() } catch (error) { /* noop */ }
+      this.remoteAnalyser = null
+    }
+
+    this.remoteSilenceFrames = 0
+    this._setRemoteSpeaking(false, 0)
+  }
+
+  _startRemoteAudioEnergyMonitor(audioElement, fallbackStream) {
+    if (!this.audioContext || (!audioElement && !fallbackStream)) {
+      return
+    }
+
+    this._stopRemoteAudioEnergyMonitor()
+
+    try {
+      const analyzedStream = (audioElement && typeof audioElement.captureStream === 'function')
+        ? audioElement.captureStream()
+        : fallbackStream
+
+      if (!analyzedStream) {
+        return
+      }
+
+      this.remoteSourceNode = this.audioContext.createMediaStreamSource(analyzedStream)
+      this.remoteAnalyser = this.audioContext.createAnalyser()
+      this.remoteAnalyser.fftSize = 1024
+      this.remoteSourceNode.connect(this.remoteAnalyser)
+      this.remoteSilenceFrames = 0
+
+      const samples = new Float32Array(this.remoteAnalyser.fftSize)
+      const tick = () => {
+        if (!this.remoteAnalyser) {
+          return
+        }
+
+        this.remoteAnalyser.getFloatTimeDomainData(samples)
+        let sum = 0
+        for (let i = 0; i < samples.length; i++) {
+          sum += samples[i] * samples[i]
+        }
+        const rms = Math.sqrt(sum / samples.length)
+
+        if (rms >= this.remoteStartThreshold) {
+          this.remoteSilenceFrames = 0
+          this._setRemoteSpeaking(true, rms)
+        } else {
+          if (this.remoteSpeaking && rms <= this.remoteStopThreshold) {
+            this.remoteSilenceFrames += 1
+            if (this.remoteSilenceFrames >= this.remoteSilenceFrameTarget) {
+              this._setRemoteSpeaking(false, rms)
+            }
+          } else {
+            this.remoteSilenceFrames = 0
+          }
+        }
+
+        this.remoteAnalysisFrameId = requestAnimationFrame(tick)
+      }
+
+      this.audioContext.resume().catch(() => {})
+      this.remoteAnalysisFrameId = requestAnimationFrame(tick)
+    } catch (error) {
+      console.warn('[Inworld] Remote audio energy monitor unavailable:', error?.message || error)
+    }
   }
 
   /**
@@ -206,8 +360,20 @@ export class InworldRealtimeService {
           }
 
           this.remoteAudioStream.addTrack(event.track)
+          this._startRemoteAudioEnergyMonitor(audioElement, this.remoteAudioStream)
+          event.track.onunmute = () => {
+            console.log('[Inworld] Audio track unmuted')
+            this._emit('audio-track-unmuted')
+          }
+          event.track.onmute = () => {
+            console.log('[Inworld] Audio track muted')
+            this._emit('audio-track-muted')
+            this._emit('audio-playback-ended')
+          }
           event.track.onended = () => {
             this.remoteAudioStream?.removeTrack(event.track)
+            this._emit('audio-track-muted')
+            this._emit('audio-playback-ended')
           }
 
           audioElement.play().catch((err) => {
@@ -461,6 +627,7 @@ export class InworldRealtimeService {
       // Response events
       case 'response.created':
         console.log('[Inworld] Response created')
+        this._beginAssistantResponse()
         this._emit('response-created', event)
         break
 
@@ -483,12 +650,15 @@ export class InworldRealtimeService {
         if (event.response?.status === 'failed') {
           console.error('[Inworld] Response failed:', JSON.stringify(event).substring(0, 500))
         }
+        this._markAssistantResponseDone()
         this._emit('response-complete', event)
         break
 
       // Audio output events
       case 'response.output_audio.delta':
         if (event.delta) {
+          this._markAssistantResponseHasAudio()
+          this._emit('response-audio-activity', event)
           this.audioQueue.push(event.delta)
           this._processAudioQueue()
         }
@@ -496,13 +666,18 @@ export class InworldRealtimeService {
 
       case 'response.output_audio.done':
         console.log('[Inworld] Audio response complete')
+        this._markAssistantResponseHasAudio()
+        this._markAssistantResponseAudioDone()
+        this._emit('response-audio-done', event)
         this.pendingAudioComplete = true
         this._maybeEmitAudioComplete()
         break
 
       case 'response.output_audio_transcript.delta':
         if (event.delta) {
+          this._markAssistantResponseHasAudio()
           console.log('[Inworld] Audio transcript delta:', event.delta)
+          this._emit('response-audio-activity', event)
           this._emit('text-delta', { text: event.delta })
         }
         break
@@ -1220,6 +1395,7 @@ export class InworldRealtimeService {
     this.pendingAudioResponseTimer = null
     this.sessionVoice = 'Clive'
     this.pendingAudioComplete = false
+    this._stopRemoteAudioEnergyMonitor()
 
     if (this.outputAudioElement) {
       this.outputAudioElement.pause()
