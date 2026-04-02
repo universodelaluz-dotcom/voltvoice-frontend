@@ -371,7 +371,9 @@ export class InworldRealtimeService {
             this._emit('audio-playback-ended')
           }
           event.track.onended = () => {
+            console.log('[Inworld] Audio track ended (WebRTC stream stopped)')
             this.remoteAudioStream?.removeTrack(event.track)
+            this._emit('audio-complete')
             this._emit('audio-track-muted')
             this._emit('audio-playback-ended')
           }

@@ -1510,13 +1510,9 @@ Extras obligatorios:
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = false
 
-      // Do NOT call endAssistantResponseWindow() here.
-      // Keep assistantResponseActiveRef = true so that if RMS spikes back up
-      // (natural inter-syllable gaps), handleAudioEnergySpeaking can re-suppress.
-      // The window is only ended by handleAudioComplete (audio element truly ended).
-      if (responsePlaybackStartedRef.current && responseCompletedRef.current) {
-        tryRestoreChatAudio()
-      }
+      // RMS silence is NOT a reliable signal (inter-syllable gaps look like silence).
+      // Do NOT restore chat here. Only handleAudioComplete (track.onended) is reliable.
+      // This handler only updates the "speaking" flag for UI purposes.
     }
 
     const handleInputTranscriptDelta = (data) => {
