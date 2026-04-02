@@ -13,10 +13,10 @@ import AdminPanel from './components/AdminPanel'
 import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft, LogOut } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const LOCAL_CONFIG_CACHE_KEY = 'sv-config-cache-v1'
 
 const DEFAULT_CONFIG = {
   audioSpeed: 1.0,
-  freeModeNoChecks: false,
   readOnlyMessage: false,
   skipRepeated: false,
   onlyDonors: false,
@@ -61,6 +61,11 @@ const DEFAULT_CONFIG = {
   chatMsgColorLight: '#1f2937',
   themeMode: 'dark',
   lastTiktokUser: '',
+  mobilePreviewEnabled: false,
+  mobilePreviewMuted: true,
+  configPreset1: null,
+  configPreset2: null,
+  configPreset3: null,
   highlightRules: {
     moderators: { enabled: false, color: '#a855f7' },
     donors: { enabled: false, color: '#f59e0b' },
@@ -89,6 +94,16 @@ const normalizeUserConfig = (rawConfig = {}) => {
   }
 }
 
+const loadCachedConfig = () => {
+  try {
+    const raw = localStorage.getItem(LOCAL_CONFIG_CACHE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
 export function App() {
   const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-workshop', 'pricing', 'control-panel', 'statistics', 'auth', 'admin'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
@@ -114,7 +129,7 @@ export function App() {
   const [userCountry, setUserCountry] = useState(null)
 
   // Config centralizado para todas las opciones
-  const [config, setConfig] = useState(DEFAULT_CONFIG)
+  const [config, setConfig] = useState(() => normalizeUserConfig(loadCachedConfig() || DEFAULT_CONFIG))
   const [configReady, setConfigReady] = useState(false)
 
   const updateConfig = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
@@ -211,9 +226,11 @@ export function App() {
       })
       const data = await res.json()
       if (data.success) {
-        const normalizedConfig = normalizeUserConfig(data.config)
-        setConfig(normalizedConfig)
-        setDarkMode(normalizedConfig.themeMode !== 'light')
+        const normalizedRemoteConfig = normalizeUserConfig(data.config)
+        const cachedConfig = normalizeUserConfig(loadCachedConfig() || {})
+        const mergedConfig = normalizeUserConfig({ ...normalizedRemoteConfig, ...cachedConfig })
+        setConfig(mergedConfig)
+        setDarkMode(mergedConfig.themeMode !== 'light')
         console.log('[Config] Configuracion del usuario cargada')
       }
     } catch (err) {
@@ -258,6 +275,14 @@ export function App() {
 
   // Auto-guardar config al backend cuando cambia (con debounce)
   const saveTimerRef = useRef(null)
+
+  // Cache local inmediata (respaldo si falla red/backend)
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_CONFIG_CACHE_KEY, JSON.stringify(config))
+    } catch {}
+  }, [config])
+
   useEffect(() => {
     const token = localStorage.getItem('sv-token')
     if (!token || !user || !configReady) return
@@ -646,45 +671,55 @@ export function App() {
       </div>
 
       {/* Hero Section */}
-      <section className="pt-8 pb-16 px-4 relative">
+      <section className="pt-10 pb-16 px-4 relative overflow-hidden">
         <div className="max-w-7xl mx-auto text-center">
           {/* Background glow */}
           <div className="absolute inset-0 -z-10">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-gradient-to-b from-cyan-500/20 to-transparent rounded-full blur-3xl"></div>
-            <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-gradient-to-b from-purple-500/20 to-transparent rounded-full blur-3xl"></div>
+            <div className="absolute top-1/2 right-0 w-[420px] h-[420px] bg-gradient-to-b from-orange-500/20 to-transparent rounded-full blur-3xl"></div>
           </div>
 
-          {/* Logo Grande - Ancho Completo */}
-          <div className="mb-12 flex justify-center">
+          <div className="mb-10 flex justify-center">
             <img
               src="/images/streamvoicer6.png"
               alt="StreamVoicer"
-              className="w-full max-w-7xl h-auto object-contain"
+              className="w-full max-w-4xl h-auto object-contain opacity-90"
             />
           </div>
 
           <h2 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
-            Lee chats en vivo con
+            Tu LIVE ya no suena
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-cyan-400">
-              Voces de IA
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-orange-400">
+              generico
             </span>
           </h2>
 
           <p className={"text-xl md:text-2xl mb-8 max-w-2xl mx-auto " + (darkMode ? "text-gray-300" : "text-gray-600")}>
-            Transforma los mensajes de chat en voz natural para tus streams de TikTok y YouTube. Aumenta la interacción con tus seguidores al instante.
+            Crea personajes con voz, responde al chat en tiempo real y convierte cada stream en una experiencia con identidad propia.
           </p>
+
+          <div className="flex flex-wrap gap-3 mb-8 justify-center">
+            {['Narrador epico', 'Villano anime', 'Comedia gamer', 'Modo historia'].map((tag) => (
+              <span
+                key={tag}
+                className={"px-3 py-2 rounded-lg text-sm border " + (darkMode ? "bg-white/5 border-cyan-400/20 text-cyan-200" : "bg-white border-cyan-200 text-cyan-700")}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => user ? setCurrentPage('studio') : setCurrentPage('auth')}
-              className="px-8 py-4 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-lg text-white hover:shadow-xl hover:shadow-cyan-400/50 transition-all flex items-center justify-center gap-2"
+              className="px-8 py-4 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-lg font-bold text-lg text-white hover:shadow-xl hover:shadow-cyan-400/50 transition-all flex items-center justify-center gap-2"
             >
               {user ? 'Ir al Studio' : 'Comenzar Gratis'} <ChevronRight className="w-5 h-5" />
             </button>
             <button
               onClick={() => setCurrentPage('pricing')}
-              className="px-8 py-4 border-2 border-cyan-400/50 rounded-lg font-bold text-lg text-cyan-400 hover:bg-cyan-400/10 transition-all"
+              className={"px-8 py-4 border-2 rounded-lg font-bold text-lg transition-all " + (darkMode ? "border-orange-300/60 text-orange-300 hover:bg-orange-400/10" : "border-orange-400 text-orange-500 hover:bg-orange-50")}
             >
               Ver Planes
             </button>

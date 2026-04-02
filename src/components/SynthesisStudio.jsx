@@ -25,7 +25,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   // Synthesis
-  const [text, setText] = useState('Hola, este es StreamVoicer. Tu plataforma para síntesis de voz profesional.')
+  const [text, setText] = useState('Asi suena tu voz elegida')
   const [loading, setLoading] = useState(false)
   const [audioUrl, setAudioUrl] = useState(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -241,7 +241,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
         if (response.ok && (data.audio || data.success)) {
           setAudioUrl(data.audio || data.audioUrl)
-          const estTokens = Math.ceil(text.length / 100)
+          const estTokens = text.length
           const usedTokens = Number(data.tokensUsed || estTokens)
           const remainingTokens = Number(data.remainingTokens)
           setTokensUsed(usedTokens)
@@ -291,7 +291,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   }
 
   const charCount = text.length
-  const estimatedTokens = Math.ceil(charCount / 100)
+  const estimatedTokens = charCount
   const selectedVoiceObj = voices.find(v => v.id === selectedVoice)
   const requiresPaidTokens = selectedVoiceObj && selectedVoiceObj.engine !== "webspeech"
   const hasInsufficientTokens = requiresPaidTokens && estimatedTokens > tokens
@@ -419,7 +419,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               />
               <div className={`${darkMode ? "flex justify-between text-xs text-gray-400" : "flex justify-between text-xs text-gray-500"}`}>
                 <span>{charCount} caracteres</span>
-                <span>≈ {estimatedTokens} tokens</span>
+                <span>1 token = 1 caracter</span>
               </div>
             </div>
 

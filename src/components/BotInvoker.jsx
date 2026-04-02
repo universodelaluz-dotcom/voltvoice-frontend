@@ -299,6 +299,12 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     }
 
     chatSuppressedRef.current = active
+    window.dispatchEvent(new CustomEvent('voltvoice:assistant-speech-state', {
+      detail: { active }
+    }))
+  }
+
+  const setPttSuppressed = (active) => {
     window.dispatchEvent(new CustomEvent('voltvoice:ptt-audio-state', {
       detail: { active }
     }))
@@ -1659,6 +1665,7 @@ Extras obligatorios:
         mediaStreamRef.current.getTracks().forEach(track => track.stop())
       }
       clearResponseTimeout()
+      setPttSuppressed(false)
       responseCompletedRef.current = true
       botIsAudiblySpeakingRef.current = false
       restoreChatAudioImmediate()
@@ -1682,6 +1689,7 @@ Extras obligatorios:
     setSelectedRealtimeVoiceId((current) => current || resolvedVoice)
     setVoiceLabel(resolvedVoice || 'Clive')
     clearResponseTimeout()
+    setPttSuppressed(false)
     responseCompletedRef.current = true
     botIsAudiblySpeakingRef.current = false
     restoreChatAudioImmediate()
@@ -1830,7 +1838,7 @@ After using a tool, summarize the result conversationally.`
       hasChargedCurrentResponseRef.current = false
       latestResponseTextRef.current = ''
       resetTranscriptCapture({ accept: true })
-      lockChatSuppression()
+      setPttSuppressed(true)
       await ensureBotSession()
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -1844,6 +1852,7 @@ After using a tool, summarize the result conversationally.`
       console.error('Error starting push-to-talk:', err)
       resetTranscriptCapture({ accept: false })
       setIsLoading(false)
+      setPttSuppressed(false)
       restoreChatAudioImmediate()
       alert('No se pudo iniciar el bot de voz')
     }
@@ -1860,6 +1869,7 @@ After using a tool, summarize the result conversationally.`
 
       setIsRecording(false)
       setIsLoading(true)
+      setPttSuppressed(false)
       stream.getAudioTracks().forEach(track => track.stop())
       setTimeout(() => {
         inworldRealtimeService.removeAudioTracks().catch((error) => {
@@ -1911,6 +1921,7 @@ After using a tool, summarize the result conversationally.`
       console.error('Error stopping recording:', err)
       resetTranscriptCapture({ accept: false })
       setIsLoading(false)
+      setPttSuppressed(false)
       restoreChatAudioImmediate()
     }
   }

@@ -44,7 +44,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
   // Prueba de voz
   const [testVoiceId, setTestVoiceId] = useState(null)
-  const [testText, setTestText] = useState('Hola, esta es una prueba de mi voz personalizada.')
+  const [testText, setTestText] = useState('Asi suena tu voz elegida')
   const [testingVoice, setTestingVoice] = useState(false)
   const [testAudioUrl, setTestAudioUrl] = useState(null)
   const testAudioRef = useRef(null)
@@ -526,10 +526,12 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
             <textarea
               value={testText}
               onChange={(e) => setTestText(e.target.value)}
-              placeholder="Ej: Hola, esto es una prueba de mi voz personalizada"
+              placeholder="Asi suena tu voz elegida"
               className={darkMode ? 'w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 min-h-20' : 'w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 min-h-20'}
             />
-            <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{testText.length} caracteres</p>
+            <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              {testText.length} caracteres · 1 token = 1 caracter
+            </p>
           </div>
           <button
             onClick={handleTestVoice}
@@ -993,7 +995,6 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         <div className="space-y-6">
           {/* 1. Taller de Asistentes de IA Roleplay */}
           <AIRoleplayWorkshop darkMode={darkMode} config={config || {}} updateConfig={updateConfig || (() => {})} user={user} />
-
           {/* 2. Probar Voz */}
           {renderTestVoice(userVoices)}
         </div>

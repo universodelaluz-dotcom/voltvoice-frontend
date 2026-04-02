@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X, Users, Clock3, TrendingUp, Filter, Trophy, Sparkles } from 'lucide-react'
 import chatStore from '../services/chatStore.js'
-import emojiLibrary from 'emojilib/dist/emoji-en-US.json'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
@@ -66,135 +65,23 @@ const removeEmojis = (text) => {
   return text.replace(emojiFullRegex, '').trim()
 }
 
-const emojiSpeechMap = {
-  '❤️': ' corazon ',
-  '❤': ' corazon ',
-  '🔥': ' fuego ',
-  '😂': ' risa ',
-  '🤣': ' risa fuerte ',
-  '😍': ' enamorado ',
-  '🥰': ' amor ',
-  '😘': ' beso ',
-  '😭': ' llorando ',
-  '😢': ' triste ',
-  '😎': ' cool ',
-  '🥳': ' fiesta ',
-  '🎉': ' celebracion ',
-  '👏': ' aplausos ',
-  '🙌': ' manos arriba ',
-  '🙏': ' bendiciones ',
-  '👍': ' like ',
-  '💪': ' fuerza ',
-  '💀': ' calavera ',
-  '✨': ' brillo ',
-  '🌹': ' rosa ',
-  '🥵': ' intenso ',
-  '😈': ' diablito ',
-  '😡': ' enojado ',
-  '🤔': ' pensando ',
-  '👀': ' mirando ',
-  '💯': ' cien ',
-  '🎁': ' regalo ',
-  '💸': ' dinero ',
-  '👑': ' corona ',
-}
+const removeTikTokEmojiTags = (text = '') => String(text || '')
+  // TikTok suele enviar algunos emotes como tokens: [heart] [thumb] [laughcry]
+  // Incluye variaciones como :[laughcry] y nombres no estandar de emotes LIVE/subs.
+  .replace(/:?\[[^\]\s]{1,32}\]/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
 
-const emojiWordTranslations = {
-  grinning: 'sonriendo',
-  smile: 'sonrisa',
-  smiling: 'sonriendo',
-  smiley: 'carita sonriente',
-  face: 'cara',
-  happy: 'feliz',
-  joy: 'alegria',
-  laughing: 'riendo',
-  laugh: 'risa',
-  tears: 'lagrimas',
-  crying: 'llorando',
-  sad: 'triste',
-  angry: 'enojado',
-  fire: 'fuego',
-  heart: 'corazon',
-  red: 'rojo',
-  blue: 'azul',
-  green: 'verde',
-  yellow: 'amarillo',
-  black: 'negro',
-  white: 'blanco',
-  broken: 'roto',
-  sparkles: 'brillos',
-  sparkle: 'brillo',
-  star: 'estrella',
-  stars: 'estrellas',
-  skull: 'calavera',
-  crown: 'corona',
-  eyes: 'ojos',
-  eye: 'ojo',
-  kiss: 'beso',
-  love: 'amor',
-  party: 'fiesta',
-  celebration: 'celebracion',
-  clap: 'aplausos',
-  hands: 'manos',
-  hand: 'mano',
-  raised: 'arriba',
-  gift: 'regalo',
-  money: 'dinero',
-  cash: 'dinero',
-  hundred: 'cien',
-  thinking: 'pensando',
-  cool: 'cool',
-  devil: 'diablito',
-  rose: 'rosa',
-  thumbs: 'pulgar',
-  thumb: 'pulgar',
-  up: 'arriba',
-  strong: 'fuerte',
-  muscle: 'musculo',
-  rocket: 'cohete',
-  bomb: 'bomba',
-  poop: 'popo',
-  ok: 'ok',
-  warning: 'alerta',
-  check: 'palomita',
-  mark: 'marca',
-  sleeping: 'durmiendo',
-  cat: 'gato',
-  dog: 'perro',
-  monkey: 'mono',
-  sun: 'sol',
-  moon: 'luna',
-  cloud: 'nube',
-  rain: 'lluvia',
-  snow: 'nieve',
-  car: 'carro',
-  truck: 'camion',
-  airplane: 'avion',
-  plane: 'avion',
-  phone: 'telefono',
-  camera: 'camara',
-  video: 'video',
-  microphone: 'microfono',
-  music: 'musica',
-}
+const expandTikTokEmojiTagsForSpeech = (text = '') => String(text || '')
+  // En modo bruto, preservar emotes TikTok como palabras hablables.
+  .replace(/:?\[([^\]\s]{1,32})\]/g, ' $1 ')
+  .replace(/[_-]+/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
 
-const getEmojiSpeechLabel = (emoji) => {
-  if (emojiSpeechMap[emoji]) return emojiSpeechMap[emoji]
-  const keywords = emojiLibrary[emoji]
-  if (!keywords?.length) return ' emoji '
-
-  const primaryLabel = keywords[0]
-    .split('_')
-    .filter((token) => !['with', 'of', 'and', 'the'].includes(token))
-    .map((token) => emojiWordTranslations[token] || token)
-    .join(' ')
-    .trim()
-
-  return primaryLabel ? ` ${primaryLabel} ` : ' emoji '
-}
-
-const verbalizeEmojisForSpeech = (text = '') => String(text || '')
-  .replace(emojiFullRegex, (emoji) => getEmojiSpeechLabel(emoji))
+const expandUnicodeEmojiForSpeech = (text = '') => String(text || '')
+  // Algunos motores TTS ignoran emoji Unicode; convertirlos a marcador hablable.
+  .replace(emojiFullRegex, ' emoji ')
   .replace(/\s+/g, ' ')
   .trim()
 
@@ -215,6 +102,13 @@ const hasTrivialSmartChatContent = (text = '') => {
 }
 
 const normalizeTikTokUsername = (value) => String(value || '').trim().replace(/^@+/, '')
+const getBanCandidateKeys = (value) => {
+  const raw = String(value || '').trim()
+  const normalized = normalizeTikTokUsername(raw).toLowerCase()
+  const rawLower = raw.toLowerCase()
+  return [...new Set([raw, rawLower, normalized, normalized ? `@${normalized}` : ''].filter(Boolean))]
+}
+const isUserBannedBySet = (bannedSet, username) => getBanCandidateKeys(username).some((key) => bannedSet.has(key))
 const getThemeChatNickColor = (config = {}, darkMode = true) => (
   darkMode
     ? (config.chatNickColorDark || config.chatNickColor || '#22d3ee')
@@ -257,6 +151,17 @@ const hasLowLegibility = (text = '') => {
   const alphaCount = (normalized.match(/[a-z]/gi) || []).length
   const wordCount = normalized.split(' ').filter(Boolean).length
   return alphaCount < 2 || wordCount === 0
+}
+
+const hasExcessiveNumericNoise = (text = '') => {
+  const raw = String(text || '')
+  if (!raw.trim()) return false
+  const digitMatches = raw.match(/\d/g) || []
+  const nonSpaceLength = raw.replace(/\s+/g, '').length
+  const digitRatio = nonSpaceLength > 0 ? digitMatches.length / nonSpaceLength : 0
+  const hasLongNumericChunks = /\d{5,}/.test(raw)
+  const hasManyNumericChunks = (raw.match(/\d{2,}/g) || []).length >= 3
+  return digitMatches.length >= 6 && (digitRatio >= 0.4 || hasLongNumericChunks || hasManyNumericChunks)
 }
 
 const extractKeywords = (text = '') => {
@@ -322,13 +227,14 @@ const apiBans = {
 
   async add(username) {
     try {
+      const normalizedUsername = normalizeTikTokUsername(username)
       const res = await fetch(`${API_URL}/api/bans`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, reason: 'Banned from chat' })
+        body: JSON.stringify({ username: normalizedUsername, reason: 'Banned from chat' })
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       return await res.json()
@@ -340,7 +246,8 @@ const apiBans = {
 
   async remove(username) {
     try {
-      const res = await fetch(`${API_URL}/api/bans/${username}`, {
+      const normalizedUsername = normalizeTikTokUsername(username)
+      const res = await fetch(`${API_URL}/api/bans/${normalizedUsername}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${getAuthToken()}` }
       })
@@ -426,7 +333,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const [editingValue, setEditingValue] = useState('')
   const [bannedUsers, setBannedUsers] = useState(new Set())
   const [volume, setVolume] = useState(0.8)
-  const [isPaused, setIsPaused] = useState(false)
+  const [isPaused, setIsPaused] = useState(config.chatPaused ?? false)
   const [highlightedUsers, setHighlightedUsers] = useState({})
   const [highlightMode, setHighlightMode] = useState(false)
   const [selectedColor, setSelectedColor] = useState('#06b6d4')
@@ -436,6 +343,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const [chatMsgColor, setChatMsgColor] = useState(() => getThemeChatMsgColor(config, localStorage.getItem('voltvoice-theme') !== 'light'))
   const [showFontPanel, setShowFontPanel] = useState(false)
   const [smartChatEnabled, setSmartChatEnabled] = useState(config.smartChatEnabled || false)
+  const [mobilePreviewEnabled, setMobilePreviewEnabled] = useState(config.mobilePreviewEnabled || false)
+  const [mobilePreviewMuted, setMobilePreviewMuted] = useState(config.mobilePreviewMuted ?? true)
   const [showSessionSummary, setShowSessionSummary] = useState(false)
   const [sessionSummary, setSessionSummary] = useState(null)
   const [highlightRules, setHighlightRules] = useState({
@@ -466,6 +375,16 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   }, [smartChatEnabled])
   useEffect(() => {
     if (updateConfig) {
+      updateConfig('mobilePreviewEnabled', mobilePreviewEnabled)
+    }
+  }, [mobilePreviewEnabled])
+  useEffect(() => {
+    if (updateConfig) {
+      updateConfig('mobilePreviewMuted', mobilePreviewMuted)
+    }
+  }, [mobilePreviewMuted])
+  useEffect(() => {
+    if (updateConfig) {
       updateConfig('highlightRules', highlightRules)
     }
   }, [highlightRules])
@@ -483,6 +402,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     setSmartChatEnabled(config.smartChatEnabled || false)
   }, [config.smartChatEnabled])
   useEffect(() => {
+    setMobilePreviewEnabled(config.mobilePreviewEnabled || false)
+  }, [config.mobilePreviewEnabled])
+  useEffect(() => {
+    setMobilePreviewMuted(config.mobilePreviewMuted ?? true)
+  }, [config.mobilePreviewMuted])
+  useEffect(() => {
+    setIsPaused(config.chatPaused ?? false)
+  }, [config.chatPaused])
+  useEffect(() => {
     setChatNickColor(getThemeChatNickColor(config, darkMode))
   }, [config.chatNickColor, config.chatNickColorDark, config.chatNickColorLight, darkMode])
   useEffect(() => {
@@ -496,6 +424,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   }, [config.lastTiktokUser, isConnected])
   const isPausedRef = useRef(false)
   const isPttSuppressedRef = useRef(false)
+  const isInteractionSuppressedRef = useRef(false)
   const wsRef = useRef(null)
   const statusIntervalRef = useRef(null)
   const speakQueueRef = useRef([])
@@ -510,7 +439,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const smartChatEnabledRef = useRef(config.smartChatEnabled || false)
   const volumeRef = useRef(0.8)
   const pttSnapshotRef = useRef({ wasPaused: false, hadCurrentAudio: false })
-  const pttRestoreTimerRef = useRef(null)
+  const activePlaybackResolveRef = useRef(null)
+  const resumeRequestedDuringSuppressionRef = useRef(false)
   const autoScrollPinnedRef = useRef(true)
   const liveRetryTimerRef = useRef(null)
   const recentIncomingTimestampsRef = useRef([])
@@ -527,6 +457,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const sessionPeakMessagesPerMinuteRef = useRef(0)
   // Cooldown por tipo de notificación (timestamp del último anuncio)
   const lastNotifTime = useRef({ like: 0, viewer_count: 0, share: 0, follow: 0, gift: 0 })
+
+  const isAudioSuppressed = () => isPttSuppressedRef.current || isInteractionSuppressedRef.current
 
   // Auto-scroll suave: solo scroll al fondo si el usuario está cerca del fondo
   useEffect(() => {
@@ -557,7 +489,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     smartChatEnabledRef.current = smartChatEnabled
     configRef.current = { ...configRef.current, smartChatEnabled }
   }, [smartChatEnabled])
-  useEffect(() => { isPausedRef.current = isPaused }, [isPaused])
+  useEffect(() => {
+    isPausedRef.current = isPaused
+    if (isPaused) {
+      markPlayingMessagesAsDone()
+      speakQueueRef.current = []
+      isProcessingRef.current = false
+      stopPlaybackNow()
+      return
+    }
+
+    isProcessingRef.current = false
+    processQueue()
+  }, [isPaused])
   useEffect(() => { volumeRef.current = volume }, [volume])
   useEffect(() => { bannedRef.current = bannedUsers; chatStore.syncBannedUsers(bannedUsers) }, [bannedUsers])
   useEffect(() => { nickOverridesRef.current = nickOverrides; chatStore.syncNickOverrides(nickOverrides) }, [nickOverrides])
@@ -665,11 +609,6 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       if (active) {
         if (isPttSuppressedRef.current) return
 
-        if (pttRestoreTimerRef.current) {
-          clearTimeout(pttRestoreTimerRef.current)
-          pttRestoreTimerRef.current = null
-        }
-
         pttSnapshotRef.current = {
           wasPaused: isPausedRef.current,
           hadCurrentAudio: !!currentAudioRef.current
@@ -677,9 +616,28 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
         isPttSuppressedRef.current = true
 
-        if (currentAudioRef.current) {
-          currentAudioRef.current.pause()
+        // Force-finish any in-flight playback promise to avoid stuck processing state.
+        if (activePlaybackResolveRef.current) {
+          try { activePlaybackResolveRef.current() } catch (error) { /* noop */ }
+          activePlaybackResolveRef.current = null
         }
+
+        if (currentAudioRef.current) {
+          try {
+            currentAudioRef.current.pause()
+            currentAudioRef.current.src = ''
+            currentAudioRef.current.load()
+          } catch (error) {
+            console.warn('[TikTok] Could not fully stop current audio during push-to-talk:', error?.message || error)
+          }
+          currentAudioRef.current = null
+        }
+
+        if (typeof window !== 'undefined' && window.speechSynthesis) {
+          try { window.speechSynthesis.cancel() } catch (error) { /* noop */ }
+        }
+
+        markPlayingMessagesAsDone()
 
         console.log('[TikTok] Chat audio suppressed for push-to-talk')
         return
@@ -688,26 +646,90 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       if (!isPttSuppressedRef.current) return
 
       isPttSuppressedRef.current = false
+      if (isInteractionSuppressedRef.current) {
+        return
+      }
       console.log('[TikTok] Restoring chat audio after push-to-talk')
-
-      pttRestoreTimerRef.current = setTimeout(() => {
-        pttRestoreTimerRef.current = null
-        if (!pttSnapshotRef.current.wasPaused) {
-          if (currentAudioRef.current) {
-            currentAudioRef.current.play().catch(() => {})
-          } else {
-            processQueue()
-          }
-        }
-      }, 1500)
+      if (!pttSnapshotRef.current.wasPaused || resumeRequestedDuringSuppressionRef.current) {
+        resumeRequestedDuringSuppressionRef.current = false
+        processQueue()
+      }
     }
 
     window.addEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
     return () => {
       window.removeEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
-      if (pttRestoreTimerRef.current) {
-        clearTimeout(pttRestoreTimerRef.current)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleInteractionSpeechState = (event) => {
+      const active = !!event.detail?.active
+
+      if (active) {
+        if (isInteractionSuppressedRef.current) return
+        isInteractionSuppressedRef.current = true
+
+        if (activePlaybackResolveRef.current) {
+          try { activePlaybackResolveRef.current() } catch (error) { /* noop */ }
+          activePlaybackResolveRef.current = null
+        }
+
+        if (currentAudioRef.current) {
+          try {
+            currentAudioRef.current.pause()
+            currentAudioRef.current.src = ''
+            currentAudioRef.current.load()
+          } catch (error) {
+            console.warn('[TikTok] Could not fully stop current audio during interaction mode:', error?.message || error)
+          }
+          currentAudioRef.current = null
+        }
+
+        if (typeof window !== 'undefined' && window.speechSynthesis) {
+          try { window.speechSynthesis.cancel() } catch (error) { /* noop */ }
+        }
+
+        markPlayingMessagesAsDone()
+        console.log('[TikTok] Chat audio suppressed for interaction mode')
+        return
       }
+
+      if (!isInteractionSuppressedRef.current) return
+      isInteractionSuppressedRef.current = false
+      if (isPttSuppressedRef.current) {
+        return
+      }
+      console.log('[TikTok] Restoring chat audio after interaction mode')
+      processQueue()
+    }
+
+    window.addEventListener('voltvoice:assistant-speech-state', handleInteractionSpeechState)
+    return () => {
+      window.removeEventListener('voltvoice:assistant-speech-state', handleInteractionSpeechState)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleChatPlaybackControl = (event) => {
+      const action = String(event?.detail?.action || '').toLowerCase()
+
+      if (action === 'pause') {
+        setIsPaused(true)
+        return
+      }
+
+      if (action === 'resume') {
+        if (isAudioSuppressed()) {
+          resumeRequestedDuringSuppressionRef.current = true
+        }
+        setIsPaused(false)
+      }
+    }
+
+    window.addEventListener('voltvoice:chat-playback-control', handleChatPlaybackControl)
+    return () => {
+      window.removeEventListener('voltvoice:chat-playback-control', handleChatPlaybackControl)
     }
   }, [])
 
@@ -730,7 +752,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       const bans = await apiBans.getAll()
       const nicks = await apiNicks.getAll()
 
-      const bannedSet = new Set(bans.map(b => b.banned_username))
+      const bannedSet = new Set(
+        bans.flatMap((b) => getBanCandidateKeys(b.banned_username))
+      )
       setBannedUsers(bannedSet)
       setNickOverrides(nicks)
 
@@ -740,10 +764,18 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
       // Register action callbacks so bot tools can update UI state
       chatStore.registerAction('onBan', (username) => {
-        setBannedUsers(prev => { const next = new Set(prev); next.add(username); return next })
+        setBannedUsers((prev) => {
+          const next = new Set(prev)
+          getBanCandidateKeys(username).forEach((key) => next.add(key))
+          return next
+        })
       })
       chatStore.registerAction('onUnban', (username) => {
-        setBannedUsers(prev => { const next = new Set(prev); next.delete(username); return next })
+        setBannedUsers((prev) => {
+          const next = new Set(prev)
+          getBanCandidateKeys(username).forEach((key) => next.delete(key))
+          return next
+        })
       })
       chatStore.registerAction('onHighlight', (username, color) => {
         setHighlightedUsers(prev => ({ ...prev, [username]: color }))
@@ -779,8 +811,16 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         } else if (data.data && data.data.type === 'gift') {
           const giftData = data.data
           console.log(`[TikTok] 🎁 Regalo de @${giftData.username}: ${giftData.giftName}`)
-          setDonors(prev => new Set([...prev, giftData.username]))
+          const normalizedGiftUsername = normalizeTikTokUsername(giftData.username)
+          setDonors(prev => new Set([
+            ...prev,
+            giftData.username,
+            normalizedGiftUsername
+          ].filter(Boolean)))
           recentGiftSendersRef.current[giftData.username] = Date.now()
+          if (normalizedGiftUsername) {
+            recentGiftSendersRef.current[normalizedGiftUsername] = Date.now()
+          }
           chatStore.trackEvent({
             type: 'gift',
             username: giftData.username,
@@ -794,6 +834,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           }
 
         } else if (data.data && data.data.type === 'follow') {
+          chatStore.trackEvent({
+            type: 'follow',
+            username: data.data.username,
+            count: 1,
+            timestamp: Date.now()
+          })
           if (c.announceFollowers && canAnnounce('follow', c.followCooldown || 10)) {
             const text = `Nuevo seguidor: ${data.data.username}`
             queueMessage(text, data.data.username, { isNotification: true })
@@ -843,6 +889,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         // === MENSAJES DE CHAT ===
         } else if (data.type === 'message') {
           const msg = data.data
+          const normalizedMsgUsername = normalizeTikTokUsername(msg.username)
+          const isKnownDonor = Boolean(
+            msg.isDonor
+            || donors.has(msg.username)
+            || donors.has(normalizedMsgUsername)
+            || Number(msg.topGifterRank || 0) > 0
+          )
           console.log(`[TikTok] Nuevo mensaje: ${msg.username} - ${msg.text}`)
           console.log(`  → isDonor: ${msg.isDonor}, isModerator: ${msg.isModerator}, isSubscriber: ${msg.isSubscriber}, topGifterRank: ${msg.topGifterRank}`)
           console.log(`  → Full msg object:`, JSON.stringify(msg, null, 2))
@@ -866,7 +919,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             ].filter((entry) => entry.timestamp >= Date.now() - 180000).slice(-120)
           }
 
-          const isBanned = bannedRef.current.has(msg.username)
+          const isBanned = isUserBannedBySet(bannedRef.current, msg.username)
 
           // Siempre mostrar el mensaje en el chat visual
           setMessages((prev) => ([
@@ -878,7 +931,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               text: msg.text,
               status: 'received',
               timestamp: new Date(),
-              isDonor: msg.isDonor || donors.has(msg.username),
+              isDonor: isKnownDonor,
               isModerator: msg.isModerator || false,
               isSubscriber: msg.isSubscriber || false,
               isCommunityMember: msg.isCommunityMember || false,
@@ -897,102 +950,88 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             isSubscriber: msg.isSubscriber || false,
             isCommunityMember: msg.isCommunityMember || false,
             isTopGifter: msg.topGifterRank > 0,
-            isDonor: msg.isDonor || donors.has(msg.username),
+            isDonor: isKnownDonor,
             isQuestion: isQuestion(msg.text)
           })
 
           // Sumar al contador de comentarios
           setStats(prev => ({ ...prev, count: prev.count + 1 }))
 
-          const freeModeNoChecks = !!c.freeModeNoChecks
           const smartChatActive = !!smartChatEnabledRef.current
-          const bypassManualChecks = freeModeNoChecks && !smartChatActive
-
-          if (bypassManualChecks) {
-            const freeModeText = verbalizeEmojisForSpeech(msg.text)
-            const freeModeDisplayName = nickOverridesRef.current[msg.username] || msg.nickname || msg.username
-            const finalFreeModeText = c.readOnlyMessage
-              ? freeModeText
-              : verbalizeEmojisForSpeech(`${freeModeDisplayName}: ${freeModeText}`)
-
-            queueMessage(finalFreeModeText, msg.username, {
-              id: msg.id,
-              isDonor: msg.isDonor || donors.has(msg.username),
-              isModerator: msg.isModerator,
-              isSubscriber: msg.isSubscriber || false,
-              isCommunityMember: msg.isCommunityMember || false,
-              isTopGifter: msg.topGifterRank > 0,
-              isQuestion: isQuestion(msg.text)
-            })
-            return
-          }
 
           // Si está baneado, no leer en voz
           if (isBanned) { markFilteredMessage(); return }
 
-          // Filtros manuales solo aplican fuera del modo libre
-          if (!bypassManualChecks && c.onlyDonors && !msg.isDonor && !donors.has(msg.username)) { markFilteredMessage(); return }
+          // Filtros manuales (solo cuando su check está activo)
+          if (c.onlyDonors && !isKnownDonor) { markFilteredMessage(); return }
 
           // Filtro: solo moderadores
-          if (!bypassManualChecks && c.onlyModerators && !msg.isModerator) { markFilteredMessage(); return }
+          if (c.onlyModerators && !msg.isModerator) { markFilteredMessage(); return }
 
           // Filtro: solo suscriptores
-          if (!bypassManualChecks && c.onlySubscribers && !msg.isSubscriber) { markFilteredMessage(); return }
+          if (c.onlySubscribers && !msg.isSubscriber) { markFilteredMessage(); return }
 
           // Filtro: solo miembros de comunidad / Fan Club
-          if (!bypassManualChecks && c.onlyCommunityMembers && !msg.isCommunityMember) { markFilteredMessage(); return }
+          if (c.onlyCommunityMembers && !msg.isCommunityMember) { markFilteredMessage(); return }
 
           // Filtro: solo preguntas
-          if (!bypassManualChecks && c.onlyQuestions && !isQuestion(msg.text)) { markFilteredMessage(); return }
+          if (c.onlyQuestions && !isQuestion(msg.text)) { markFilteredMessage(); return }
 
           // Filtro: saltar repetidos (por usuario, no global)
           const normalizedText = msg.text.trim().toLowerCase()
-          if (!bypassManualChecks && c.skipRepeated && normalizedText === lastMessageRef.current[msg.username]) { markFilteredMessage(); return }
+          if (c.skipRepeated && normalizedText === lastMessageRef.current[msg.username]) { markFilteredMessage(); return }
           lastMessageRef.current[msg.username] = normalizedText
 
           // Filtro: ignorar enlaces
-          if (!bypassManualChecks && c.ignoreLinks && hasLinks(msg.text)) { markFilteredMessage(); return }
+          if (c.ignoreLinks && hasLinks(msg.text)) { markFilteredMessage(); return }
           const priorityUser = isPriorityUser({
-            isDonor: msg.isDonor || donors.has(msg.username),
+            isDonor: isKnownDonor,
             isModerator: msg.isModerator,
             isSubscriber: msg.isSubscriber || false,
             isCommunityMember: msg.isCommunityMember || false
           })
+          const smartMetrics = smartChatActive ? getSmartMetrics() : null
 
-          // Filtro: no leer emojis en chat (quitar todos los emojis del texto)
+          // Modo bruto: solo limpiar tags de emojis TikTok cuando hay filtros activos o smart chat.
           let textToProcess = msg.text
-          if (!bypassManualChecks && (c.stripChatEmojis || smartChatActive)) {
+          const shouldSanitizeTikTokTags = smartChatActive || c.stripChatEmojis || c.ignoreExcessiveEmojis
+          if (shouldSanitizeTikTokTags) {
+            textToProcess = removeTikTokEmojiTags(textToProcess)
+            if (!textToProcess.trim()) { markFilteredMessage(); return }
+          } else {
+            textToProcess = expandTikTokEmojiTagsForSpeech(textToProcess)
+            textToProcess = expandUnicodeEmojiForSpeech(textToProcess)
+            if (!textToProcess.trim()) { markFilteredMessage(); return }
+          }
+          if (c.stripChatEmojis || smartChatActive) {
             textToProcess = removeEmojis(textToProcess)
             if (!textToProcess.trim()) { markFilteredMessage(); return }
           }
 
           // Filtro: limpiar emojis excesivos del texto (no ignorar el mensaje)
-          if (!bypassManualChecks && c.ignoreExcessiveEmojis && hasExcessiveEmojis(textToProcess, parseInt(c.maxEmojisAllowed) || 3)) {
+          if (c.ignoreExcessiveEmojis && hasExcessiveEmojis(textToProcess, parseInt(c.maxEmojisAllowed) || 3)) {
             textToProcess = removeEmojis(textToProcess)
             if (!textToProcess.trim()) { markFilteredMessage(); return }
           }
 
-          // Normalizar Unicode solo cuando hay filtros manuales o chat inteligente activos
-          if (!bypassManualChecks || smartChatActive) {
-            const unicodeCheck = normalizeUnicode(textToProcess)
-            if (unicodeCheck.suspicious) {
-              console.log(`[TikTok] ⚠️ Mensaje sospechoso detectado: ${unicodeCheck.reason}`)
-              console.log(`[TikTok] Usuario: ${msg.username}, Texto original: ${textToProcess.substring(0, 50)}...`)
-              // Silenciosamente usar el texto normalizado, pero alertar en logs
-              textToProcess = unicodeCheck.text
-            } else if (unicodeCheck.text !== textToProcess) {
-              // Si hay normalización pero no es sospechoso, usar el texto normalizado
-              textToProcess = unicodeCheck.text
-            }
+          const unicodeCheck = normalizeUnicode(textToProcess)
+          if (unicodeCheck.suspicious) {
+            console.log(`[TikTok] ⚠️ Mensaje sospechoso detectado: ${unicodeCheck.reason}`)
+            console.log(`[TikTok] Usuario: ${msg.username}, Texto original: ${textToProcess.substring(0, 50)}...`)
+            // Silenciosamente usar el texto normalizado, pero alertar en logs
+            textToProcess = unicodeCheck.text
+          } else if (unicodeCheck.text !== textToProcess) {
+            // Si hay normalización pero no es sospechoso, usar el texto normalizado
+            textToProcess = unicodeCheck.text
           }
           if (!textToProcess.trim()) { markFilteredMessage(); return }
-          if (smartChatActive && !priorityUser && textToProcess.trim().length < 7) { markFilteredMessage(); return }
+          if (smartChatActive && smartMetrics?.pressure > 1.25 && !priorityUser && textToProcess.trim().length < 5) { markFilteredMessage(); return }
 
           // Filtro: largo mínimo
-          if (!bypassManualChecks && c.minMessageLengthEnabled && textToProcess.trim().length < c.minMessageLength) { markFilteredMessage(); return }
+          if (c.minMessageLengthEnabled && textToProcess.trim().length < c.minMessageLength) { markFilteredMessage(); return }
 
           // Limitar cola máxima
-          if (!bypassManualChecks && c.maxQueueEnabled && speakQueueRef.current.length >= c.maxQueueSize) {
+          if (c.maxQueueEnabled && speakQueueRef.current.length >= c.maxQueueSize) {
             console.log(`[TikTok] Cola llena (${c.maxQueueSize}), descartando mensaje`)
             markFilteredMessage()
             return
@@ -1000,19 +1039,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
           // Limitar caracteres en todos los mensajes
           let textToSpeak = textToProcess
-          if (!bypassManualChecks && c.donorCharLimitEnabled) {
+          if (c.donorCharLimitEnabled) {
             textToSpeak = textToProcess.substring(0, c.donorCharLimit)
-          }
-
-          if (bypassManualChecks) {
-            textToSpeak = verbalizeEmojisForSpeech(textToSpeak)
           }
 
           // Construir texto final (usar nickname para lectura, no el username técnico)
           let displayName = nickOverridesRef.current[msg.username] || msg.nickname || msg.username
 
           // Si está activado, eliminar emojis y caracteres especiales del nickname
-          if (!bypassManualChecks && (c.onlyPlainNicks || smartChatActive) && !nickOverridesRef.current[msg.username]) {
+          if ((c.onlyPlainNicks || smartChatActive) && !nickOverridesRef.current[msg.username]) {
             displayName = getPlainNick(displayName)
           }
 
@@ -1020,7 +1055,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
           queueMessage(finalText, msg.username, {
             id: msg.id,
-            isDonor: msg.isDonor || donors.has(msg.username),
+            isDonor: isKnownDonor,
             isModerator: msg.isModerator,
             isSubscriber: msg.isSubscriber || false,
             isCommunityMember: msg.isCommunityMember || false,
@@ -1160,6 +1195,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     if (hasExcessiveEmojis(rawText, 3)) score -= 2.4
     if (isEmojiOrSymbolOnly(rawText)) score -= 8
     if (hasLowLegibility(rawText)) score -= 5
+    if (!item.isQuestion && !isQuestion(rawText) && hasExcessiveNumericNoise(rawText)) score -= 6
     if (/([a-z])\1{4,}/i.test(normalizedText)) score -= 3.5
     if (/(jaja){3,}|(haha){3,}|(xd){3,}/i.test(normalizedText)) score -= 2.5
 
@@ -1171,11 +1207,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     const normalizedText = normalizeMessageForMatching(rawText)
     const ageSeconds = (Date.now() - item.queuedAt) / 1000
     if (!rawText) return true
-    if (!item.isNotification && hasRecentlySpokenDuplicate(normalizedText)) return true
+    const lowPressureMode = metrics.pressure <= 1.2
+      && metrics.incomingPerMinute <= Math.max(12, metrics.readCapacityPerMinute * 0.95)
+    if (lowPressureMode) return false
+    if (!item.isNotification && (metrics.pressure >= 1.2 || metrics.queueDepth >= 2) && hasRecentlySpokenDuplicate(normalizedText)) return true
     if (!isPriorityUser(item) && hasTrivialSmartChatContent(rawText)) return true
     if (metrics.pressure >= 1.2 && isEmojiOrSymbolOnly(rawText)) return true
     if (metrics.pressure >= 1.15 && hasLowLegibility(rawText)) return true
     if (metrics.pressure >= 1.25 && /(jaja){4,}|(haha){4,}|(xd){4,}/i.test(normalizedText)) return true
+    if (!isPriorityUser(item) && !item.isQuestion && !isQuestion(rawText) && hasExcessiveNumericNoise(rawText)) return true
     if (metrics.pressure >= 1.3 && getUniquenessPenalty(normalizedText) >= 2.4) return true
     if (metrics.pressure >= 1.35 && rawText.length > 220) return true
     if (metrics.pressure >= 1.2 && ageSeconds > 30) return true
@@ -1200,6 +1240,16 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         markFilteredMessage()
         return
       }
+      const lowPressureFastPath = metrics.pressure <= 1.2
+        && metrics.incomingPerMinute <= Math.max(12, metrics.readCapacityPerMinute * 0.95)
+        && metrics.queueDepth <= 3
+      if (lowPressureFastPath) {
+        speakQueueRef.current.push(item)
+        console.log('[TikTok] Smart chat en baja carga: lectura directa para maximizar cobertura')
+        console.log(`[TikTok] Agregado a cola (${speakQueueRef.current.length} pendientes)`)
+        processQueue()
+        return
+      }
       if (shouldHardDropSmartMessage(item, metrics)) {
         console.log('[TikTok] Smart chat descartó mensaje por filtros duros adaptativos')
         markFilteredMessage()
@@ -1207,7 +1257,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       }
       const adaptiveSkip = getAdaptiveSkipCount(metrics)
       const targetQueueSize = Math.max(2, Math.round(metrics.readCapacityPerMinute / (metrics.pressure > 1.25 ? 22 : 16)))
-      const threshold = metrics.pressure > 2 ? 10 : metrics.pressure > 1.5 ? 6 : metrics.pressure > 1.15 ? 2.5 : -999
+      const threshold = metrics.pressure > 2.4 ? 10 : metrics.pressure > 1.8 ? 6 : metrics.pressure > 1.35 ? 2 : -999
 
       item.smartScore = scoreSmartMessage(item, metrics)
       if (item.smartScore < threshold) {
@@ -1244,13 +1294,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     if (isProcessingRef.current) return
     if (speakQueueRef.current.length === 0) return
     if (isPausedRef.current) return
-    if (isPttSuppressedRef.current) return
+    if (isAudioSuppressed()) return
 
     isProcessingRef.current = true
 
     while (speakQueueRef.current.length > 0) {
       if (disconnectedRef.current) break
-      if (isPausedRef.current || isPttSuppressedRef.current) break
+      if (isPausedRef.current || isAudioSuppressed()) break
       const item = speakQueueRef.current.shift()
       if (smartChatEnabledRef.current) {
         const metrics = getSmartMetrics()
@@ -1280,6 +1330,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           const lang = voiceId === 'en-US' ? 'en-US' : 'es-ES'
           await new Promise((resolve) => {
             if (disconnectedRef.current) { resolve(); return }
+            activePlaybackResolveRef.current = resolve
             const utterance = new SpeechSynthesisUtterance(text)
             utterance.lang = lang
             utterance.rate = c.audioSpeed || 1.0
@@ -1306,11 +1357,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   .filter(e => e.timestamp >= Date.now() - 180000).slice(-80)
               }
               setMessages((prev) => prev.map((msg) => msg.id === item.id ? { ...msg, status: 'done' } : msg))
+              activePlaybackResolveRef.current = null
               resolve()
             }
-            utterance.onerror = () => resolve()
+            utterance.onerror = () => {
+              activePlaybackResolveRef.current = null
+              resolve()
+            }
 
-            if (isPttSuppressedRef.current) { resolve(); return }
+            if (isAudioSuppressed()) {
+              activePlaybackResolveRef.current = null
+              resolve()
+              return
+            }
             window.speechSynthesis.cancel()
             window.speechSynthesis.speak(utterance)
           })
@@ -1329,6 +1388,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
         const data = await response.json()
 
+        if (isPausedRef.current || disconnectedRef.current || isAudioSuppressed()) {
+          continue
+        }
+
         if (data.audio) {
           setMessages((prev) =>
             prev.map((msg) =>
@@ -1338,12 +1401,14 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
           await new Promise((resolve) => {
             if (disconnectedRef.current) { resolve(); return }
+            activePlaybackResolveRef.current = resolve
             const audio = new Audio(data.audio)
             currentAudioRef.current = audio
             audio.playbackRate = c.audioSpeed || 1.0
             audio.volume = volumeRef.current
             audio.onended = () => {
               currentAudioRef.current = null
+              activePlaybackResolveRef.current = null
               console.log(`[TikTok] Audio terminado`)
               const duration = Number(audio.duration)
               const effectiveDuration = Number.isFinite(duration) && duration > 0
@@ -1371,19 +1436,29 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               )
               resolve()
             }
-            audio.onerror = () => { currentAudioRef.current = null; resolve() }
-            if (isPttSuppressedRef.current) {
+            audio.onerror = () => {
+              currentAudioRef.current = null
+              activePlaybackResolveRef.current = null
+              resolve()
+            }
+            if (isAudioSuppressed()) {
               audio.pause()
+              currentAudioRef.current = null
+              activePlaybackResolveRef.current = null
               resolve()
               return
             }
-            audio.play().catch(() => { currentAudioRef.current = null; resolve() })
+            audio.play().catch(() => {
+              currentAudioRef.current = null
+              activePlaybackResolveRef.current = null
+              resolve()
+            })
           })
         }
         } // fin else voz backend
       } catch (err) {
         console.error('[TikTok] Error sintetizando:', err)
-        await new Promise((r) => setTimeout(r, 500))
+        await new Promise((r) => setTimeout(r, 220))
       }
     }
 
@@ -1523,6 +1598,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
   const currentReadingMessage = messages.find((msg) => msg.status === 'playing') || null
   const showConnectedView = isConnected || showSessionSummary
+  const mobilePreviewUsername = normalizeTikTokUsername(connectedTikTokUser || tiktokUser || config.lastTiktokUser || '')
+  const mobilePreviewLiveUrl = mobilePreviewUsername ? `https://www.tiktok.com/@${mobilePreviewUsername}/live` : ''
+  const mobilePreviewFrameUrl = ''
   const oneMinuteAgo = Date.now() - 60000
   const messagesPerMinute = messages.reduce((count, msg) => {
     const timestamp = Number(msg.timestamp || 0)
@@ -1539,39 +1617,35 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       ? 'Sesion activa'
       : 'Sesion fluida'
 
-  const handlePause = () => {
-    if (!isPaused) {
-      // Pausar: detener audio actual y vaciar cola
-      isPausedRef.current = true
-      setIsPaused(true)
-      markPlayingMessagesAsDone()
-      speakQueueRef.current = []
-      isProcessingRef.current = false
-      if (currentAudioRef.current) {
-        currentAudioRef.current.pause()
-        currentAudioRef.current.src = ''
-        currentAudioRef.current = null
-      }
-      keepReadMessageVisible({ force: true })
-    } else {
-      // Reanudar: limpiar cola vieja y arrancar desde cero
-      isPausedRef.current = false
-      setIsPaused(false)
-      speakQueueRef.current = []
-      isProcessingRef.current = false
-      keepReadMessageVisible({ force: true })
+  const stopPlaybackNow = () => {
+    if (activePlaybackResolveRef.current) {
+      try { activePlaybackResolveRef.current() } catch (error) { /* noop */ }
+      activePlaybackResolveRef.current = null
     }
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause()
+      currentAudioRef.current.src = ''
+      currentAudioRef.current = null
+    }
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      try { window.speechSynthesis.cancel() } catch (e) { /* noop */ }
+    }
+  }
+
+  const handlePause = () => {
+    const nextPaused = !isPaused
+    setIsPaused(nextPaused)
+    if (typeof updateConfig === 'function') {
+      updateConfig('chatPaused', nextPaused)
+    }
+    keepReadMessageVisible({ force: true })
   }
 
   const handleRefresh = () => {
     markPlayingMessagesAsDone()
     speakQueueRef.current = []
     isProcessingRef.current = false
-    if (currentAudioRef.current) {
-      currentAudioRef.current.pause()
-      currentAudioRef.current.src = ''
-      currentAudioRef.current = null
-    }
+    stopPlaybackNow()
     // Si estaba pausado, reanudar también
     if (isPausedRef.current) {
       isPausedRef.current = false
@@ -1587,11 +1661,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       disconnectedRef.current = true
       speakQueueRef.current = []
       isProcessingRef.current = false
-      if (currentAudioRef.current) {
-        currentAudioRef.current.pause()
-        currentAudioRef.current.src = ''
-        currentAudioRef.current = null
-      }
+      stopPlaybackNow()
 
       await fetch(`${API_URL}/api/tiktok/disconnect`, {
         method: 'POST',
@@ -1613,7 +1683,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   }
 
   return (
-    <div className={`relative overflow-hidden ${darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6 mb-6" : "bg-white border border-indigo-200 rounded-lg p-6 mb-6 shadow-sm"}`}>
+    <div className={`relative overflow-visible ${darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6 mb-6" : "bg-white border border-indigo-200 rounded-lg p-6 mb-6 shadow-sm"}`}>
       <div className="flex items-center gap-3 mb-4">
         <MessageCircle className="w-6 h-6 text-cyan-300" />
         <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>TikTok LIVE en Tiempo Real</h2>
@@ -1693,6 +1763,35 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             <br />
             ✓ Reproduce mientras haces stream
           </p>
+          <div className="flex items-center justify-end gap-2" />
+          <div className="relative flex items-start gap-3">
+            <div className="flex-1">
+              <div
+                style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain' }}
+                className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-64 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-64 overflow-y-auto space-y-2"}
+              >
+                {messages.length === 0 ? (
+                  <div className="text-center text-gray-400 py-8">
+                    <MessageCircle className="w-6 h-6 mx-auto mb-2 text-cyan-400" />
+                    <p>Panel del chat disponible. Conecta TikTok para ver mensajes en vivo.</p>
+                  </div>
+                ) : (
+                  messages.slice(-12).map((msg, idx) => (
+                    <div
+                      key={msg.id || `${msg.user}-${idx}-${msg.text}`}
+                      className={darkMode ? "border-l border-cyan-500/30 pl-3 py-2 rounded-r" : "border-l border-indigo-300 pl-3 py-2 rounded-r"}
+                    >
+                      <p className="font-semibold" style={{ color: chatNickColor, fontSize: `${chatFontSize}px` }}>
+                        {nickOverrides[msg.user] || msg.nickname || msg.user}
+                      </p>
+                      <p style={{ color: chatMsgColor, fontSize: `${chatFontSize}px` }}>{msg.text}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+            
+          </div>
         </form>
       ) : (
         <div className="space-y-4">
@@ -1727,13 +1826,42 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 </p>
               </div>
             </div>
-            <button
-              onClick={handleDisconnect}
-              className="bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-300 px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap"
-            >
-              <Square className="w-4 h-4" />
-              Desconectar
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setMobilePreviewEnabled(prev => !prev)}
+                style={{ display: 'none' }}
+                className={`px-3 py-2 rounded-lg transition flex items-center gap-2 text-xs font-semibold whitespace-nowrap ${
+                  mobilePreviewEnabled
+                    ? 'bg-cyan-500/25 border border-cyan-400/60 text-cyan-200'
+                    : 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20'
+                }`}
+                title="Mostrar/Ocultar preview móvil"
+              >
+                <MessageCircle className="w-4 h-4" />
+                {mobilePreviewEnabled ? 'Móvil ON' : 'Móvil OFF'}
+              </button>
+              {false && (
+                <button
+                  onClick={() => setMobilePreviewMuted(prev => !prev)}
+                  className={`px-3 py-2 rounded-lg transition flex items-center gap-2 text-xs font-semibold whitespace-nowrap ${
+                    mobilePreviewMuted
+                      ? 'bg-amber-500/20 border border-amber-400/60 text-amber-200'
+                      : 'bg-emerald-500/15 border border-emerald-400/60 text-emerald-200'
+                  }`}
+                  title="Silenciar/activar audio del preview móvil"
+                >
+                  {mobilePreviewMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                  {mobilePreviewMuted ? 'Mute' : 'Audio'}
+                </button>
+              )}
+              <button
+                onClick={handleDisconnect}
+                className="bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-300 px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap"
+              >
+                <Square className="w-4 h-4" />
+                Desconectar
+              </button>
+            </div>
           </div>
 
             <div className="space-y-3">
@@ -1774,18 +1902,20 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 )}
             </div>
 
-            <div
-              ref={chatContainerRef}
-              style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain', scrollBehavior: 'smooth' }}
-              className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-96 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-96 overflow-y-auto space-y-2"}
-            >
-              {messages.length === 0 ? (
-                <div className="text-center text-gray-400 py-8">
-                  <Loader className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
-                  <p>Esperando comentarios en vivo...</p>
-                </div>
-              ) : (
-                messages.map((msg, idx) => {
+            <div className="relative flex items-start gap-3">
+              <div className="flex-1">
+                <div
+                  ref={chatContainerRef}
+                  style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain', scrollBehavior: 'smooth' }}
+                  className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-96 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-96 overflow-y-auto space-y-2"}
+                >
+                  {messages.length === 0 ? (
+                    <div className="text-center text-gray-400 py-8">
+                      <Loader className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
+                      <p>Esperando comentarios en vivo...</p>
+                    </div>
+                  ) : (
+                    messages.map((msg, idx) => {
                 const effectiveHighlightRules = {
                   ...defaultHighlightRules,
                   ...(highlightRules || {})
@@ -1796,7 +1926,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   : (effectiveHighlightRules.donors.enabled && (msg.isDonor || donors.has(msg.user))) ? effectiveHighlightRules.donors.color
                   : (effectiveHighlightRules.subscribers.enabled && msg.isSubscriber) ? effectiveHighlightRules.subscribers.color
                   : (effectiveHighlightRules.communityMembers.enabled && msg.isCommunityMember) ? effectiveHighlightRules.communityMembers.color
-                  : (effectiveHighlightRules.banned.enabled && bannedUsers.has(msg.user)) ? effectiveHighlightRules.banned.color
+                  : (effectiveHighlightRules.banned.enabled && isUserBannedBySet(bannedUsers, msg.user)) ? effectiveHighlightRules.banned.color
                   : null
                 const hlColor = highlightedUsers[msg.user] || autoColor
                 // DEBUG: Log para test messages
@@ -1881,21 +2011,21 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                               })
                               return
                             }
-                            if (!bannedUsers.has(msg.user)) {
+                            if (!isUserBannedBySet(bannedUsers, msg.user)) {
                               setEditingNick(msg.id)
                               setEditingValue(nickOverrides[msg.user] || msg.nickname || msg.user)
                             }
                           }}
                           onContextMenu={async (e) => {
                             e.preventDefault()
-                            const isBanned = bannedUsers.has(msg.user)
+                            const isBanned = isUserBannedBySet(bannedUsers, msg.user)
 
                             if (isBanned) {
                               // Desbanear
                               await apiBans.remove(msg.user)
                               setBannedUsers(prev => {
                                 const next = new Set(prev)
-                                next.delete(msg.user)
+                                getBanCandidateKeys(msg.user).forEach((key) => next.delete(key))
                                 bannedRef.current = next
                                 return next
                               })
@@ -1904,19 +2034,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                               await apiBans.add(msg.user)
                               setBannedUsers(prev => {
                                 const next = new Set(prev)
-                                next.add(msg.user)
+                                getBanCandidateKeys(msg.user).forEach((key) => next.add(key))
                                 bannedRef.current = next
                                 return next
                               })
                             }
                           }}
                           className={`font-semibold cursor-pointer select-none px-1 rounded transition-colors ${
-                            bannedUsers.has(msg.user)
+                            isUserBannedBySet(bannedUsers, msg.user)
                               ? 'text-red-400 bg-red-500/15 line-through'
                               : 'hover:underline'
                           }`}
-                          style={!bannedUsers.has(msg.user) ? { color: chatNickColor } : undefined}
-                          title={highlightMode ? "Click para remarcar/desmarcar este usuario" : bannedUsers.has(msg.user) ? "Click derecho para desbloquear" : "Click para editar · Click derecho para silenciar"}
+                          style={!isUserBannedBySet(bannedUsers, msg.user) ? { color: chatNickColor } : undefined}
+                          title={highlightMode ? "Click para remarcar/desmarcar este usuario" : isUserBannedBySet(bannedUsers, msg.user) ? "Click derecho para desbloquear" : "Click para editar · Click derecho para silenciar"}
                         >
                           {hlColor && <span className="inline-block w-2.5 h-2.5 rounded-full mr-1 ring-1 ring-white/30" style={{ backgroundColor: hlColor }} />}
                           {nickOverrides[msg.user] || msg.nickname || msg.user}
@@ -1939,8 +2069,63 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   >{msg.text}</p>
                 </div>
                 )
-              })
-            )}
+                    })
+                  )}
+                </div>
+              </div>
+              {false && (
+                <div className="hidden xl:block absolute right-[-384px] top-[-140px] w-[360px]">
+                  <div className={darkMode ? "bg-[#0f0f23]/90 border border-cyan-400/30 rounded-2xl p-2 shadow-lg" : "bg-white border border-indigo-200 rounded-2xl p-2 shadow-md"}>
+                    <div className={darkMode ? "rounded-xl border border-cyan-500/20 bg-black/40 p-2 h-[620px] flex flex-col" : "rounded-xl border border-indigo-200 bg-gray-50 p-2 h-[620px] flex flex-col"}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={darkMode ? "text-[10px] text-cyan-300 font-semibold" : "text-[10px] text-cyan-700 font-semibold"}>LIVE Móvil</span>
+                        <span className={`text-[10px] font-semibold ${mobilePreviewMuted ? 'text-amber-300' : 'text-emerald-300'}`}>
+                          {mobilePreviewMuted ? 'MUTE' : 'AUDIO'}
+                        </span>
+                      </div>
+                      <div className={darkMode ? "flex-1 rounded-lg bg-[#070714] border border-cyan-500/15 p-3 overflow-hidden" : "flex-1 rounded-lg bg-white border border-indigo-200 p-3 overflow-hidden"}>
+                        {mobilePreviewFrameUrl ? (<iframe title="Preview LIVE móvil" src={mobilePreviewFrameUrl} className="w-full h-full rounded-md" allow="autoplay; encrypted-media; picture-in-picture; clipboard-write" referrerPolicy="strict-origin-when-cross-origin" />) : (
+                          <div className="h-full flex flex-col gap-2">
+                            {currentReadingMessage ? (
+                              <div className={darkMode ? "rounded-md border border-cyan-500/25 bg-cyan-500/10 p-2" : "rounded-md border border-cyan-200 bg-cyan-50 p-2"}>
+                                <p className={darkMode ? "text-[9px] uppercase tracking-wide text-cyan-300/90" : "text-[9px] uppercase tracking-wide text-cyan-700/90"}>En lectura</p>
+                                <p className="text-[11px] font-semibold truncate" style={{ color: chatNickColor }}>
+                                  {nickOverrides[currentReadingMessage.user] || currentReadingMessage.nickname || currentReadingMessage.user}
+                                </p>
+                                <p className="text-[11px] leading-snug line-clamp-2" style={{ color: chatMsgColor }}>
+                                  {currentReadingMessage.text}
+                                </p>
+                              </div>
+                            ) : (
+                              <p className={darkMode ? "text-[10px] text-slate-400 text-center py-1" : "text-[10px] text-slate-500 text-center py-1"}>
+                                Esperando mensaje en curso...
+                              </p>
+                            )}
+                            <div className={darkMode ? "flex-1 rounded-md bg-[#050512] border border-cyan-500/10 p-2 overflow-y-auto space-y-1.5" : "flex-1 rounded-md bg-slate-50 border border-indigo-100 p-2 overflow-y-auto space-y-1.5"}>
+                              {messages.length === 0 ? (
+                                <p className={darkMode ? "text-[10px] text-slate-400 text-center py-6" : "text-[10px] text-slate-500 text-center py-6"}>
+                                  Esperando comentarios en vivo...
+                                </p>
+                              ) : (
+                                messages.slice(-12).map((msg, idx) => (
+                                  <div key={`mobile-feed-on-${msg.id || idx}`} className={darkMode ? "rounded-md border border-cyan-500/15 bg-cyan-500/5 p-1.5" : "rounded-md border border-cyan-100 bg-white p-1.5"}>
+                                    <p className="text-[10px] font-semibold truncate" style={{ color: chatNickColor }}>
+                                      {nickOverrides[msg.user] || msg.nickname || msg.user}
+                                    </p>
+                                    <p className="text-[10px] leading-snug line-clamp-2" style={{ color: chatMsgColor }}>
+                                      {msg.text}
+                                    </p>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -2419,3 +2604,4 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     </div>
   )
 }
+

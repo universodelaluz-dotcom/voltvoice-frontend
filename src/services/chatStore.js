@@ -235,6 +235,9 @@ class ChatStore {
       giftsToday: this.eventHistory
         .filter((event) => event.type === 'gift' && event.timestamp >= new Date(new Date().setHours(0, 0, 0, 0)).getTime())
         .reduce((acc, event) => acc + (event.count || 1), 0),
+      followsToday: this.eventHistory
+        .filter((event) => event.type === 'follow' && event.timestamp >= new Date(new Date().setHours(0, 0, 0, 0)).getTime())
+        .reduce((acc, event) => acc + (event.count || 1), 0),
       sharesToday: this.eventHistory
         .filter((event) => event.type === 'share' && event.timestamp >= new Date(new Date().setHours(0, 0, 0, 0)).getTime())
         .reduce((acc, event) => acc + (event.count || 1), 0)
@@ -386,7 +389,10 @@ class ChatStore {
   async banUser(username) {
     try {
       const resolved = this.resolveUserReference(username)
-      const targetUsername = resolved?.username || username
+      const targetUsername = String(resolved?.username || username || '').trim().replace(/^@+/, '')
+      if (!targetUsername) {
+        return { success: false, message: 'No pude identificar a quien bloquear.' }
+      }
       const res = await fetch(`${API_URL}/api/bans`, {
         method: 'POST',
         headers: {
@@ -411,7 +417,10 @@ class ChatStore {
   async unbanUser(username) {
     try {
       const resolved = this.resolveUserReference(username)
-      const targetUsername = resolved?.username || username
+      const targetUsername = String(resolved?.username || username || '').trim().replace(/^@+/, '')
+      if (!targetUsername) {
+        return { success: false, message: 'No pude identificar a quien desbloquear.' }
+      }
       const res = await fetch(`${API_URL}/api/bans/${targetUsername}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${getAuthToken()}` }

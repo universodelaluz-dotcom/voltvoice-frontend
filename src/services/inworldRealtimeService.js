@@ -351,7 +351,7 @@ export class InworldRealtimeService {
       }
 
       this.peerConnection.ontrack = (event) => {
-        console.log('[Inworld] Audio track received:', event.track.kind)
+        console.log('[Inworld] Audio track received:', event.track.kind, 'readyState:', event.track.readyState)
         if (event.track.kind === 'audio') {
           const audioElement = this._ensureOutputAudioElement()
           if (!this.remoteAudioStream) {
@@ -360,6 +360,16 @@ export class InworldRealtimeService {
           }
 
           this.remoteAudioStream.addTrack(event.track)
+
+          // Monitor track state changes
+          const stateCheckInterval = setInterval(() => {
+            console.log('[Track State] readyState:', event.track.readyState, 'enabled:', event.track.enabled, 'muted:', event.track.muted)
+            if (event.track.readyState === 'ended') {
+              clearInterval(stateCheckInterval)
+              console.log('[Track State] TRACK ENDED - audio should be done')
+            }
+          }, 500)
+
           this._startRemoteAudioEnergyMonitor(audioElement, this.remoteAudioStream)
           event.track.onunmute = () => {
             console.log('[Inworld] Audio track unmuted')
@@ -371,6 +381,7 @@ export class InworldRealtimeService {
             this._emit('audio-playback-ended')
           }
           event.track.onended = () => {
+            clearInterval(stateCheckInterval)
             console.log('[Inworld] Audio track ended (WebRTC stream stopped)')
             this.remoteAudioStream?.removeTrack(event.track)
             this._emit('audio-complete')

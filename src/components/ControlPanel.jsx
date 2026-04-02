@@ -138,6 +138,7 @@ function BotShortcutCapture({ darkMode, onCapture }) {
 
 export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode, config, updateConfig, user }) {
   const [userVoices, setUserVoices] = useState([])
+  const [presetStatus, setPresetStatus] = useState('')
 
   // Cargar voces del usuario desde la API
   const loadUserVoices = async () => {
@@ -187,6 +188,49 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     ...userVoices,
   ]
 
+  const presetKeys = ['configPreset1', 'configPreset2', 'configPreset3']
+
+  const buildPresetSnapshot = () => {
+    const {
+      configPreset1,
+      configPreset2,
+      configPreset3,
+      lastTiktokUser,
+      mobilePreviewEnabled,
+      mobilePreviewMuted,
+      ...rest
+    } = config || {}
+    return JSON.parse(JSON.stringify(rest))
+  }
+
+  const savePreset = (index) => {
+    const key = presetKeys[index]
+    const payload = {
+      name: `Preset ${index + 1}`,
+      updatedAt: Date.now(),
+      data: buildPresetSnapshot(),
+    }
+    updateConfig(key, payload)
+    setPresetStatus(`Preset ${index + 1} guardado`)
+  }
+
+  const applyPreset = (index) => {
+    const key = presetKeys[index]
+    const preset = config?.[key]
+    if (!preset?.data || typeof preset.data !== 'object') {
+      setPresetStatus(`Preset ${index + 1} vacío`)
+      return
+    }
+    Object.entries(preset.data).forEach(([k, v]) => updateConfig(k, v))
+    setPresetStatus(`Preset ${index + 1} aplicado`)
+  }
+
+  useEffect(() => {
+    if (!presetStatus) return
+    const t = setTimeout(() => setPresetStatus(''), 2200)
+    return () => clearTimeout(t)
+  }, [presetStatus])
+
   return (
     <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 text-gray-900"}>
       {/* Header */}
@@ -206,6 +250,64 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
       {/* Content */}
       <div className="pt-28 pb-20 px-6">
         <div className="max-w-7xl mx-auto">
+          <div className={`mb-4 rounded-2xl border p-4 ${
+            darkMode ? 'border-cyan-500/20 bg-[#12122a]/70' : 'border-indigo-200 bg-white/80'
+          }`}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className={`text-sm font-black uppercase tracking-widest ${darkMode ? 'text-cyan-300' : 'text-indigo-700'}`}>
+                Presets Rápidos
+              </h3>
+              <span className={`text-xs ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                Guarda y aplica tu configuración al instante
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {[0, 1, 2].map((idx) => {
+                const preset = config?.[presetKeys[idx]]
+                const hasPreset = Boolean(preset?.data)
+                return (
+                  <div
+                    key={`preset-card-${idx + 1}`}
+                    className={`rounded-xl border p-3 ${
+                      darkMode ? 'border-cyan-500/25 bg-cyan-500/5' : 'border-cyan-200 bg-cyan-50/60'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>Preset {idx + 1}</span>
+                      <span className={`text-[11px] ${hasPreset ? (darkMode ? 'text-emerald-300' : 'text-emerald-700') : (darkMode ? 'text-slate-400' : 'text-slate-500')}`}>
+                        {hasPreset ? 'Guardado' : 'Vacío'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => savePreset(idx)}
+                        className={`rounded-lg py-2.5 text-xs font-bold transition ${
+                          darkMode
+                            ? 'bg-gradient-to-r from-cyan-500/40 to-blue-500/40 text-white hover:from-cyan-500/60 hover:to-blue-500/60 border border-cyan-400/40'
+                            : 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90 border border-cyan-500/40'
+                        }`}
+                      >
+                        Guardar
+                      </button>
+                      <button
+                        onClick={() => applyPreset(idx)}
+                        className={`rounded-lg py-2.5 text-xs font-bold transition ${
+                          darkMode
+                            ? 'bg-gradient-to-r from-purple-500/40 to-fuchsia-500/40 text-white hover:from-purple-500/60 hover:to-fuchsia-500/60 border border-fuchsia-400/40'
+                            : 'bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white hover:opacity-90 border border-fuchsia-500/40'
+                        }`}
+                      >
+                        Aplicar
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            {presetStatus && (
+              <p className={`mt-3 text-xs font-semibold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{presetStatus}</p>
+            )}
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
             {/* LEFT COLUMN */}
@@ -220,7 +322,6 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               </div>
 
               <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => updateConfig('readOnlyMessage', !config.readOnlyMessage)} darkMode={darkMode} hint="Lee el mensaje sin mencionar quién lo escribió" />
-              <CheckOption label="Modo libre de checks" checked={config.freeModeNoChecks} onChange={() => updateConfig('freeModeNoChecks', !config.freeModeNoChecks)} darkMode={darkMode} hint="Lee el chat sin aplicar filtros de preguntas, links, repetidos, cola, longitud ni chat inteligente" />
               <CheckOption label="Saltar mensajes repetidos" checked={config.skipRepeated} onChange={() => updateConfig('skipRepeated', !config.skipRepeated)} darkMode={darkMode} hint="Ignora mensajes idénticos consecutivos para evitar spam" />
               <CheckOption label="Leer solo preguntas" checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} hint="Solo lee mensajes que contengan signos de interrogación" />
               <CheckOption label="Leer solo donadores" checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron regalos" />
