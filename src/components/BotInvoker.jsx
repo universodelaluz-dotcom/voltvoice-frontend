@@ -1510,10 +1510,11 @@ Extras obligatorios:
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = false
 
-      // Only restore chat if playback actually started
-      // Ignore momentary silence before audio playback begins
-      if (responsePlaybackStartedRef.current) {
-        endAssistantResponseWindow()
+      // Do NOT call endAssistantResponseWindow() here.
+      // Keep assistantResponseActiveRef = true so that if RMS spikes back up
+      // (natural inter-syllable gaps), handleAudioEnergySpeaking can re-suppress.
+      // The window is only ended by handleAudioComplete (audio element truly ended).
+      if (responsePlaybackStartedRef.current && responseCompletedRef.current) {
         tryRestoreChatAudio()
       }
     }

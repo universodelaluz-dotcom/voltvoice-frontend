@@ -35,7 +35,7 @@ export class InworldRealtimeService {
     this.remoteSilenceFrames = 0
     this.remoteStartThreshold = 0.02
     this.remoteStopThreshold = 0.008
-    this.remoteSilenceFrameTarget = 3
+    this.remoteSilenceFrameTarget = 25
     this._assistantResponseState = {
       active: false,
       hasAudio: false,
