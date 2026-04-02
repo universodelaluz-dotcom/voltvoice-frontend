@@ -1113,6 +1113,21 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     return matches.length >= 3 ? 4 : matches.length === 2 ? 2.4 : matches.length === 1 ? 0.8 : 0
   }
 
+  const hasRecentlySpokenDuplicate = (normalizedText = '', windowMs = 180000) => {
+    if (!normalizedText) return false
+    const cutoff = Date.now() - windowMs
+    return recentNormalizedMessagesRef.current.some((entry) => (
+      entry.text === normalizedText && entry.timestamp >= cutoff
+    ))
+  }
+
+  const hasQueuedDuplicate = (normalizedText = '') => {
+    if (!normalizedText) return false
+    return speakQueueRef.current.some((candidate) => (
+      normalizeMessageForMatching(candidate.rawText || candidate.text) === normalizedText
+    ))
+  }
+
   const scoreSmartMessage = (item, metrics) => {
     const rawText = String(item.rawText || item.text || '').trim()
     const normalizedText = normalizeMessageForMatching(rawText)
@@ -1156,6 +1171,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     const normalizedText = normalizeMessageForMatching(rawText)
     const ageSeconds = (Date.now() - item.queuedAt) / 1000
     if (!rawText) return true
+    if (!item.isNotification && hasRecentlySpokenDuplicate(normalizedText)) return true
     if (!isPriorityUser(item) && hasTrivialSmartChatContent(rawText)) return true
     if (metrics.pressure >= 1.2 && isEmojiOrSymbolOnly(rawText)) return true
     if (metrics.pressure >= 1.15 && hasLowLegibility(rawText)) return true
@@ -1178,6 +1194,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
     if (smartChatEnabledRef.current) {
       const metrics = getSmartMetrics()
+      const normalizedQueuedText = normalizeMessageForMatching(item.rawText || item.text)
+      if (!item.isNotification && hasQueuedDuplicate(normalizedQueuedText)) {
+        console.log('[TikTok] Smart chat descartó mensaje repetido ya en cola')
+        markFilteredMessage()
+        return
+      }
       if (shouldHardDropSmartMessage(item, metrics)) {
         console.log('[TikTok] Smart chat descartó mensaje por filtros duros adaptativos')
         markFilteredMessage()
