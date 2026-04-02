@@ -12,6 +12,16 @@ const BUILTIN_VOICE_OPTIONS = [
 
 const CONFIG_COMMANDS = [
   {
+    key: 'smartChatEnabled',
+    label: 'chat inteligente',
+    aliases: [
+      'chat inteligente',
+      'smart chat',
+      'modo inteligente del chat',
+      'filtro inteligente del chat'
+    ]
+  },
+  {
     key: 'onlyModerators',
     label: 'leer solo moderadores',
     aliases: [
@@ -44,18 +54,6 @@ const CONFIG_COMMANDS = [
       'solo mensajes con pregunta',
       'solo las preguntas',
       'filtra preguntas'
-    ]
-  },
-  {
-    key: 'freeModeNoChecks',
-    label: 'modo libre de checks',
-    aliases: [
-      'modo libre de checks',
-      'sin checks',
-      'sin filtros',
-      'modo libre',
-      'leer todo sin checks',
-      'leer todo sin filtros'
     ]
   },
   {
@@ -259,13 +257,41 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const transcriptBufferRef = useRef('')
   const transcriptCompleteRef = useRef('')
   const transcriptDeltaTimerRef = useRef(null)
+  const acceptTranscriptRef = useRef(false)
   const localAudioRef = useRef(null)
   const latestResponseTextRef = useRef('')
   const hasChargedCurrentResponseRef = useRef(false)
   const selectedRealtimeVoiceIdRef = useRef('')
   const voiceLabelRef = useRef('Clive')
   const sessionBrokenRef = useRef(false)
+  const autopilotBusyRef = useRef(false)
+  const lastAutopilotSignatureRef = useRef('')
+  const lastAutopilotTextRef = useRef('')
+  const autopilotRecentTextsRef = useRef([])
+  const autopilotIntentCooldownRef = useRef({})
+  const autopilotRecentIntentTypesRef = useRef([])
+  const skipCurrentResponseRef = useRef(false)
+  const assistantResponseActiveRef = useRef(false)
+  const assistantResponseHadAudioRef = useRef(false)
+  const responseCompletedRef = useRef(false)
+  const botIsAudiblySpeakingRef = useRef(false)
+  const heardSpeechThisTurnRef = useRef(false)
+  const lastRmsRef = useRef(0)
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+
+  const beginAssistantResponseWindow = () => {
+    assistantResponseActiveRef.current = true
+    assistantResponseHadAudioRef.current = false
+    heardSpeechThisTurnRef.current = false
+    lastRmsRef.current = 0
+  }
+
+  const endAssistantResponseWindow = () => {
+    assistantResponseActiveRef.current = false
+    assistantResponseHadAudioRef.current = false
+    heardSpeechThisTurnRef.current = false
+    lastRmsRef.current = 0
+  }
 
   const setChatSuppressed = (active) => {
     if (chatSuppressedRef.current === active) {
@@ -275,6 +301,45 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     chatSuppressedRef.current = active
     window.dispatchEvent(new CustomEvent('voltvoice:ptt-audio-state', {
       detail: { active }
+    }))
+  }
+
+  const lockChatSuppression = () => {
+    setChatSuppressed(true)
+  }
+
+  const unlockChatSuppression = () => {
+    setChatSuppressed(false)
+  }
+
+  const suppressChatAudio = () => {
+    lockChatSuppression()
+    dispatchChatPlaybackControl('pause')
+  }
+
+  const restoreChatAudioImmediate = () => {
+    endAssistantResponseWindow()
+    unlockChatSuppression()
+    dispatchChatPlaybackControl('resume')
+  }
+
+  const tryRestoreChatAudio = () => {
+    if (!responseCompletedRef.current) return
+    if (assistantResponseHadAudioRef.current && !heardSpeechThisTurnRef.current) return
+    if (botIsAudiblySpeakingRef.current) return
+    restoreChatAudioImmediate()
+  }
+
+  const dispatchChatPlaybackControl = (action) => {
+    if (typeof window === 'undefined') {
+      return
+    }
+    const normalizedAction = String(action || '').toLowerCase()
+    if (normalizedAction !== 'pause' && normalizedAction !== 'resume') {
+      return
+    }
+    window.dispatchEvent(new CustomEvent('voltvoice:chat-playback-control', {
+      detail: { action: normalizedAction }
     }))
   }
 
@@ -289,6 +354,28 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       clearTimeout(responseTimeoutRef.current)
       responseTimeoutRef.current = null
     }
+  }
+
+  const resetTranscriptCapture = ({ accept = false } = {}) => {
+    transcriptBufferRef.current = ''
+    transcriptCompleteRef.current = ''
+    acceptTranscriptRef.current = accept
+    if (transcriptDeltaTimerRef.current) {
+      clearTimeout(transcriptDeltaTimerRef.current)
+      transcriptDeltaTimerRef.current = null
+    }
+  }
+
+  const waitForTranscriptCapture = async (timeoutMs = 2200) => {
+    const startedAt = Date.now()
+    while (Date.now() - startedAt < timeoutMs) {
+      const value = (transcriptCompleteRef.current || transcriptBufferRef.current || '').trim()
+      if (value) {
+        return value
+      }
+      await new Promise((resolve) => setTimeout(resolve, 80))
+    }
+    return (transcriptCompleteRef.current || transcriptBufferRef.current || '').trim()
   }
 
   const dispatchTokenUsageUpdate = ({ tokensUsed, remainingTokens }) => {
@@ -353,7 +440,9 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       console.warn('[Bot] Response timeout reached, restoring UI state')
       setIsLoading(false)
       setIsRecording(false)
-      setChatSuppressed(false)
+      responseCompletedRef.current = true
+      botIsAudiblySpeakingRef.current = false
+      restoreChatAudioImmediate()
       setResponse((current) => current || 'La IA tardó demasiado en responder. Intenta de nuevo.')
     }, 35000)
   }
@@ -434,6 +523,22 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
   const resolveConfigIntent = (normalized) => {
     const explicitState = detectDesiredBooleanState(normalized)
+
+    if (/(pausa(r)?\s+(el\s+)?chat|dete(n|)er\s+(el\s+)?chat|deten\s+(el\s+)?chat|silencia\s+(el\s+)?chat)/i.test(normalized)) {
+      return { type: 'set_chat_pause', paused: true, label: 'chat' }
+    }
+    if (/(reanuda(r)?\s+(el\s+)?chat|continua\s+(el\s+)?chat|continuar\s+(el\s+)?chat|resume\s+(el\s+)?chat)/i.test(normalized)) {
+      return { type: 'set_chat_pause', paused: false, label: 'chat' }
+    }
+
+    if (/(chat inteligente|smart chat)/i.test(normalized) && explicitState !== null) {
+      return {
+        type: 'set_config_boolean',
+        key: 'smartChatEnabled',
+        label: 'chat inteligente',
+        value: explicitState
+      }
+    }
 
     const voiceMatch = normalized.match(/(?:cambia|pon|usa|asigna|deja)\s+(?:la\s+)?voz\s+(general|de\s+donadores|de\s+moderadores|de\s+notificaciones)\s+(?:a|por)\s+(.+)/i)
     if (voiceMatch) {
@@ -656,6 +761,35 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       return { type: 'get_active_users', minutes: 5 }
     }
 
+    if (/(interactua|interactua con|interactuar con|opina|comenta algo|di algo).*(chat)/i.test(normalized) ||
+        /(chat).*(interactua|opina|comenta algo)/i.test(normalized)) {
+      return { type: 'interact_with_chat' }
+    }
+
+    if (/(reacciona|reacciona|reaccionar).*(chat)|reaccion al chat/i.test(normalized)) {
+      return { type: 'react_to_chat' }
+    }
+
+    if (/(broma|bromear|hazme reir|chiste).*(chat)?/i.test(normalized)) {
+      return { type: 'make_chat_joke' }
+    }
+
+    if (/(celebra|celebrar|festeja|festejar).*(follows|follow|subs|suscrip|donaci|regal)/i.test(normalized)) {
+      return { type: 'celebrate_chat_events' }
+    }
+
+    if (/(frase epica|frases epicas|epico|epica|lanzar frase)/i.test(normalized)) {
+      return { type: 'epic_chat_line' }
+    }
+
+    if (/(narra|narrar|narracion).*(momento|intenso|stream)|momento intenso/i.test(normalized)) {
+      return { type: 'narrate_stream_moment' }
+    }
+
+    if (/(troll).*(brom|silencia|calla|bloquea|banea)|(brom|silencia|bloquea|banea).*(troll)/i.test(normalized)) {
+      return { type: 'joke_and_silence_troll' }
+    }
+
     if (normalized.includes('estadisticas del chat') || normalized.includes('stats del chat') || normalized.includes('resumen del chat')) {
       return { type: 'get_chat_stats' }
     }
@@ -772,6 +906,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     localAudioRef.current = audio
 
     audio.onplay = () => {
+      lockChatSuppression()
       hasVoiceResponseRef.current = true
       responsePlaybackStartedRef.current = true
       setHasVoiceResponse(true)
@@ -783,18 +918,212 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     audio.onended = () => {
       responsePlaybackStartedRef.current = false
       setIsPlayingResponse(false)
-      setChatSuppressed(false)
+      unlockChatSuppression()
       localAudioRef.current = null
     }
 
     audio.onerror = () => {
       responsePlaybackStartedRef.current = false
       setIsPlayingResponse(false)
-      setChatSuppressed(false)
+      unlockChatSuppression()
       localAudioRef.current = null
     }
 
     await audio.play()
+  }
+
+  const buildInteractiveChatComment = () => {
+    const recent = chatStore.getRecentMessages(40)
+      .filter((item) => String(item?.text || '').trim().length >= 4)
+      .slice(-25)
+
+    if (!recent.length) {
+      return 'Aun no tengo suficiente chat reciente para opinar algo con contexto real.'
+    }
+
+    const cleanText = (value) => String(value || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 140)
+
+    const scoreMessage = (msg) => {
+      const text = cleanText(msg.text)
+      let score = 0
+      if (/\?/.test(text)) score += 3
+      if (/(porque|como|cuando|donde|opinan|que piensan|recomiendan|deberia)/i.test(text)) score += 2
+      if (text.length >= 18 && text.length <= 120) score += 1.5
+      if (/(jaja|xd|lol|hola|hi|hey)$/i.test(text)) score -= 2
+      return score
+    }
+
+    const picked = [...recent]
+      .map((msg) => ({ msg, score: scoreMessage(msg) }))
+      .sort((a, b) => b.score - a.score)[0]?.msg || recent[recent.length - 1]
+
+    const user = picked.nickname || picked.user || 'alguien del chat'
+    const text = cleanText(picked.text)
+    const endsWithQuestion = /\?$/.test(text) || /^(\bque\b|\bcomo\b|\bpor que\b|\bcuando\b|\bdonde\b|\bquien\b)/i.test(text)
+
+    if (endsWithQuestion) {
+      return `Me latio la pregunta de ${user}: "${text}". Buen punto, porque eso tambien le puede servir a mas gente del chat.`
+    }
+
+    return `Me llamo la atencion lo que dijo ${user}: "${text}". Buen comentario, trae contexto y ayuda a mover la conversacion.`
+  }
+
+  const buildChatReaction = () => {
+    const mood = chatStore.getChatMood(8)
+    const stats = chatStore.getChatStats()
+    if (!mood || !stats) {
+      return 'Siento el chat encendido, sigan tirando mensajes que me estoy prendiendo con ustedes.'
+    }
+    return `Se siente un chat ${mood.mood}. Traemos ${stats.recentMessages} mensajes recientes y buena energia en la sala.`
+  }
+
+  const buildChatJoke = () => {
+    const activeUsers = chatStore.getActiveUsers(8)
+    const target = activeUsers[0]?.user || 'chat'
+    const jokes = [
+      `Hoy ${target} esta tan activo que ya le vamos a cobrar renta por vivir en el chat.`,
+      `Este chat va tan rapido que mis neuronas ya pidieron modo turbo.`,
+      `Si siguen asi, TikTok nos va a pedir permiso para usar este chat de ejemplo.`
+    ]
+    return jokes[Math.floor(Math.random() * jokes.length)]
+  }
+
+  const buildCelebrationLine = () => {
+    const stats = chatStore.getChatStats()
+    const topGift = chatStore.getTopEventUser('gift', { todayOnly: true })
+    const topShare = chatStore.getTopEventUser('share', { todayOnly: true })
+    const subsSeen = chatStore.getRecentMessages(80).filter((item) => item.isSubscriber).length
+
+    const parts = []
+    if (stats?.giftsToday > 0) {
+      parts.push(`Llevamos ${stats.giftsToday} regalos hoy`)
+    }
+    if (stats?.followsToday > 0) {
+      parts.push(`${stats.followsToday} follows nuevos`)
+    }
+    if (stats?.sharesToday > 0) {
+      parts.push(`${stats.sharesToday} compartidos`)
+    }
+    if (subsSeen > 0) {
+      parts.push(`${subsSeen} mensajes de subs en la ultima tanda`)
+    }
+    if (topGift?.username) {
+      parts.push(`top donador de hoy ${topGift.username}`)
+    }
+    if (topShare?.username) {
+      parts.push(`top sharer ${topShare.username}`)
+    }
+
+    if (!parts.length) {
+      return 'Se viene la lluvia de follows, subs y donaciones. Vamos con todo, chat.'
+    }
+    return `Que locura chat, ${parts.join(', ')}. Gracias por empujar el stream asi de duro.`
+  }
+
+  const buildEpicLine = () => {
+    const lines = [
+      'Hoy no se stremea, hoy se escribe historia.',
+      'Cuando este chat se une, no hay algoritmo que nos pare.',
+      'No vinimos a mirar, vinimos a romperla en vivo.',
+      'Este stream no baja de nivel, solo sube de intensidad.'
+    ]
+    return lines[Math.floor(Math.random() * lines.length)]
+  }
+
+  const buildIntenseNarration = () => {
+    const stats = chatStore.getChatStats()
+    const active = chatStore.getActiveUsers(5)
+    const leader = active[0]?.user
+    if (!stats) {
+      return 'Momento intenso en vivo, el chat sube de ritmo y no afloja.'
+    }
+    return leader
+      ? `Momento intenso: ${stats.recentMessages} mensajes en la ventana reciente, y ${leader} viene empujando fuerte la conversacion.`
+      : `Momento intenso: ${stats.recentMessages} mensajes recientes y el chat esta a tope.`
+  }
+
+  const pickTrollCandidate = () => {
+    const summary = chatStore.getUserActivitySummary(12)
+    return summary
+      .filter((item) => item.negativeScore > 0)
+      .sort((a, b) => (b.negativeScore - a.negativeScore) || (b.messageCount - a.messageCount))[0] || null
+  }
+
+  const buildRecentChatSnapshot = (max = 50) => {
+    const recent = chatStore.getRecentMessages(max).slice(-30)
+    if (!recent.length) return 'No hay mensajes recientes.'
+    return recent.map((msg) => {
+      const user = msg.nickname || msg.user || 'anon'
+      const text = String(msg.text || '').replace(/\s+/g, ' ').trim()
+      return `- ${user}: ${text}`
+    }).join('\n')
+  }
+
+  const requestCharacterDrivenInteraction = async (interactionType, options = {}) => {
+    const interactionMap = {
+      interact_with_chat: 'Opina sobre algo interesante del chat y responde con utilidad o criterio.',
+      react_to_chat: 'Reacciona al estado general del chat con energia y lectura real de lo que pasa.',
+      make_chat_joke: 'Haz una broma contextual del chat sin perder respeto.',
+      celebrate_chat_events: 'Celebra follows/subs/regalos/compartidos de forma fresca y no repetitiva.',
+      epic_chat_line: 'Lanza una frase epica breve que suba energia.',
+      narrate_stream_moment: 'Narra el momento intenso del stream con tono dinamico.',
+      joke_and_silence_troll: 'Haz una linea breve sobre el troll ya silenciado, sin escalar agresion.'
+    }
+
+    const character = characters.find((item) => item.id === selectedCharacterId)
+    const characterName = character?.name || 'Asistente'
+    const characterDescription = String(character?.description || '').trim()
+    const characterPrompt = String(character?.system_prompt || '').trim()
+    const stats = chatStore.getChatStats()
+    const snapshot = buildRecentChatSnapshot(50)
+    const extraContext = options?.extraContext ? `\nContexto extra: ${options.extraContext}` : ''
+    const objective = interactionMap[interactionType] || 'Interactua con el chat.'
+
+    const instruction = `
+INSTRUCCION INTERNA DE INTERACCION AUTONOMA.
+Debes obedecer LITERALMENTE tu system prompt del personaje activo.
+Personaje activo: ${characterName}
+Descripcion del personaje: ${characterDescription || 'sin descripcion'}
+System prompt del personaje (literal): ${characterPrompt || 'sin prompt'}
+
+Objetivo puntual: ${objective}
+Datos reales del chat:
+- mensajes recientes: ${stats?.recentMessages ?? 0}
+- gifts hoy: ${stats?.giftsToday ?? 0}
+- follows hoy: ${stats?.followsToday ?? 0}
+- shares hoy: ${stats?.sharesToday ?? 0}
+
+Ultimos mensajes (maximo 50):
+${snapshot}${extraContext}
+
+Reglas de salida:
+- Responde SOLO con lo que dirias al chat en voz.
+- Maximo 2 frases cortas.
+- No expliques reglas ni digas que eres IA.
+- No repitas lineas previas literalmente.
+
+Directiva de comportamiento continuo:
+Mantén al personaje creado siempre fresco, variado y natural.
+Evita repetir siempre el mismo tipo de frases, bromas o temas.
+Lee el chat reciente y métete en los temas activos reaccionando como si estuvieras presente en tiempo real.
+Detecta patrones, conversaciones activas, tensiones, momentos graciosos y oportunidades para intervenir con humor, observación, preguntas o comentarios inteligentes.
+Alterna tipos de intervención para no volverte predecible.
+Si detectas spam, flood, provocación barata o negatividad insistente, indica brevemente que se aplicó silencio y no te enganches con trolls.
+Objetivo: mantener el chat vivo, entretenido, en movimiento y bajo control.
+
+Extras obligatorios:
+1) Evitar repetición: si recientemente hiciste un tipo de comentario, varía el siguiente.
+2) Prioridad a lo interesante: prioriza mensajes que generen conversación, risa, reacción o movimiento del chat.
+3) No hablar de más: si no hay contexto útil o intervención valiosa, responde exactamente: "__SKIP__"
+`.trim()
+
+    armResponseTimeout()
+    await ensureBotSession()
+    await inworldRealtimeService.sendMessage(instruction)
+    return { delegated: true }
   }
 
   const executeLocalIntent = async (intent, originalText) => {
@@ -853,6 +1182,54 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
         }
         updateConfig(intent.key, intent.voice.id)
         return `Listo, ya cambie ${intent.label} a ${intent.voice.name}.`
+      }
+      case 'set_chat_pause': {
+        if (typeof updateConfig === 'function') {
+          updateConfig('chatPaused', intent.paused)
+        }
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('voltvoice:chat-playback-control', {
+            detail: { action: intent.paused ? 'pause' : 'resume' }
+          }))
+        }
+        return intent.paused
+          ? 'Listo, chat pausado.'
+          : 'Listo, chat reanudado.'
+      }
+      case 'interact_with_chat': {
+        return requestCharacterDrivenInteraction('interact_with_chat')
+      }
+      case 'react_to_chat': {
+        return requestCharacterDrivenInteraction('react_to_chat')
+      }
+      case 'make_chat_joke': {
+        return requestCharacterDrivenInteraction('make_chat_joke')
+      }
+      case 'celebrate_chat_events': {
+        return requestCharacterDrivenInteraction('celebrate_chat_events')
+      }
+      case 'epic_chat_line': {
+        return requestCharacterDrivenInteraction('epic_chat_line')
+      }
+      case 'narrate_stream_moment': {
+        return requestCharacterDrivenInteraction('narrate_stream_moment')
+      }
+      case 'joke_and_silence_troll': {
+        const troll = pickTrollCandidate()
+        if (!troll) {
+          return requestCharacterDrivenInteraction('react_to_chat', {
+            extraContext: 'No se detecto troll claro para silenciar en esta ventana.'
+          })
+        }
+        const result = await chatStore.banUser(troll.username)
+        if (!result.success) {
+          return requestCharacterDrivenInteraction('react_to_chat', {
+            extraContext: `Intento de silenciar a ${troll.nickname || troll.username} fallo: ${result.message || 'sin detalle'}.`
+          })
+        }
+        return requestCharacterDrivenInteraction('joke_and_silence_troll', {
+          extraContext: `Se silencio al usuario ${result.nickname || troll.nickname || troll.username}.`
+        })
       }
       case 'ban_user': {
         const target = resolveActionTarget(intent.username)
@@ -1033,6 +1410,21 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   useEffect(() => {
     const handleTextResponse = (data) => {
       if (data?.text) {
+        const normalized = String(data.text || '').trim()
+        if (normalized === '__SKIP__') {
+          skipCurrentResponseRef.current = true
+          latestResponseTextRef.current = ''
+          setHasActiveResponse(false)
+          hasActiveResponseRef.current = false
+          setResponse(null)
+          setIsLoading(false)
+          clearResponseTimeout()
+          responseCompletedRef.current = true
+          botIsAudiblySpeakingRef.current = false
+          restoreChatAudioImmediate()
+          return
+        }
+
         latestResponseTextRef.current = data.text
         setHasActiveResponse(true)
         hasActiveResponseRef.current = true
@@ -1044,13 +1436,83 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
     const handleResponseCreated = () => {
       // Wait for real content (text/audio) before considering the response active.
+      skipCurrentResponseRef.current = false
       hasChargedCurrentResponseRef.current = false
       latestResponseTextRef.current = ''
+      beginAssistantResponseWindow()
+      responseCompletedRef.current = false
+      botIsAudiblySpeakingRef.current = false
+      suppressChatAudio()
       console.log('[Bot] Response created, waiting for actual content')
     }
 
+    const handleResponseAudioActivity = () => {
+      if (!assistantResponseActiveRef.current) {
+        return
+      }
+      assistantResponseHadAudioRef.current = true
+      heardSpeechThisTurnRef.current = true
+      botIsAudiblySpeakingRef.current = true
+      suppressChatAudio()
+    }
+
+    const handleResponseAudioDone = () => {
+      if (!assistantResponseActiveRef.current) {
+        return
+      }
+      assistantResponseHadAudioRef.current = true
+      // El backend termino de enviar audio, pero no implica silencio real local.
+      // La liberacion depende de audio-energy-silent/audio-complete.
+    }
+
+    const handleAudioTrackMuted = () => {
+      if (!assistantResponseActiveRef.current) {
+        return
+      }
+      assistantResponseHadAudioRef.current = true
+    }
+
+    const handleAudioTrackUnmuted = () => {
+      if (!assistantResponseActiveRef.current) {
+        return
+      }
+      assistantResponseHadAudioRef.current = true
+      heardSpeechThisTurnRef.current = true
+      botIsAudiblySpeakingRef.current = true
+      suppressChatAudio()
+    }
+
+    const handleAudioPlaybackEnded = () => {
+      if (!assistantResponseActiveRef.current) {
+        return
+      }
+      assistantResponseHadAudioRef.current = true
+      botIsAudiblySpeakingRef.current = false
+      tryRestoreChatAudio()
+    }
+
+    const handleAudioEnergySpeaking = (data) => {
+      if (!assistantResponseActiveRef.current) {
+        return
+      }
+      assistantResponseHadAudioRef.current = true
+      heardSpeechThisTurnRef.current = true
+      lastRmsRef.current = Number(data?.rms || 0)
+      botIsAudiblySpeakingRef.current = true
+      suppressChatAudio()
+    }
+
+    const handleAudioEnergySilent = (data) => {
+      if (!assistantResponseActiveRef.current) {
+        return
+      }
+      lastRmsRef.current = Number(data?.rms || 0)
+      botIsAudiblySpeakingRef.current = false
+      tryRestoreChatAudio()
+    }
+
     const handleInputTranscriptDelta = (data) => {
-      if (!data?.text) {
+      if (!acceptTranscriptRef.current || !data?.text) {
         return
       }
 
@@ -1064,7 +1526,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     }
 
     const handleInputTranscriptComplete = (data) => {
-      if (!data?.text) {
+      if (!acceptTranscriptRef.current || !data?.text) {
         return
       }
 
@@ -1077,6 +1539,18 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     }
 
     const handleResponseComplete = async () => {
+      if (skipCurrentResponseRef.current) {
+        skipCurrentResponseRef.current = false
+        setResponse(null)
+        setIsLoading(false)
+        setIsRecording(false)
+        clearResponseTimeout()
+        responseCompletedRef.current = true
+        botIsAudiblySpeakingRef.current = false
+        restoreChatAudioImmediate()
+        return
+      }
+
       if (!hasActiveResponseRef.current) {
         setResponse((current) => current || 'La IA no devolvio contenido. Intenta de nuevo.')
       }
@@ -1092,9 +1566,19 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
           console.warn('[Bot] No se pudo registrar consumo realtime:', error.message)
         }
       }
+
+      responseCompletedRef.current = true
+      if (!assistantResponseHadAudioRef.current) {
+        botIsAudiblySpeakingRef.current = false
+        tryRestoreChatAudio()
+      }
+      // If there was audio, wait for handleAudioPlaybackEnded() or handleAudioComplete()
     }
 
     const handleAudioStarted = () => {
+      heardSpeechThisTurnRef.current = true
+      botIsAudiblySpeakingRef.current = true
+      suppressChatAudio()
       hasVoiceResponseRef.current = true
       responsePlaybackStartedRef.current = true
       setHasActiveResponse(true)
@@ -1107,10 +1591,11 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     }
 
     const handleAudioComplete = () => {
+      botIsAudiblySpeakingRef.current = false
       responsePlaybackStartedRef.current = false
       setIsPlayingResponse(false)
-      setChatSuppressed(false)
       clearResponseTimeout()
+      tryRestoreChatAudio()
     }
 
     const handleError = (error) => {
@@ -1120,12 +1605,21 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       setResponse(`Error: ${error?.message || 'Unknown error'}`)
       setIsLoading(false)
       setIsRecording(false)
-      setChatSuppressed(false)
+      responseCompletedRef.current = true
+      botIsAudiblySpeakingRef.current = false
+      restoreChatAudioImmediate()
       clearResponseTimeout()
     }
 
     inworldRealtimeService.on('text-response', handleTextResponse)
     inworldRealtimeService.on('response-created', handleResponseCreated)
+    inworldRealtimeService.on('response-audio-activity', handleResponseAudioActivity)
+    inworldRealtimeService.on('response-audio-done', handleResponseAudioDone)
+    inworldRealtimeService.on('audio-track-muted', handleAudioTrackMuted)
+    inworldRealtimeService.on('audio-track-unmuted', handleAudioTrackUnmuted)
+    inworldRealtimeService.on('audio-playback-ended', handleAudioPlaybackEnded)
+    inworldRealtimeService.on('audio-energy-speaking', handleAudioEnergySpeaking)
+    inworldRealtimeService.on('audio-energy-silent', handleAudioEnergySilent)
     inworldRealtimeService.on('response-complete', handleResponseComplete)
     inworldRealtimeService.on('audio-started', handleAudioStarted)
     inworldRealtimeService.on('audio-complete', handleAudioComplete)
@@ -1135,8 +1629,15 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
     return () => {
       inworldRealtimeService.off('text-response', handleTextResponse)
-      inworldRealtimeService.off('response-created', handleResponseCreated)
-      inworldRealtimeService.off('response-complete', handleResponseComplete)
+    inworldRealtimeService.off('response-created', handleResponseCreated)
+    inworldRealtimeService.off('response-audio-activity', handleResponseAudioActivity)
+    inworldRealtimeService.off('response-audio-done', handleResponseAudioDone)
+    inworldRealtimeService.off('audio-track-muted', handleAudioTrackMuted)
+    inworldRealtimeService.off('audio-track-unmuted', handleAudioTrackUnmuted)
+    inworldRealtimeService.off('audio-playback-ended', handleAudioPlaybackEnded)
+    inworldRealtimeService.off('audio-energy-speaking', handleAudioEnergySpeaking)
+    inworldRealtimeService.off('audio-energy-silent', handleAudioEnergySilent)
+    inworldRealtimeService.off('response-complete', handleResponseComplete)
       inworldRealtimeService.off('audio-started', handleAudioStarted)
       inworldRealtimeService.off('audio-complete', handleAudioComplete)
       inworldRealtimeService.off('input-transcript-delta', handleInputTranscriptDelta)
@@ -1150,10 +1651,10 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
         mediaStreamRef.current.getTracks().forEach(track => track.stop())
       }
       clearResponseTimeout()
-      setChatSuppressed(false)
-      if (transcriptDeltaTimerRef.current) {
-        clearTimeout(transcriptDeltaTimerRef.current)
-      }
+      responseCompletedRef.current = true
+      botIsAudiblySpeakingRef.current = false
+      restoreChatAudioImmediate()
+      resetTranscriptCapture({ accept: false })
       inworldRealtimeService.closeSession()
     }
   }, [])
@@ -1173,7 +1674,9 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     setSelectedRealtimeVoiceId((current) => current || resolvedVoice)
     setVoiceLabel(resolvedVoice || 'Clive')
     clearResponseTimeout()
-    setChatSuppressed(false)
+    responseCompletedRef.current = true
+    botIsAudiblySpeakingRef.current = false
+    restoreChatAudioImmediate()
     inworldRealtimeService.closeSession()
   }, [selectedCharacterId, characters, userVoices])
 
@@ -1261,6 +1764,11 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     return matchedVoice?.voice_name || voiceId || 'Clive'
   }
 
+  const getResolvedVoiceId = () => {
+    const character = characters.find((item) => item.id === selectedCharacterId)
+    return selectedRealtimeVoiceId || resolveRealtimeVoice(character) || 'Clive'
+  }
+
   const ensureBotSession = async () => {
     if (!selectedCharacterId) {
       throw new Error('Selecciona un personaje')
@@ -1304,6 +1812,7 @@ After using a tool, summarize the result conversationally.`
   const startRecording = async () => {
     try {
       setIsLoading(true)
+      clearResponseTimeout()
       setResponse(null)
       setHasVoiceResponse(false)
       hasVoiceResponseRef.current = false
@@ -1312,13 +1821,8 @@ After using a tool, summarize the result conversationally.`
       hasActiveResponseRef.current = false
       hasChargedCurrentResponseRef.current = false
       latestResponseTextRef.current = ''
-      transcriptBufferRef.current = ''
-      transcriptCompleteRef.current = ''
-      if (transcriptDeltaTimerRef.current) {
-        clearTimeout(transcriptDeltaTimerRef.current)
-        transcriptDeltaTimerRef.current = null
-      }
-      setChatSuppressed(true)
+      resetTranscriptCapture({ accept: true })
+      lockChatSuppression()
       await ensureBotSession()
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -1330,8 +1834,9 @@ After using a tool, summarize the result conversationally.`
       console.log('[Bot] Microphone activated')
     } catch (err) {
       console.error('Error starting push-to-talk:', err)
+      resetTranscriptCapture({ accept: false })
       setIsLoading(false)
-      setChatSuppressed(false)
+      restoreChatAudioImmediate()
       alert('No se pudo iniciar el bot de voz')
     }
   }
@@ -1354,18 +1859,12 @@ After using a tool, summarize the result conversationally.`
         })
       }, 300)
 
-      await new Promise((resolve) => setTimeout(resolve, 650))
-      const transcriptFromSpeech = (transcriptCompleteRef.current || transcriptBufferRef.current).trim()
-      transcriptBufferRef.current = ''
-      transcriptCompleteRef.current = ''
-      if (transcriptDeltaTimerRef.current) {
-        clearTimeout(transcriptDeltaTimerRef.current)
-        transcriptDeltaTimerRef.current = null
-      }
+      const transcriptFromSpeech = await waitForTranscriptCapture(2200)
+      resetTranscriptCapture({ accept: false })
 
       if (!transcriptFromSpeech) {
         setIsLoading(false)
-        setChatSuppressed(false)
+        unlockChatSuppression()
         setResponse('No se detecto voz suficiente. Intenta hablar un poco mas claro o mantener presionado un poco mas.')
         return
       }
@@ -1373,7 +1872,12 @@ After using a tool, summarize the result conversationally.`
       const localIntent = resolveChatIntent(transcriptFromSpeech)
       if (localIntent) {
         clearResponseTimeout()
-        const localResponse = await executeLocalIntent(localIntent, transcriptFromSpeech)
+        const localResult = await executeLocalIntent(localIntent, transcriptFromSpeech)
+        if (localResult?.delegated) {
+          console.log('[Bot] Interaction delegated to character prompt:', localIntent.type)
+          return
+        }
+        const localResponse = String(localResult || '')
         setResponse(localResponse)
         setHasActiveResponse(true)
         hasActiveResponseRef.current = true
@@ -1387,7 +1891,7 @@ After using a tool, summarize the result conversationally.`
       if (looksLikePlatformRequest(transcriptFromSpeech)) {
         setIsLoading(false)
         setResponse('Entendi que eso suena a una accion o ajuste real de la plataforma, pero no lo pude resolver con suficiente certeza. Intenta decirlo de otra forma un poco mas directa.')
-        setChatSuppressed(false)
+        unlockChatSuppression()
         return
       }
 
@@ -1397,8 +1901,9 @@ After using a tool, summarize the result conversationally.`
       console.log('[Bot] Microphone deactivated, transcript sent as text')
     } catch (err) {
       console.error('Error stopping recording:', err)
+      resetTranscriptCapture({ accept: false })
       setIsLoading(false)
-      setChatSuppressed(false)
+      restoreChatAudioImmediate()
     }
   }
 
@@ -1408,6 +1913,7 @@ After using a tool, summarize the result conversationally.`
     }
 
     setIsLoading(true)
+    clearResponseTimeout()
     setResponse(null)
     setHasVoiceResponse(false)
     hasVoiceResponseRef.current = false
@@ -1416,12 +1922,18 @@ After using a tool, summarize the result conversationally.`
     hasActiveResponseRef.current = false
     hasChargedCurrentResponseRef.current = false
     latestResponseTextRef.current = ''
-    setChatSuppressed(true)
+    resetTranscriptCapture({ accept: false })
+    lockChatSuppression()
 
     try {
       const localIntent = resolveChatIntent(text.trim())
       if (localIntent) {
-        const localResponse = await executeLocalIntent(localIntent, text.trim())
+        const localResult = await executeLocalIntent(localIntent, text.trim())
+        if (localResult?.delegated) {
+          console.log('[Bot] Typed interaction delegated to character prompt:', localIntent.type)
+          return
+        }
+        const localResponse = String(localResult || '')
         setResponse(localResponse)
         setHasActiveResponse(true)
         hasActiveResponseRef.current = true
@@ -1435,7 +1947,7 @@ After using a tool, summarize the result conversationally.`
       if (looksLikePlatformRequest(text.trim())) {
         setResponse('Entendi que eso suena a accion o consulta real de la plataforma, pero todavia no pude resolverla con confianza. Prueba siendo un poco mas especifico.')
         setIsLoading(false)
-        setChatSuppressed(false)
+        unlockChatSuppression()
         return
       }
 
@@ -1447,7 +1959,7 @@ After using a tool, summarize the result conversationally.`
       clearResponseTimeout()
       setResponse(`Error: ${err.message}`)
       setIsLoading(false)
-      setChatSuppressed(false)
+      restoreChatAudioImmediate()
     }
   }
 
@@ -1464,6 +1976,162 @@ After using a tool, summarize the result conversationally.`
       console.error('Error resuming audio:', err)
     }
   }
+
+  const pickAutopilotIntent = () => {
+    const recent = chatStore.getRecentMessages(50)
+    if (!recent.length) return null
+
+    const stats = chatStore.getChatStats()
+    const summary = chatStore.getUserActivitySummary(10)
+    const troll = summary
+      .filter((user) => user.negativeScore >= 3 && user.messageCount >= 3)
+      .sort((a, b) => (b.negativeScore - a.negativeScore) || (b.messageCount - a.messageCount))[0]
+    const questions = chatStore.getQuestions(15)
+    const hasJokes = recent.some((item) => /(jaja|jeje|xd|lol|🤣|😂)/i.test(String(item.text || '')))
+    const hasIntenseFlow = recent.length >= 30
+    const celebrationLevel = Number(stats?.giftsToday || 0) + Number(stats?.followsToday || 0) + Number(stats?.sharesToday || 0)
+    const lowSignalMessages = recent.filter((item) => {
+      const text = String(item.text || '').trim()
+      if (!text) return true
+      return /^(hola+|hi+|ok+|xd+|jaja+|jeje+|lol+|eh+|bro+)[!.?\s]*$/i.test(text)
+    }).length
+    const questionRate = recent.length > 0 ? (questions.length / recent.length) : 0
+    const interestingRate = recent.length > 0
+      ? (recent.filter((item) => /[?¿!]|(jaja|jeje|xd|lol|wow|no manches|contexto|por que|como|cuando|donde|opinan|debate|drama|troll)/i.test(String(item.text || ''))).length / recent.length)
+      : 0
+    const lowSignalRatio = recent.length > 0 ? (lowSignalMessages / recent.length) : 1
+
+    const now = Date.now()
+    const inCooldown = (type, ms) => (now - Number(autopilotIntentCooldownRef.current[type] || 0)) < ms
+    const choose = (type, reason) => ({ type, reason })
+    const recentIntents = autopilotRecentIntentTypesRef.current.slice(-2)
+    const wasRecentlyUsed = (type) => recentIntents.includes(type)
+    const shouldWaitForBetterContext = (
+      recent.length < 8 ||
+      ((questionRate < 0.08) && (interestingRate < 0.18) && (lowSignalRatio > 0.65))
+    )
+
+    if (shouldWaitForBetterContext && !troll && celebrationLevel <= 0) {
+      return null
+    }
+
+    if (troll && !inCooldown('joke_and_silence_troll', 5 * 60 * 1000) && !wasRecentlyUsed('joke_and_silence_troll')) return choose('joke_and_silence_troll', 'troll_detected')
+    if (questions.length >= 2 && !inCooldown('interact_with_chat', 45 * 1000) && !wasRecentlyUsed('interact_with_chat')) return choose('interact_with_chat', 'questions')
+    if (celebrationLevel > 0 && !inCooldown('celebrate_chat_events', 4 * 60 * 1000) && !wasRecentlyUsed('celebrate_chat_events')) return choose('celebrate_chat_events', 'celebration')
+    if (hasIntenseFlow && !inCooldown('narrate_stream_moment', 70 * 1000) && !wasRecentlyUsed('narrate_stream_moment')) return choose('narrate_stream_moment', 'intense')
+    if (hasJokes && !inCooldown('make_chat_joke', 80 * 1000) && !wasRecentlyUsed('make_chat_joke')) return choose('make_chat_joke', 'jokes')
+
+    const fallback = ['react_to_chat', 'interact_with_chat', 'epic_chat_line']
+    const available = fallback.filter((type) => !inCooldown(type, 60 * 1000) && !wasRecentlyUsed(type))
+    const selected = (available.length ? available : fallback)[Math.floor(Math.random() * (available.length ? available.length : fallback.length))]
+    return { type: selected, reason: 'fallback' }
+  }
+
+  const runAutopilotCycle = async () => {
+    if (autopilotBusyRef.current) return
+    if (isRecording || isLoading || isPlayingResponse || chatSuppressedRef.current) return
+
+    const recent = chatStore.getRecentMessages(50)
+    if (recent.length < 4) return
+
+    const latest = recent[recent.length - 1]
+    const signature = `${recent.length}:${latest?.timestamp || 0}:${latest?.user || ''}:${String(latest?.text || '').slice(0, 24)}`
+    if (signature === lastAutopilotSignatureRef.current) return
+
+    const intent = pickAutopilotIntent()
+    if (!intent) return
+
+    autopilotBusyRef.current = true
+    try {
+      setIsLoading(true)
+      clearResponseTimeout()
+      setHasVoiceResponse(false)
+      hasVoiceResponseRef.current = false
+      responsePlaybackStartedRef.current = false
+      setHasActiveResponse(false)
+      hasActiveResponseRef.current = false
+      lockChatSuppression()
+
+      const localResult = await executeLocalIntent({ type: intent.type }, 'autopilot')
+      if (localResult?.delegated) {
+        const now = Date.now()
+        autopilotIntentCooldownRef.current[intent.type] = now
+        autopilotRecentIntentTypesRef.current = [...autopilotRecentIntentTypesRef.current, intent.type].slice(-8)
+        lastAutopilotSignatureRef.current = signature
+        return
+      }
+
+      const localResponse = String(localResult || '').trim()
+      if (localResponse === '__SKIP__') {
+        setIsLoading(false)
+        unlockChatSuppression()
+        const now = Date.now()
+        autopilotIntentCooldownRef.current[intent.type] = now
+        autopilotRecentIntentTypesRef.current = [...autopilotRecentIntentTypesRef.current, intent.type].slice(-8)
+        lastAutopilotSignatureRef.current = signature
+        return
+      }
+      if (!localResponse) {
+        setIsLoading(false)
+        unlockChatSuppression()
+        return
+      }
+
+      const normalizedResponse = String(localResponse || '').trim().toLowerCase()
+      const now = Date.now()
+      autopilotRecentTextsRef.current = autopilotRecentTextsRef.current
+        .filter((entry) => now - entry.ts < (10 * 60 * 1000))
+      const alreadyUsedRecently = autopilotRecentTextsRef.current.some((entry) => entry.text === normalizedResponse)
+      if (normalizedResponse === lastAutopilotTextRef.current || alreadyUsedRecently) {
+        console.log('[Bot][Autopilot] Skipping repeated response')
+        setIsLoading(false)
+        unlockChatSuppression()
+        return
+      }
+
+      setResponse(localResponse)
+      setHasActiveResponse(true)
+      hasActiveResponseRef.current = true
+
+      const voiceId = getResolvedVoiceId()
+      setVoiceLabel(getVoiceDisplayName(voiceId))
+      armResponseTimeout()
+      console.log('[Bot][Autopilot] Intent selected:', intent.type, intent.reason)
+      await speakLocalResponse(localResponse, voiceId)
+      autopilotIntentCooldownRef.current[intent.type] = now
+      autopilotRecentIntentTypesRef.current = [...autopilotRecentIntentTypesRef.current, intent.type].slice(-8)
+      lastAutopilotTextRef.current = normalizedResponse
+      autopilotRecentTextsRef.current.push({ text: normalizedResponse, ts: now })
+      lastAutopilotSignatureRef.current = signature
+    } catch (error) {
+      console.error('[Bot][Autopilot] Error:', error)
+      setIsLoading(false)
+      restoreChatAudioImmediate()
+    } finally {
+      autopilotBusyRef.current = false
+    }
+  }
+
+  useEffect(() => {
+    if (!config?.botAutoInteractEnabled) return
+
+    const intervalSec = Math.max(30, Number(config?.botAutoInteractIntervalSec || 120))
+    const timer = setInterval(() => {
+      runAutopilotCycle()
+    }, intervalSec * 1000)
+
+    return () => clearInterval(timer)
+  }, [
+    config?.botAutoInteractEnabled,
+    config?.botAutoInteractIntervalSec,
+    isRecording,
+    isLoading,
+    isPlayingResponse,
+    selectedCharacterId,
+    selectedRealtimeVoiceId,
+    characters,
+    userVoices
+  ])
 
   return (
     <div className={`rounded-lg border p-4 space-y-3 ${
@@ -1531,6 +2199,54 @@ After using a tool, summarize the result conversationally.`
             </optgroup>
           )}
         </select>
+      </div>
+
+      <div className={`rounded p-3 border ${
+        darkMode
+          ? 'bg-[#0f0f23] border-emerald-400/30'
+          : 'bg-emerald-50 border-emerald-200'
+      }`}>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className={`text-xs font-bold ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>
+              Modo Interactuador
+            </p>
+            <p className={`text-[11px] ${darkMode ? 'text-emerald-200/80' : 'text-emerald-700/80'}`}>
+              Revisa hasta 50 mensajes y comenta solo.
+            </p>
+          </div>
+          <button
+            onClick={() => updateConfig && updateConfig('botAutoInteractEnabled', !(config?.botAutoInteractEnabled))}
+            className={`px-3 py-1 rounded text-xs font-bold transition-all ${
+              config?.botAutoInteractEnabled
+                ? 'bg-emerald-500 text-white'
+                : darkMode ? 'bg-[#1f2937] text-gray-300' : 'bg-white text-gray-700 border border-gray-300'
+            }`}
+          >
+            {config?.botAutoInteractEnabled ? 'ACTIVO' : 'APAGADO'}
+          </button>
+        </div>
+
+        <div className="mt-2">
+          <label className={`block text-[11px] font-semibold mb-1 ${darkMode ? 'text-emerald-200' : 'text-emerald-800'}`}>
+            Intervalo
+          </label>
+          <select
+            value={Number(config?.botAutoInteractIntervalSec || 120)}
+            onChange={(e) => updateConfig && updateConfig('botAutoInteractIntervalSec', Number(e.target.value))}
+            className={`w-full p-2 rounded text-xs ${
+              darkMode
+                ? 'bg-[#0b1220] border border-emerald-400/30 text-white'
+                : 'bg-white border border-emerald-300 text-gray-900'
+            }`}
+          >
+            <option value={30}>Cada 30 segundos</option>
+            <option value={60}>Cada 1 minuto</option>
+            <option value={120}>Cada 2 minutos</option>
+            <option value={180}>Cada 3 minutos</option>
+            <option value={300}>Cada 5 minutos</option>
+          </select>
+        </div>
       </div>
 
       <div className="flex gap-2">
@@ -1630,3 +2346,7 @@ After using a tool, summarize the result conversationally.`
     </div>
   )
 }
+
+
+
+
