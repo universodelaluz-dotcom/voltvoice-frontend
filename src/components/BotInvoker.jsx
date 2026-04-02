@@ -1509,8 +1509,13 @@ Extras obligatorios:
       }
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = false
-      endAssistantResponseWindow()  // End response only when RMS confirms silence
-      tryRestoreChatAudio()
+
+      // Only restore chat if playback actually started
+      // Ignore momentary silence before audio playback begins
+      if (responsePlaybackStartedRef.current) {
+        endAssistantResponseWindow()
+        tryRestoreChatAudio()
+      }
     }
 
     const handleInputTranscriptDelta = (data) => {
