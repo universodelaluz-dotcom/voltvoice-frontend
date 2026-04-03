@@ -1543,7 +1543,14 @@ Extras obligatorios:
     }
 
     const handleAudioEnergySpeaking = (data) => {
+      console.log('[Bot] handleAudioEnergySpeaking: CALLED', {
+        assistantResponseActive: assistantResponseActiveRef.current,
+        rms: data?.rms,
+        responsePlaybackStartedBefore: responsePlaybackStartedRef.current,
+        hasInactivityTimer: !!inactivityTimerRef.current
+      })
       if (!assistantResponseActiveRef.current) {
+        console.log('[Bot] handleAudioEnergySpeaking: Response not active, returning')
         return
       }
       assistantResponseHadAudioRef.current = true
@@ -1552,9 +1559,11 @@ Extras obligatorios:
       botIsAudiblySpeakingRef.current = true
       // Audio energy detected = playback is happening, set flag (works for all responses including persistent connection)
       responsePlaybackStartedRef.current = true
+      console.log('[Bot] handleAudioEnergySpeaking: Set responsePlaybackStartedRef=true, timer reset')
 
       // Reset inactivity timer - bot is speaking again
       if (inactivityTimerRef.current) {
+        console.log('[Bot] handleAudioEnergySpeaking: Clearing inactivity timer (bot speaking again)')
         clearTimeout(inactivityTimerRef.current)
         inactivityTimerRef.current = null
       }
