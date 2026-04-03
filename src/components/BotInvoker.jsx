@@ -1462,15 +1462,19 @@ Extras obligatorios:
   useEffect(() => {
     selectedRealtimeVoiceIdRef.current = selectedRealtimeVoiceId
 
-    // If voice changes while Inworld session is active, restart it with new voice
-    // This ensures the bot uses the new voice immediately
-    if (selectedRealtimeVoiceId && inworldRealtimeService.sessionId && !isRecording && !isLoading) {
-      console.log('[Bot] Voice changed during active session - restarting Inworld session with new voice:', selectedRealtimeVoiceId)
-      inworldRealtimeService.closeSession()
-      sessionBrokenRef.current = false
-      // The next message will create a new session with the updated voice
+    // If voice changes while bot is active (session exists), close the session
+    // so the next response creates a new session with the new voice
+    if (selectedRealtimeVoiceId && inworldRealtimeService.sessionId) {
+      // Don't close if currently playing audio or recording
+      if (!isPlayingResponse && !isRecording && !isLoading) {
+        console.log('[Bot] Voice changed - closing Inworld session to use new voice on next response:', selectedRealtimeVoiceId)
+        inworldRealtimeService.closeSession()
+        sessionBrokenRef.current = false
+      } else {
+        console.log('[Bot] Voice changed but bot is speaking - will use new voice after current response ends')
+      }
     }
-  }, [selectedRealtimeVoiceId])
+  }, [selectedRealtimeVoiceId, isPlayingResponse, isRecording, isLoading])
 
   useEffect(() => {
     voiceLabelRef.current = voiceLabel
@@ -2363,6 +2367,15 @@ After using a tool, summarize the result conversationally.`
       armResponseTimeout()
       console.log('[Bot][Autopilot] Intent selected:', intent.type, intent.reason)
       await speakLocalResponse(localResponse, voiceId)
+
+      // CRITICAL: Reset threshold timestamp IMMEDIATELY after local response starts playing
+      // This prevents the 4-second jump issue where audio.onended might not fire reliably
+      const resetTimestamp = Date.now()
+      lastBotResponseTimestampRef.current = resetTimestamp
+      messagesCountSinceLastResponseRef.current = 0
+      window.messagesCountSinceLastResponseRef = 0
+      console.log(`[Autopilot] Local response started - threshold reset immediately: timestamp=${resetTimestamp}, msgCount=0 (next response allowed in ${config?.minTimeBetweenResponsesMs ?? 0}ms)`)
+
       autopilotIntentCooldownRef.current[intent.type] = now
       autopilotRecentIntentTypesRef.current = [...autopilotRecentIntentTypesRef.current, intent.type].slice(-8)
       lastAutopilotTextRef.current = normalizedResponse
@@ -2609,32 +2622,39 @@ After using a tool, summarize the result conversationally.`
         </div>
       )}
 
-      {response && (
-        <div className={`rounded p-3 text-sm ${
-          darkMode
-            ? 'bg-cyan-500/10 border border-cyan-400/30 text-cyan-300'
-            : 'bg-indigo-50 border border-indigo-200 text-indigo-800'
-        }`}>
-          <p className="font-bold mb-2">Respuesta del Bot:</p>
-          <p>{response}</p>
-          <p className="mt-2 text-xs text-gray-400">Voz realtime: {voiceLabel}</p>
+      {/* Response container with fixed min-height to prevent scroll glitch */}
+      <div className={`rounded p-3 text-sm min-h-[60px] transition-opacity duration-300 ${
+        response
+          ? 'opacity-100 visible'
+          : 'opacity-0 invisible'
+      } ${
+        darkMode
+          ? 'bg-cyan-500/10 border border-cyan-400/30 text-cyan-300'
+          : 'bg-indigo-50 border border-indigo-200 text-indigo-800'
+      }`}>
+        {response ? (
+          <>
+            <p className="font-bold mb-2">Respuesta del Bot:</p>
+            <p>{response}</p>
+            <p className="mt-2 text-xs text-gray-400">Voz realtime: {voiceLabel}</p>
 
-          {hasVoiceResponse && (
-            <div className="mt-3 flex items-center gap-2">
-              <button
-                onClick={handleRetryAudio}
-                className="p-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full hover:shadow-lg text-white transition-all"
-                title="Reintentar audio"
-              >
-                <Volume2 className="w-4 h-4" />
-              </button>
-              <span className="text-xs text-gray-400">
-                {isPlayingResponse ? 'La respuesta de voz se está reproduciendo' : 'Si no se oyó, toca este botón para reactivar el audio'}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
+            {hasVoiceResponse && (
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  onClick={handleRetryAudio}
+                  className="p-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full hover:shadow-lg text-white transition-all"
+                  title="Reintentar audio"
+                >
+                  <Volume2 className="w-4 h-4" />
+                </button>
+                <span className="text-xs text-gray-400">
+                  {isPlayingResponse ? 'La respuesta de voz se está reproduciendo' : 'Si no se oyó, toca este botón para reactivar el audio'}
+                </span>
+              </div>
+            )}
+          </>
+        ) : null}
+      </div>
     </div>
   )
 }
