@@ -361,9 +361,8 @@ export class InworldRealtimeService {
 
           this.remoteAudioStream.addTrack(event.track)
 
-          // Monitor track state changes
+          // Monitor track state changes (silent monitoring - only log if track ends)
           const stateCheckInterval = setInterval(() => {
-            console.log('[Track State] readyState:', event.track.readyState, 'enabled:', event.track.enabled, 'muted:', event.track.muted)
             if (event.track.readyState === 'ended') {
               clearInterval(stateCheckInterval)
               console.log('[Track State] TRACK ENDED - audio should be done')
