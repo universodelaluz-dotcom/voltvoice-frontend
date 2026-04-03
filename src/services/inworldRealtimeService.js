@@ -879,6 +879,11 @@ export class InworldRealtimeService {
   /**
    * Process and play audio queue using Web Audio API for continuous streaming without gaps
    * This fixes choppy/entrecortado audio by avoiding individual HTML Audio element delays
+   *
+   * Inworld sends small audio chunks (deltas) that need to be:
+   * 1. Buffered and decoded properly (as raw PCM or WAV data)
+   * 2. Played continuously without gaps between chunks
+   * 3. Using Web Audio API for precise timing and no codec overhead
    */
   async _processAudioQueue() {
     if (this.audioQueue.length === 0) {
@@ -897,19 +902,21 @@ export class InworldRealtimeService {
         bytes[i] = binaryString.charCodeAt(i)
       }
 
-      // Convert raw bytes to AudioBuffer using Web Audio API
-      // Inworld sends 16-bit PCM at 24kHz (mono)
-      const pcmData = new Int16Array(bytes.buffer)
-      const audioBuffer = this.audioContext.createBuffer(
-        1,  // 1 channel (mono)
-        pcmData.length,
-        24000  // Inworld uses 24kHz sample rate
-      )
-
-      const channelData = audioBuffer.getChannelData(0)
-      for (let i = 0; i < pcmData.length; i++) {
-        channelData[i] = pcmData[i] / 32768  // Convert 16-bit int to float
-      }
+      // Use Web Audio API's decodeAudioData for proper format handling
+      // This handles WAV, MP3, and other audio formats automatically
+      const audioBuffer = await new Promise((resolve, reject) => {
+        this.audioContext.decodeAudioData(
+          bytes.buffer.slice(0), // Copy buffer for decode operation
+          (decodedBuffer) => {
+            console.log(`[Inworld Audio] Decoded chunk: ${decodedBuffer.duration.toFixed(3)}s, ${decodedBuffer.numberOfChannels} ch, ${decodedBuffer.sampleRate}Hz`)
+            resolve(decodedBuffer)
+          },
+          (err) => {
+            console.error('[Inworld Audio] Decode error:', err)
+            reject(err)
+          }
+        )
+      })
 
       // Create source node and play buffer
       const source = this.audioContext.createBufferSource()
@@ -919,6 +926,7 @@ export class InworldRealtimeService {
       if (!this.gainNode) {
         this.gainNode = this.audioContext.createGain()
         this.gainNode.connect(this.audioContext.destination)
+        console.log('[Inworld Audio] Gain node created')
       }
       source.connect(this.gainNode)
 
@@ -934,7 +942,7 @@ export class InworldRealtimeService {
       this.streamStartTime = this.streamStartTime || playTime
       this.streamTotalDuration += audioBuffer.duration
 
-      console.log(`[Inworld Audio] Queued chunk (${(pcmData.length / 24000).toFixed(3)}s) @ ${playTime.toFixed(3)}s, total: ${this.streamTotalDuration.toFixed(3)}s`)
+      console.log(`[Inworld Audio] Queued chunk (${audioBuffer.duration.toFixed(3)}s) @ ${playTime.toFixed(3)}s, cumulative: ${this.streamTotalDuration.toFixed(3)}s`)
 
       // Mark playback started
       if (!this.isPlayingAudio) {
@@ -946,6 +954,12 @@ export class InworldRealtimeService {
 
     } catch (err) {
       console.error('[Inworld] Error processing audio chunk:', err, 'data length:', audioDataB64?.length)
+      // Log first few bytes for debugging
+      if (audioDataB64) {
+        const bytes = atob(audioDataB64)
+        const hex = Array.from(bytes.substring(0, 16)).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join(' ')
+        console.error('[Inworld Audio Debug] First 16 bytes (hex):', hex)
+      }
       // Continue to next chunk even if one fails
       this._processAudioQueue()
     }
