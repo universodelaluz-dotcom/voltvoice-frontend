@@ -54,10 +54,9 @@ const DEFAULT_CONFIG = {
   followCooldown: 10,
   shareCooldown: 15,
   giftCooldown: 5,
-  // Bot response threshold settings
-  minNewMessagesBeforeResponse: 0,       // 0, 30, 50, 80, 100, 130, 160, 190, 220 (0 = disabled)
-  minTimeBetweenResponsesMs: 0,          // 0, 35000, 60000, 120000, 300000, 600000 (0 = disabled)
-  requireBothConditions: false,          // true = AND logic, false = OR logic
+  // Bot response threshold settings (0 = disabled, >0 = required)
+  minNewMessagesBeforeResponse: 0,       // Min new messages before responding
+  minTimeBetweenResponsesMs: 0,          // Min milliseconds between responses
   chatFontSize: 14,
   chatNickColorDark: '#22d3ee',
   chatNickColorLight: '#0f766e',
