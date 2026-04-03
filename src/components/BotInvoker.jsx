@@ -1668,14 +1668,13 @@ Extras obligatorios:
     }
 
     const handleAudioComplete = () => {
-      console.log('[Bot] handleAudioComplete fired')
-      botIsAudiblySpeakingRef.current = false
-      responsePlaybackStartedRef.current = false
-      setIsPlayingResponse(false)
-      clearResponseTimeout()
-      endAssistantResponseWindow()
-      console.log('[Bot] handleAudioComplete: calling tryRestoreChatAudio()')
-      tryRestoreChatAudio()
+      console.log('[Bot] handleAudioComplete fired - audio transmission complete')
+      console.log('[Bot] handleAudioComplete: NOT resetting responsePlaybackStartedRef - playback may still be ongoing')
+      console.log('[Bot] handleAudioComplete: Waiting for RMS silence to confirm audio is truly done')
+      // CRITICAL: Do NOT reset responsePlaybackStartedRef here!
+      // Do NOT call restore functions here!
+      // Audio transmission complete ≠ audio playback complete
+      // Wait for handleAudioEnergySilent to confirm via RMS detection
     }
 
     const handleError = (error) => {
