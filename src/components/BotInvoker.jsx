@@ -1491,6 +1491,7 @@ Extras obligatorios:
       assistantResponseHadAudioRef.current = true
       heardSpeechThisTurnRef.current = true
       botIsAudiblySpeakingRef.current = true
+      responsePlaybackStartedRef.current = true
       suppressChatAudio()
     }
 
