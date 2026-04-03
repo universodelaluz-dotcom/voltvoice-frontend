@@ -43,7 +43,8 @@ export class InworldRealtimeService {
       active: false,
       hasAudio: false,
       audioDone: false,
-      responseDone: false
+      responseDone: false,
+      skipAudio: false  // When true, discard audio chunks without playing them
     }
 
     // Web Audio API streaming (fixes choppy audio by avoiding gaps between chunks)
@@ -82,7 +83,8 @@ export class InworldRealtimeService {
       active: true,
       hasAudio: false,
       audioDone: false,
-      responseDone: false
+      responseDone: false,
+      skipAudio: false
     }
     this.transmissionComplete = false
     this.remoteSilenceFrameTarget = this.SILENCE_THRESHOLD_NORMAL
@@ -108,6 +110,12 @@ export class InworldRealtimeService {
     this._maybeCompleteAssistantResponse()
   }
 
+  _markAssistantResponseSkipAudio() {
+    if (!this._assistantResponseState.active) return
+    this._assistantResponseState.skipAudio = true
+    console.log('[Inworld] Marking response audio as __SKIP__ - will suppress playback')
+  }
+
   _markAssistantResponseDone() {
     if (!this._assistantResponseState.active) return
     this._assistantResponseState.responseDone = true
@@ -123,7 +131,8 @@ export class InworldRealtimeService {
       active: false,
       hasAudio: false,
       audioDone: false,
-      responseDone: false
+      responseDone: false,
+      skipAudio: false
     }
     this._emit('assistant-response-end')
   }
@@ -733,6 +742,11 @@ export class InworldRealtimeService {
         if (event.delta) {
           this._markAssistantResponseHasAudio()
           console.log('[Inworld] Audio transcript delta:', event.delta)
+          // Detect __SKIP__ marker and suppress audio playback
+          if (String(event.delta || '').trim() === '__SKIP__') {
+            console.log('[Inworld] Detected __SKIP__ marker - will suppress audio playback')
+            this._markAssistantResponseSkipAudio()
+          }
           this._emit('response-audio-activity', event)
           this._emit('text-delta', { text: event.delta })
         }
@@ -884,6 +898,13 @@ export class InworldRealtimeService {
    */
   _processAudioQueue() {
     if (this.isPlayingAudio || this.audioQueue.length === 0) return
+
+    // If skipAudio is set, silently discard chunks without playing them
+    if (this._assistantResponseState.skipAudio) {
+      console.log('[Inworld] Skipping audio playback (skipAudio=true), discarding', this.audioQueue.length, 'chunks')
+      this.audioQueue = []
+      return
+    }
 
     this.isPlayingAudio = true
 
