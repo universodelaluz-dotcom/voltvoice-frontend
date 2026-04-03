@@ -2345,18 +2345,17 @@ After using a tool, summarize the result conversationally.`
     }
   }
 
+  // Autopilot timer - runs when enabled, response cadence controlled by UMBRALES thresholds
   useEffect(() => {
     if (!config?.botAutoInteractEnabled) return
 
-    const intervalSec = Math.max(30, Number(config?.botAutoInteractIntervalSec || 120))
     const timer = setInterval(() => {
       runAutopilotCycle()
-    }, intervalSec * 1000)
+    }, 3000) // Check every 3 seconds
 
     return () => clearInterval(timer)
   }, [
     config?.botAutoInteractEnabled,
-    config?.botAutoInteractIntervalSec,
     isRecording,
     isLoading,
     isPlayingResponse,
@@ -2439,6 +2438,24 @@ After using a tool, summarize the result conversationally.`
           ? 'bg-[#0b1220]/50 border-cyan-400/20'
           : 'bg-cyan-50/30 border-cyan-200/50'
       }`}>
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <p className={`text-xs font-bold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
+              Autopilot
+            </p>
+          </div>
+          <button
+            onClick={() => updateConfig && updateConfig('botAutoInteractEnabled', !(config?.botAutoInteractEnabled))}
+            className={`px-3 py-1 rounded text-xs font-bold transition-all ${
+              config?.botAutoInteractEnabled
+                ? 'bg-cyan-500 text-white'
+                : darkMode ? 'bg-[#1f2937] text-gray-300' : 'bg-white text-gray-700 border border-gray-300'
+            }`}
+          >
+            {config?.botAutoInteractEnabled ? 'ACTIVO' : 'APAGADO'}
+          </button>
+        </div>
+
         {/* Thresholds Row */}
         <div className={`mt-3 p-2 rounded border ${darkMode ? 'bg-[#0b1220]/50 border-cyan-400/20' : 'bg-cyan-50/30 border-cyan-200/50'}`}>
           <label className={`block text-[10px] font-bold mb-2 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
