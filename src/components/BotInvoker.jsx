@@ -2183,28 +2183,17 @@ After using a tool, summarize the result conversationally.`
       : (messagesCountSinceLastResponseRef.current ?? 0)
     const timeSinceLast = lastBotResponseTimestampRef.current ? Date.now() - lastBotResponseTimestampRef.current : Infinity
 
-    // If minMsgs=0, this criterion is always satisfied (disabled)
-    const meetsMessageThreshold = minMsgs === 0 ? true : msgsSinceLast >= minMsgs
+    // If both disabled, always respond
+    if (minMsgs === 0 && minTime === 0) return true
 
-    // If minTime=0, this criterion is always satisfied (disabled)
-    const meetsTimeThreshold = minTime === 0 ? true : timeSinceLast >= minTime
+    // If message threshold enabled but not met, block response
+    if (minMsgs > 0 && msgsSinceLast < minMsgs) return false
 
-    // Use OR logic: respond if at least one threshold is met
-    const shouldRespond = meetsMessageThreshold || meetsTimeThreshold
+    // If time threshold enabled but not met, block response
+    if (minTime > 0 && timeSinceLast < minTime) return false
 
-    if (!shouldRespond) {
-      console.log('[Autopilot] Response blocked by thresholds:', {
-        minMsgs,
-        minTime,
-        requireBoth,
-        msgsSinceLast,
-        timeSinceLast,
-        meetsMessageThreshold,
-        meetsTimeThreshold,
-      })
-    }
-
-    return shouldRespond
+    // All enabled thresholds are met
+    return true
   }
 
   const pickAutopilotIntent = () => {
