@@ -1522,21 +1522,19 @@ Extras obligatorios:
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = false
 
-      // Combined signal: only restore if ALL conditions met:
+      // ONLY restore when we're 100% sure audio is done:
       // 1. Response generation is complete
       // 2. Audio transmission is complete
       // 3. RMS shows silence (we're in this handler)
       if (assistantAudioTransmissionCompleteRef.current && responseCompletedRef.current) {
-        console.log('[Bot] Transmission complete + Response complete + RMS silent = restore chat')
-        // Only reset these refs when actually restoring
+        console.log('[Bot] ALL CONDITIONS MET: restoring chat audio')
         responsePlaybackStartedRef.current = false
         setIsPlayingResponse(false)
         clearResponseTimeout()
         endAssistantResponseWindow()
-        tryRestoreChatAudio()
-      } else {
-        // Not restoring - do NOT modify responsePlaybackStartedRef
-        // It must remain true to prevent handleResponseComplete from restoring prematurely
+        // Directly restore - bypass tryRestoreChatAudio() to avoid dynamic checks
+        unlockChatSuppression()
+        dispatchChatPlaybackControl('resume')
       }
     }
 
