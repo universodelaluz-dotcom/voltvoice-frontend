@@ -1528,11 +1528,15 @@ Extras obligatorios:
       // 3. RMS shows silence (we're in this handler)
       if (assistantAudioTransmissionCompleteRef.current && responseCompletedRef.current) {
         console.log('[Bot] Transmission complete + Response complete + RMS silent = restore chat')
+        // Only reset these refs when actually restoring
         responsePlaybackStartedRef.current = false
         setIsPlayingResponse(false)
         clearResponseTimeout()
         endAssistantResponseWindow()
         tryRestoreChatAudio()
+      } else {
+        // Not restoring - do NOT modify responsePlaybackStartedRef
+        // It must remain true to prevent handleResponseComplete from restoring prematurely
       }
     }
 
