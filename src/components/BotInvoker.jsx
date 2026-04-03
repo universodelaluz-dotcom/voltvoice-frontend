@@ -2194,13 +2194,6 @@ After using a tool, summarize the result conversationally.`
     if (autopilotBusyRef.current) return
     if (isRecording || isLoading || isPlayingResponse || chatSuppressedRef.current) return
 
-    // CRITICAL: Don't start new response if Inworld is still processing the previous one
-    // This prevents the 30s timer from firing while a response is still active
-    if (inworldRealtimeService._assistantResponseState?.active) {
-      console.log('[Bot][Autopilot] Skipping cycle - Inworld response still active')
-      return
-    }
-
     const recent = chatStore.getRecentMessages(50)
     if (recent.length < 4) return
 
