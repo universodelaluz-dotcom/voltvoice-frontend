@@ -278,6 +278,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const heardSpeechThisTurnRef = useRef(false)
   const lastRmsRef = useRef(0)
   const assistantAudioTransmissionCompleteRef = useRef(false)
+  const consecutiveSilenceFramesRef = useRef(0)
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   const beginAssistantResponseWindow = () => {
@@ -293,6 +294,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     assistantResponseHadAudioRef.current = false
     heardSpeechThisTurnRef.current = false
     lastRmsRef.current = 0
+    consecutiveSilenceFramesRef.current = 0
   }
 
   const setChatSuppressed = (active) => {
@@ -1535,6 +1537,7 @@ Extras obligatorios:
       heardSpeechThisTurnRef.current = true
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = true
+      consecutiveSilenceFramesRef.current = 0
       suppressChatAudio()
     }
 
@@ -1545,16 +1548,22 @@ Extras obligatorios:
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = false
 
-      // ONLY restore when we're 100% sure audio is done:
+      // ONLY restore when we're ABSOLUTELY sure audio is done:
       // 1. Response generation is complete
       // 2. Audio transmission is complete
-      // 3. RMS shows silence (we're in this handler)
+      // 3. RMS shows SUSTAINED silence (multiple consecutive frames, not inter-syllable gaps)
       const txComplete = assistantAudioTransmissionCompleteRef.current
       const respComplete = responseCompletedRef.current
-      console.log('[Bot] handleAudioEnergySilent: txComplete=', txComplete, 'respComplete=', respComplete)
 
-      if (txComplete && respComplete) {
-        console.log('[Bot] handleAudioEnergySilent: ALL CONDITIONS MET - restoring chat audio')
+      // Increment silence counter - need SUSTAINED silence, not single frame
+      consecutiveSilenceFramesRef.current += 1
+      const SILENCE_THRESHOLD = 5 // Need 5+ consecutive silence frames for sustained silence
+
+      console.log('[Bot] handleAudioEnergySilent: txComplete=', txComplete, 'respComplete=', respComplete,
+                  'silenceFrames=', consecutiveSilenceFramesRef.current, 'threshold=', SILENCE_THRESHOLD)
+
+      if (txComplete && respComplete && consecutiveSilenceFramesRef.current >= SILENCE_THRESHOLD) {
+        console.log('[Bot] handleAudioEnergySilent: ALL CONDITIONS MET (SUSTAINED SILENCE) - restoring chat audio')
         console.trace('[Bot] handleAudioEnergySilent restoration stack')
         responsePlaybackStartedRef.current = false
         setIsPlayingResponse(false)
@@ -1564,7 +1573,10 @@ Extras obligatorios:
         unlockChatSuppression()
         dispatchChatPlaybackControl('resume')
       } else {
-        console.log('[Bot] handleAudioEnergySilent: CONDITIONS NOT MET - NOT restoring')
+        const reason = !txComplete ? 'transmission not complete' :
+                       !respComplete ? 'response not complete' :
+                       'waiting for sustained silence'
+        console.log('[Bot] handleAudioEnergySilent: CONDITIONS NOT MET -', reason)
       }
     }
 
