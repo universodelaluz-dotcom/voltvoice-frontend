@@ -1667,16 +1667,18 @@ Extras obligatorios:
 
       responseCompletedRef.current = true
       console.log('[Bot] handleResponseComplete: responsePlaybackStartedRef =', responsePlaybackStartedRef.current)
+      assistantAudioTransmissionCompleteRef.current = true
+
       if (!responsePlaybackStartedRef.current) {
-        // Audio playback never started, safe to restore chat now and end response window
-        console.log('[Bot] handleResponseComplete: NO PLAYBACK - restaurando')
-        botIsAudiblySpeakingRef.current = false
-        assistantAudioTransmissionCompleteRef.current = true
-        endAssistantResponseWindow()
-        tryRestoreChatAudio()
+        // Audio playback never started YET, but RMS may still detect it.
+        // Keep response window ACTIVE and let RMS detection run.
+        // The 2-second inactivity timer will handle final restoration.
+        console.log('[Bot] handleResponseComplete: NO PLAYBACK DETECTED YET - keeping response window active for RMS detection')
+        // DO NOT call endAssistantResponseWindow() here!
+        // Let RMS events (handleAudioEnergySpeaking) set the flag,
+        // then handleAudioEnergySilent triggers the inactivity timer which restores
       } else {
-        // Playback started - mark transmission complete and wait for RMS + transmission check
-        assistantAudioTransmissionCompleteRef.current = true
+        // Playback started - transmission is complete, wait for RMS silence to confirm end
         console.log('[Bot] handleResponseComplete: PLAYBACK STARTED - esperando RMS silent + transmission')
       }
     }
