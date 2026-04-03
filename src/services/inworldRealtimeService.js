@@ -927,14 +927,15 @@ export class InworldRealtimeService {
   async sendMessage(text) {
     // CRITICAL FIX: Wait for previous response to complete before sending next message
     // This prevents Inworld from reusing/duplicating responses when messages arrive too quickly
+    // Even if Autopilot tries to send faster than responses complete, we wait for clean state
     const startTime = Date.now()
-    const maxWaitMs = 5000 // Max 5 seconds wait
+    const maxWaitMs = 6000 // Max 6 seconds wait (slightly more than avg response time)
     while (this._assistantResponseState.active && (Date.now() - startTime) < maxWaitMs) {
-      console.log('[Inworld] sendMessage: Previous response still active, waiting...')
+      console.log('[Inworld] sendMessage: Previous response still active, waiting for clean state...')
       await new Promise(resolve => setTimeout(resolve, 100))
     }
     if (this._assistantResponseState.active) {
-      console.warn('[Inworld] sendMessage: Previous response still active after', maxWaitMs, 'ms - forcing send anyway')
+      console.warn('[Inworld] sendMessage: Previous response still active after', maxWaitMs, 'ms - forcing send anyway to prevent blocking')
     }
 
     const maxRetries = 3
