@@ -712,16 +712,22 @@ export class InworldRealtimeService {
         break
 
       case 'response.output_text.done':
+        console.log('[Inworld] Text done event received:', event.text ? `"${event.text}"` : 'NO TEXT')
         if (event.text) {
           console.log('[Inworld] Text response:', event.text)
           this._emit('text-response', { text: event.text })
+        } else {
+          console.warn('[Inworld] Text done event had no text content - NOT emitting text-response')
         }
         break
 
       case 'response.output_audio_transcript.done':
+        console.log('[Inworld] Audio transcript done event received:', event.transcript ? `"${event.transcript}"` : 'NO TRANSCRIPT')
         if (event.transcript) {
           console.log('[Inworld] Audio transcript:', event.transcript)
           this._emit('text-response', { text: event.transcript })
+        } else {
+          console.warn('[Inworld] Audio transcript event had no transcript - NOT emitting text-response')
         }
         break
 

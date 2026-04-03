@@ -1450,9 +1450,11 @@ Extras obligatorios:
 
   useEffect(() => {
     const handleTextResponse = (data) => {
+      console.log('[Bot] handleTextResponse FIRED with data:', data?.text ? `"${String(data.text).substring(0, 50)}..."` : 'NO TEXT')
       if (data?.text) {
         const normalized = String(data.text || '').trim()
         if (normalized === '__SKIP__') {
+          console.log('[Bot] Text response is __SKIP__, skipping this response')
           skipCurrentResponseRef.current = true
           latestResponseTextRef.current = ''
           setHasActiveResponse(false)
@@ -1466,20 +1468,25 @@ Extras obligatorios:
           return
         }
 
+        console.log('[Bot] Setting response text:', normalized.substring(0, 50))
         latestResponseTextRef.current = data.text
         setHasActiveResponse(true)
         hasActiveResponseRef.current = true
         setResponse(data.text)
         setIsLoading(false)
         clearResponseTimeout()
+      } else {
+        console.warn('[Bot] handleTextResponse called with no text data')
       }
     }
 
     const handleResponseCreated = () => {
       // Wait for real content (text/audio) before considering the response active.
+      console.log('[Bot] handleResponseCreated FIRED - clearing previous response text')
       skipCurrentResponseRef.current = false
       hasChargedCurrentResponseRef.current = false
       latestResponseTextRef.current = ''
+      setResponse(null)  // CRITICAL: Clear previous response before new one arrives to prevent repetition
       beginAssistantResponseWindow()
       responseCompletedRef.current = false
       botIsAudiblySpeakingRef.current = false
@@ -2027,6 +2034,7 @@ After using a tool, summarize the result conversationally.`
       return
     }
 
+    console.log('[Bot] invokeBot called with text:', text.substring(0, 50))
     setIsLoading(true)
     clearResponseTimeout()
     setResponse(null)
