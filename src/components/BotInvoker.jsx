@@ -1494,8 +1494,6 @@ Extras obligatorios:
       assistantResponseHadAudioRef.current = true
       heardSpeechThisTurnRef.current = true
       botIsAudiblySpeakingRef.current = true
-      // On persistent connection, audio track might not unmute again - set flag when we receive audio data
-      responsePlaybackStartedRef.current = true
       suppressChatAudio()
     }
 
@@ -1552,6 +1550,8 @@ Extras obligatorios:
       heardSpeechThisTurnRef.current = true
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = true
+      // Audio energy detected = playback is happening, set flag (works for all responses including persistent connection)
+      responsePlaybackStartedRef.current = true
 
       // Reset inactivity timer - bot is speaking again
       if (inactivityTimerRef.current) {
