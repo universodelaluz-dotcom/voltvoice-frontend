@@ -1471,18 +1471,10 @@ Extras obligatorios:
       }
       assistantResponseHadAudioRef.current = true
       assistantAudioTransmissionCompleteRef.current = true
-      console.log('[Bot] Audio transmission complete - checking if RMS already silent...')
+      console.log('[Bot] Audio transmission complete - waiting for RMS silence confirmation...')
 
-      // Si ya no estamos detectando audio, podemos restaurar ya
-      if (!botIsAudiblySpeakingRef.current) {
-        console.log('[Bot] Already silent, restoring chat immediately')
-        botIsAudiblySpeakingRef.current = false
-        responsePlaybackStartedRef.current = false
-        setIsPlayingResponse(false)
-        clearResponseTimeout()
-        endAssistantResponseWindow()
-        tryRestoreChatAudio()
-      }
+      // Only set the flag. Let handleAudioEnergySilent do the actual restoration.
+      // This ensures we only restore when BOTH transmission is done AND audio is truly silent.
     }
 
     const handleAudioTrackMuted = () => {
@@ -1529,9 +1521,12 @@ Extras obligatorios:
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = false
 
-      // Combined signal: if transmission is complete AND RMS shows silence, restore
-      if (assistantAudioTransmissionCompleteRef.current) {
-        console.log('[Bot] Audio transmission was complete + RMS silent = restore chat')
+      // Combined signal: only restore if ALL conditions met:
+      // 1. Response generation is complete
+      // 2. Audio transmission is complete
+      // 3. RMS shows silence (we're in this handler)
+      if (assistantAudioTransmissionCompleteRef.current && responseCompletedRef.current) {
+        console.log('[Bot] Transmission complete + Response complete + RMS silent = restore chat')
         responsePlaybackStartedRef.current = false
         setIsPlayingResponse(false)
         clearResponseTimeout()
@@ -1600,11 +1595,12 @@ Extras obligatorios:
       if (!responsePlaybackStartedRef.current) {
         // Audio playback never started, safe to restore chat now and end response window
         botIsAudiblySpeakingRef.current = false
+        assistantAudioTransmissionCompleteRef.current = true
         endAssistantResponseWindow()
         tryRestoreChatAudio()
       }
-      // If playback already started, wait for RMS-based handlers (audio-energy-silent or audio-complete)
-      // to confirm audio has truly ended and call endAssistantResponseWindow()
+      // If playback already started, wait for audio transmission complete + RMS silence
+      // handleAudioEnergySilent will handle restoration once both conditions are met
     }
 
     const handleAudioStarted = () => {
