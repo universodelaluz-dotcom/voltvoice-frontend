@@ -329,67 +329,6 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               <CheckOption label="Leer solo suscriptores" checked={config.onlySubscribers} onChange={() => updateConfig('onlySubscribers', !config.onlySubscribers)} darkMode={darkMode} hint="Solo lee usuarios suscritos al creador del live" />
               <CheckOption label="Filtro de miembros de comunidad" checked={config.onlyCommunityMembers} onChange={() => updateConfig('onlyCommunityMembers', !config.onlyCommunityMembers)} darkMode={darkMode} hint="Solo lee usuarios Fan o SuperFan del LIVE bajo el mismo filtro de comunidad" />
 
-              {/* === SECCIÓN: UMBRALES DE RESPUESTA === */}
-              <div className={`mx-1 mt-4 mb-3 px-4 py-2 rounded-xl border ${
-                darkMode
-                  ? 'bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-cyan-500/20 text-cyan-400'
-                  : 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 text-indigo-600'
-              }`}>
-                <span className="text-xs font-bold uppercase tracking-widest">⏱️ Umbrales de Respuesta</span>
-              </div>
-
-              {/* Mínimo de mensajes nuevos */}
-              <div className={`mb-2 rounded-xl px-4 py-3 border ${
-                darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-              }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-[15px] font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>Mensajes mínimos antes de responder</span>
-                </div>
-                <select
-                  value={config.minNewMessagesBeforeResponse || 0}
-                  onChange={(e) => updateConfig('minNewMessagesBeforeResponse', parseInt(e.target.value))}
-                  className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                    darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                >
-                  {[0, 30, 50, 80, 100, 130, 160, 190, 220].map(val => (
-                    <option key={val} value={val}>{val === 0 ? 'Deshabilitado' : val}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Tiempo mínimo entre respuestas */}
-              <div className={`mb-2 rounded-xl px-4 py-3 border ${
-                darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-              }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`text-[15px] font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>Segundos entre respuestas</span>
-                </div>
-                <select
-                  value={config.minTimeBetweenResponsesMs || 0}
-                  onChange={(e) => updateConfig('minTimeBetweenResponsesMs', parseInt(e.target.value))}
-                  className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                    darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                >
-                  <option value={0}>Deshabilitado</option>
-                  <option value={35000}>35 segundos</option>
-                  <option value={60000}>1 minuto</option>
-                  <option value={120000}>2 minutos</option>
-                  <option value={300000}>5 minutos</option>
-                  <option value={600000}>10 minutos</option>
-                </select>
-              </div>
-
-              {/* Requiere ambos criterios */}
-              <CheckOption
-                label="Require ambos criterios (AND)"
-                checked={config.requireBothConditions}
-                onChange={() => updateConfig('requireBothConditions', !config.requireBothConditions)}
-                darkMode={darkMode}
-                hint="Si está deshabilitado (OR), se usa el primero que se cumpla. Valores en 0 se ignoran automáticamente"
-              />
-
               {/* === SECCIÓN: VOCES === */}
               <div className={`mx-1 mt-4 mb-3 px-4 py-2 rounded-xl border ${
                 darkMode

@@ -2479,6 +2479,58 @@ After using a tool, summarize the result conversationally.`
             <option value={300}>Cada 5 minutos</option>
           </select>
         </div>
+
+        {/* Thresholds Row */}
+        <div className={`mt-3 p-2 rounded border ${darkMode ? 'bg-[#0b1220]/50 border-cyan-400/20' : 'bg-cyan-50/30 border-cyan-200/50'}`}>
+          <label className={`block text-[10px] font-bold mb-2 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
+            ⏱️ UMBRALES
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={`text-[9px] block mb-0.5 ${darkMode ? 'text-cyan-200/70' : 'text-cyan-600/70'}`}>Mensajes</label>
+              <select
+                value={config?.minNewMessagesBeforeResponse || 0}
+                onChange={(e) => updateConfig && updateConfig('minNewMessagesBeforeResponse', parseInt(e.target.value))}
+                className={`w-full p-1 rounded text-[10px] ${
+                  darkMode ? 'bg-[#0f1729] border border-cyan-500/20 text-cyan-100' : 'bg-white border border-cyan-300 text-cyan-900'
+                }`}
+              >
+                {[0, 30, 50, 80, 100, 130, 160, 190, 220].map(v => (
+                  <option key={v} value={v}>{v === 0 ? '✓' : v}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={`text-[9px] block mb-0.5 ${darkMode ? 'text-cyan-200/70' : 'text-cyan-600/70'}`}>Tiempo (seg)</label>
+              <select
+                value={config?.minTimeBetweenResponsesMs || 0}
+                onChange={(e) => updateConfig && updateConfig('minTimeBetweenResponsesMs', parseInt(e.target.value))}
+                className={`w-full p-1 rounded text-[10px] ${
+                  darkMode ? 'bg-[#0f1729] border border-cyan-500/20 text-cyan-100' : 'bg-white border border-cyan-300 text-cyan-900'
+                }`}
+              >
+                <option value={0}>✓</option>
+                <option value={35000}>35s</option>
+                <option value={60000}>1m</option>
+                <option value={120000}>2m</option>
+                <option value={300000}>5m</option>
+                <option value={600000}>10m</option>
+              </select>
+            </div>
+            <div className="col-span-2">
+              <button
+                onClick={() => updateConfig && updateConfig('requireBothConditions', !config?.requireBothConditions)}
+                className={`w-full p-1 rounded text-[9px] font-bold transition-all ${
+                  config?.requireBothConditions
+                    ? 'bg-cyan-500/30 text-cyan-200 border border-cyan-400'
+                    : darkMode ? 'bg-[#0f1729] text-cyan-300/60 border border-cyan-500/20' : 'bg-white text-cyan-600 border border-cyan-300'
+                }`}
+              >
+                {config?.requireBothConditions ? '✓ Y' : '○ O'} (AND/OR)
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-2">
