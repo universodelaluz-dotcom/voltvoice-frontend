@@ -255,6 +255,7 @@ export class InworldRealtimeService {
           if (this.remoteSpeaking && rms <= this.remoteStopThreshold) {
             this.remoteSilenceFrames += 1
             if (this.remoteSilenceFrames >= this.remoteSilenceFrameTarget) {
+              console.log('[RMS-ANALYSIS] FIRING SILENT EVENT: frames=', this.remoteSilenceFrames, 'threshold=', this.remoteSilenceFrameTarget, 'txComplete=', this.transmissionComplete)
               this._setRemoteSpeaking(false, rms)
             }
           } else {
