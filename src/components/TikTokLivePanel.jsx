@@ -964,9 +964,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             isQuestion: isQuestion(msg.text)
           })
 
-          // Increment message counter for autopilot thresholds
-          if (window.messagesCountSinceLastResponseRef !== undefined) {
+          // Increment message counter for autopilot thresholds - ONLY if chat is NOT suppressed
+          // (Only count messages that arrive AFTER the bot's response ends)
+          if (window.messagesCountSinceLastResponseRef !== undefined && !isInteractionSuppressedRef.current) {
             window.messagesCountSinceLastResponseRef++
+            console.log(`[TikTok] ✓ Message counter incremented: ${window.messagesCountSinceLastResponseRef} (chat not suppressed)`)
+          } else if (window.messagesCountSinceLastResponseRef !== undefined && isInteractionSuppressedRef.current) {
+            console.log(`[TikTok] ✗ Message NOT counted (chat suppressed/bot speaking)`)
           }
 
           // Sumar al contador de comentarios

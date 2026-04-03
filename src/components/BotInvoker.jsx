@@ -1725,11 +1725,12 @@ Extras obligatorios:
         // Playback started - transmission is complete, wait for RMS silence to confirm end
         console.log('[Bot] handleResponseComplete: PLAYBACK STARTED - esperando RMS silent + transmission')
         // Reset response timestamp for threshold counting
-        lastBotResponseTimestampRef.current = Date.now()
+        const resetTimestamp = Date.now()
+        lastBotResponseTimestampRef.current = resetTimestamp
         messagesCountSinceLastResponseRef.current = 0
         // Expose to window for cross-component access (TikTokLivePanel)
         window.messagesCountSinceLastResponseRef = 0
-        console.log('[Bot] Response timestamp reset for threshold tracking')
+        console.log(`[Bot] Response threshold reset: timestamp=${resetTimestamp}, msgCount=0 (next response allowed in ${config?.minTimeBetweenResponsesMs ?? 0}ms or after ${config?.minNewMessagesBeforeResponse ?? 0} messages)`)
       }
     }
 
@@ -2172,7 +2173,7 @@ After using a tool, summarize the result conversationally.`
   }
 
   // Check if bot should respond based on configured thresholds
-  // Logic: 0 = disabled, >0 = required. If both >0, use OR (whichever is satisfied first)
+  // Logic: 0 = disabled, >0 = required. ALL enabled thresholds must be satisfied (AND logic)
   const shouldRespondBasedOnThresholds = () => {
     const minMsgs = config?.minNewMessagesBeforeResponse ?? 0
     const minTime = config?.minTimeBetweenResponsesMs ?? 0
@@ -2184,15 +2185,25 @@ After using a tool, summarize the result conversationally.`
     const timeSinceLast = lastBotResponseTimestampRef.current ? Date.now() - lastBotResponseTimestampRef.current : Infinity
 
     // If both disabled, always respond
-    if (minMsgs === 0 && minTime === 0) return true
+    if (minMsgs === 0 && minTime === 0) {
+      console.log('[Autopilot] Both thresholds disabled - ALLOW response')
+      return true
+    }
 
     // If message threshold enabled but not met, block response
-    if (minMsgs > 0 && msgsSinceLast < minMsgs) return false
+    if (minMsgs > 0 && msgsSinceLast < minMsgs) {
+      console.log(`[Autopilot] Message threshold NOT MET: ${msgsSinceLast}/${minMsgs} messages - BLOCK`)
+      return false
+    }
 
     // If time threshold enabled but not met, block response
-    if (minTime > 0 && timeSinceLast < minTime) return false
+    if (minTime > 0 && timeSinceLast < minTime) {
+      console.log(`[Autopilot] Time threshold NOT MET: ${Math.floor(timeSinceLast/1000)}s/${Math.floor(minTime/1000)}s required - BLOCK`)
+      return false
+    }
 
     // All enabled thresholds are met
+    console.log(`[Autopilot] THRESHOLDS MET: msgs=${msgsSinceLast}/${minMsgs}, time=${Math.floor(timeSinceLast/1000)}s/${Math.floor(minTime/1000)}s - ALLOW`)
     return true
   }
 
@@ -2254,7 +2265,12 @@ After using a tool, summarize the result conversationally.`
     if (recent.length < 4) return
 
     // Check if bot should respond based on configured thresholds
-    if (!shouldRespondBasedOnThresholds()) return
+    console.log('[Autopilot] runAutopilotCycle: Checking response thresholds...')
+    if (!shouldRespondBasedOnThresholds()) {
+      console.log('[Autopilot] runAutopilotCycle: Thresholds NOT MET - skipping autopilot')
+      return
+    }
+    console.log('[Autopilot] runAutopilotCycle: Thresholds MET - proceeding')
 
     const latest = recent[recent.length - 1]
     const signature = `${recent.length}:${latest?.timestamp || 0}:${latest?.user || ''}:${String(latest?.text || '').slice(0, 24)}`
