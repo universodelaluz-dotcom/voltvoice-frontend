@@ -277,6 +277,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const botIsAudiblySpeakingRef = useRef(false)
   const heardSpeechThisTurnRef = useRef(false)
   const lastRmsRef = useRef(0)
+  const assistantAudioTransmissionCompleteRef = useRef(false)
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   const beginAssistantResponseWindow = () => {
@@ -284,6 +285,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     assistantResponseHadAudioRef.current = false
     heardSpeechThisTurnRef.current = false
     lastRmsRef.current = 0
+    assistantAudioTransmissionCompleteRef.current = false
   }
 
   const endAssistantResponseWindow = () => {
@@ -1468,8 +1470,19 @@ Extras obligatorios:
         return
       }
       assistantResponseHadAudioRef.current = true
-      // El backend termino de enviar audio, pero no implica silencio real local.
-      // La liberacion depende de audio-energy-silent/audio-complete.
+      assistantAudioTransmissionCompleteRef.current = true
+      console.log('[Bot] Audio transmission complete - checking if RMS already silent...')
+
+      // Si ya no estamos detectando audio, podemos restaurar ya
+      if (!botIsAudiblySpeakingRef.current) {
+        console.log('[Bot] Already silent, restoring chat immediately')
+        botIsAudiblySpeakingRef.current = false
+        responsePlaybackStartedRef.current = false
+        setIsPlayingResponse(false)
+        clearResponseTimeout()
+        endAssistantResponseWindow()
+        tryRestoreChatAudio()
+      }
     }
 
     const handleAudioTrackMuted = () => {
@@ -1516,9 +1529,15 @@ Extras obligatorios:
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = false
 
-      // RMS silence is NOT a reliable signal (inter-syllable gaps look like silence).
-      // Do NOT restore chat here. Only handleAudioComplete (track.onended) is reliable.
-      // This handler only updates the "speaking" flag for UI purposes.
+      // Combined signal: if transmission is complete AND RMS shows silence, restore
+      if (assistantAudioTransmissionCompleteRef.current) {
+        console.log('[Bot] Audio transmission was complete + RMS silent = restore chat')
+        responsePlaybackStartedRef.current = false
+        setIsPlayingResponse(false)
+        clearResponseTimeout()
+        endAssistantResponseWindow()
+        tryRestoreChatAudio()
+      }
     }
 
     const handleInputTranscriptDelta = (data) => {
