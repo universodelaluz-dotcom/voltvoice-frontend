@@ -2174,8 +2174,8 @@ After using a tool, summarize the result conversationally.`
   // Check if bot should respond based on configured thresholds
   // Logic: 0 = disabled, >0 = required. If both >0, use OR (whichever is satisfied first)
   const shouldRespondBasedOnThresholds = () => {
-    const minMsgs = configRef.current?.minNewMessagesBeforeResponse ?? 0
-    const minTime = configRef.current?.minTimeBetweenResponsesMs ?? 0
+    const minMsgs = config?.minNewMessagesBeforeResponse ?? 0
+    const minTime = config?.minTimeBetweenResponsesMs ?? 0
 
     // Use window counter if available (updated by TikTokLivePanel), fallback to ref
     const msgsSinceLast = (typeof window !== 'undefined' && window.messagesCountSinceLastResponseRef !== undefined)
