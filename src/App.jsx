@@ -57,6 +57,7 @@ const DEFAULT_CONFIG = {
   // Bot response threshold settings (0 = disabled, >0 = required)
   minNewMessagesBeforeResponse: 0,       // Min new messages before responding
   minTimeBetweenResponsesMs: 0,          // Min milliseconds between responses
+  botAutoInteractEnabled: true,          // Enable/disable autopilot
   chatFontSize: 14,
   chatNickColorDark: '#22d3ee',
   chatNickColorLight: '#0f766e',
