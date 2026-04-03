@@ -1451,6 +1451,7 @@ Extras obligatorios:
   useEffect(() => {
     const handleTextResponse = (data) => {
       console.log('[Bot] handleTextResponse FIRED with data:', data?.text ? `"${String(data.text).substring(0, 50)}..."` : 'NO TEXT')
+      console.log('[Bot] handleTextResponse: Current response state before update:', response?.substring?.(0, 30) || 'null')
       if (data?.text) {
         const normalized = String(data.text || '').trim()
         if (normalized === '__SKIP__') {
@@ -1472,6 +1473,7 @@ Extras obligatorios:
         latestResponseTextRef.current = data.text
         setHasActiveResponse(true)
         hasActiveResponseRef.current = true
+        console.log('[Bot] handleTextResponse: About to call setResponse with:', data.text.substring(0, 50))
         setResponse(data.text)
         setIsLoading(false)
         clearResponseTimeout()
@@ -1483,9 +1485,11 @@ Extras obligatorios:
     const handleResponseCreated = () => {
       // Wait for real content (text/audio) before considering the response active.
       console.log('[Bot] handleResponseCreated FIRED - clearing previous response text')
+      console.log('[Bot] handleResponseCreated: Previous response was:', response?.substring?.(0, 50) || 'null')
       skipCurrentResponseRef.current = false
       hasChargedCurrentResponseRef.current = false
       latestResponseTextRef.current = ''
+      console.log('[Bot] handleResponseCreated: About to call setResponse(null)')
       setResponse(null)  // CRITICAL: Clear previous response before new one arrives to prevent repetition
       beginAssistantResponseWindow()
       responseCompletedRef.current = false
@@ -1657,7 +1661,13 @@ Extras obligatorios:
       }
 
       if (!hasActiveResponseRef.current) {
-        setResponse((current) => current || 'La IA no devolvio contenido. Intenta de nuevo.')
+        console.log('[Bot] handleResponseComplete: !hasActiveResponseRef, preserving/setting response')
+        setResponse((current) => {
+          console.log('[Bot] handleResponseComplete: setResponse callback - current is:', current ? `"${current.substring(0, 40)}..."` : 'null')
+          const result = current || 'La IA no devolvio contenido. Intenta de nuevo.'
+          console.log('[Bot] handleResponseComplete: setResponse callback - returning:', result ? `"${result.substring(0, 40)}..."` : 'null')
+          return result
+        })
       }
       setIsLoading(false)
       setIsRecording(false)
@@ -1702,7 +1712,13 @@ Extras obligatorios:
       setIsPlayingResponse(true)
       setIsLoading(false)
       clearResponseTimeout()
-      setResponse((current) => current === 'La IA tardó demasiado en responder. Intenta de nuevo.' ? null : current)
+      console.log('[Bot] handleAudioStarted: Current response state:', response?.substring?.(0, 30) || 'null')
+      setResponse((current) => {
+        console.log('[Bot] handleAudioStarted: setResponse callback - current:', current?.substring?.(0, 30) || 'null')
+        const result = current === 'La IA tardó demasiado en responder. Intenta de nuevo.' ? null : current
+        console.log('[Bot] handleAudioStarted: setResponse callback - returning:', result?.substring?.(0, 30) || 'null')
+        return result
+      })
     }
 
     const handleAudioComplete = () => {
@@ -1798,6 +1814,12 @@ Extras obligatorios:
     restoreChatAudioImmediate()
     inworldRealtimeService.closeSession()
   }, [selectedCharacterId, characters, userVoices])
+
+  // DIAGNOSTIC: Log every response state change to track message repetition
+  useEffect(() => {
+    console.log('[Bot] RESPONSE STATE CHANGED TO:', response ? `"${response.substring(0, 60)}..."` : 'null')
+    console.log('[Bot] latestResponseTextRef is now:', latestResponseTextRef.current ? `"${latestResponseTextRef.current.substring(0, 60)}..."` : 'null')
+  }, [response])
 
   const loadCharacters = async () => {
     try {
@@ -2035,8 +2057,11 @@ After using a tool, summarize the result conversationally.`
     }
 
     console.log('[Bot] invokeBot called with text:', text.substring(0, 50))
+    console.log('[Bot] invokeBot: Current response state:', response?.substring?.(0, 50) || 'null')
+    console.log('[Bot] invokeBot: latestResponseTextRef:', latestResponseTextRef.current?.substring?.(0, 50) || 'null')
     setIsLoading(true)
     clearResponseTimeout()
+    console.log('[Bot] invokeBot: About to call setResponse(null)')
     setResponse(null)
     setHasVoiceResponse(false)
     hasVoiceResponseRef.current = false
@@ -2089,6 +2114,7 @@ After using a tool, summarize the result conversationally.`
   const handleTextSubmit = async () => {
     const textToSend = inputText
     setInputText('')
+    console.log('[Bot] handleTextSubmit: Sending text:', textToSend.substring(0, 50), '| Current response state:', response?.substring?.(0, 30) || 'null')
     await invokeBot(textToSend)
   }
 
