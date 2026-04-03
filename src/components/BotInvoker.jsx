@@ -280,6 +280,11 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const assistantAudioTransmissionCompleteRef = useRef(false)
   const inactivityTimerRef = useRef(null)
   const INACTIVITY_TIMEOUT_MS = 4500 // 4.5 seconds of silence = unlock chat (prevents solapamiento on long responses with pauses)
+
+  // Bot response threshold tracking
+  const lastBotResponseTimestampRef = useRef(null)  // When bot last responded (timestamp)
+  const messagesCountSinceLastResponseRef = useRef(0)  // How many messages since last response
+
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   const beginAssistantResponseWindow = () => {
@@ -1158,7 +1163,7 @@ Objetivo: mantener el chat vivo, entretenido, en movimiento y bajo control.
 Extras obligatorios:
 1) Evitar repetición: si recientemente hiciste un tipo de comentario, varía el siguiente.
 2) Prioridad a lo interesante: prioriza mensajes que generen conversación, risa, reacción o movimiento del chat.
-3) No hablar de más: si no hay contexto útil o intervención valiosa, responde exactamente: "__SKIP__"
+3) __SKIP__ SOLO si el mensaje es una repetición exacta (mismo usuario, exactamente el mismo texto, en los últimos 10 segundos). En TODOS los otros casos, SIEMPRE responde con algo contextual y natural.
 `.trim()
 
     armResponseTimeout()
@@ -1465,6 +1470,18 @@ Extras obligatorios:
           clearResponseTimeout()
           responseCompletedRef.current = true
           botIsAudiblySpeakingRef.current = false
+
+          // CRITICAL: Cancel inactivity timer immediately - don't wait for silence
+          if (inactivityTimerRef.current) {
+            console.log('[Bot] __SKIP__ detected: Cancelling inactivity timer immediately')
+            clearTimeout(inactivityTimerRef.current)
+            inactivityTimerRef.current = null
+          }
+
+          // End response window immediately to unlock chat
+          endAssistantResponseWindow()
+
+          // Resume chat immediately without waiting for silence
           restoreChatAudioImmediate()
           return
         }
@@ -1658,6 +1675,14 @@ Extras obligatorios:
         clearResponseTimeout()
         responseCompletedRef.current = true
         botIsAudiblySpeakingRef.current = false
+
+        // Cancel inactivity timer if it's running
+        if (inactivityTimerRef.current) {
+          console.log('[Bot] handleResponseComplete: Cancelling inactivity timer (skipCurrentResponse=true)')
+          clearTimeout(inactivityTimerRef.current)
+          inactivityTimerRef.current = null
+        }
+
         restoreChatAudioImmediate()
         return
       }
@@ -1699,6 +1724,12 @@ Extras obligatorios:
       } else {
         // Playback started - transmission is complete, wait for RMS silence to confirm end
         console.log('[Bot] handleResponseComplete: PLAYBACK STARTED - esperando RMS silent + transmission')
+        // Reset response timestamp for threshold counting
+        lastBotResponseTimestampRef.current = Date.now()
+        messagesCountSinceLastResponseRef.current = 0
+        // Expose to window for cross-component access (TikTokLivePanel)
+        window.messagesCountSinceLastResponseRef = 0
+        console.log('[Bot] Response timestamp reset for threshold tracking')
       }
     }
 
@@ -2140,6 +2171,41 @@ After using a tool, summarize the result conversationally.`
     }
   }
 
+  // Check if bot should respond based on configured thresholds
+  const shouldRespondBasedOnThresholds = () => {
+    const minMsgs = configRef.current?.minNewMessagesBeforeResponse ?? 0
+    const minTime = configRef.current?.minTimeBetweenResponsesMs ?? 0
+    const requireBoth = configRef.current?.requireBothConditions ?? false
+
+    // Use window counter if available (updated by TikTokLivePanel), fallback to ref
+    const msgsSinceLast = (typeof window !== 'undefined' && window.messagesCountSinceLastResponseRef !== undefined)
+      ? window.messagesCountSinceLastResponseRef
+      : (messagesCountSinceLastResponseRef.current ?? 0)
+    const timeSinceLast = lastBotResponseTimestampRef.current ? Date.now() - lastBotResponseTimestampRef.current : Infinity
+
+    // If minMsgs=0, this criterion is always satisfied
+    const meetsMessageThreshold = minMsgs === 0 ? true : msgsSinceLast >= minMsgs
+
+    // If minTime=0, this criterion is always satisfied
+    const meetsTimeThreshold = minTime === 0 ? true : timeSinceLast >= minTime
+
+    const shouldRespond = requireBoth ? (meetsMessageThreshold && meetsTimeThreshold) : (meetsMessageThreshold || meetsTimeThreshold)
+
+    if (!shouldRespond) {
+      console.log('[Autopilot] Response blocked by thresholds:', {
+        minMsgs,
+        minTime,
+        requireBoth,
+        msgsSinceLast,
+        timeSinceLast,
+        meetsMessageThreshold,
+        meetsTimeThreshold,
+      })
+    }
+
+    return shouldRespond
+  }
+
   const pickAutopilotIntent = () => {
     const recent = chatStore.getRecentMessages(50)
     if (!recent.length) return null
@@ -2196,6 +2262,9 @@ After using a tool, summarize the result conversationally.`
 
     const recent = chatStore.getRecentMessages(50)
     if (recent.length < 4) return
+
+    // Check if bot should respond based on configured thresholds
+    if (!shouldRespondBasedOnThresholds()) return
 
     const latest = recent[recent.length - 1]
     const signature = `${recent.length}:${latest?.timestamp || 0}:${latest?.user || ''}:${String(latest?.text || '').slice(0, 24)}`

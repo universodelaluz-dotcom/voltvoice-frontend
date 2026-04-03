@@ -964,6 +964,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             isQuestion: isQuestion(msg.text)
           })
 
+          // Increment message counter for autopilot thresholds
+          if (window.messagesCountSinceLastResponseRef !== undefined) {
+            window.messagesCountSinceLastResponseRef++
+          }
+
           // Sumar al contador de comentarios
           setStats(prev => ({ ...prev, count: prev.count + 1 }))
 

@@ -244,6 +244,20 @@ class ChatStore {
     }
   }
 
+  isRecentDuplicate(username, text, windowMs = 10000) {
+    if (!username || !text) return false
+    const now = Date.now()
+    const cutoff = now - windowMs
+    // Check recent messages in the window for exact duplicates from the same user
+    const recentDuplicates = this.messages.filter(
+      m => m.timestamp >= cutoff &&
+           m.user === username &&
+           m.text === text
+    )
+    // Return true if there's more than one message with same user/text (i.e., it's a repeat)
+    return recentDuplicates.length > 1
+  }
+
   getTopEventUser(eventType, { todayOnly = true } = {}) {
     const startOfDay = new Date(new Date().setHours(0, 0, 0, 0)).getTime()
     const grouped = new Map()

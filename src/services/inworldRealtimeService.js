@@ -114,6 +114,15 @@ export class InworldRealtimeService {
     if (!this._assistantResponseState.active) return
     this._assistantResponseState.skipAudio = true
     console.log('[Inworld] Marking response audio as __SKIP__ - will suppress playback')
+
+    // CRITICAL: Mute audio element immediately to stop playback NOW
+    if (this.outputAudioElement) {
+      this.outputAudioElement.muted = true
+      console.log('[Inworld] Audio element muted immediately (skipAudio)')
+    }
+
+    // Also clear any audio queue
+    this._clearAudioQueue()
   }
 
   _markAssistantResponseDone() {
