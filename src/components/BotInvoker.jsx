@@ -2355,6 +2355,18 @@ After using a tool, summarize the result conversationally.`
   }
 
   // Autopilot timer - runs when enabled, response cadence controlled by UMBRALES thresholds
+  // Reset threshold timestamp when autopilot is activated
+  useEffect(() => {
+    if (config?.botAutoInteractEnabled) {
+      lastBotResponseTimestampRef.current = Date.now()
+      if (typeof window !== 'undefined') {
+        window.messagesCountSinceLastResponseRef = 0
+      }
+      messagesCountSinceLastResponseRef.current = 0
+      console.log(`[Autopilot] ACTIVATED - Threshold timestamp reset to NOW. Next response allowed after ${Math.floor((config?.minTimeBetweenResponsesMs ?? 0)/1000)}s`)
+    }
+  }, [config?.botAutoInteractEnabled])
+
   useEffect(() => {
     if (!config?.botAutoInteractEnabled) return
 
