@@ -47,7 +47,18 @@ export class InworldRealtimeService {
     }
   }
 
+  _clearAudioQueue() {
+    if (this.audioQueue.length > 0) {
+      console.log('[Inworld] Clearing audio queue, items removed:', this.audioQueue.length)
+      this.audioQueue = []
+      this.isPlayingAudio = false
+    }
+  }
+
   _beginAssistantResponse() {
+    // CRITICAL: Clear previous response's audio queue to prevent overlap/solapamiento
+    this._clearAudioQueue()
+
     this._assistantResponseState = {
       active: true,
       hasAudio: false,
