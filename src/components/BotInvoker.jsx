@@ -1500,7 +1500,7 @@ Extras obligatorios:
       }
       assistantResponseHadAudioRef.current = true
       botIsAudiblySpeakingRef.current = false
-      tryRestoreChatAudio()
+      // Do NOT restore here. Wait for RMS silence + transmission complete
     }
 
     const handleAudioEnergySpeaking = (data) => {
