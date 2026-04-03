@@ -301,6 +301,8 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     }
 
     chatSuppressedRef.current = active
+    console.log(`[Bot] setChatSuppressed(${active}) - dispatching voltvoice:assistant-speech-state`)
+    console.trace('[Bot] setChatSuppressed stack trace')
     window.dispatchEvent(new CustomEvent('voltvoice:assistant-speech-state', {
       detail: { active }
     }))
@@ -321,6 +323,8 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   }
 
   const suppressChatAudio = () => {
+    console.log('[Bot] suppressChatAudio() called')
+    console.trace('[Bot] suppressChatAudio stack trace')
     lockChatSuppression()
     dispatchChatPlaybackControl('pause')
   }
@@ -328,14 +332,32 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const restoreChatAudioImmediate = () => {
     // Don't end response window here - let RMS detection do it
     // endAssistantResponseWindow() should only be called when RMS confirms audio has truly ended
+    console.log('[Bot] restoreChatAudioImmediate() called')
+    console.trace('[Bot] restoreChatAudioImmediate stack trace')
     unlockChatSuppression()
     dispatchChatPlaybackControl('resume')
   }
 
   const tryRestoreChatAudio = () => {
-    if (!responseCompletedRef.current) return
-    if (assistantResponseHadAudioRef.current && !heardSpeechThisTurnRef.current) return
-    if (botIsAudiblySpeakingRef.current) return
+    const guard1 = !responseCompletedRef.current
+    const guard2 = assistantResponseHadAudioRef.current && !heardSpeechThisTurnRef.current
+    const guard3 = botIsAudiblySpeakingRef.current
+
+    console.log('[Bot] tryRestoreChatAudio: guard1(responseComplete)=', !guard1, 'guard2(hadAudio&&!heardSpeech)=', guard2, 'guard3(botSpeaking)=', guard3)
+
+    if (guard1) {
+      console.log('[Bot] tryRestoreChatAudio BLOCKED: response not completed')
+      return
+    }
+    if (guard2) {
+      console.log('[Bot] tryRestoreChatAudio BLOCKED: had audio but no speech heard')
+      return
+    }
+    if (guard3) {
+      console.log('[Bot] tryRestoreChatAudio BLOCKED: bot still audibly speaking')
+      return
+    }
+    console.log('[Bot] tryRestoreChatAudio: ALL GUARDS PASSED - calling restoreChatAudioImmediate()')
     restoreChatAudioImmediate()
   }
 
@@ -1488,6 +1510,7 @@ Extras obligatorios:
       if (!assistantResponseActiveRef.current) {
         return
       }
+      console.log('[Bot] handleAudioTrackUnmuted: Setting responsePlaybackStartedRef=true')
       assistantResponseHadAudioRef.current = true
       heardSpeechThisTurnRef.current = true
       botIsAudiblySpeakingRef.current = true
@@ -1526,8 +1549,13 @@ Extras obligatorios:
       // 1. Response generation is complete
       // 2. Audio transmission is complete
       // 3. RMS shows silence (we're in this handler)
-      if (assistantAudioTransmissionCompleteRef.current && responseCompletedRef.current) {
-        console.log('[Bot] ALL CONDITIONS MET: restoring chat audio')
+      const txComplete = assistantAudioTransmissionCompleteRef.current
+      const respComplete = responseCompletedRef.current
+      console.log('[Bot] handleAudioEnergySilent: txComplete=', txComplete, 'respComplete=', respComplete)
+
+      if (txComplete && respComplete) {
+        console.log('[Bot] handleAudioEnergySilent: ALL CONDITIONS MET - restoring chat audio')
+        console.trace('[Bot] handleAudioEnergySilent restoration stack')
         responsePlaybackStartedRef.current = false
         setIsPlayingResponse(false)
         clearResponseTimeout()
@@ -1535,6 +1563,8 @@ Extras obligatorios:
         // Directly restore - bypass tryRestoreChatAudio() to avoid dynamic checks
         unlockChatSuppression()
         dispatchChatPlaybackControl('resume')
+      } else {
+        console.log('[Bot] handleAudioEnergySilent: CONDITIONS NOT MET - NOT restoring')
       }
     }
 
@@ -1566,7 +1596,19 @@ Extras obligatorios:
     }
 
     const handleResponseComplete = async () => {
+      console.log('[Bot] handleResponseComplete: FIRED')
+      console.log('[Bot] handleResponseComplete STATE:', {
+        skipCurrent: skipCurrentResponseRef.current,
+        hasActiveResponse: hasActiveResponseRef.current,
+        responsePlaybackStarted: responsePlaybackStartedRef.current,
+        responsesCompleted: responseCompletedRef.current,
+        assistantAudioTransmissionComplete: assistantAudioTransmissionCompleteRef.current,
+        botAudiblySpeaking: botIsAudiblySpeakingRef.current,
+        assistantResponseActive: assistantResponseActiveRef.current
+      })
+
       if (skipCurrentResponseRef.current) {
+        console.log('[Bot] handleResponseComplete: skipCurrentResponse=true, restoring immediately')
         skipCurrentResponseRef.current = false
         setResponse(null)
         setIsLoading(false)
@@ -1595,8 +1637,10 @@ Extras obligatorios:
       }
 
       responseCompletedRef.current = true
+      console.log('[Bot] handleResponseComplete: responsePlaybackStartedRef =', responsePlaybackStartedRef.current)
       if (!responsePlaybackStartedRef.current) {
         // Audio playback never started, safe to restore chat now and end response window
+        console.log('[Bot] handleResponseComplete: NO PLAYBACK - restaurando')
         botIsAudiblySpeakingRef.current = false
         assistantAudioTransmissionCompleteRef.current = true
         endAssistantResponseWindow()
@@ -1604,7 +1648,7 @@ Extras obligatorios:
       } else {
         // Playback started - mark transmission complete and wait for RMS + transmission check
         assistantAudioTransmissionCompleteRef.current = true
-        console.log('[Bot] Response complete but playback ongoing, waiting for RMS silent + transmission complete')
+        console.log('[Bot] handleResponseComplete: PLAYBACK STARTED - esperando RMS silent + transmission')
       }
     }
 
@@ -1624,11 +1668,13 @@ Extras obligatorios:
     }
 
     const handleAudioComplete = () => {
+      console.log('[Bot] handleAudioComplete fired')
       botIsAudiblySpeakingRef.current = false
       responsePlaybackStartedRef.current = false
       setIsPlayingResponse(false)
       clearResponseTimeout()
       endAssistantResponseWindow()
+      console.log('[Bot] handleAudioComplete: calling tryRestoreChatAudio()')
       tryRestoreChatAudio()
     }
 

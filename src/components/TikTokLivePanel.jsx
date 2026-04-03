@@ -665,9 +665,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   useEffect(() => {
     const handleInteractionSpeechState = (event) => {
       const active = !!event.detail?.active
+      console.log('[TikTok] handleInteractionSpeechState: active=', active)
 
       if (active) {
-        if (isInteractionSuppressedRef.current) return
+        if (isInteractionSuppressedRef.current) {
+          console.log('[TikTok] handleInteractionSpeechState: already suppressed, returning')
+          return
+        }
         isInteractionSuppressedRef.current = true
 
         if (activePlaybackResolveRef.current) {
@@ -695,12 +699,18 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         return
       }
 
-      if (!isInteractionSuppressedRef.current) return
-      isInteractionSuppressedRef.current = false
-      if (isPttSuppressedRef.current) {
+      console.log('[TikTok] handleInteractionSpeechState: active=false, checking restore conditions')
+      if (!isInteractionSuppressedRef.current) {
+        console.log('[TikTok] handleInteractionSpeechState: NOT suppressed, returning')
         return
       }
-      console.log('[TikTok] Restoring chat audio after interaction mode')
+      isInteractionSuppressedRef.current = false
+      if (isPttSuppressedRef.current) {
+        console.log('[TikTok] handleInteractionSpeechState: isPttSuppressed=true, returning')
+        return
+      }
+      console.log('[TikTok] handleInteractionSpeechState: ALL CONDITIONS MET - Restoring chat audio after interaction mode')
+      console.trace('[TikTok] handleInteractionSpeechState restoration stack')
       processQueue()
     }
 
@@ -1291,11 +1301,26 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   }
 
   const processQueue = async () => {
-    if (isProcessingRef.current) return
-    if (speakQueueRef.current.length === 0) return
-    if (isPausedRef.current) return
-    if (isAudioSuppressed()) return
+    console.log('[TikTok] processQueue called, checking guards...')
+    if (isProcessingRef.current) {
+      console.log('[TikTok] processQueue: BLOCKED - already processing')
+      return
+    }
+    if (speakQueueRef.current.length === 0) {
+      console.log('[TikTok] processQueue: BLOCKED - queue empty')
+      return
+    }
+    if (isPausedRef.current) {
+      console.log('[TikTok] processQueue: BLOCKED - paused')
+      return
+    }
+    const suppressed = isAudioSuppressed()
+    if (suppressed) {
+      console.log('[TikTok] processQueue: BLOCKED - audio suppressed')
+      return
+    }
 
+    console.log('[TikTok] processQueue: ALL GUARDS PASSED - starting queue processing')
     isProcessingRef.current = true
 
     while (speakQueueRef.current.length > 0) {
