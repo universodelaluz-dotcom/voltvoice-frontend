@@ -966,6 +966,13 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       setIsPlayingResponse(false)
       unlockChatSuppression()
       localAudioRef.current = null
+
+      // Reset threshold timestamp for autopilot - CRITICAL FIX for 4-second jump
+      const resetTimestamp = Date.now()
+      lastBotResponseTimestampRef.current = resetTimestamp
+      messagesCountSinceLastResponseRef.current = 0
+      window.messagesCountSinceLastResponseRef = 0
+      console.log(`[Autopilot] Local response complete - threshold reset: timestamp=${resetTimestamp}, msgCount=0 (next response allowed in ${config?.minTimeBetweenResponsesMs ?? 0}ms or after ${config?.minNewMessagesBeforeResponse ?? 0} messages)`)
     }
 
     audio.onerror = () => {
@@ -973,6 +980,13 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       setIsPlayingResponse(false)
       unlockChatSuppression()
       localAudioRef.current = null
+
+      // Reset threshold timestamp on error to prevent autopilot from being blocked
+      const resetTimestamp = Date.now()
+      lastBotResponseTimestampRef.current = resetTimestamp
+      messagesCountSinceLastResponseRef.current = 0
+      window.messagesCountSinceLastResponseRef = 0
+      console.log(`[Autopilot] Local response error - threshold reset: timestamp=${resetTimestamp}, msgCount=0`)
     }
 
     await audio.play()
@@ -1447,6 +1461,15 @@ Extras obligatorios:
 
   useEffect(() => {
     selectedRealtimeVoiceIdRef.current = selectedRealtimeVoiceId
+
+    // If voice changes while Inworld session is active, restart it with new voice
+    // This ensures the bot uses the new voice immediately
+    if (selectedRealtimeVoiceId && inworldRealtimeService.sessionId && !isRecording && !isLoading) {
+      console.log('[Bot] Voice changed during active session - restarting Inworld session with new voice:', selectedRealtimeVoiceId)
+      inworldRealtimeService.closeSession()
+      sessionBrokenRef.current = false
+      // The next message will create a new session with the updated voice
+    }
   }, [selectedRealtimeVoiceId])
 
   useEffect(() => {
