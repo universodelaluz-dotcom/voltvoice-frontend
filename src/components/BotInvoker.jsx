@@ -278,7 +278,6 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const heardSpeechThisTurnRef = useRef(false)
   const lastRmsRef = useRef(0)
   const assistantAudioTransmissionCompleteRef = useRef(false)
-  const lastSpeakingTimeRef = useRef(0)
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   const beginAssistantResponseWindow = () => {
@@ -294,7 +293,6 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     assistantResponseHadAudioRef.current = false
     heardSpeechThisTurnRef.current = false
     lastRmsRef.current = 0
-    lastSpeakingTimeRef.current = 0
   }
 
   const setChatSuppressed = (active) => {
@@ -1537,7 +1535,6 @@ Extras obligatorios:
       heardSpeechThisTurnRef.current = true
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = true
-      lastSpeakingTimeRef.current = Date.now()
       suppressChatAudio()
     }
 
@@ -1551,18 +1548,16 @@ Extras obligatorios:
       // ONLY restore when we're ABSOLUTELY sure audio is done:
       // 1. Response generation is complete
       // 2. Audio transmission is complete
-      // 3. Sustained silence - bot hasn't spoken for 800ms+ (confirms inter-syllable gaps are over)
+      // 3. RMS shows SUSTAINED silence - inworldRealtimeService auto-increases silence threshold after transmission
+      //    Before TX: 3 frames (allows inter-syllable gaps)
+      //    After TX: 8 frames (rejects inter-syllable gaps, requires true sustained silence)
       const txComplete = assistantAudioTransmissionCompleteRef.current
       const respComplete = responseCompletedRef.current
-      const now = Date.now()
-      const timeSinceLastSpeaking = now - lastSpeakingTimeRef.current
-      const SUSTAINED_SILENCE_MS = 800 // 800ms of no speaking = truly silent
 
-      console.log('[Bot] handleAudioEnergySilent: txComplete=', txComplete, 'respComplete=', respComplete,
-                  'timeSilent=', timeSinceLastSpeaking, 'msThreshold=', SUSTAINED_SILENCE_MS)
+      console.log('[Bot] handleAudioEnergySilent: txComplete=', txComplete, 'respComplete=', respComplete)
 
-      if (txComplete && respComplete && timeSinceLastSpeaking >= SUSTAINED_SILENCE_MS) {
-        console.log('[Bot] handleAudioEnergySilent: ALL CONDITIONS MET (SUSTAINED SILENCE) - restoring chat audio')
+      if (txComplete && respComplete) {
+        console.log('[Bot] handleAudioEnergySilent: ALL CONDITIONS MET (RMS-based sustained silence) - restoring chat audio')
         console.trace('[Bot] handleAudioEnergySilent restoration stack')
         responsePlaybackStartedRef.current = false
         setIsPlayingResponse(false)
@@ -1574,7 +1569,6 @@ Extras obligatorios:
       } else {
         const reason = !txComplete ? 'transmission not complete' :
                        !respComplete ? 'response not complete' :
-                       timeSinceLastSpeaking < SUSTAINED_SILENCE_MS ? `waiting for sustained silence (${SUSTAINED_SILENCE_MS - timeSinceLastSpeaking}ms more)` :
                        'unknown'
         console.log('[Bot] handleAudioEnergySilent: CONDITIONS NOT MET -', reason)
       }

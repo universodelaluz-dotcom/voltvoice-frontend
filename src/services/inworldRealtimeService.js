@@ -36,6 +36,9 @@ export class InworldRealtimeService {
     this.remoteStartThreshold = 0.02
     this.remoteStopThreshold = 0.008
     this.remoteSilenceFrameTarget = 3
+    this.transmissionComplete = false // Signal-based: switch silence threshold when transmission done
+    this.SILENCE_THRESHOLD_NORMAL = 3 // During active transmission: 3 frames (allows inter-syllable gaps)
+    this.SILENCE_THRESHOLD_POST_TX = 8 // After transmission complete: 8 frames (rejects inter-syllable gaps)
     this._assistantResponseState = {
       active: false,
       hasAudio: false,
@@ -51,6 +54,8 @@ export class InworldRealtimeService {
       audioDone: false,
       responseDone: false
     }
+    this.transmissionComplete = false
+    this.remoteSilenceFrameTarget = this.SILENCE_THRESHOLD_NORMAL
     this._emit('assistant-response-start')
   }
 
@@ -62,6 +67,9 @@ export class InworldRealtimeService {
   _markAssistantResponseAudioDone() {
     if (!this._assistantResponseState.active) return
     this._assistantResponseState.audioDone = true
+    this.transmissionComplete = true
+    this.remoteSilenceFrameTarget = this.SILENCE_THRESHOLD_POST_TX
+    console.log('[Inworld] Transmission complete - switching to stricter silence detection (', this.SILENCE_THRESHOLD_POST_TX, 'frames)')
     this._maybeCompleteAssistantResponse()
   }
 
