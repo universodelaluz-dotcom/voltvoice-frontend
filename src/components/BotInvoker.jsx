@@ -283,11 +283,14 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   const beginAssistantResponseWindow = () => {
+    console.log('[Bot] beginAssistantResponseWindow: CALLED - resetting state for new response')
     assistantResponseActiveRef.current = true
     assistantResponseHadAudioRef.current = false
     heardSpeechThisTurnRef.current = false
     lastRmsRef.current = 0
     assistantAudioTransmissionCompleteRef.current = false
+    responsePlaybackStartedRef.current = false // Reset for new response - on persistent connection, track doesn't unmute again
+    console.log('[Bot] beginAssistantResponseWindow: responsePlaybackStartedRef reset to false')
     // Clear any pending inactivity timer from previous response
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current)
@@ -1491,6 +1494,8 @@ Extras obligatorios:
       assistantResponseHadAudioRef.current = true
       heardSpeechThisTurnRef.current = true
       botIsAudiblySpeakingRef.current = true
+      // On persistent connection, audio track might not unmute again - set flag when we receive audio data
+      responsePlaybackStartedRef.current = true
       suppressChatAudio()
     }
 
@@ -1514,7 +1519,12 @@ Extras obligatorios:
     }
 
     const handleAudioTrackUnmuted = () => {
+      console.log('[Bot] handleAudioTrackUnmuted: FIRED', {
+        assistantResponseActive: assistantResponseActiveRef.current,
+        responsePlaybackStartedBefore: responsePlaybackStartedRef.current
+      })
       if (!assistantResponseActiveRef.current) {
+        console.log('[Bot] handleAudioTrackUnmuted: Response not active, returning')
         return
       }
       console.log('[Bot] handleAudioTrackUnmuted: Setting responsePlaybackStartedRef=true')
