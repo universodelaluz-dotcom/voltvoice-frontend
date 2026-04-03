@@ -37,8 +37,8 @@ export class InworldRealtimeService {
     this.remoteStopThreshold = 0.008
     this.remoteSilenceFrameTarget = 3
     this.transmissionComplete = false // Signal-based: switch silence threshold when transmission done
-    this.SILENCE_THRESHOLD_NORMAL = 6 // During active transmission: 6 frames (~60ms) - allows natural voice pauses without choppy cuts
-    this.SILENCE_THRESHOLD_POST_TX = 10 // After transmission complete: 10 frames (~100ms) - stricter silence detection after audio done
+    this.SILENCE_THRESHOLD_NORMAL = 15 // During active transmission: 15 frames (~150ms) - allows natural voice pauses without choppy cuts or solapamiento
+    this.SILENCE_THRESHOLD_POST_TX = 20 // After transmission complete: 20 frames (~200ms) - prevents early silence detection during speech pauses
     this._assistantResponseState = {
       active: false,
       hasAudio: false,
