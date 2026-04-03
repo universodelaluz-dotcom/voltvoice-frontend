@@ -925,6 +925,18 @@ export class InworldRealtimeService {
    * Send text message to Inworld (with retry logic)
    */
   async sendMessage(text) {
+    // CRITICAL FIX: Wait for previous response to complete before sending next message
+    // This prevents Inworld from reusing/duplicating responses when messages arrive too quickly
+    const startTime = Date.now()
+    const maxWaitMs = 5000 // Max 5 seconds wait
+    while (this._assistantResponseState.active && (Date.now() - startTime) < maxWaitMs) {
+      console.log('[Inworld] sendMessage: Previous response still active, waiting...')
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+    if (this._assistantResponseState.active) {
+      console.warn('[Inworld] sendMessage: Previous response still active after', maxWaitMs, 'ms - forcing send anyway')
+    }
+
     const maxRetries = 3
     let lastError
 
