@@ -279,7 +279,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const lastRmsRef = useRef(0)
   const assistantAudioTransmissionCompleteRef = useRef(false)
   const inactivityTimerRef = useRef(null)
-  const INACTIVITY_TIMEOUT_MS = 2000 // 2 seconds of silence = unlock chat
+  const INACTIVITY_TIMEOUT_MS = 4500 // 4.5 seconds of silence = unlock chat (prevents solapamiento on long responses with pauses)
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   const beginAssistantResponseWindow = () => {
