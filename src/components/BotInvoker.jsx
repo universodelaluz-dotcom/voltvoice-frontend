@@ -2198,12 +2198,16 @@ After using a tool, summarize the result conversationally.`
 
     // If time threshold enabled but not met, block response
     if (minTime > 0 && timeSinceLast < minTime) {
-      console.log(`[Autopilot] Time threshold NOT MET: ${Math.floor(timeSinceLast/1000)}s/${Math.floor(minTime/1000)}s required - BLOCK`)
+      const now = Date.now()
+      const resetTime = lastBotResponseTimestampRef.current
+      console.log(`[Autopilot] Time threshold NOT MET: ${Math.floor(timeSinceLast/1000)}s/${Math.floor(minTime/1000)}s required - BLOCK (now=${now}, lastReset=${resetTime}, diff=${now-resetTime}ms)`)
       return false
     }
 
     // All enabled thresholds are met
-    console.log(`[Autopilot] THRESHOLDS MET: msgs=${msgsSinceLast}/${minMsgs}, time=${Math.floor(timeSinceLast/1000)}s/${Math.floor(minTime/1000)}s - ALLOW`)
+    const now = Date.now()
+    const resetTime = lastBotResponseTimestampRef.current
+    console.log(`[Autopilot] THRESHOLDS MET: msgs=${msgsSinceLast}/${minMsgs}, time=${Math.floor(timeSinceLast/1000)}s/${Math.floor(minTime/1000)}s - ALLOW (now=${now}, lastReset=${resetTime})`)
     return true
   }
 
