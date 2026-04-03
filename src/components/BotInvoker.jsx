@@ -1598,9 +1598,11 @@ Extras obligatorios:
         assistantAudioTransmissionCompleteRef.current = true
         endAssistantResponseWindow()
         tryRestoreChatAudio()
+      } else {
+        // Playback started - mark transmission complete and wait for RMS + transmission check
+        assistantAudioTransmissionCompleteRef.current = true
+        console.log('[Bot] Response complete but playback ongoing, waiting for RMS silent + transmission complete')
       }
-      // If playback already started, wait for audio transmission complete + RMS silence
-      // handleAudioEnergySilent will handle restoration once both conditions are met
     }
 
     const handleAudioStarted = () => {
