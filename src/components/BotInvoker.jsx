@@ -1488,9 +1488,11 @@ Extras obligatorios:
       console.log('[Bot] handleResponseCreated: Previous response was:', response?.substring?.(0, 50) || 'null')
       skipCurrentResponseRef.current = false
       hasChargedCurrentResponseRef.current = false
+      hasActiveResponseRef.current = false  // CRITICAL: Reset flag so response-complete doesn't preserve old text
       latestResponseTextRef.current = ''
       console.log('[Bot] handleResponseCreated: About to call setResponse(null)')
       setResponse(null)  // CRITICAL: Clear previous response before new one arrives to prevent repetition
+      setHasActiveResponse(false)  // Also clear React state to ensure clean slate
       beginAssistantResponseWindow()
       responseCompletedRef.current = false
       botIsAudiblySpeakingRef.current = false
@@ -1661,13 +1663,13 @@ Extras obligatorios:
       }
 
       if (!hasActiveResponseRef.current) {
-        console.log('[Bot] handleResponseComplete: !hasActiveResponseRef, preserving/setting response')
-        setResponse((current) => {
-          console.log('[Bot] handleResponseComplete: setResponse callback - current is:', current ? `"${current.substring(0, 40)}..."` : 'null')
-          const result = current || 'La IA no devolvio contenido. Intenta de nuevo.'
-          console.log('[Bot] handleResponseComplete: setResponse callback - returning:', result ? `"${result.substring(0, 40)}..."` : 'null')
-          return result
-        })
+        console.log('[Bot] handleResponseComplete: !hasActiveResponseRef - no content received')
+        console.log('[Bot] handleResponseComplete: Current response text:', response?.substring?.(0, 40) || 'null')
+        // Only set error message if there's no response text at all
+        // Don't preserve response from previous message
+        if (!response) {
+          setResponse('La IA no devolvio contenido. Intenta de nuevo.')
+        }
       }
       setIsLoading(false)
       setIsRecording(false)
@@ -1713,11 +1715,23 @@ Extras obligatorios:
       setIsLoading(false)
       clearResponseTimeout()
       console.log('[Bot] handleAudioStarted: Current response state:', response?.substring?.(0, 30) || 'null')
+      console.log('[Bot] handleAudioStarted: latestResponseTextRef:', latestResponseTextRef.current?.substring?.(0, 30) || 'null')
       setResponse((current) => {
         console.log('[Bot] handleAudioStarted: setResponse callback - current:', current?.substring?.(0, 30) || 'null')
-        const result = current === 'La IA tardó demasiado en responder. Intenta de nuevo.' ? null : current
-        console.log('[Bot] handleAudioStarted: setResponse callback - returning:', result?.substring?.(0, 30) || 'null')
-        return result
+        // Clear timeout message, but preserve valid response text
+        // Only preserve if it matches the latest response we received
+        if (current === 'La IA tardó demasiado en responder. Intenta de nuevo.') {
+          console.log('[Bot] handleAudioStarted: Clearing timeout message')
+          return null
+        }
+        // If current response matches latest, keep it (valid response)
+        // If they don't match, audio started for a NEW response, so clear old text
+        if (current && latestResponseTextRef.current && current !== latestResponseTextRef.current) {
+          console.log('[Bot] handleAudioStarted: Response changed, clearing old text')
+          return null
+        }
+        console.log('[Bot] handleAudioStarted: Preserving response')
+        return current
       })
     }
 
