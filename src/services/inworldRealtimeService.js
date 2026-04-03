@@ -45,6 +45,13 @@ export class InworldRealtimeService {
       audioDone: false,
       responseDone: false
     }
+
+    // Web Audio API streaming (fixes choppy audio by avoiding gaps between chunks)
+    this.audioBufferList = []  // List of decoded audio buffers
+    this.sourceNodes = []      // Track active source nodes for cleanup
+    this.gainNode = null       // Master gain control
+    this.streamStartTime = null
+    this.streamTotalDuration = 0
   }
 
   _clearAudioQueue() {
@@ -53,6 +60,18 @@ export class InworldRealtimeService {
       this.audioQueue = []
       this.isPlayingAudio = false
     }
+    // Also clear Web Audio API buffers and source nodes
+    this.audioBufferList = []
+    this.sourceNodes.forEach(node => {
+      try {
+        node.stop()
+      } catch (e) {
+        // Node may already be stopped
+      }
+    })
+    this.sourceNodes = []
+    this.streamStartTime = null
+    this.streamTotalDuration = 0
   }
 
   _beginAssistantResponse() {
@@ -67,6 +86,11 @@ export class InworldRealtimeService {
     }
     this.transmissionComplete = false
     this.remoteSilenceFrameTarget = this.SILENCE_THRESHOLD_NORMAL
+
+    // Initialize new audio stream timing for continuous playback
+    this.streamStartTime = null
+    this.streamTotalDuration = 0
+
     this._emit('assistant-response-start')
   }
 
@@ -853,71 +877,99 @@ export class InworldRealtimeService {
   }
 
   /**
-   * Process and play audio queue
+   * Process and play audio queue using Web Audio API for continuous streaming without gaps
+   * This fixes choppy/entrecortado audio by avoiding individual HTML Audio element delays
    */
-  _processAudioQueue() {
-    if (this.isPlayingAudio || this.audioQueue.length === 0) return
+  async _processAudioQueue() {
+    if (this.audioQueue.length === 0) {
+      // All queued chunks have been processed
+      this._maybeEmitAudioComplete()
+      return
+    }
 
-    this.isPlayingAudio = true
-    const audioData = this.audioQueue.shift()
+    const audioDataB64 = this.audioQueue.shift()
 
     try {
-      // Decode base64 audio
-      const binaryString = atob(audioData)
+      // Decode base64 to bytes
+      const binaryString = atob(audioDataB64)
       const bytes = new Uint8Array(binaryString.length)
       for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i)
       }
 
-      // Create audio element and play
-      const audioBlob = new Blob([bytes], { type: 'audio/wav' })
-      const audioUrl = URL.createObjectURL(audioBlob)
-      const audioElement = new Audio(audioUrl)
+      // Convert raw bytes to AudioBuffer using Web Audio API
+      // Inworld sends 16-bit PCM at 24kHz (mono)
+      const pcmData = new Int16Array(bytes.buffer)
+      const audioBuffer = this.audioContext.createBuffer(
+        1,  // 1 channel (mono)
+        pcmData.length,
+        24000  // Inworld uses 24kHz sample rate
+      )
 
-      audioElement.onended = () => {
-        URL.revokeObjectURL(audioUrl)
-        this.isPlayingAudio = false
-        if (this.audioQueue.length > 0) {
-          this._processAudioQueue()
-        } else {
-          this._maybeEmitAudioComplete()
-        }
+      const channelData = audioBuffer.getChannelData(0)
+      for (let i = 0; i < pcmData.length; i++) {
+        channelData[i] = pcmData[i] / 32768  // Convert 16-bit int to float
       }
 
-      audioElement.onerror = (err) => {
-        console.error('[Inworld] Audio playback error:', err)
-        this.isPlayingAudio = false
-        if (this.audioQueue.length > 0) {
-          this._processAudioQueue()
-        } else {
-          this._maybeEmitAudioComplete()
-        }
+      // Create source node and play buffer
+      const source = this.audioContext.createBufferSource()
+      source.buffer = audioBuffer
+
+      // Initialize gain node on first audio chunk
+      if (!this.gainNode) {
+        this.gainNode = this.audioContext.createGain()
+        this.gainNode.connect(this.audioContext.destination)
+      }
+      source.connect(this.gainNode)
+
+      // Track this source for cleanup
+      this.sourceNodes.push(source)
+
+      // Schedule playback: queue chunk to play immediately after previous chunk ends
+      const playTime = this.streamStartTime ?
+        this.streamStartTime + this.streamTotalDuration :
+        this.audioContext.currentTime
+
+      source.start(playTime)
+      this.streamStartTime = this.streamStartTime || playTime
+      this.streamTotalDuration += audioBuffer.duration
+
+      console.log(`[Inworld Audio] Queued chunk (${(pcmData.length / 24000).toFixed(3)}s) @ ${playTime.toFixed(3)}s, total: ${this.streamTotalDuration.toFixed(3)}s`)
+
+      // Mark playback started
+      if (!this.isPlayingAudio) {
+        this.isPlayingAudio = true
       }
 
-      audioElement.play().catch(err => {
-        console.error('[Inworld] Error playing audio:', err)
-        this.isPlayingAudio = false
-        if (this.audioQueue.length > 0) {
-          this._processAudioQueue()
-        } else {
-          this._maybeEmitAudioComplete()
-        }
-      })
+      // Process next chunk without delay - Web Audio API handles timing
+      this._processAudioQueue()
+
     } catch (err) {
-      console.error('[Inworld] Error processing audio:', err)
-      this.isPlayingAudio = false
-      if (this.audioQueue.length > 0) {
-        this._processAudioQueue()
-      } else {
-        this._maybeEmitAudioComplete()
-      }
+      console.error('[Inworld] Error processing audio chunk:', err, 'data length:', audioDataB64?.length)
+      // Continue to next chunk even if one fails
+      this._processAudioQueue()
     }
   }
 
   _maybeEmitAudioComplete() {
-    if (this.pendingAudioComplete && !this.isPlayingAudio && this.audioQueue.length === 0) {
-      this.pendingAudioComplete = false
-      this._emit('audio-complete')
+    // With Web Audio API, emit when: all queued chunks processed AND completion signaled
+    if (this.pendingAudioComplete && this.audioQueue.length === 0) {
+      // Schedule emission after last buffer finishes playing
+      if (this.streamStartTime && this.streamTotalDuration > 0) {
+        const timeUntilComplete = (this.streamStartTime + this.streamTotalDuration) - this.audioContext.currentTime
+        const delayMs = Math.max(0, timeUntilComplete * 1000 + 100)  // Add 100ms buffer
+        setTimeout(() => {
+          console.log('[Inworld Audio] Audio stream complete (all buffers played)')
+          this.isPlayingAudio = false
+          this.pendingAudioComplete = false
+          this._emit('audio-complete')
+        }, delayMs)
+      } else {
+        // No audio was sent, emit immediately
+        this.isPlayingAudio = false
+        this.pendingAudioComplete = false
+        this._emit('audio-complete')
+      }
     }
   }
 
