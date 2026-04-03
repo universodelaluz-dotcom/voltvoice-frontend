@@ -2436,51 +2436,9 @@ After using a tool, summarize the result conversationally.`
 
       <div className={`rounded p-3 border ${
         darkMode
-          ? 'bg-[#0f0f23] border-emerald-400/30'
-          : 'bg-emerald-50 border-emerald-200'
+          ? 'bg-[#0b1220]/50 border-cyan-400/20'
+          : 'bg-cyan-50/30 border-cyan-200/50'
       }`}>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className={`text-xs font-bold ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>
-              Modo Interactuador
-            </p>
-            <p className={`text-[11px] ${darkMode ? 'text-emerald-200/80' : 'text-emerald-700/80'}`}>
-              Revisa hasta 50 mensajes y comenta solo.
-            </p>
-          </div>
-          <button
-            onClick={() => updateConfig && updateConfig('botAutoInteractEnabled', !(config?.botAutoInteractEnabled))}
-            className={`px-3 py-1 rounded text-xs font-bold transition-all ${
-              config?.botAutoInteractEnabled
-                ? 'bg-emerald-500 text-white'
-                : darkMode ? 'bg-[#1f2937] text-gray-300' : 'bg-white text-gray-700 border border-gray-300'
-            }`}
-          >
-            {config?.botAutoInteractEnabled ? 'ACTIVO' : 'APAGADO'}
-          </button>
-        </div>
-
-        <div className="mt-2">
-          <label className={`block text-[11px] font-semibold mb-1 ${darkMode ? 'text-emerald-200' : 'text-emerald-800'}`}>
-            Intervalo
-          </label>
-          <select
-            value={Number(config?.botAutoInteractIntervalSec || 120)}
-            onChange={(e) => updateConfig && updateConfig('botAutoInteractIntervalSec', Number(e.target.value))}
-            className={`w-full p-2 rounded text-xs ${
-              darkMode
-                ? 'bg-[#0b1220] border border-emerald-400/30 text-white'
-                : 'bg-white border border-emerald-300 text-gray-900'
-            }`}
-          >
-            <option value={30}>Cada 30 segundos</option>
-            <option value={60}>Cada 1 minuto</option>
-            <option value={120}>Cada 2 minutos</option>
-            <option value={180}>Cada 3 minutos</option>
-            <option value={300}>Cada 5 minutos</option>
-          </select>
-        </div>
-
         {/* Thresholds Row */}
         <div className={`mt-3 p-2 rounded border ${darkMode ? 'bg-[#0b1220]/50 border-cyan-400/20' : 'bg-cyan-50/30 border-cyan-200/50'}`}>
           <label className={`block text-[10px] font-bold mb-2 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
