@@ -278,6 +278,8 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const heardSpeechThisTurnRef = useRef(false)
   const lastRmsRef = useRef(0)
   const assistantAudioTransmissionCompleteRef = useRef(false)
+  const inactivityTimerRef = useRef(null)
+  const INACTIVITY_TIMEOUT_MS = 2000 // 2 seconds of silence = unlock chat
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   const beginAssistantResponseWindow = () => {
@@ -286,6 +288,11 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     heardSpeechThisTurnRef.current = false
     lastRmsRef.current = 0
     assistantAudioTransmissionCompleteRef.current = false
+    // Clear any pending inactivity timer from previous response
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current)
+      inactivityTimerRef.current = null
+    }
   }
 
   const endAssistantResponseWindow = () => {
@@ -1535,6 +1542,13 @@ Extras obligatorios:
       heardSpeechThisTurnRef.current = true
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = true
+
+      // Reset inactivity timer - bot is speaking again
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current)
+        inactivityTimerRef.current = null
+      }
+
       suppressChatAudio()
     }
 
@@ -1545,33 +1559,23 @@ Extras obligatorios:
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = false
 
-      // ONLY restore when we're ABSOLUTELY sure audio is done:
-      // 1. Response generation is complete
-      // 2. Audio transmission is complete
-      // 3. RMS shows SUSTAINED silence - inworldRealtimeService auto-increases silence threshold after transmission
-      //    Before TX: 3 frames (allows inter-syllable gaps)
-      //    After TX: 8 frames (rejects inter-syllable gaps, requires true sustained silence)
-      const txComplete = assistantAudioTransmissionCompleteRef.current
-      const respComplete = responseCompletedRef.current
+      console.log('[Bot] handleAudioEnergySilent: Bot went silent, starting inactivity timer')
 
-      console.log('[Bot] handleAudioEnergySilent: txComplete=', txComplete, 'respComplete=', respComplete)
+      // Start inactivity timer: if bot doesn't speak for INACTIVITY_TIMEOUT_MS, unlock chat
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current)
+      }
 
-      if (txComplete && respComplete) {
-        console.log('[Bot] handleAudioEnergySilent: ALL CONDITIONS MET (RMS-based sustained silence) - restoring chat audio')
-        console.trace('[Bot] handleAudioEnergySilent restoration stack')
+      inactivityTimerRef.current = setTimeout(() => {
+        console.log('[Bot] Inactivity timeout expired - unlocking chat after', INACTIVITY_TIMEOUT_MS, 'ms of silence')
         responsePlaybackStartedRef.current = false
         setIsPlayingResponse(false)
         clearResponseTimeout()
         endAssistantResponseWindow()
-        // Directly restore - bypass tryRestoreChatAudio() to avoid dynamic checks
         unlockChatSuppression()
         dispatchChatPlaybackControl('resume')
-      } else {
-        const reason = !txComplete ? 'transmission not complete' :
-                       !respComplete ? 'response not complete' :
-                       'unknown'
-        console.log('[Bot] handleAudioEnergySilent: CONDITIONS NOT MET -', reason)
-      }
+        inactivityTimerRef.current = null
+      }, INACTIVITY_TIMEOUT_MS)
     }
 
     const handleInputTranscriptDelta = (data) => {
