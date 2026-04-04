@@ -1451,16 +1451,7 @@ Extras obligatorios:
     }
   }, [config?.botShortcutEnabled, config?.botShortcutKey])
 
-  // Track voice changes and close Inworld session if needed
-  useEffect(() => {
-    const previousVoiceRef = useRef(null)
-
-    return () => {
-      previousVoiceRef.current = selectedRealtimeVoiceId
-    }
-  }, [selectedRealtimeVoiceId])
-
-  // Separate effect: close Inworld session ONLY when voice actually changes
+  // Effect: close Inworld session when voice changes
   useEffect(() => {
     selectedRealtimeVoiceIdRef.current = selectedRealtimeVoiceId
     console.log(`[Voice] selectedRealtimeVoiceId updated: ${selectedRealtimeVoiceId}`)
