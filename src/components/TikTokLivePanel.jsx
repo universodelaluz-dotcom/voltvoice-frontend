@@ -2017,11 +2017,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                       Mensaje en curso
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="relative flex h-2.5 w-2.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400" />
-                      </span>
-                      <Volume2 className="w-4 h-4 text-cyan-400 animate-pulse" />
+                      <span className="inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400" />
+                      <Volume2 className="w-4 h-4 text-cyan-400" />
                     </span>
                   </div>
                     <p className="font-semibold leading-tight shrink-0" style={{ color: chatNickColor, fontSize: `${chatFontSize}px` }}>
@@ -2050,7 +2047,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               <div className="flex-1">
                 <div
                   ref={chatContainerRef}
-                  style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain', scrollBehavior: 'smooth' }}
+                  style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain' }}
                   className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-96 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-96 overflow-y-auto space-y-2"}
                 >
                   {messages.length === 0 ? (
@@ -2097,7 +2094,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 <div
                   key={msg.id || `${msg.user}-${idx}-${msg.text}`}
                   style={{ fontSize: `${chatFontSize}px`, ...(hlColor ? { backgroundColor: `${hlColor}40`, borderLeftColor: hlColor, borderLeftWidth: '4px' } : {}) }}
-                  className={`pl-3 py-2 rounded-r transition-all duration-300 relative ${
+                  className={`pl-3 py-2 rounded-r relative ${
                     msg.status === 'playing'
                       ? darkMode
                         ? 'border-l-2 border-cyan-400 bg-cyan-500/10'
@@ -2200,11 +2197,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                     )}
                     {msg.status === 'playing' && (
                       <span className="flex items-center gap-1">
-                        <span className="relative flex h-2.5 w-2.5">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400" />
-                        </span>
-                        <Volume2 className="w-4 h-4 text-cyan-400 animate-pulse" />
+                        <span className="inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400" />
+                        <Volume2 className="w-4 h-4 text-cyan-400" />
                       </span>
                     )}
                   </div>
