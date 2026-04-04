@@ -917,10 +917,10 @@ export class InworldRealtimeService {
 
     this.isPlayingAudio = true
 
-    // Process ONE chunk at a time to avoid voice mixing/overlap issues
-    // Multiple accumulated chunks with stagger cause overlapping audio artifacts
+    // Process 2-3 chunks together to avoid gaps between chunks
+    // Gaps cause RMS detector to fire "silence" events mid-response, creating distortion
     const chunksToProcess = []
-    const maxAccumulation = 1  // Process only 1 chunk per cycle
+    const maxAccumulation = 2  // Process 2 chunks per cycle to minimize gaps
 
     while (chunksToProcess.length < maxAccumulation && this.audioQueue.length > 0) {
       chunksToProcess.push(this.audioQueue.shift())
@@ -1009,11 +1009,11 @@ export class InworldRealtimeService {
         console.log(`[Inworld] ▶ Chunk @ ${playbackTime.toFixed(3)}s, duration: ${bufferDuration.toFixed(3)}s`)
       })
 
-      // Calculate delay based on buffer duration (one chunk at a time)
-      const maxDuration = Math.max(...buffers.map(b => b.duration))
-      const delayMs = Math.ceil(maxDuration * 1000) + 50
+      // Calculate delay based on TOTAL duration of all buffers to minimize gaps
+      const totalDuration = buffers.reduce((sum, b) => sum + b.duration, 0)
+      const delayMs = Math.ceil(totalDuration * 1000) + 20  // Small buffer for RMS tolerance
 
-      console.log(`[Inworld] Buffer queued, next check in ${delayMs}ms`)
+      console.log(`[Inworld] ${buffers.length} buffer(s) total duration ${totalDuration.toFixed(3)}s, next check in ${delayMs}ms`)
 
       setTimeout(() => {
         this.isPlayingAudio = false
