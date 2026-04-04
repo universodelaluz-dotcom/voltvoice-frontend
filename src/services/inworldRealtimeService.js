@@ -917,10 +917,9 @@ export class InworldRealtimeService {
 
     this.isPlayingAudio = true
 
-    // Process ALL chunks together in one shot - NO gaps, NO distortion
-    // Gaps between chunks cause RMS false positives that destroy audio quality
+    // Accumulate multiple chunks before decoding (reduces gaps and codec overhead)
     const chunksToProcess = []
-    const maxAccumulation = 999  // Process ALL chunks at once
+    const maxAccumulation = 3  // Process up to 3 chunks together
 
     while (chunksToProcess.length < maxAccumulation && this.audioQueue.length > 0) {
       chunksToProcess.push(this.audioQueue.shift())
@@ -983,9 +982,10 @@ export class InworldRealtimeService {
 
   _playDecodedBuffers(buffers) {
     try {
-      // CRITICAL: Process one chunk at a time to prevent voice mixing/overlap
-      // Sequential playback of single chunks = clean audio without artifacts
-      const baseTime = this.audioContext.currentTime
+      // CRITICAL: Play buffers sequentially, not simultaneously
+      // Each buffer must start AFTER the previous one ends to prevent overlap/distortion
+      let currentPlaybackTime = this.audioContext.currentTime
+      let totalDuration = 0
 
       console.log(`[Inworld] Starting playback of ${buffers.length} decoded buffer(s)`)
 
@@ -1000,20 +1000,21 @@ export class InworldRealtimeService {
         source.connect(this.gainNode)
         this.sourceNodes.push(source)
 
-        // Since we process one chunk at a time (maxAccumulation=1),
-        // all buffers in this array should be played sequentially
-        const playbackTime = baseTime + (idx * 0)  // No stagger - play immediately
-        source.start(playbackTime)
+        // Play this buffer AFTER the previous one ends (sequential playback)
+        source.start(currentPlaybackTime)
 
         const bufferDuration = audioBuffer.duration
-        console.log(`[Inworld] ▶ Chunk @ ${playbackTime.toFixed(3)}s, duration: ${bufferDuration.toFixed(3)}s`)
+        totalDuration += bufferDuration
+
+        console.log(`[Inworld] ▶ Buffer ${idx + 1}/${buffers.length}: ${bufferDuration.toFixed(3)}s @ ${currentPlaybackTime.toFixed(3)}s (ends at ${(currentPlaybackTime + bufferDuration).toFixed(3)}s)`)
+
+        // Next buffer starts after this one finishes
+        currentPlaybackTime += bufferDuration
       })
 
-      // Calculate delay based on TOTAL duration of all buffers to minimize gaps
-      const totalDuration = buffers.reduce((sum, b) => sum + b.duration, 0)
-      const delayMs = Math.ceil(totalDuration * 1000) + 20  // Small buffer for RMS tolerance
-
-      console.log(`[Inworld] ${buffers.length} buffer(s) total duration ${totalDuration.toFixed(3)}s, next check in ${delayMs}ms`)
+      // Schedule next processing after ALL buffers have finished playing
+      const delayMs = Math.ceil(totalDuration * 1000) + 50
+      console.log(`[Inworld] Total playback duration: ${totalDuration.toFixed(3)}s, next check in ${delayMs}ms`)
 
       setTimeout(() => {
         this.isPlayingAudio = false
@@ -1538,7 +1539,6 @@ export class InworldRealtimeService {
     // Emit event for UI
     this._emit('tool-executed', { name, args, result })
   }
-
 
   /**
    * Close WebRTC session
