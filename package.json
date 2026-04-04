@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Chat Reader para TikTok Live / YouTube - Vercel + Render",
   "scripts": {
-    "build": "cd frontend && npm install && npm run build",
+    "build": "cd frontend && npm install && npm run build && cd .. && cp -r frontend/dist .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["tiktok", "youtube", "chat", "reader", "voice"],
