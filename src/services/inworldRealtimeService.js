@@ -215,6 +215,12 @@ export class InworldRealtimeService {
     return audioElement
   }
 
+  _hasLiveRemoteAudioTrack() {
+    if (!this.remoteAudioStream) return false
+    const tracks = this.remoteAudioStream.getAudioTracks()
+    return tracks.some((track) => track && track.readyState === 'live')
+  }
+
   _sendResponseCreate(overrides = {}) {
     if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
       throw new Error('Data channel not ready for response request')
@@ -733,6 +739,16 @@ export class InworldRealtimeService {
         if (event.delta) {
           this._markAssistantResponseHasAudio()
           this._emit('response-audio-activity', event)
+
+          // CRITICAL: Avoid dual playback paths (RTP track + decoded delta chunks).
+          // If WebRTC already has a live remote track, let that be the only source.
+          if (this._hasLiveRemoteAudioTrack()) {
+            if (this.audioQueue.length > 0) {
+              this._clearAudioQueue()
+            }
+            break
+          }
+
           this.audioQueue.push(event.delta)
           this._processAudioQueue()
         }
