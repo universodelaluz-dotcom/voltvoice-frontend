@@ -917,10 +917,10 @@ export class InworldRealtimeService {
 
     this.isPlayingAudio = true
 
-    // Process 2-3 chunks together to avoid gaps between chunks
-    // Gaps cause RMS detector to fire "silence" events mid-response, creating distortion
+    // Process ALL chunks together in one shot - NO gaps, NO distortion
+    // Gaps between chunks cause RMS false positives that destroy audio quality
     const chunksToProcess = []
-    const maxAccumulation = 2  // Process 2 chunks per cycle to minimize gaps
+    const maxAccumulation = 999  // Process ALL chunks at once
 
     while (chunksToProcess.length < maxAccumulation && this.audioQueue.length > 0) {
       chunksToProcess.push(this.audioQueue.shift())
