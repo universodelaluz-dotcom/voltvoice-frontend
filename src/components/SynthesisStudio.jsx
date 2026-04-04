@@ -315,22 +315,28 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               <div className={`w-2 h-2 rounded-full ${isStreamActive ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></div>
               <span className="text-xs font-semibold">{isStreamActive ? 'EN VIVO' : 'INACTIVO'}</span>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30 rounded-lg">
-              <Zap className="w-4 h-4 text-cyan-300" />
-              <span className="text-sm font-bold text-cyan-300">{tokens} tokens</span>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+              darkMode
+                ? 'bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30'
+                : 'bg-slate-700 border border-slate-600 shadow-sm'
+            }`}>
+              <Zap className={`w-4 h-4 ${darkMode ? 'text-cyan-300' : 'text-slate-200'}`} />
+              <span className={`text-sm font-bold ${darkMode ? 'text-cyan-300' : 'text-slate-100'}`}>{tokens} tokens</span>
             </div>
             <button
               onClick={toggleTheme}
-              className={darkMode ? "p-2 rounded-lg bg-gray-800 border border-cyan-500/30 hover:bg-gray-700 transition-colors" : "p-2 rounded-lg bg-white border border-indigo-200 hover:bg-indigo-50 transition-colors shadow-sm"}
+              className={darkMode ? "p-2 rounded-lg bg-gray-800 border border-cyan-500/30 hover:bg-gray-700 transition-colors" : "p-2 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 transition-colors shadow-sm"}
               title={darkMode ? 'Modo claro' : 'Modo oscuro'}
             >
-              {darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-indigo-600" />}
+              {darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
             </button>
             {user?.role === 'admin' && onGoAdmin && (
               <button
                 onClick={onGoAdmin}
                 title="Panel Admin"
-                className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/30 transition-all"
+                className={darkMode
+                  ? "p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/30 transition-all"
+                  : "p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 border border-red-300 transition-all shadow-sm"}
               >
                 <Shield className="w-5 h-5" />
               </button>

@@ -4,7 +4,7 @@ import { ArrowLeft, Check, HelpCircle, Keyboard, ChevronRight } from 'lucide-rea
 function Hint({ text, darkMode }) {
   return (
     <span className="relative group ml-1 inline-flex">
-      <HelpCircle className={`w-3.5 h-3.5 cursor-help ${darkMode ? 'text-gray-500 hover:text-cyan-400' : 'text-gray-400 hover:text-cyan-600'} transition-colors`} />
+      <HelpCircle className={`w-3.5 h-3.5 cursor-help ${darkMode ? 'text-gray-500 hover:text-cyan-400' : 'text-slate-500 hover:text-slate-700'} transition-colors`} />
       <span className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 ${
         darkMode ? 'bg-gray-800 text-gray-200 border border-cyan-500/30' : 'bg-gray-900 text-white'
       } shadow-lg`}>{text}</span>
@@ -20,16 +20,18 @@ function CheckOption({ label, checked, onChange, darkMode, hint }) {
           ? 'bg-cyan-500/10 border-cyan-400/40'
           : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
         : checked
-          ? 'bg-cyan-50 border-cyan-300 shadow-sm'
-          : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm'
+          ? 'bg-slate-100 border-slate-400 shadow-sm'
+          : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
     }`}>
       <button onClick={onChange} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
         <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-          checked ? 'bg-cyan-500 border-cyan-400' : darkMode ? 'border-gray-400' : 'border-gray-400'
+          checked
+            ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800')
+            : (darkMode ? 'border-gray-400' : 'border-slate-500 bg-white')
         }`}>
-          {checked && <Check className="w-4 h-4 text-white" />}
+          {checked && <Check className={`w-4 h-4 ${darkMode ? 'text-white' : 'text-white'}`} />}
         </div>
-        <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${checked ? 'font-semibold' : 'font-medium'}`}>
+        <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${checked ? 'font-semibold' : 'font-medium'}`}>
           {label}
           {hint && <Hint text={hint} darkMode={darkMode} />}
         </span>
@@ -46,16 +48,18 @@ function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeh
           ? 'bg-cyan-500/10 border-cyan-400/40'
           : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
         : checked
-          ? 'bg-cyan-50 border-cyan-300 shadow-sm'
-          : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm'
+          ? 'bg-slate-100 border-slate-400 shadow-sm'
+          : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
     }`}>
       <button onClick={onToggle} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
         <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-          checked ? 'bg-cyan-500 border-cyan-400' : darkMode ? 'border-gray-400' : 'border-gray-400'
+          checked
+            ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800')
+            : (darkMode ? 'border-gray-400' : 'border-slate-500 bg-white')
         }`}>
-          {checked && <Check className="w-4 h-4 text-white" />}
+          {checked && <Check className={`w-4 h-4 ${darkMode ? 'text-white' : 'text-white'}`} />}
         </div>
-        <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${checked ? 'font-semibold' : 'font-medium'}`}>
+        <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${checked ? 'font-semibold' : 'font-medium'}`}>
           {label}
           {hint && <Hint text={hint} darkMode={darkMode} />}
         </span>

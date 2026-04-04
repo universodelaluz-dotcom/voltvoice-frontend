@@ -2280,10 +2280,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 onClick={handlePause}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide border transition-all shadow-sm ${
                   isPaused
-                    ? 'border-yellow-300 bg-yellow-300 text-gray-900 hover:bg-yellow-200 hover:border-yellow-200'
+                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 hover:border-slate-600'
                     : darkMode
                       ? 'border-white/10 bg-slate-800 text-slate-100 hover:bg-slate-700'
-                      : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100'
                 }`}
                 title={isPaused ? 'Reanudar lectura' : 'Pausar lectura'}
               >
@@ -2297,7 +2297,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide border shadow-sm transition-all ${
                   darkMode
                     ? 'border-cyan-400/30 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25'
-                    : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100'
                 }`}
                 title="Saltar cola y continuar desde el próximo mensaje"
               >
@@ -2310,7 +2310,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                     ? 'border-slate-700 bg-gradient-to-r from-slate-700 to-slate-900 text-white hover:from-slate-600 hover:to-slate-800 shadow-[0_10px_24px_rgba(15,23,42,0.25)]'
                     : darkMode
                       ? 'border-fuchsia-400/25 bg-fuchsia-500/12 text-fuchsia-100 hover:bg-fuchsia-500/18'
-                      : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100'
                 }`}
                 title="Activa el filtro inteligente para eliminar spam y basura"
               >
@@ -2338,10 +2338,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 onClick={() => setShowHighlightPanel(!showHighlightPanel)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide border shadow-sm transition-all ${
                   showHighlightPanel || highlightMode
-                    ? 'border-amber-300 bg-amber-300 text-gray-900 hover:bg-amber-200'
+                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600'
                     : darkMode
                       ? 'border-amber-400/25 bg-amber-500/12 text-amber-100 hover:bg-amber-500/18'
-                      : 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100'
                 }`}
                 title="Remarcar usuarios con color"
               >
@@ -2355,7 +2355,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                     ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600'
                     : darkMode
                       ? 'border-white/10 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                      : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100'
                 }`}
                 title="Tamaño y colores del chat"
               >
