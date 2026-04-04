@@ -2307,7 +2307,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 onClick={() => setSmartChatEnabled((prev) => !prev)}
                 className={`group flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide border shadow-sm transition-all ${
                   smartChatEnabled
-                    ? 'border-fuchsia-300 bg-gradient-to-r from-fuchsia-400 to-violet-400 text-slate-950 hover:from-fuchsia-300 hover:to-violet-300 shadow-[0_10px_24px_rgba(217,70,239,0.28)]'
+                    ? 'border-fuchsia-300 bg-gradient-to-r from-fuchsia-400 to-violet-400 text-white hover:from-fuchsia-300 hover:to-violet-300 shadow-[0_10px_24px_rgba(217,70,239,0.28)]'
                     : darkMode
                       ? 'border-fuchsia-400/25 bg-fuchsia-500/12 text-fuchsia-100 hover:bg-fuchsia-500/18'
                       : 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700 hover:bg-fuchsia-100'
@@ -2362,40 +2362,59 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 <span style={{ fontSize: '13px' }}>Aa</span>
               </button>
             </div>
-            <div className={`flex items-center gap-2 rounded-xl px-3 py-2 ${
-              darkMode ? 'bg-black/20' : 'bg-slate-50'
+            <div className={`grid grid-cols-1 md:grid-cols-2 gap-2 rounded-xl px-3 py-2 ${
+              darkMode ? 'bg-black/20 border border-white/5' : 'bg-white/80 border border-slate-300'
             }`}>
-              <button
-                onClick={() => setVolume(v => v > 0 ? 0 : 0.8)}
-                className={`rounded-lg p-1.5 transition-all ${
-                  darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-200'
-                }`}
-              >
-                {volume === 0
-                  ? <VolumeX className="w-3.5 h-3.5 text-red-400" />
-                  : <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
-                }
-              </button>
-              <input
-                type="range" min="0" max="1" step="0.01" value={volume}
-                onChange={(e) => setVolume(parseFloat(e.target.value))}
-                className="w-20 h-1 rounded-full appearance-none cursor-pointer accent-cyan-400"
-                style={{
-                  background: `linear-gradient(to right, #22d3ee ${volume * 100}%, ${darkMode ? '#1e293b' : '#d1d5db'} ${volume * 100}%)`
-                }}
-              />
-              <div className={`mx-1 h-4 w-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`} />
-              <span className={`text-[10px] font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Vel {Number(config.audioSpeed || 1).toFixed(1)}x
-              </span>
-              <input
-                type="range" min="0.5" max="2" step="0.1" value={Number(config.audioSpeed || 1)}
-                onChange={(e) => updateConfig && updateConfig('audioSpeed', parseFloat(e.target.value))}
-                className="w-20 h-1 rounded-full appearance-none cursor-pointer accent-fuchsia-400"
-                style={{
-                  background: `linear-gradient(to right, #d946ef ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%, ${darkMode ? '#1e293b' : '#d1d5db'} ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%)`
-                }}
-              />
+              <div className={`rounded-lg px-3 py-2 ${darkMode ? 'bg-slate-900/60 border border-slate-700/70' : 'bg-slate-100 border border-slate-300'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-[10px] uppercase tracking-[0.18em] font-semibold ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Volumen
+                  </span>
+                  <button
+                    onClick={() => setVolume(v => v > 0 ? 0 : 0.8)}
+                    className={`rounded-md p-1.5 transition-all ${
+                      darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-200'
+                    }`}
+                    title={volume === 0 ? 'Activar audio' : 'Silenciar audio'}
+                  >
+                    {volume === 0
+                      ? <VolumeX className="w-3.5 h-3.5 text-red-400" />
+                      : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
+                    }
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range" min="0" max="1" step="0.01" value={volume}
+                    onChange={(e) => setVolume(parseFloat(e.target.value))}
+                    className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, #10b981 ${volume * 100}%, ${darkMode ? '#334155' : '#cbd5e1'} ${volume * 100}%)`
+                    }}
+                  />
+                  <span className={`text-xs font-bold min-w-[42px] text-right ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                    {Math.round(volume * 100)}%
+                  </span>
+                </div>
+              </div>
+              <div className={`rounded-lg px-3 py-2 ${darkMode ? 'bg-slate-900/60 border border-slate-700/70' : 'bg-slate-100 border border-slate-300'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-[10px] uppercase tracking-[0.18em] font-semibold ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Velocidad
+                  </span>
+                  <span className={`text-xs font-bold ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                    {Number(config.audioSpeed || 1).toFixed(1)}x
+                  </span>
+                </div>
+                <input
+                  type="range" min="0.5" max="2" step="0.1" value={Number(config.audioSpeed || 1)}
+                  onChange={(e) => updateConfig && updateConfig('audioSpeed', parseFloat(e.target.value))}
+                  className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, #2563eb ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%, ${darkMode ? '#334155' : '#cbd5e1'} ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%)`
+                  }}
+                />
+              </div>
             </div>
           </div>
 
@@ -2732,7 +2751,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               <div className="mt-6 flex justify-end">
                 <button
                   onClick={closeSessionSummary}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-slate-950 font-bold hover:opacity-90 transition"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-white font-bold hover:opacity-90 transition"
                 >
                   Cerrar resumen
                 </button>

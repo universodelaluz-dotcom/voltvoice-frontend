@@ -51,13 +51,18 @@ body {
 :root:not(.dark) [class*='from-cyan-'][class*='to-blue-'],
 :root:not(.dark) [class*='from-purple-'][class*='to-cyan-'],
 :root:not(.dark) [class*='from-purple-'][class*='to-pink-'],
-:root:not(.dark) [class*='from-blue-'][class*='to-purple-'] {
+:root:not(.dark) [class*='from-blue-'][class*='to-purple-'],
+:root:not(.dark) [class*='from-fuchsia-'][class*='to-violet-'],
+:root:not(.dark) [class*='from-cyan-'][class*='to-fuchsia-'],
+:root:not(.dark) [class*='from-green-'][class*='to-green-'] {
   background-image: linear-gradient(120deg, #1f2937, #4b5563) !important;
 }
 
 :root:not(.dark) [class*='text-cyan-'],
 :root:not(.dark) [class*='text-purple-'],
-:root:not(.dark) [class*='text-indigo-'] {
+:root:not(.dark) [class*='text-indigo-'],
+:root:not(.dark) [class*='text-fuchsia-'],
+:root:not(.dark) [class*='text-violet-'] {
   color: var(--lv-accent) !important;
 }
 
@@ -79,6 +84,11 @@ body {
 :root:not(.dark) [class*='shadow-cyan-'],
 :root:not(.dark) [class*='shadow-purple-'] {
   --tw-shadow-color: rgba(17, 24, 39, 0.12) !important;
+}
+
+:root:not(.dark) .text-slate-950[class*='bg-gradient-to-r'],
+:root:not(.dark) .text-black[class*='bg-gradient-to-r'] {
+  color: #f8fafc !important;
 }
 
 #root {
