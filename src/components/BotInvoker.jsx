@@ -1456,17 +1456,16 @@ Extras obligatorios:
     }
   }, [config?.botShortcutEnabled, config?.botShortcutKey])
 
-  // Effect: close Inworld session when voice changes
+  // Effect: update voice on active Inworld session when voice selection changes
   useEffect(() => {
     selectedRealtimeVoiceIdRef.current = selectedRealtimeVoiceId
     console.log(`[Voice] selectedRealtimeVoiceId updated: ${selectedRealtimeVoiceId}`)
 
-    // If voice is set and session exists, close the session so next response uses new voice
-    // This is for Inworld responses only - local TTS responses use voice directly from state
+    // If voice is set and session exists, update the session voice WITHOUT closing
+    // This allows voice changes to apply to future responses while preserving session continuity
     if (selectedRealtimeVoiceId && inworldRealtimeService.sessionId) {
-      console.log(`[Voice] Inworld session exists, closing to prepare for new voice: ${selectedRealtimeVoiceId}`)
-      inworldRealtimeService.closeSession()
-      sessionBrokenRef.current = false
+      console.log(`[Voice] Inworld session exists, updating voice to: ${selectedRealtimeVoiceId}`)
+      inworldRealtimeService.updateSessionVoice(selectedRealtimeVoiceId)
     }
   }, [selectedRealtimeVoiceId])
 

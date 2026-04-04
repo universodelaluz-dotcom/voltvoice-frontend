@@ -917,9 +917,10 @@ export class InworldRealtimeService {
 
     this.isPlayingAudio = true
 
-    // Accumulate multiple chunks before decoding (reduces gaps and codec overhead)
+    // Process ONE chunk at a time to avoid voice mixing/overlap issues
+    // Multiple accumulated chunks with stagger cause overlapping audio artifacts
     const chunksToProcess = []
-    const maxAccumulation = 3  // Process up to 3 chunks together
+    const maxAccumulation = 1  // Process only 1 chunk per cycle
 
     while (chunksToProcess.length < maxAccumulation && this.audioQueue.length > 0) {
       chunksToProcess.push(this.audioQueue.shift())
@@ -982,10 +983,9 @@ export class InworldRealtimeService {
 
   _playDecodedBuffers(buffers) {
     try {
-      // CRITICAL: Play buffers sequentially, not simultaneously
-      // Each buffer must start AFTER the previous one ends to prevent overlap/distortion
-      let currentPlaybackTime = this.audioContext.currentTime
-      let totalDuration = 0
+      // CRITICAL: Process one chunk at a time to prevent voice mixing/overlap
+      // Sequential playback of single chunks = clean audio without artifacts
+      const baseTime = this.audioContext.currentTime
 
       console.log(`[Inworld] Starting playback of ${buffers.length} decoded buffer(s)`)
 
@@ -1000,21 +1000,20 @@ export class InworldRealtimeService {
         source.connect(this.gainNode)
         this.sourceNodes.push(source)
 
-        // Play this buffer AFTER the previous one ends (sequential playback)
-        source.start(currentPlaybackTime)
+        // Since we process one chunk at a time (maxAccumulation=1),
+        // all buffers in this array should be played sequentially
+        const playbackTime = baseTime + (idx * 0)  // No stagger - play immediately
+        source.start(playbackTime)
 
         const bufferDuration = audioBuffer.duration
-        totalDuration += bufferDuration
-
-        console.log(`[Inworld] ▶ Buffer ${idx + 1}/${buffers.length}: ${bufferDuration.toFixed(3)}s @ ${currentPlaybackTime.toFixed(3)}s (ends at ${(currentPlaybackTime + bufferDuration).toFixed(3)}s)`)
-
-        // Next buffer starts after this one finishes
-        currentPlaybackTime += bufferDuration
+        console.log(`[Inworld] ▶ Chunk @ ${playbackTime.toFixed(3)}s, duration: ${bufferDuration.toFixed(3)}s`)
       })
 
-      // Schedule next processing after ALL buffers have finished playing
-      const delayMs = Math.ceil(totalDuration * 1000) + 50
-      console.log(`[Inworld] Total playback duration: ${totalDuration.toFixed(3)}s, next check in ${delayMs}ms`)
+      // Calculate delay based on buffer duration (one chunk at a time)
+      const maxDuration = Math.max(...buffers.map(b => b.duration))
+      const delayMs = Math.ceil(maxDuration * 1000) + 50
+
+      console.log(`[Inworld] Buffer queued, next check in ${delayMs}ms`)
 
       setTimeout(() => {
         this.isPlayingAudio = false
@@ -1538,6 +1537,37 @@ export class InworldRealtimeService {
 
     // Emit event for UI
     this._emit('tool-executed', { name, args, result })
+  }
+
+  /**
+   * Update voice on active session WITHOUT closing it
+   */
+  updateSessionVoice(voiceId) {
+    if (this._isSupportedRealtimeVoice(voiceId)) {
+      this.sessionVoice = voiceId.trim()
+      console.log(`[Inworld] Session voice updated to: ${this.sessionVoice}`)
+
+      // If session is active, send updated config
+      if (this.dataChannel && this.dataChannelReady) {
+        try {
+          const sessionUpdate = {
+            type: 'session.update',
+            session: {
+              audio: {
+                output: {
+                  voice: this.sessionVoice,
+                  model: 'inworld-tts-1.5-mini'
+                }
+              }
+            }
+          }
+          this.dataChannel.send(JSON.stringify(sessionUpdate))
+          console.log(`[Inworld] Voice config updated in active session: ${this.sessionVoice}`)
+        } catch (err) {
+          console.error('[Inworld] Error updating voice in session:', err)
+        }
+      }
+    }
   }
 
   /**
