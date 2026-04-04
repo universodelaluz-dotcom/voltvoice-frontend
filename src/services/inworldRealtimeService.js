@@ -25,6 +25,7 @@ export class InworldRealtimeService {
     this.remoteAudioStream = null
     this.sessionInstructions = 'You are a helpful voice assistant. Respond in Spanish. Keep responses concise.'
     this.sessionVoice = 'Clive'
+    this.sessionOutputModel = 'inworld-tts-1.5-mini'
     this.pendingAudioResponse = false
     this.pendingAudioResponseTimer = null
     this.pendingAudioComplete = false
@@ -171,6 +172,46 @@ export class InworldRealtimeService {
 
     console.warn('[Inworld] Ignoring invalid apiUrl value, falling back to relative backend path')
     return ''
+  }
+
+  _getOutputTtsModelForVoice(voiceId = '') {
+    const normalized = String(voiceId || '').trim()
+    // Cloned voices are more stable with max model in long utterances.
+    if (normalized.includes('__')) {
+      return 'inworld-tts-1.5-max'
+    }
+    return 'inworld-tts-1.5-mini'
+  }
+
+  _sendSessionUpdate() {
+    if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
+      return false
+    }
+
+    try {
+      const payload = {
+        type: 'session.update',
+        session: {
+          type: 'realtime',
+          model: 'openai/gpt-4o-mini',
+          instructions: this.sessionInstructions,
+          output_modalities: ['audio', 'text'],
+          audio: {
+            output: {
+              voice: this.sessionVoice,
+              model: this.sessionOutputModel
+            }
+          },
+          tools: []
+        }
+      }
+      this.dataChannel.send(JSON.stringify(payload))
+      console.log('[Inworld] Session voice/model updated:', this.sessionVoice, this.sessionOutputModel)
+      return true
+    } catch (err) {
+      console.warn('[Inworld] Failed to update session voice/model:', err?.message || err)
+      return false
+    }
   }
 
   _getAuthorizationHeader(apiKey = '') {
@@ -381,15 +422,25 @@ export class InworldRealtimeService {
   async startSession(characterId, systemPrompt, workspaceId, apiUrl = '', voiceId = null) {
     try {
       this.sessionInstructions = systemPrompt?.trim() || this.sessionInstructions
-      this.sessionVoice = this._isSupportedRealtimeVoice(voiceId) ? voiceId.trim() : 'Clive'
+      const nextVoice = this._isSupportedRealtimeVoice(voiceId) ? voiceId.trim() : 'Clive'
+      const nextModel = this._getOutputTtsModelForVoice(nextVoice)
+      const voiceOrModelChanged = this.sessionVoice !== nextVoice || this.sessionOutputModel !== nextModel
+      this.sessionVoice = nextVoice
+      this.sessionOutputModel = nextModel
 
       if (this.peerConnection && this.dataChannelReady && this.sessionId) {
+        if (voiceOrModelChanged) {
+          this._sendSessionUpdate()
+        }
         return this.sessionId
       }
 
       if (this.peerConnection && !this.dataChannelReady) {
         await this.waitForDataChannel(5000)
         if (this.sessionId) {
+          if (voiceOrModelChanged) {
+            this._sendSessionUpdate()
+          }
           return this.sessionId
         }
       }
@@ -624,14 +675,14 @@ export class InworldRealtimeService {
               },
               output: {
                 voice: this.sessionVoice,
-                model: 'inworld-tts-1.5-mini'
+                model: this.sessionOutputModel
               }
             },
             tools: []
           }
         }
         this.dataChannel.send(JSON.stringify(sessionConfig))
-        console.log('[Inworld] Session config sent with model:', sessionConfig.session.model, 'voice:', this.sessionVoice, 'tools:', sessionConfig.session.tools.length)
+        console.log('[Inworld] Session config sent with model:', sessionConfig.session.model, 'voice:', this.sessionVoice, 'ttsModel:', this.sessionOutputModel, 'tools:', sessionConfig.session.tools.length)
       } catch (err) {
         console.error('[Inworld] Error sending session config:', err)
       }
@@ -1601,6 +1652,7 @@ export class InworldRealtimeService {
     clearTimeout(this.pendingAudioResponseTimer)
     this.pendingAudioResponseTimer = null
     this.sessionVoice = 'Clive'
+    this.sessionOutputModel = 'inworld-tts-1.5-mini'
     this.pendingAudioComplete = false
     this._stopRemoteAudioEnergyMonitor()
 
