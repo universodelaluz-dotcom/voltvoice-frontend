@@ -458,6 +458,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const sessionPeakMessagesPerMinuteRef = useRef(0)
   // Cooldown por tipo de notificación (timestamp del último anuncio)
   const lastNotifTime = useRef({ like: 0, viewer_count: 0, share: 0, follow: 0, gift: 0 })
+  // Anti-spam por usuario: { username: [timestamps] }
+  const userSpamTimestampsRef = useRef({})
+  // Media de mensajes cada 20s para ajuste dinámico de presión
+  const recentMessages20sRef = useRef([])
 
   const isAudioSuppressed = () => isPttSuppressedRef.current || isInteractionSuppressedRef.current
 
@@ -996,19 +1000,20 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           // Si está baneado, no leer en voz
           if (isBanned) { markFilteredMessage(); return }
 
-          // Filtros manuales (solo cuando su check está activo)
-          if (c.onlyDonors && !isKnownDonor) { markFilteredMessage(); return }
+          // PUNTO 4: Filtros de rol — trabajan como OR entre sí (pasa si cumple CUALQUIERA)
+          // Ejemplo: donor + moderador = lee a cualquiera de los dos, no a ambos a la vez
+          const roleFiltersActive = c.onlyDonors || c.onlyModerators || c.onlySubscribers || c.onlyCommunityMembers
+          if (roleFiltersActive) {
+            const passRoleFilter =
+              (c.onlyDonors && isKnownDonor) ||
+              (c.onlyModerators && msg.isModerator) ||
+              (c.onlySubscribers && (msg.isSubscriber || false)) ||
+              (c.onlyCommunityMembers && msg.isCommunityMember)
+            if (!passRoleFilter) { markFilteredMessage(); return }
+          }
 
-          // Filtro: solo moderadores
-          if (c.onlyModerators && !msg.isModerator) { markFilteredMessage(); return }
-
-          // Filtro: solo suscriptores
-          if (c.onlySubscribers && !msg.isSubscriber) { markFilteredMessage(); return }
-
-          // Filtro: solo miembros de comunidad / Fan Club
-          if (c.onlyCommunityMembers && !msg.isCommunityMember) { markFilteredMessage(); return }
-
-          // Filtro: solo preguntas
+          // Filtro: solo preguntas — AND independiente encima de los roles
+          // Ejemplo: donor + preguntas = lee donadores QUE ADEMÁS hagan preguntas
           if (c.onlyQuestions && !isQuestion(msg.text)) { markFilteredMessage(); return }
 
           // Filtro: saltar repetidos (por usuario, no global)
@@ -1018,12 +1023,31 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
           // Filtro: ignorar enlaces
           if (c.ignoreLinks && hasLinks(msg.text)) { markFilteredMessage(); return }
+
+          // PUNTO 4: Los checks de configuración se aplican de cajón, antes de todo filtro inteligente.
+          // (onlyDonors, onlyModerators, onlySubscribers, onlyCommunityMembers, onlyQuestions, skipRepeated, ignoreLinks — ya ejecutados arriba)
+
           const priorityUser = isPriorityUser({
             isDonor: isKnownDonor,
             isModerator: msg.isModerator,
             isSubscriber: msg.isSubscriber || false,
             isCommunityMember: msg.isCommunityMember || false
           })
+
+          // PUNTO 2: Registrar mensaje en media de 20s para ajuste dinámico de presión
+          recordMessage20s()
+
+          // PUNTO 1: Anti-spam por usuario — si envía >5 msgs en 10s, ignorarlo temporalmente
+          // Los usuarios prioritarios (mod, donor, sub, community) están exentos
+          if (!priorityUser) {
+            recordUserMessage(msg.username)
+            if (isUserSpamming(msg.username)) {
+              console.log(`[TikTok] Anti-spam: ${msg.username} ignorado temporalmente (>5 msgs/10s)`)
+              markFilteredMessage()
+              return
+            }
+          }
+
           const smartMetrics = smartChatActive ? getSmartMetrics() : null
 
           // Modo bruto: solo limpiar tags de emojis TikTok cuando hay filtros activos o smart chat.
@@ -1151,14 +1175,51 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     const avgPlaybackSeconds = average(recentPlaybackDurationsRef.current, 4.8)
     const readCapacityPerMinute = Math.max(6, 60 / Math.max(1.8, avgPlaybackSeconds))
     const queueDepth = speakQueueRef.current.length
-    const pressure = incomingPerMinute / Math.max(1, readCapacityPerMinute)
-    return { incomingPerMinute, avgPlaybackSeconds, readCapacityPerMinute, queueDepth, pressure }
+    const basePressure = incomingPerMinute / Math.max(1, readCapacityPerMinute)
+    // PUNTO 2: Ajuste dinámico con media de 20s — más velocidad = más filtrado
+    const pressureMultiplier = getDynamicPressureMultiplier()
+    const pressure = basePressure * pressureMultiplier
+    return { incomingPerMinute, avgPlaybackSeconds, readCapacityPerMinute, queueDepth, pressure, pressureMultiplier }
   }
 
   const getAdaptiveSkipCount = (metrics) => {
     if (metrics.pressure <= 1.05) return 0
     const overflow = Math.max(0, metrics.incomingPerMinute - metrics.readCapacityPerMinute)
     return Math.max(0, Math.round(overflow / Math.max(1, metrics.readCapacityPerMinute / 3)))
+  }
+
+  // PUNTO 1: Anti-spam por usuario — ignora temporalmente si envía >5 msgs en 10s
+  const isUserSpamming = (username) => {
+    const now = Date.now()
+    const cutoff = now - 10000
+    const timestamps = (userSpamTimestampsRef.current[username] || []).filter(ts => ts >= cutoff)
+    userSpamTimestampsRef.current[username] = timestamps
+    return timestamps.length >= 5
+  }
+  const recordUserMessage = (username) => {
+    const now = Date.now()
+    if (!userSpamTimestampsRef.current[username]) userSpamTimestampsRef.current[username] = []
+    userSpamTimestampsRef.current[username].push(now)
+  }
+
+  // PUNTO 2: Media de mensajes en últimos 20s para ajustar filtrado dinámico
+  const getMessageRate20s = () => {
+    const now = Date.now()
+    const cutoff = now - 20000
+    recentMessages20sRef.current = recentMessages20sRef.current.filter(ts => ts >= cutoff)
+    return recentMessages20sRef.current.length / 20 // msgs por segundo
+  }
+  const recordMessage20s = () => {
+    recentMessages20sRef.current.push(Date.now())
+  }
+  // Retorna un multiplicador de presión basado en velocidad del chat en 20s
+  // Alta velocidad = más filtrado (>1), baja velocidad = más permisivo (<1)
+  const getDynamicPressureMultiplier = () => {
+    const rate = getMessageRate20s()
+    if (rate > 3) return 1.4      // >3 msgs/s = muy intenso, filtrar más
+    if (rate > 1.5) return 1.15   // >1.5 msgs/s = flujo alto
+    if (rate < 0.3) return 0.7   // <0.3 msgs/s = chat lento, ser más permisivo
+    return 1.0
   }
 
   const getTopicRelevanceScore = (text = '') => {
@@ -1208,13 +1269,20 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     const mentionsStreamer = connectedTikTokUser && normalizedText.includes(normalizeTikTokUsername(connectedTikTokUser).toLowerCase())
 
     let score = 0
-    if (item.isNotification) score += 9
-    if (item.isDonor) score += 10
-    if (secondsSinceGift <= 45) score += 7
-    if (item.isQuestion || isQuestion(rawText)) score += 8.5
-    if (item.isModerator) score += 7
-    if (item.isSubscriber) score += 6.5
-    if (item.isCommunityMember) score += 6
+    if (item.isNotification) score += 11
+    // PUNTO 3: Prioridad por rol — comunidad > mod > donor > suscriptor > pregunta
+    if (item.isCommunityMember) score += 10  // Fan/SuperFan: más comprometidos
+    if (item.isModerator) score += 9
+    if (item.isDonor) score += 8.5
+    if (secondsSinceGift <= 45) score += 7.5  // donación reciente = muy relevante
+    if (item.isSubscriber) score += 7.5
+    // PUNTO 1: Prioriza mensajes con mayor longitud y diversidad de palabras
+    const words = rawText.split(/\s+/).filter(Boolean)
+    const uniqueWords = new Set(words.map(w => w.toLowerCase()))
+    const wordDiversityBonus = Math.min(3, (uniqueWords.size / Math.max(1, words.length)) * 4)
+    score += wordDiversityBonus
+    if (rawText.length >= 30 && rawText.length <= 150) score += 2.5  // longitud óptima
+    if (item.isQuestion || isQuestion(rawText)) score += 6.5
     if (mentionsStreamer || /(^|\s)@[\w._-]+/i.test(rawText)) score += 3.4
     score += getTopicRelevanceScore(rawText)
     score += getEmotionalScore(rawText)
@@ -1317,7 +1385,24 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         `skip aprox ${adaptiveSkip}, cola objetivo ${targetQueueSize}, score ${item.smartScore.toFixed(2)}`
       )
     } else {
+      // PUNTO 3: Incluso sin filtro inteligente, priorizar cola por rol
+      // Orden: comunidad > moderadores > donadores > suscriptores > preguntas > general
       speakQueueRef.current.push(item)
+      const getRoleWeight = (m) => {
+        if (m.isNotification) return 11
+        if (m.isCommunityMember) return 10
+        if (m.isModerator) return 9
+        if (m.isDonor) return 8.5
+        if (m.isSubscriber) return 7.5
+        if (m.isQuestion) return 6.5
+        return 0
+      }
+      // Solo reordenar si hay mensajes de diferentes roles en la cola
+      const hasRoledMessages = speakQueueRef.current.some(m => getRoleWeight(m) > 0)
+      if (hasRoledMessages) {
+        speakQueueRef.current = speakQueueRef.current
+          .sort((a, b) => (getRoleWeight(b) - getRoleWeight(a)) || (a.queuedAt - b.queuedAt))
+      }
     }
 
     console.log(`[TikTok] Agregado a cola (${speakQueueRef.current.length} pendientes)`)
