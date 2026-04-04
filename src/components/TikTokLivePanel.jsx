@@ -442,6 +442,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const activePlaybackResolveRef = useRef(null)
   const resumeRequestedDuringSuppressionRef = useRef(false)
   const autoScrollPinnedRef = useRef(true)
+  const pendingScrollRef = useRef(null) // Prevent multiple scrolls from stacking
   const liveRetryTimerRef = useRef(null)
   const recentIncomingTimestampsRef = useRef([])
   const recentPlaybackDurationsRef = useRef([])
@@ -469,12 +470,18 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     // Solo auto-scroll si el usuario está cerca del bottom del chat
     // Pero NO si el usuario está scrolleando manualmente (autoScrollPinnedRef sería false)
     if (autoScrollPinnedRef.current) {
+      // Cancelar scroll anterior si uno está pendiente
+      if (pendingScrollRef.current) {
+        cancelAnimationFrame(pendingScrollRef.current)
+      }
+
       // Usar requestAnimationFrame para evitar múltiples scrolls en el mismo frame
-      requestAnimationFrame(() => {
+      pendingScrollRef.current = requestAnimationFrame(() => {
         if (!autoScrollPinnedRef.current) return // User scrolled away, cancel
         preservePageScroll(() => {
           container.scrollTop = container.scrollHeight
         })
+        pendingScrollRef.current = null
       })
     }
   }, [messages])
@@ -1574,7 +1581,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   }
 
   const keepReadMessageVisible = ({ force = false } = {}) => {
-    requestAnimationFrame(() => {
+    // Cancelar scroll anterior si uno está pendiente
+    if (pendingScrollRef.current) {
+      cancelAnimationFrame(pendingScrollRef.current)
+    }
+
+    pendingScrollRef.current = requestAnimationFrame(() => {
       const container = chatContainerRef.current
       if (!container) return
 
@@ -1587,6 +1599,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           container.scrollTop = container.scrollHeight
         })
       }
+      pendingScrollRef.current = null
     })
   }
 
