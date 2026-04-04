@@ -1539,36 +1539,6 @@ export class InworldRealtimeService {
     this._emit('tool-executed', { name, args, result })
   }
 
-  /**
-   * Update voice on active session WITHOUT closing it
-   */
-  updateSessionVoice(voiceId) {
-    if (this._isSupportedRealtimeVoice(voiceId)) {
-      this.sessionVoice = voiceId.trim()
-      console.log(`[Inworld] Session voice updated to: ${this.sessionVoice}`)
-
-      // If session is active, send updated config
-      if (this.dataChannel && this.dataChannelReady) {
-        try {
-          const sessionUpdate = {
-            type: 'session.update',
-            session: {
-              audio: {
-                output: {
-                  voice: this.sessionVoice,
-                  model: 'inworld-tts-1.5-mini'
-                }
-              }
-            }
-          }
-          this.dataChannel.send(JSON.stringify(sessionUpdate))
-          console.log(`[Inworld] Voice config updated in active session: ${this.sessionVoice}`)
-        } catch (err) {
-          console.error('[Inworld] Error updating voice in session:', err)
-        }
-      }
-    }
-  }
 
   /**
    * Close WebRTC session
