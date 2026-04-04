@@ -934,23 +934,31 @@ export function App() {
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <div className={`rounded-2xl p-12 ${darkMode ? 'bg-gradient-to-br from-cyan-400/20 to-purple-500/20 border border-cyan-400/30' : 'bg-gradient-to-br from-cyan-50 to-purple-50 border border-cyan-200'}`}>
-            <h3 className={`text-4xl font-black mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+          <div className={`rounded-2xl p-12 ${darkMode ? 'bg-gradient-to-br from-cyan-400/20 to-purple-500/20 border border-cyan-400/30' : 'bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600'}`}>
+            <h3 className={`text-4xl font-black mb-6 ${darkMode ? 'text-white' : 'text-white'}`}>
               Listo para revolucionar tus streams?
             </h3>
-            <p className={`text-xl mb-8 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            <p className={`text-xl mb-8 ${darkMode ? 'text-gray-300' : 'text-slate-200'}`}>
               Únete a miles de creadores que ya están usando StreamVoicer
             </p>
             <div className="flex gap-4 justify-center">
               <button
                 onClick={() => user ? setCurrentPage('studio') : setCurrentPage('auth')}
-                className="px-8 py-4 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-lg text-white hover:shadow-xl hover:shadow-cyan-400/50 transition-all inline-flex items-center gap-2"
+                className={`px-8 py-4 rounded-lg font-bold text-lg transition-all inline-flex items-center gap-2 ${
+                  darkMode
+                    ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white hover:shadow-xl hover:shadow-cyan-400/50'
+                    : 'bg-white text-slate-900 hover:bg-slate-100'
+                }`}
               >
                 {user ? 'Ir al Studio' : 'Comenzar Gratis'} <ChevronRight className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setCurrentPage('pricing')}
-                className="px-8 py-4 border-2 border-cyan-400 text-cyan-400 rounded-lg font-bold text-lg hover:bg-cyan-400/10 transition-all inline-flex items-center gap-2"
+                className={`px-8 py-4 border-2 rounded-lg font-bold text-lg transition-all inline-flex items-center gap-2 ${
+                  darkMode
+                    ? 'border-cyan-400 text-cyan-400 hover:bg-cyan-400/10'
+                    : 'border-slate-200 text-white hover:bg-white/10'
+                }`}
               >
                 Ver Planes
               </button>

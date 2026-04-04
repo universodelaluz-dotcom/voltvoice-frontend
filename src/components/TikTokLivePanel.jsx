@@ -2279,12 +2279,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               ? 'border-white/10 bg-white/[0.03] shadow-[0_10px_35px_rgba(0,0,0,0.18)]'
               : 'border-slate-200 bg-white/85 shadow-[0_10px_30px_rgba(148,163,184,0.18)]'
           }`}>
-            <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 p-1.5 rounded-lg border ${
+            <div className={`flex flex-wrap lg:flex-nowrap gap-1.5 p-1.5 rounded-lg border ${
               darkMode ? 'bg-slate-900/40 border-white/10' : 'bg-slate-100 border-slate-300'
             }`}>
               <button
                 onClick={handlePause}
-                className={`h-10 w-full flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
+                className={`h-10 w-[126px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
                   isPaused
                     ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 hover:border-slate-600 shadow-sm'
                     : darkMode
@@ -2300,7 +2300,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               </button>
               <button
                 onClick={handleRefresh}
-                className={`h-10 w-full flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
+                className={`h-10 w-[126px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
                   darkMode
                     ? 'border-cyan-400/30 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25'
                     : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
@@ -2311,7 +2311,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               </button>
               <button
                 onClick={() => setSmartChatEnabled((prev) => !prev)}
-                className={`group h-10 w-full flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
+                className={`group h-10 w-[126px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
                   smartChatEnabled
                     ? 'border-slate-700 bg-gradient-to-r from-slate-700 to-slate-900 text-white hover:from-slate-600 hover:to-slate-800 shadow-sm'
                     : darkMode
@@ -2333,16 +2333,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   }`} />
                 </span>
                 <MessageCircle className="w-3.5 h-3.5" />
-                <span>Filtro inteligente</span>
-                {smartChatEnabled && (
-                  <span className="rounded-full bg-black/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em]">
-                    On
-                  </span>
-                )}
+                <span>Filtro IA</span>
               </button>
               <button
                 onClick={() => setShowHighlightPanel(!showHighlightPanel)}
-                className={`h-10 w-full flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
+                className={`h-10 w-[126px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
                   showHighlightPanel || highlightMode
                     ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 shadow-sm'
                     : darkMode
@@ -2356,7 +2351,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               {/* Botón para abrir panel de estilo del chat */}
               <button
                 onClick={() => setShowFontPanel(!showFontPanel)}
-                className={`h-10 w-full flex items-center justify-center gap-1 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
+                className={`h-10 w-[126px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-1 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
                   showFontPanel
                     ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 shadow-sm'
                     : darkMode

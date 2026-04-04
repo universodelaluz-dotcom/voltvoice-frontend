@@ -311,8 +311,14 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             </div>
           </button>
           <div className="flex items-center gap-4">
-            <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${isStreamActive ? 'bg-red-500/20 border border-red-500/50' : 'bg-gray-700/50 border border-gray-600/50'}`}>
-              <div className={`w-2 h-2 rounded-full ${isStreamActive ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></div>
+            <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+              darkMode
+                ? (isStreamActive ? 'bg-red-500/20 border border-red-500/50' : 'bg-gray-700/50 border border-gray-600/50')
+                : (isStreamActive ? 'bg-slate-700 border border-slate-600 text-white' : 'bg-slate-200 border border-slate-300 text-slate-700')
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${
+                isStreamActive ? (darkMode ? 'bg-red-500 animate-pulse' : 'bg-red-300') : 'bg-gray-500'
+              }`}></div>
               <span className="text-xs font-semibold">{isStreamActive ? 'EN VIVO' : 'INACTIVO'}</span>
             </div>
             <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
