@@ -1,8 +1,10 @@
-'use client'
+﻿'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
+import { useState } from 'react'
 import { Menu, X, Zap } from 'lucide-react'
+
+const STUDIO_URL = 'https://voltvoice-frontend.vercel.app'
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
@@ -15,7 +17,6 @@ export function Navbar() {
     <nav className="fixed top-0 w-full backdrop-blur-md bg-voltvoice-dark/80 border-b border-voltvoice-cyan/20 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
             <div className="relative">
               <Zap className="w-8 h-8 text-voltvoice-cyan animate-pulse group-hover:animate-bounce" />
@@ -24,10 +25,9 @@ export function Navbar() {
             <span className="text-xl font-bold gradient-text hidden sm:inline">VoltVoice</span>
           </Link>
 
-          {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-8">
             <Link href="#features" className="text-gray-300 hover:text-voltvoice-cyan transition-colors duration-300">
-              Características
+              Caracteristicas
             </Link>
             <Link href="#pricing" className="text-gray-300 hover:text-voltvoice-cyan transition-colors duration-300">
               Planes
@@ -40,14 +40,12 @@ export function Navbar() {
             </Link>
           </div>
 
-          {/* CTA Button */}
           <div className="hidden md:flex items-center gap-4">
-            <button className="px-6 py-2 bg-gradient-to-r from-voltvoice-cyan to-voltvoice-purple rounded-lg font-semibold text-white hover:shadow-glow-cyan transition-all duration-300 btn-glow">
-              Comenzar Gratis
-            </button>
+            <a href={STUDIO_URL} className="px-6 py-2 bg-gradient-to-r from-voltvoice-cyan to-voltvoice-purple rounded-lg font-semibold text-white hover:shadow-glow-cyan transition-all duration-300 btn-glow">
+              Ir al Studio
+            </a>
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={toggleMenu}
             className="md:hidden text-voltvoice-cyan hover:text-voltvoice-magenta transition-colors"
@@ -56,7 +54,6 @@ export function Navbar() {
           </button>
         </div>
 
-        {/* Mobile Menu */}
         {isOpen && (
           <div className="md:hidden pb-4 animate-slide-up">
             <div className="flex flex-col gap-4">
@@ -65,7 +62,7 @@ export function Navbar() {
                 className="text-gray-300 hover:text-voltvoice-cyan transition-colors py-2"
                 onClick={() => setIsOpen(false)}
               >
-                Características
+                Caracteristicas
               </Link>
               <Link
                 href="#pricing"
@@ -88,9 +85,9 @@ export function Navbar() {
               >
                 Contacto
               </Link>
-              <button className="w-full px-6 py-2 bg-gradient-to-r from-voltvoice-cyan to-voltvoice-purple rounded-lg font-semibold text-white hover:shadow-glow-cyan transition-all mt-2">
-                Comenzar Gratis
-              </button>
+              <a href={STUDIO_URL} className="w-full px-6 py-2 bg-gradient-to-r from-voltvoice-cyan to-voltvoice-purple rounded-lg font-semibold text-white hover:shadow-glow-cyan transition-all mt-2 text-center">
+                Ir al Studio
+              </a>
             </div>
           </div>
         )}

@@ -89,7 +89,12 @@
       "Bash(psql -U postgres -d voltvoice -c \"UPDATE users SET plan = ''elite'' WHERE email = ''alainsh@gmail.com'' RETURNING id, email, plan;\")",
       "WebFetch(domain:vercel.com)",
       "Bash(find '/c/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE/backend/src' -name *.js -type f)",
-      "Bash(grep -E \"\\\\.js$\")"
+      "Bash(grep -E \"\\\\.js$\")",
+      "Bash(tasklist)",
+      "Bash(pkill -f \"git\")",
+      "Bash(rm -f \"C:\\\\Nueva carpeta\\\\VOLTVOICE CON SERVER M25\\\\VOLTVOICE\\\\.git\\\\index.lock\")",
+      "Bash(grep -r \"voices.*play\\\\|/play\\\\|testText\" 'C:\\\\Nueva carpeta\\\\VOLTVOICE CON SERVER M25\\\\VOLTVOICE\\\\backend\\\\src' --include=*.js)",
+      "Bash(grep -n \"export.*ControlPanel\\\\|const ControlPanel\\\\|function ControlPanel\" frontend/src/components/*.jsx)"
     ]
   }
 }
