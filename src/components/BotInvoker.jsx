@@ -924,6 +924,8 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       ? { text, voice: selectedVoice }
       : { text, voiceId: selectedVoice }
 
+    console.log(`[TTS] Speaking with voice: ${selectedVoice} (voiceId param: ${voiceId}, selectedRealtimeVoiceId: ${selectedRealtimeVoiceId}, endpoint: ${endpoint})`)
+
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'POST',
       headers: {
@@ -966,13 +968,8 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       setIsPlayingResponse(false)
       unlockChatSuppression()
       localAudioRef.current = null
-
-      // Reset threshold timestamp for autopilot - CRITICAL FIX for 4-second jump
-      const resetTimestamp = Date.now()
-      lastBotResponseTimestampRef.current = resetTimestamp
-      messagesCountSinceLastResponseRef.current = 0
-      window.messagesCountSinceLastResponseRef = 0
-      console.log(`[Autopilot] Local response complete - threshold reset: timestamp=${resetTimestamp}, msgCount=0 (next response allowed in ${config?.minTimeBetweenResponsesMs ?? 0}ms or after ${config?.minNewMessagesBeforeResponse ?? 0} messages)`)
+      // NOTE: Timestamp was already reset when response STARTED, no need to reset again
+      console.log(`[Autopilot] Local audio finished playing - chat unlocked (threshold timer already started when response began)`)
     }
 
     audio.onerror = () => {
@@ -980,13 +977,8 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       setIsPlayingResponse(false)
       unlockChatSuppression()
       localAudioRef.current = null
-
-      // Reset threshold timestamp on error to prevent autopilot from being blocked
-      const resetTimestamp = Date.now()
-      lastBotResponseTimestampRef.current = resetTimestamp
-      messagesCountSinceLastResponseRef.current = 0
-      window.messagesCountSinceLastResponseRef = 0
-      console.log(`[Autopilot] Local response error - threshold reset: timestamp=${resetTimestamp}, msgCount=0`)
+      // NOTE: Threshold was already reset when audio.play() started, so no need to reset again on error
+      console.log(`[Autopilot] Local response ERROR - chat unlocked (threshold was already reset when playback was attempted)`)
     }
 
     await audio.play()
@@ -1459,22 +1451,28 @@ Extras obligatorios:
     }
   }, [config?.botShortcutEnabled, config?.botShortcutKey])
 
+  // Track voice changes and close Inworld session if needed
+  useEffect(() => {
+    const previousVoiceRef = useRef(null)
+
+    return () => {
+      previousVoiceRef.current = selectedRealtimeVoiceId
+    }
+  }, [selectedRealtimeVoiceId])
+
+  // Separate effect: close Inworld session ONLY when voice actually changes
   useEffect(() => {
     selectedRealtimeVoiceIdRef.current = selectedRealtimeVoiceId
+    console.log(`[Voice] selectedRealtimeVoiceId updated: ${selectedRealtimeVoiceId}`)
 
-    // If voice changes while bot is active (session exists), close the session
-    // so the next response creates a new session with the new voice
+    // If voice is set and session exists, close the session so next response uses new voice
+    // This is for Inworld responses only - local TTS responses use voice directly from state
     if (selectedRealtimeVoiceId && inworldRealtimeService.sessionId) {
-      // Don't close if currently playing audio or recording
-      if (!isPlayingResponse && !isRecording && !isLoading) {
-        console.log('[Bot] Voice changed - closing Inworld session to use new voice on next response:', selectedRealtimeVoiceId)
-        inworldRealtimeService.closeSession()
-        sessionBrokenRef.current = false
-      } else {
-        console.log('[Bot] Voice changed but bot is speaking - will use new voice after current response ends')
-      }
+      console.log(`[Voice] Inworld session exists, closing to prepare for new voice: ${selectedRealtimeVoiceId}`)
+      inworldRealtimeService.closeSession()
+      sessionBrokenRef.current = false
     }
-  }, [selectedRealtimeVoiceId, isPlayingResponse, isRecording, isLoading])
+  }, [selectedRealtimeVoiceId])
 
   useEffect(() => {
     voiceLabelRef.current = voiceLabel
@@ -1527,6 +1525,14 @@ Extras obligatorios:
     }
 
     const handleResponseCreated = () => {
+      // CRITICAL: Reset threshold timestamp when INWORLD RESPONSE STARTS (right now!)
+      // This starts the 35-second timer from when bot BEGINS responding
+      const resetTimestamp = Date.now()
+      lastBotResponseTimestampRef.current = resetTimestamp
+      messagesCountSinceLastResponseRef.current = 0
+      window.messagesCountSinceLastResponseRef = 0
+      console.log(`[Autopilot] INWORLD RESPONSE STARTING - threshold timer begins NOW: timestamp=${resetTimestamp}, msgCount=0 (next response allowed in ${config?.minTimeBetweenResponsesMs ?? 0}ms)`)
+
       // Wait for real content (text/audio) before considering the response active.
       console.log('[Bot] handleResponseCreated FIRED - clearing previous response text')
       console.log('[Bot] handleResponseCreated: Previous response was:', response?.substring?.(0, 50) || 'null')
@@ -1651,6 +1657,8 @@ Extras obligatorios:
         unlockChatSuppression()
         dispatchChatPlaybackControl('resume')
         inactivityTimerRef.current = null
+        // NOTE: Threshold timestamp was already reset when response STARTED (in handleResponseCreated)
+        console.log('[Bot] Inactivity timeout - response truly complete, but threshold timer already started')
       }, INACTIVITY_TIMEOUT_MS)
     }
 
@@ -1751,13 +1759,8 @@ Extras obligatorios:
       } else {
         // Playback started - transmission is complete, wait for RMS silence to confirm end
         console.log('[Bot] handleResponseComplete: PLAYBACK STARTED - esperando RMS silent + transmission')
-        // Reset response timestamp for threshold counting
-        const resetTimestamp = Date.now()
-        lastBotResponseTimestampRef.current = resetTimestamp
-        messagesCountSinceLastResponseRef.current = 0
-        // Expose to window for cross-component access (TikTokLivePanel)
-        window.messagesCountSinceLastResponseRef = 0
-        console.log(`[Bot] Response threshold reset: timestamp=${resetTimestamp}, msgCount=0 (next response allowed in ${config?.minTimeBetweenResponsesMs ?? 0}ms or after ${config?.minNewMessagesBeforeResponse ?? 0} messages)`)
+        // DO NOT reset threshold timestamp here!
+        // It will be reset when the inactivity timer fires (when audio ACTUALLY stops)
       }
     }
 
@@ -1878,15 +1881,18 @@ Extras obligatorios:
     latestResponseTextRef.current = ''
     const currentCharacter = characters.find((item) => item.id === selectedCharacterId)
     const resolvedVoice = resolveRealtimeVoice(currentCharacter) || ''
-    setSelectedRealtimeVoiceId((current) => current || resolvedVoice)
-    setVoiceLabel(resolvedVoice || 'Clive')
+    // CRITICAL FIX: Do NOT reset selectedRealtimeVoiceId here
+    // This was preventing voice changes from the dropdown
+    // Let dropdown (onChange) be the ONLY way to change voice
+    // setSelectedRealtimeVoiceId is removed to allow user voice choices to persist
+    setVoiceLabel(selectedRealtimeVoiceId || resolvedVoice || 'Clive')
     clearResponseTimeout()
     setPttSuppressed(false)
     responseCompletedRef.current = true
     botIsAudiblySpeakingRef.current = false
     restoreChatAudioImmediate()
     inworldRealtimeService.closeSession()
-  }, [selectedCharacterId, characters, userVoices])
+  }, [selectedCharacterId, characters, userVoices, selectedRealtimeVoiceId])
 
   // DIAGNOSTIC: Log every response state change to track message repetition
   useEffect(() => {
@@ -1980,7 +1986,9 @@ Extras obligatorios:
 
   const getResolvedVoiceId = () => {
     const character = characters.find((item) => item.id === selectedCharacterId)
-    return selectedRealtimeVoiceId || resolveRealtimeVoice(character) || 'Clive'
+    const resolvedId = selectedRealtimeVoiceId || resolveRealtimeVoice(character) || 'Clive'
+    console.log(`[Voice] getResolvedVoiceId: selectedRealtimeVoiceId=${selectedRealtimeVoiceId}, character=${character?.name}, resolved=${resolvedId}`)
+    return resolvedId
   }
 
   const ensureBotSession = async () => {
@@ -2366,15 +2374,17 @@ After using a tool, summarize the result conversationally.`
       setVoiceLabel(getVoiceDisplayName(voiceId))
       armResponseTimeout()
       console.log('[Bot][Autopilot] Intent selected:', intent.type, intent.reason)
-      await speakLocalResponse(localResponse, voiceId)
+      console.log(`[Bot][Autopilot] Using voice: ${voiceId}`)
 
-      // CRITICAL: Reset threshold timestamp IMMEDIATELY after local response starts playing
-      // This prevents the 4-second jump issue where audio.onended might not fire reliably
+      // CRITICAL: Reset threshold timestamp BEFORE starting to speak
+      // This starts the 35-second timer from when bot STARTS responding, not when it ends
       const resetTimestamp = Date.now()
       lastBotResponseTimestampRef.current = resetTimestamp
       messagesCountSinceLastResponseRef.current = 0
       window.messagesCountSinceLastResponseRef = 0
-      console.log(`[Autopilot] Local response started - threshold reset immediately: timestamp=${resetTimestamp}, msgCount=0 (next response allowed in ${config?.minTimeBetweenResponsesMs ?? 0}ms)`)
+      console.log(`[Autopilot] RESPONSE STARTING - threshold timer begins NOW: timestamp=${resetTimestamp}, msgCount=0 (next response allowed in ${config?.minTimeBetweenResponsesMs ?? 0}ms)`)
+
+      await speakLocalResponse(localResponse, voiceId)
 
       autopilotIntentCooldownRef.current[intent.type] = now
       autopilotRecentIntentTypesRef.current = [...autopilotRecentIntentTypesRef.current, intent.type].slice(-8)

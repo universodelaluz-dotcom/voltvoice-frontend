@@ -461,12 +461,20 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const isAudioSuppressed = () => isPttSuppressedRef.current || isInteractionSuppressedRef.current
 
   // Auto-scroll suave: solo scroll al fondo si el usuario está cerca del fondo
+  // FIX: Usar throttling para evitar scroll agresivo cuando llegan muchos mensajes rapidísimo
   useEffect(() => {
     if (!chatContainerRef.current) return
     const container = chatContainerRef.current
+
+    // Solo auto-scroll si el usuario está cerca del bottom del chat
+    // Pero NO si el usuario está scrolleando manualmente (autoScrollPinnedRef sería false)
     if (autoScrollPinnedRef.current) {
-      preservePageScroll(() => {
-        container.scrollTop = container.scrollHeight
+      // Usar requestAnimationFrame para evitar múltiples scrolls en el mismo frame
+      requestAnimationFrame(() => {
+        if (!autoScrollPinnedRef.current) return // User scrolled away, cancel
+        preservePageScroll(() => {
+          container.scrollTop = container.scrollHeight
+        })
       })
     }
   }, [messages])
