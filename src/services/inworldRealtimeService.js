@@ -33,8 +33,12 @@ export class InworldRealtimeService {
     this.remoteAnalysisFrameId = null
     this.remoteSpeaking = false
     this.remoteSilenceFrames = 0
+    this.remoteSpeakingFrames = 0
     this.remoteStartThreshold = 0.02
     this.remoteStopThreshold = 0.008
+    this.remotePostTxStartThreshold = 0.055
+    this.remoteSpeakingFrameTarget = 2
+    this.remotePostTxSpeakingFrameTarget = 8
     this.remoteSilenceFrameTarget = 3
     this.transmissionComplete = false // Signal-based: switch silence threshold when transmission done
     this.SILENCE_THRESHOLD_NORMAL = 15 // During active transmission: 15 frames (~150ms) - allows natural voice pauses without choppy cuts or solapamiento
@@ -269,6 +273,7 @@ export class InworldRealtimeService {
     }
 
     this.remoteSilenceFrames = 0
+    this.remoteSpeakingFrames = 0
     this._setRemoteSpeaking(false, 0)
   }
 
@@ -306,11 +311,21 @@ export class InworldRealtimeService {
           sum += samples[i] * samples[i]
         }
         const rms = Math.sqrt(sum / samples.length)
+        const speakingThreshold = this.transmissionComplete
+          ? this.remotePostTxStartThreshold
+          : this.remoteStartThreshold
+        const speakingFramesNeeded = this.transmissionComplete
+          ? this.remotePostTxSpeakingFrameTarget
+          : this.remoteSpeakingFrameTarget
 
-        if (rms >= this.remoteStartThreshold) {
+        if (rms >= speakingThreshold) {
+          this.remoteSpeakingFrames += 1
           this.remoteSilenceFrames = 0
-          this._setRemoteSpeaking(true, rms)
+          if (this.remoteSpeaking || this.remoteSpeakingFrames >= speakingFramesNeeded) {
+            this._setRemoteSpeaking(true, rms)
+          }
         } else {
+          this.remoteSpeakingFrames = 0
           if (this.remoteSpeaking && rms <= this.remoteStopThreshold) {
             this.remoteSilenceFrames += 1
             if (this.remoteSilenceFrames >= this.remoteSilenceFrameTarget) {
