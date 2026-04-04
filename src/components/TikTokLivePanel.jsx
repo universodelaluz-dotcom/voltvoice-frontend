@@ -2357,10 +2357,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 <span style={{ fontSize: '13px' }}>Aa</span>
               </button>
             </div>
-            <div className={`grid grid-cols-1 md:grid-cols-2 gap-2 rounded-xl px-3 py-2 ${
-              darkMode ? 'bg-black/20 border border-white/5' : 'bg-white border border-slate-300'
+            <div className={`flex flex-wrap lg:flex-nowrap gap-1.5 p-1.5 rounded-lg border ${
+              darkMode ? 'bg-black/20 border-white/5' : 'bg-white border-slate-300'
             }`}>
-            <div className={`h-10 w-[220px] shrink-0 rounded-md px-2 border flex items-center gap-2 ${
+            <div className={`h-10 w-[246px] shrink-0 rounded-md px-2 border flex items-center gap-2 ${
               darkMode ? 'bg-slate-900/60 border-slate-700/70' : 'bg-white border-slate-300'
             }`}>
               <button
@@ -2382,11 +2382,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   background: `linear-gradient(to right, #10b981 ${volume * 100}%, ${darkMode ? '#334155' : '#d1d5db'} ${volume * 100}%)`
                 }}
               />
-              <span className={`text-xs font-bold min-w-[34px] text-right ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+              <span className={`h-6 min-w-[40px] px-1 rounded border text-[11px] font-bold text-center leading-6 ${
+                darkMode ? 'text-slate-100 border-slate-700 bg-slate-800/70' : 'text-slate-800 border-slate-300 bg-slate-50'
+              }`}>
                 {Math.round(volume * 100)}%
               </span>
             </div>
-            <div className={`h-10 w-[220px] shrink-0 rounded-md px-2 border flex items-center gap-2 ${
+            <div className={`h-10 w-[246px] shrink-0 rounded-md px-2 border flex items-center gap-2 ${
               darkMode ? 'bg-slate-900/60 border-slate-700/70' : 'bg-white border-slate-300'
             }`}>
               <span className={`text-[10px] font-semibold uppercase tracking-wide ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>Vel</span>
@@ -2398,7 +2400,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   background: `linear-gradient(to right, #2563eb ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%, ${darkMode ? '#334155' : '#d1d5db'} ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%)`
                 }}
               />
-              <span className={`text-xs font-bold min-w-[32px] text-right ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+              <span className={`h-6 min-w-[40px] px-1 rounded border text-[11px] font-bold text-center leading-6 ${
+                darkMode ? 'text-slate-100 border-slate-700 bg-slate-800/70' : 'text-slate-800 border-slate-300 bg-slate-50'
+              }`}>
                 {Number(config.audioSpeed || 1).toFixed(1)}x
               </span>
             </div>
