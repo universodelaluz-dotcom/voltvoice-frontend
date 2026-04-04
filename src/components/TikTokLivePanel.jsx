@@ -2227,7 +2227,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                       ? 'border-fuchsia-400/25 bg-fuchsia-500/12 text-fuchsia-100 hover:bg-fuchsia-500/18'
                       : 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700 hover:bg-fuchsia-100'
                 }`}
-                title="Activa el modo de chat inteligente para pruebas"
+                title="Activa el filtro inteligente para eliminar spam y basura"
               >
                 <span className="relative flex h-3 w-3 items-center justify-center">
                   <span className={`absolute inline-flex h-full w-full rounded-full ${
@@ -2242,7 +2242,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   }`} />
                 </span>
                 <MessageCircle className="w-3.5 h-3.5" />
-                <span>Chat inteligente</span>
+                <span>Filtro inteligente</span>
                 {smartChatEnabled && (
                   <span className="rounded-full bg-black/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em]">
                     On

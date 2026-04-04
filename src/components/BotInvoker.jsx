@@ -13,7 +13,7 @@ const BUILTIN_VOICE_OPTIONS = [
 const CONFIG_COMMANDS = [
   {
     key: 'smartChatEnabled',
-    label: 'chat inteligente',
+    label: 'filtro inteligente',
     aliases: [
       'chat inteligente',
       'smart chat',
@@ -577,11 +577,11 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       return { type: 'set_chat_pause', paused: false, label: 'chat' }
     }
 
-    if (/(chat inteligente|smart chat)/i.test(normalized) && explicitState !== null) {
+    if (/(chat inteligente|filtro inteligente|smart chat|smart filter)/i.test(normalized) && explicitState !== null) {
       return {
         type: 'set_config_boolean',
         key: 'smartChatEnabled',
-        label: 'chat inteligente',
+        label: 'filtro inteligente',
         value: explicitState
       }
     }
