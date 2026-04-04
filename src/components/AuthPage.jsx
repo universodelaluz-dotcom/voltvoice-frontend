@@ -278,7 +278,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
     <div className={`min-h-screen flex items-center justify-center px-4 ${
       darkMode
         ? 'bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23]'
-        : 'bg-gradient-to-b from-gray-50 via-white to-gray-100'
+        : 'bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1]'
     }`}>
       {/* Back button */}
       <button

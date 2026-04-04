@@ -13,11 +13,72 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Segoe UI Variable', 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:root:not(.dark) {
+  --lv-bg: #eef1f5;
+  --lv-bg-soft: #f7f8fa;
+  --lv-surface: #ffffff;
+  --lv-surface-soft: #f4f6f8;
+  --lv-border: #d7dce3;
+  --lv-text: #111827;
+  --lv-muted: #4b5563;
+  --lv-accent: #1f2937;
+  --lv-accent-2: #374151;
+}
+
+:root:not(.dark) body {
+  background:
+    radial-gradient(1000px 500px at 0% -10%, #dde3ea 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, #e3e7ed 0%, transparent 55%),
+    var(--lv-bg-soft);
+  color: var(--lv-text);
+}
+
+:root:not(.dark) .gradient-text {
+  background-image: linear-gradient(120deg, var(--lv-accent), var(--lv-accent-2));
+}
+
+:root:not(.dark) .btn-primary {
+  background-image: linear-gradient(120deg, #1f2937, #4b5563);
+  box-shadow: 0 6px 24px rgba(17, 24, 39, 0.15);
+}
+
+:root:not(.dark) [class*='from-cyan-'][class*='to-purple-'],
+:root:not(.dark) [class*='from-cyan-'][class*='to-blue-'],
+:root:not(.dark) [class*='from-purple-'][class*='to-cyan-'],
+:root:not(.dark) [class*='from-purple-'][class*='to-pink-'],
+:root:not(.dark) [class*='from-blue-'][class*='to-purple-'] {
+  background-image: linear-gradient(120deg, #1f2937, #4b5563) !important;
+}
+
+:root:not(.dark) [class*='text-cyan-'],
+:root:not(.dark) [class*='text-purple-'],
+:root:not(.dark) [class*='text-indigo-'] {
+  color: var(--lv-accent) !important;
+}
+
+:root:not(.dark) [class*='border-cyan-'],
+:root:not(.dark) [class*='border-purple-'],
+:root:not(.dark) [class*='border-indigo-'] {
+  border-color: var(--lv-border) !important;
+}
+
+:root:not(.dark) [class*='bg-cyan-50'],
+:root:not(.dark) [class*='bg-cyan-100'],
+:root:not(.dark) [class*='bg-purple-50'],
+:root:not(.dark) [class*='bg-purple-100'],
+:root:not(.dark) [class*='bg-indigo-50'],
+:root:not(.dark) [class*='bg-indigo-100'] {
+  background-color: var(--lv-surface-soft) !important;
+}
+
+:root:not(.dark) [class*='shadow-cyan-'],
+:root:not(.dark) [class*='shadow-purple-'] {
+  --tw-shadow-color: rgba(17, 24, 39, 0.12) !important;
 }
 
 #root {
