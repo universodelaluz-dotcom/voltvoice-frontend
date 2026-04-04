@@ -252,6 +252,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const responseTimeoutRef = useRef(null)
   const hasActiveResponseRef = useRef(false)
   const shortcutFnRef = useRef({}) // refs to latest recording fns for shortcut handler
+  const f8FnRef = useRef({}) // refs to latest f8 fns/state to avoid stale voice/session closures
   const hasVoiceResponseRef = useRef(false)
   const responsePlaybackStartedRef = useRef(false)
   const transcriptBufferRef = useRef('')
@@ -1161,6 +1162,7 @@ Reglas de salida:
 - Maximo 2 frases cortas.
 - No expliques reglas ni digas que eres IA.
 - No repitas lineas previas literalmente.
+- CRITICO: NUNCA leas en voz alta ni cites textualmente el contenido de mensajes del chat. JAMAS repitas palabra por palabra lo que dijo alguien. Siempre reacciona con TUS PROPIAS PALABRAS originales.
 
 Directiva de comportamiento continuo:
 Mantén al personaje creado siempre fresco, variado y natural.
@@ -1421,6 +1423,7 @@ Extras obligatorios:
   // Keep shortcutFnRef updated with latest values so the listener never has stale closures
   useEffect(() => {
     shortcutFnRef.current = { isRecording, isLoading, startRecording, stopRecording, setInputMode }
+    f8FnRef.current = { isRecording, isLoading, isPlayingResponse, pickAutopilotIntent, executeLocalIntent }
   })
 
   // === SHORTCUT DE TECLADO PARA PUSH-TO-TALK ===
@@ -1465,7 +1468,8 @@ Extras obligatorios:
       const tag = document.activeElement?.tagName?.toLowerCase()
       if (tag === 'input' || tag === 'textarea' || document.activeElement?.isContentEditable) return
 
-      if (isRecording || isLoading || isPlayingResponse) {
+      const fn = f8FnRef.current
+      if (fn.isRecording || fn.isLoading || fn.isPlayingResponse) {
         console.log('[F8] Bot ocupado, ignorado')
         return
       }
@@ -1474,7 +1478,7 @@ Extras obligatorios:
       try {
         // Pick an intent like autopilot does, but skip threshold checks
         console.log('[F8] Step 1: Calling pickAutopilotIntent()')
-        const intent = pickAutopilotIntent()
+        const intent = fn.pickAutopilotIntent()
         console.log('[F8] Step 2: pickAutopilotIntent returned:', intent)
         if (!intent) {
           console.log('[F8] No hay intent disponible')
@@ -1493,7 +1497,7 @@ Extras obligatorios:
 
         // Execute the intent (Inworld or local)
         console.log('[F8] Step 4: Calling executeLocalIntent with type:', intent.type)
-        const localResult = await executeLocalIntent({ type: intent.type }, 'f8-manual')
+        const localResult = await fn.executeLocalIntent({ type: intent.type }, 'f8-manual')
         console.log('[F8] Step 5: executeLocalIntent returned:', localResult)
         if (localResult?.delegated) {
           console.log('[F8] Inworld delegated - response en progreso')
@@ -1515,7 +1519,7 @@ Extras obligatorios:
           setResponse(localResponse)
           setHasActiveResponse(true)
           hasActiveResponseRef.current = true
-          await speakLocalResponse(localResponse, selectedRealtimeVoiceId || voiceLabelRef.current)
+          await speakLocalResponse(localResponse, selectedRealtimeVoiceIdRef.current || voiceLabelRef.current)
           console.log('[F8] ✓ Completado')
         } else {
           console.log('[F8] Step 7: No localResponse, cleanup')
@@ -1535,7 +1539,7 @@ Extras obligatorios:
     return () => {
       window.removeEventListener('keydown', onF8KeyDown)
     }
-  }, [isRecording, isLoading, isPlayingResponse])
+  }, [])
 
   // Effect: track voice selection changes
   useEffect(() => {
