@@ -94,7 +94,8 @@
       "Bash(pkill -f \"git\")",
       "Bash(rm -f \"C:\\\\Nueva carpeta\\\\VOLTVOICE CON SERVER M25\\\\VOLTVOICE\\\\.git\\\\index.lock\")",
       "Bash(grep -r \"voices.*play\\\\|/play\\\\|testText\" 'C:\\\\Nueva carpeta\\\\VOLTVOICE CON SERVER M25\\\\VOLTVOICE\\\\backend\\\\src' --include=*.js)",
-      "Bash(grep -n \"export.*ControlPanel\\\\|const ControlPanel\\\\|function ControlPanel\" frontend/src/components/*.jsx)"
+      "Bash(grep -n \"export.*ControlPanel\\\\|const ControlPanel\\\\|function ControlPanel\" frontend/src/components/*.jsx)",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }

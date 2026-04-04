@@ -1,70 +1,11 @@
 {
   "name": "voltvoice",
   "version": "1.0.0",
-  "description": "Lector de Chat para TikTok Live",
-  "main": "main.js",
+  "description": "Chat Reader para TikTok Live / YouTube - Vercel + Render",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron . --remote-debugging-port=9223",
-    "build": "cd frontend && npm install && npm run build && cd .. && cp -r frontend/dist .",
-    "build:electron": "electron-builder --win --publish never",
-    "build:portable": "electron-builder --win portable --publish never",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "panel": "node control_panel/panel_server.js",
-    "launch": "node launcher.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["tiktok", "youtube", "chat", "reader", "voice"],
   "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "dotenv": "^16.6.1",
-    "express": "^5.2.1",
-    "google-tts-api": "^2.0.2",
-    "googleapis": "^171.4.0",
-    "play-sound": "^1.1.6",
-    "playwright": "^1.48.0",
-    "tiktok-live-connector": "^2.1.1-beta1"
-  },
-  "devDependencies": {
-    "electron": "^41.0.3",
-    "electron-builder": "^26.8.1",
-    "pkg": "^5.8.1"
-  },
-  "build": {
-    "appId": "com.voltvoice.app",
-    "productName": "VoltVoice",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "tts_service.js",
-      "control_panel/**/*",
-      "node_modules/**/*"
-    ],
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
-    }
-  }
+  "license": "ISC"
 }
