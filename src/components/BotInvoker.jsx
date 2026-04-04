@@ -968,8 +968,13 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       setIsPlayingResponse(false)
       unlockChatSuppression()
       localAudioRef.current = null
-      // NOTE: Timestamp was already reset when response STARTED, no need to reset again
-      console.log(`[Autopilot] Local audio finished playing - chat unlocked (threshold timer already started when response began)`)
+
+      // CRITICAL: Reset threshold timer NOW - when local audio FINISHES playing
+      const resetTimestamp = Date.now()
+      lastBotResponseTimestampRef.current = resetTimestamp
+      messagesCountSinceLastResponseRef.current = 0
+      window.messagesCountSinceLastResponseRef = 0
+      console.log(`[Autopilot] LOCAL AUDIO FINISHED - threshold timer begins NOW: timestamp=${resetTimestamp}, msgCount=0`)
     }
 
     audio.onerror = () => {
@@ -1516,14 +1521,6 @@ Extras obligatorios:
     }
 
     const handleResponseCreated = () => {
-      // CRITICAL: Reset threshold timestamp when INWORLD RESPONSE STARTS (right now!)
-      // This starts the 35-second timer from when bot BEGINS responding
-      const resetTimestamp = Date.now()
-      lastBotResponseTimestampRef.current = resetTimestamp
-      messagesCountSinceLastResponseRef.current = 0
-      window.messagesCountSinceLastResponseRef = 0
-      console.log(`[Autopilot] INWORLD RESPONSE STARTING - threshold timer begins NOW: timestamp=${resetTimestamp}, msgCount=0 (next response allowed in ${config?.minTimeBetweenResponsesMs ?? 0}ms)`)
-
       // Wait for real content (text/audio) before considering the response active.
       console.log('[Bot] handleResponseCreated FIRED - clearing previous response text')
       console.log('[Bot] handleResponseCreated: Previous response was:', response?.substring?.(0, 50) || 'null')
@@ -1648,8 +1645,13 @@ Extras obligatorios:
         unlockChatSuppression()
         dispatchChatPlaybackControl('resume')
         inactivityTimerRef.current = null
-        // NOTE: Threshold timestamp was already reset when response STARTED (in handleResponseCreated)
-        console.log('[Bot] Inactivity timeout - response truly complete, but threshold timer already started')
+
+        // CRITICAL: Reset threshold timer NOW - when Inworld audio FINISHES (after silence detected)
+        const resetTimestamp = Date.now()
+        lastBotResponseTimestampRef.current = resetTimestamp
+        messagesCountSinceLastResponseRef.current = 0
+        window.messagesCountSinceLastResponseRef = 0
+        console.log(`[Autopilot] INWORLD AUDIO FINISHED - threshold timer begins NOW: timestamp=${resetTimestamp}, msgCount=0`)
       }, INACTIVITY_TIMEOUT_MS)
     }
 
@@ -2366,14 +2368,6 @@ After using a tool, summarize the result conversationally.`
       armResponseTimeout()
       console.log('[Bot][Autopilot] Intent selected:', intent.type, intent.reason)
       console.log(`[Bot][Autopilot] Using voice: ${voiceId}`)
-
-      // CRITICAL: Reset threshold timestamp BEFORE starting to speak
-      // This starts the 35-second timer from when bot STARTS responding, not when it ends
-      const resetTimestamp = Date.now()
-      lastBotResponseTimestampRef.current = resetTimestamp
-      messagesCountSinceLastResponseRef.current = 0
-      window.messagesCountSinceLastResponseRef = 0
-      console.log(`[Autopilot] RESPONSE STARTING - threshold timer begins NOW: timestamp=${resetTimestamp}, msgCount=0 (next response allowed in ${config?.minTimeBetweenResponsesMs ?? 0}ms)`)
 
       await speakLocalResponse(localResponse, voiceId)
 
