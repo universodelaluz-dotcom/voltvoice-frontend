@@ -930,7 +930,9 @@ export class InworldRealtimeService {
       let decodedBuffers = []
       let pendingDecodes = chunksToProcess.length
 
-      chunksToProcess.forEach((audioDataB64) => {
+      console.log(`[Inworld] Processing ${chunksToProcess.length} audio chunks from queue (total queued: ${this.audioQueue.length})`)
+
+      chunksToProcess.forEach((audioDataB64, idx) => {
         try {
           const binaryString = atob(audioDataB64)
           const bytes = new Uint8Array(binaryString.length)
@@ -938,9 +940,12 @@ export class InworldRealtimeService {
             bytes[i] = binaryString.charCodeAt(i)
           }
 
+          console.log(`[Inworld] Decoding chunk ${idx + 1}/${chunksToProcess.length}, size=${bytes.length} bytes`)
+
           this.audioContext.decodeAudioData(
             bytes.buffer.slice(0),
             (decodedBuffer) => {
+              console.log(`[Inworld] Decoded chunk ${idx + 1}: ${decodedBuffer.duration.toFixed(3)}s @ ${decodedBuffer.sampleRate}Hz`)
               decodedBuffers.push(decodedBuffer)
               pendingDecodes--
               if (pendingDecodes === 0) {
@@ -980,8 +985,11 @@ export class InworldRealtimeService {
       // CRITICAL: Play buffers sequentially, not simultaneously
       // Each buffer must start AFTER the previous one ends to prevent overlap/distortion
       let currentPlaybackTime = this.audioContext.currentTime
+      let totalDuration = 0
 
-      buffers.forEach((audioBuffer) => {
+      console.log(`[Inworld] Starting playback of ${buffers.length} decoded buffer(s)`)
+
+      buffers.forEach((audioBuffer, idx) => {
         const source = this.audioContext.createBufferSource()
         source.buffer = audioBuffer
 
@@ -994,21 +1002,27 @@ export class InworldRealtimeService {
 
         // Play this buffer AFTER the previous one ends (sequential playback)
         source.start(currentPlaybackTime)
-        console.log(`[Inworld] Queued audio buffer: duration=${audioBuffer.duration.toFixed(3)}s, startTime=${currentPlaybackTime.toFixed(3)}s`)
+
+        const bufferDuration = audioBuffer.duration
+        totalDuration += bufferDuration
+
+        console.log(`[Inworld] ▶ Buffer ${idx + 1}/${buffers.length}: ${bufferDuration.toFixed(3)}s @ ${currentPlaybackTime.toFixed(3)}s (ends at ${(currentPlaybackTime + bufferDuration).toFixed(3)}s)`)
 
         // Next buffer starts after this one finishes
-        currentPlaybackTime += audioBuffer.duration
+        currentPlaybackTime += bufferDuration
       })
 
       // Schedule next processing after ALL buffers have finished playing
-      const totalDuration = buffers.reduce((sum, buf) => sum + buf.duration, 0)
       const delayMs = Math.ceil(totalDuration * 1000) + 50
+      console.log(`[Inworld] Total playback duration: ${totalDuration.toFixed(3)}s, next check in ${delayMs}ms`)
 
       setTimeout(() => {
         this.isPlayingAudio = false
         if (this.audioQueue.length > 0) {
+          console.log(`[Inworld] Playback complete, processing remaining ${this.audioQueue.length} queued chunks`)
           this._processAudioQueue()
         } else {
+          console.log(`[Inworld] Playback complete, no more chunks in queue`)
           this._maybeEmitAudioComplete()
         }
       }, delayMs)
