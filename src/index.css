@@ -19,11 +19,11 @@ body {
 }
 
 :root:not(.dark) {
-  --lv-bg: #eef1f5;
-  --lv-bg-soft: #f7f8fa;
+  --lv-bg: #e7eaee;
+  --lv-bg-soft: #f1f3f6;
   --lv-surface: #ffffff;
-  --lv-surface-soft: #f4f6f8;
-  --lv-border: #d7dce3;
+  --lv-surface-soft: #f3f4f6;
+  --lv-border: #d1d5db;
   --lv-text: #111827;
   --lv-muted: #4b5563;
   --lv-accent: #1f2937;
@@ -32,8 +32,8 @@ body {
 
 :root:not(.dark) body {
   background:
-    radial-gradient(1000px 500px at 0% -10%, #dde3ea 0%, transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, #e3e7ed 0%, transparent 55%),
+    radial-gradient(1000px 500px at 0% -10%, #d7dde4 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, #dee3e9 0%, transparent 55%),
     var(--lv-bg-soft);
   color: var(--lv-text);
 }
@@ -74,10 +74,25 @@ body {
 
 :root:not(.dark) [class*='bg-cyan-50'],
 :root:not(.dark) [class*='bg-cyan-100'],
+:root:not(.dark) [class*='bg-cyan-200'],
+:root:not(.dark) [class*='bg-cyan-300'],
 :root:not(.dark) [class*='bg-purple-50'],
 :root:not(.dark) [class*='bg-purple-100'],
+:root:not(.dark) [class*='bg-purple-200'],
+:root:not(.dark) [class*='bg-purple-300'],
 :root:not(.dark) [class*='bg-indigo-50'],
-:root:not(.dark) [class*='bg-indigo-100'] {
+:root:not(.dark) [class*='bg-indigo-100'],
+:root:not(.dark) [class*='bg-indigo-200'],
+:root:not(.dark) [class*='bg-indigo-300'],
+:root:not(.dark) [class*='bg-fuchsia-50'],
+:root:not(.dark) [class*='bg-fuchsia-100'],
+:root:not(.dark) [class*='bg-fuchsia-200'],
+:root:not(.dark) [class*='bg-violet-50'],
+:root:not(.dark) [class*='bg-violet-100'],
+:root:not(.dark) [class*='bg-violet-200'],
+:root:not(.dark) [class*='bg-pink-50'],
+:root:not(.dark) [class*='bg-pink-100'],
+:root:not(.dark) [class*='bg-pink-200'] {
   background-color: var(--lv-surface-soft) !important;
 }
 
@@ -89,6 +104,56 @@ body {
 :root:not(.dark) .text-slate-950[class*='bg-gradient-to-r'],
 :root:not(.dark) .text-black[class*='bg-gradient-to-r'] {
   color: #f8fafc !important;
+}
+
+:root:not(.dark) [class*='bg-fuchsia-'][class*='text-black'],
+:root:not(.dark) [class*='bg-violet-'][class*='text-black'],
+:root:not(.dark) [class*='bg-cyan-'][class*='text-black'],
+:root:not(.dark) [class*='bg-slate-900'][class*='text-black'] {
+  color: #f8fafc !important;
+}
+
+/* Sliders estilo "panel profesional" */
+.pro-slider {
+  appearance: none;
+  height: 8px;
+  border-radius: 9999px;
+  outline: none;
+}
+
+.pro-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 3px 10px rgba(2, 6, 23, 0.28);
+  cursor: pointer;
+}
+
+.pro-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 3px 10px rgba(2, 6, 23, 0.28);
+  cursor: pointer;
+}
+
+.pro-slider-volume::-webkit-slider-thumb {
+  background: #10b981;
+}
+
+.pro-slider-volume::-moz-range-thumb {
+  background: #10b981;
+}
+
+.pro-slider-speed::-webkit-slider-thumb {
+  background: #2563eb;
+}
+
+.pro-slider-speed::-moz-range-thumb {
+  background: #2563eb;
 }
 
 #root {
