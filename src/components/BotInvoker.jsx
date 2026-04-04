@@ -1473,12 +1473,15 @@ Extras obligatorios:
       console.log('[F8] ¡LLAMAR AL INTERACTUADOR AHORA!')
       try {
         // Pick an intent like autopilot does, but skip threshold checks
+        console.log('[F8] Step 1: Calling pickAutopilotIntent()')
         const intent = pickAutopilotIntent()
+        console.log('[F8] Step 2: pickAutopilotIntent returned:', intent)
         if (!intent) {
           console.log('[F8] No hay intent disponible')
           return
         }
 
+        console.log('[F8] Step 3: Setting state (isLoading, etc)')
         setIsLoading(true)
         clearResponseTimeout()
         setHasVoiceResponse(false)
@@ -1489,13 +1492,16 @@ Extras obligatorios:
         lockChatSuppression()
 
         // Execute the intent (Inworld or local)
+        console.log('[F8] Step 4: Calling executeLocalIntent with type:', intent.type)
         const localResult = await executeLocalIntent({ type: intent.type }, 'f8-manual')
+        console.log('[F8] Step 5: executeLocalIntent returned:', localResult)
         if (localResult?.delegated) {
           console.log('[F8] Inworld delegated - response en progreso')
           return
         }
 
         const localResponse = String(localResult || '').trim()
+        console.log('[F8] Step 6: localResponse:', localResponse?.substring?.(0, 50))
         if (localResponse === '__SKIP__') {
           console.log('[F8] Response skipped')
           setIsLoading(false)
@@ -1504,18 +1510,22 @@ Extras obligatorios:
         }
 
         if (localResponse) {
-          console.log('[F8] Respuesta local:', localResponse)
+          console.log('[F8] Step 7: Speaking response')
           armResponseTimeout()
           setResponse(localResponse)
           setHasActiveResponse(true)
           hasActiveResponseRef.current = true
           await speakLocalResponse(localResponse, selectedRealtimeVoiceId || voiceLabelRef.current)
+          console.log('[F8] ✓ Completado')
         } else {
+          console.log('[F8] Step 7: No localResponse, cleanup')
           setIsLoading(false)
           unlockChatSuppression()
         }
       } catch (err) {
-        console.error('[F8] Error:', err)
+        console.error('[F8] ERROR caught at:', err?.message || err?.toString?.() || String(err) || 'UNKNOWN ERROR')
+        console.error('[F8] Full error object:', err)
+        console.error('[F8] Error stack:', err?.stack)
         setIsLoading(false)
         unlockChatSuppression()
       }
