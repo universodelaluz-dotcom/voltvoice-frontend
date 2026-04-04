@@ -357,7 +357,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
               darkMode
                 ? 'bg-gradient-to-r from-[#1a1a2e] to-[#16213e] border border-cyan-400/30 hover:border-cyan-300 hover:shadow-lg hover:shadow-cyan-500/20 text-cyan-300'
-                : 'bg-white border border-indigo-200 hover:bg-indigo-50 hover:border-indigo-400 text-indigo-600 shadow-sm'
+                : 'bg-gradient-to-r from-slate-700 to-slate-800 border border-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-sm'
             }`}
           >
             <Settings className="w-5 h-5" />
@@ -366,7 +366,11 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
           {onGoVoiceCloning && (
             <button
               onClick={onGoVoiceCloning}
-              className="flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white hover:shadow-lg hover:shadow-purple-500/30"
+              className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
+                darkMode
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white hover:shadow-lg hover:shadow-purple-500/30'
+                  : 'bg-gradient-to-r from-slate-700 to-slate-800 border border-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-sm'
+              }`}
             >
               <Mic2 className="w-5 h-5" />
               <span>Taller de Voces</span>
@@ -378,7 +382,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
                 darkMode
                   ? 'bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-400/40 hover:border-cyan-300 hover:shadow-lg hover:shadow-cyan-500/30 text-cyan-300'
-                  : 'bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-300 hover:from-cyan-100 hover:to-blue-100 text-cyan-700 shadow-sm'
+                  : 'bg-gradient-to-r from-slate-700 to-slate-800 border border-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-sm'
               }`}
             >
               <BarChart3 className="w-5 h-5" />

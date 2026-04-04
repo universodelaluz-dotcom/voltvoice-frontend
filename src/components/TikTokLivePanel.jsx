@@ -1937,11 +1937,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
               <div className="grid grid-cols-3 gap-3 flex-1 mr-4">
-                <div className="bg-cyan-500/10 border border-cyan-500/30 rounded p-2">
+                <div className={darkMode ? "bg-cyan-500/10 border border-cyan-500/30 rounded p-2" : "bg-slate-100 border border-slate-300 rounded p-2"}>
                   <p className="text-xs text-gray-400">Comentarios</p>
-                  <p className="text-lg font-bold text-cyan-300">{stats.count}</p>
+                  <p className={darkMode ? "text-lg font-bold text-cyan-300" : "text-lg font-bold text-slate-800"}>{stats.count}</p>
                 </div>
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded p-2">
+                <div className={darkMode ? "bg-emerald-500/10 border border-emerald-500/30 rounded p-2" : "bg-slate-100 border border-slate-300 rounded p-2"}>
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-xs text-gray-400">Msgs/min</p>
                     <span
@@ -1955,11 +1955,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                       {chatIntensity.label}
                     </span>
                   </div>
-                  <p className="text-lg font-bold text-emerald-300">{messagesPerMinute}</p>
+                  <p className={darkMode ? "text-lg font-bold text-emerald-300" : "text-lg font-bold text-slate-800"}>{messagesPerMinute}</p>
                 </div>
-                <div className="bg-purple-500/10 border border-purple-500/30 rounded p-2">
+                <div className={darkMode ? "bg-purple-500/10 border border-purple-500/30 rounded p-2" : "bg-slate-100 border border-slate-300 rounded p-2"}>
                   <p className="text-xs text-gray-400">Tiempo</p>
-                  <p className="text-lg font-bold text-purple-300">
+                  <p className={darkMode ? "text-lg font-bold text-purple-300" : "text-lg font-bold text-slate-800"}>
                   {stats.uptime < 60
                     ? `${stats.uptime}s`
                     : `${Math.floor(stats.uptime / 60)}m ${stats.uptime % 60}s`}
@@ -1996,7 +1996,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               )}
               <button
                 onClick={handleDisconnect}
-                className="bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-300 px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap"
+                className={darkMode
+                  ? "bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-300 px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap"
+                  : "bg-slate-700 hover:bg-slate-600 border border-slate-600 text-white px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap"}
               >
                 <Square className="w-4 h-4" />
                 Desconectar
@@ -2275,15 +2277,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               ? 'border-white/10 bg-white/[0.03] shadow-[0_10px_35px_rgba(0,0,0,0.18)]'
               : 'border-slate-200 bg-white/85 shadow-[0_10px_30px_rgba(148,163,184,0.18)]'
           }`}>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className={`flex flex-wrap items-center gap-1.5 p-1.5 rounded-lg border ${
+              darkMode ? 'bg-slate-900/40 border-white/10' : 'bg-slate-100 border-slate-300'
+            }`}>
               <button
                 onClick={handlePause}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide border transition-all shadow-sm ${
+                className={`h-10 flex items-center gap-2 px-4 rounded-md text-xs font-semibold tracking-wide border transition-all ${
                   isPaused
-                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 hover:border-slate-600'
+                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 hover:border-slate-600 shadow-sm'
                     : darkMode
                       ? 'border-white/10 bg-slate-800 text-slate-100 hover:bg-slate-700'
-                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100'
+                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
                 }`}
                 title={isPaused ? 'Reanudar lectura' : 'Pausar lectura'}
               >
@@ -2294,10 +2298,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               </button>
               <button
                 onClick={handleRefresh}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide border shadow-sm transition-all ${
+                className={`h-10 flex items-center gap-2 px-4 rounded-md text-xs font-semibold tracking-wide border transition-all ${
                   darkMode
                     ? 'border-cyan-400/30 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25'
-                    : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100'
+                    : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
                 }`}
                 title="Saltar cola y continuar desde el próximo mensaje"
               >
@@ -2305,12 +2309,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               </button>
               <button
                 onClick={() => setSmartChatEnabled((prev) => !prev)}
-                className={`group flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide border shadow-sm transition-all ${
+                className={`group h-10 flex items-center gap-2 px-4 rounded-md text-xs font-semibold tracking-wide border transition-all ${
                   smartChatEnabled
-                    ? 'border-slate-700 bg-gradient-to-r from-slate-700 to-slate-900 text-white hover:from-slate-600 hover:to-slate-800 shadow-[0_10px_24px_rgba(15,23,42,0.25)]'
+                    ? 'border-slate-700 bg-gradient-to-r from-slate-700 to-slate-900 text-white hover:from-slate-600 hover:to-slate-800 shadow-sm'
                     : darkMode
                       ? 'border-fuchsia-400/25 bg-fuchsia-500/12 text-fuchsia-100 hover:bg-fuchsia-500/18'
-                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100'
+                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
                 }`}
                 title="Activa el filtro inteligente para eliminar spam y basura"
               >
@@ -2336,12 +2340,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               </button>
               <button
                 onClick={() => setShowHighlightPanel(!showHighlightPanel)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide border shadow-sm transition-all ${
+                className={`h-10 flex items-center gap-2 px-4 rounded-md text-xs font-semibold tracking-wide border transition-all ${
                   showHighlightPanel || highlightMode
-                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600'
+                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 shadow-sm'
                     : darkMode
                       ? 'border-amber-400/25 bg-amber-500/12 text-amber-100 hover:bg-amber-500/18'
-                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100'
+                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
                 }`}
                 title="Remarcar usuarios con color"
               >
@@ -2350,12 +2354,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               {/* Botón para abrir panel de estilo del chat */}
               <button
                 onClick={() => setShowFontPanel(!showFontPanel)}
-                className={`flex items-center justify-center gap-1 px-3 py-2.5 rounded-xl text-xs font-semibold tracking-wide border shadow-sm transition-all min-w-[52px] ${
+                className={`h-10 flex items-center justify-center gap-1 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all min-w-[52px] ${
                   showFontPanel
-                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600'
+                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 shadow-sm'
                     : darkMode
                       ? 'border-white/10 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100'
+                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
                 }`}
                 title="Tamaño y colores del chat"
               >
