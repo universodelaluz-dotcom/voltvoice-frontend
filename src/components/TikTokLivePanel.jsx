@@ -2268,17 +2268,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           </div>
 
           {/* Controles */}
-          <div className={`flex flex-col gap-3 rounded-xl border px-3 py-3 md:flex-row md:items-center md:justify-between ${
+          <div className={`flex flex-col gap-3 rounded-xl border px-3 py-3 md:flex-row md:items-stretch md:justify-between ${
             darkMode
               ? 'border-white/10 bg-white/[0.03] shadow-[0_10px_35px_rgba(0,0,0,0.18)]'
               : 'border-slate-200 bg-white/85 shadow-[0_10px_30px_rgba(148,163,184,0.18)]'
           }`}>
-            <div className={`flex flex-wrap lg:flex-nowrap gap-1.5 p-1.5 rounded-lg border ${
+            <div className={`flex flex-wrap lg:flex-nowrap gap-1.5 p-1.5 rounded-lg border h-12 items-center ${
               darkMode ? 'bg-slate-900/40 border-white/10' : 'bg-slate-100 border-slate-300'
             }`}>
               <button
                 onClick={handlePause}
-                className={`h-10 w-[126px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
+                className={`h-10 w-[120px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
                   isPaused
                     ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 hover:border-slate-600 shadow-sm'
                     : darkMode
@@ -2294,7 +2294,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               </button>
               <button
                 onClick={handleRefresh}
-                className={`h-10 w-[126px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
+                className={`h-10 w-[120px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
                   darkMode
                     ? 'border-cyan-400/30 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25'
                     : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
@@ -2305,7 +2305,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               </button>
               <button
                 onClick={() => setSmartChatEnabled((prev) => !prev)}
-                className={`group h-10 w-[126px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
+                className={`group h-10 w-[120px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
                   smartChatEnabled
                     ? 'border-slate-700 bg-gradient-to-r from-slate-700 to-slate-900 text-white hover:from-slate-600 hover:to-slate-800 shadow-sm'
                     : darkMode
@@ -2316,7 +2316,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               >
                 <span className="relative flex h-3 w-3 items-center justify-center">
                   <span className={`absolute inline-flex h-full w-full rounded-full ${
-                    smartChatEnabled ? 'animate-ping bg-emerald-400/70' : 'bg-transparent'
+                    smartChatEnabled ? 'bg-emerald-400/70' : 'bg-transparent'
                   }`} />
                   <span className={`relative inline-flex h-2.5 w-2.5 rounded-full border ${
                     smartChatEnabled
@@ -2331,7 +2331,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               </button>
               <button
                 onClick={() => setShowHighlightPanel(!showHighlightPanel)}
-                className={`h-10 w-[126px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
+                className={`h-10 w-[120px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
                   showHighlightPanel || highlightMode
                     ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 shadow-sm'
                     : darkMode
@@ -2345,7 +2345,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               {/* Botón para abrir panel de estilo del chat */}
               <button
                 onClick={() => setShowFontPanel(!showFontPanel)}
-                className={`h-10 w-[126px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-1 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
+                className={`h-10 w-[104px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-1 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
                   showFontPanel
                     ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 shadow-sm'
                     : darkMode
@@ -2357,10 +2357,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 <span style={{ fontSize: '13px' }}>Aa</span>
               </button>
             </div>
-            <div className={`flex flex-wrap lg:flex-nowrap gap-1.5 p-1.5 rounded-lg border ${
+            <div className={`flex flex-wrap lg:flex-nowrap gap-1.5 p-1.5 rounded-lg border h-12 items-center ${
               darkMode ? 'bg-black/20 border-white/5' : 'bg-white border-slate-300'
             }`}>
-            <div className={`h-10 w-[246px] shrink-0 rounded-md px-2 border flex items-center gap-2 ${
+            <div className={`h-10 w-[214px] shrink-0 rounded-md px-2 border flex items-center gap-2 ${
               darkMode ? 'bg-slate-900/60 border-slate-700/70' : 'bg-white border-slate-300'
             }`}>
               <button
@@ -2382,13 +2382,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   background: `linear-gradient(to right, #10b981 ${volume * 100}%, ${darkMode ? '#334155' : '#d1d5db'} ${volume * 100}%)`
                 }}
               />
-              <span className={`h-6 min-w-[40px] px-1 rounded border text-[11px] font-bold text-center leading-6 ${
-                darkMode ? 'text-slate-100 border-slate-700 bg-slate-800/70' : 'text-slate-800 border-slate-300 bg-slate-50'
+              <span className={`w-[34px] text-[11px] font-semibold text-right tabular-nums ${
+                darkMode ? 'text-slate-200' : 'text-slate-800'
               }`}>
                 {Math.round(volume * 100)}%
               </span>
             </div>
-            <div className={`h-10 w-[246px] shrink-0 rounded-md px-2 border flex items-center gap-2 ${
+            <div className={`h-10 w-[214px] shrink-0 rounded-md px-2 border flex items-center gap-2 ${
               darkMode ? 'bg-slate-900/60 border-slate-700/70' : 'bg-white border-slate-300'
             }`}>
               <span className={`text-[10px] font-semibold uppercase tracking-wide ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>Vel</span>
@@ -2400,8 +2400,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   background: `linear-gradient(to right, #2563eb ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%, ${darkMode ? '#334155' : '#d1d5db'} ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%)`
                 }}
               />
-              <span className={`h-6 min-w-[40px] px-1 rounded border text-[11px] font-bold text-center leading-6 ${
-                darkMode ? 'text-slate-100 border-slate-700 bg-slate-800/70' : 'text-slate-800 border-slate-300 bg-slate-50'
+              <span className={`w-[32px] text-[11px] font-semibold text-right tabular-nums ${
+                darkMode ? 'text-slate-200' : 'text-slate-800'
               }`}>
                 {Number(config.audioSpeed || 1).toFixed(1)}x
               </span>
