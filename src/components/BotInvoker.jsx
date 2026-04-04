@@ -1456,6 +1456,34 @@ Extras obligatorios:
     }
   }, [config?.botShortcutEnabled, config?.botShortcutKey])
 
+  // === F8 PARA ACTIVAR/DESACTIVAR INTERACTUADOR (MODO MANUAL) ===
+  useEffect(() => {
+    const onF8KeyDown = (e) => {
+      if (e.key !== 'F8') return
+      e.preventDefault()
+
+      const tag = document.activeElement?.tagName?.toLowerCase()
+      if (tag === 'input' || tag === 'textarea' || document.activeElement?.isContentEditable) return
+
+      const fn = shortcutFnRef.current
+      console.log('[F8] Toggle Interactuador - isRecording:', fn.isRecording, 'isLoading:', fn.isLoading)
+
+      if (fn.isRecording) {
+        console.log('[F8] Deteniendo grabación')
+        fn.stopRecording()
+      } else if (!fn.isLoading) {
+        console.log('[F8] Iniciando Interactuador')
+        fn.setInputMode('microphone')
+        fn.startRecording()
+      }
+    }
+
+    window.addEventListener('keydown', onF8KeyDown)
+    return () => {
+      window.removeEventListener('keydown', onF8KeyDown)
+    }
+  }, [])
+
   // Effect: track voice selection changes
   useEffect(() => {
     selectedRealtimeVoiceIdRef.current = selectedRealtimeVoiceId
