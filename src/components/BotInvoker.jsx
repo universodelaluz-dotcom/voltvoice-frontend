@@ -2567,8 +2567,8 @@ After using a tool, summarize the result conversationally.`
           onClick={() => setInputMode('microphone')}
           className={`flex-1 p-2 text-xs font-bold rounded transition-all ${
             inputMode === 'microphone'
-              ? 'bg-cyan-500 text-white'
-              : darkMode ? 'bg-[#0f0f23] text-gray-400' : 'bg-gray-100 text-gray-600'
+              ? (darkMode ? 'bg-cyan-500 text-white' : 'bg-slate-700 text-white border border-slate-700')
+              : darkMode ? 'bg-[#0f0f23] text-gray-400' : 'bg-slate-100 text-slate-700 border border-slate-300'
           }`}
         >
           Micrófono
@@ -2577,8 +2577,8 @@ After using a tool, summarize the result conversationally.`
           onClick={() => setInputMode('text')}
           className={`flex-1 p-2 text-xs font-bold rounded transition-all ${
             inputMode === 'text'
-              ? 'bg-cyan-500 text-white'
-              : darkMode ? 'bg-[#0f0f23] text-gray-400' : 'bg-gray-100 text-gray-600'
+              ? (darkMode ? 'bg-cyan-500 text-white' : 'bg-slate-700 text-white border border-slate-700')
+              : darkMode ? 'bg-[#0f0f23] text-gray-400' : 'bg-slate-100 text-slate-700 border border-slate-300'
           }`}
         >
           Texto
@@ -2592,7 +2592,9 @@ After using a tool, summarize the result conversationally.`
           className={`w-full p-3 rounded font-bold flex items-center justify-center gap-2 transition-all ${
             isRecording
               ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
-              : 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:shadow-lg text-white disabled:opacity-50'
+              : darkMode
+                ? 'bg-gradient-to-r from-cyan-500 to-purple-500 hover:shadow-lg text-white disabled:opacity-50'
+                : 'bg-gradient-to-r from-slate-700 to-slate-900 hover:from-slate-600 hover:to-slate-800 text-white disabled:opacity-50'
           }`}
         >
           <Mic2 className="w-5 h-5" />
@@ -2617,7 +2619,9 @@ After using a tool, summarize the result conversationally.`
           <button
             onClick={handleTextSubmit}
             disabled={isLoading || !inputText.trim()}
-            className="p-2 bg-cyan-500 text-white rounded hover:bg-cyan-600 disabled:opacity-50 transition-all"
+            className={`p-2 rounded disabled:opacity-50 transition-all ${
+              darkMode ? 'bg-cyan-500 text-white hover:bg-cyan-600' : 'bg-slate-700 text-white hover:bg-slate-600'
+            }`}
           >
             <Send className="w-5 h-5" />
           </button>
@@ -2666,6 +2670,7 @@ After using a tool, summarize the result conversationally.`
     </div>
   )
 }
+
 
 
 
