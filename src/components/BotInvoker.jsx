@@ -1456,7 +1456,7 @@ Extras obligatorios:
     }
   }, [config?.botShortcutEnabled, config?.botShortcutKey])
 
-  // === F8 PARA FORZAR UNA RESPUESTA AHORA (SIN MICRÓFONO) ===
+  // === F8 PARA LLAMAR AL INTERACTUADOR MANUALMENTE (UNA SOLA VEZ) ===
   useEffect(() => {
     const onF8KeyDown = async (e) => {
       if (e.key !== 'F8') return
@@ -1465,29 +1465,59 @@ Extras obligatorios:
       const tag = document.activeElement?.tagName?.toLowerCase()
       if (tag === 'input' || tag === 'textarea' || document.activeElement?.isContentEditable) return
 
-      const fn = shortcutFnRef.current
-      if (fn.isRecording || fn.isLoading) {
-        console.log('[F8] Bot ya está hablando o cargando, ignorado')
+      if (isRecording || isLoading || isPlayingResponse) {
+        console.log('[F8] Bot ocupado, ignorado')
         return
       }
 
-      console.log('[F8] Forzando respuesta ahora...')
+      console.log('[F8] ¡LLAMAR AL INTERACTUADOR AHORA!')
       try {
-        fn.setInputMode('text')  // Use text mode, not microphone
-        armResponseTimeout()
-        latestResponseTextRef.current = ''
-        resetTranscriptCapture({ accept: true })
-        setPttSuppressed(true)
+        // Pick an intent like autopilot does, but skip threshold checks
+        const intent = pickAutopilotIntent()
+        if (!intent) {
+          console.log('[F8] No hay intent disponible')
+          return
+        }
 
-        await ensureBotSession()
+        setIsLoading(true)
+        clearResponseTimeout()
+        setHasVoiceResponse(false)
+        hasVoiceResponseRef.current = false
+        responsePlaybackStartedRef.current = false
+        setHasActiveResponse(false)
+        hasActiveResponseRef.current = false
+        lockChatSuppression()
 
-        // Send auto-generated prompt to trigger response
-        const autoPrompt = `El chat está diciendo algo. Responde brevemente sobre lo que está sucediendo en el live.`
-        console.log('[F8] Enviando prompt automático:', autoPrompt)
-        await inworldRealtimeService.sendMessage(autoPrompt)
+        // Execute the intent (Inworld or local)
+        const localResult = await executeLocalIntent({ type: intent.type }, 'f8-manual')
+        if (localResult?.delegated) {
+          console.log('[F8] Inworld delegated - response en progreso')
+          return
+        }
+
+        const localResponse = String(localResult || '').trim()
+        if (localResponse === '__SKIP__') {
+          console.log('[F8] Response skipped')
+          setIsLoading(false)
+          unlockChatSuppression()
+          return
+        }
+
+        if (localResponse) {
+          console.log('[F8] Respuesta local:', localResponse)
+          armResponseTimeout()
+          setResponse(localResponse)
+          setHasActiveResponse(true)
+          hasActiveResponseRef.current = true
+          await speakLocalResponse(localResponse, selectedRealtimeVoiceId || voiceLabelRef.current)
+        } else {
+          setIsLoading(false)
+          unlockChatSuppression()
+        }
       } catch (err) {
         console.error('[F8] Error:', err)
-        setPttSuppressed(false)
+        setIsLoading(false)
+        unlockChatSuppression()
       }
     }
 
@@ -1495,7 +1525,7 @@ Extras obligatorios:
     return () => {
       window.removeEventListener('keydown', onF8KeyDown)
     }
-  }, [])
+  }, [isRecording, isLoading, isPlayingResponse])
 
   // Effect: track voice selection changes
   useEffect(() => {
