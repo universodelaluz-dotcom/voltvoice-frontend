@@ -977,7 +977,10 @@ export class InworldRealtimeService {
 
   _playDecodedBuffers(buffers) {
     try {
-      // Create and play each decoded buffer
+      // CRITICAL: Play buffers sequentially, not simultaneously
+      // Each buffer must start AFTER the previous one ends to prevent overlap/distortion
+      let currentPlaybackTime = this.audioContext.currentTime
+
       buffers.forEach((audioBuffer) => {
         const source = this.audioContext.createBufferSource()
         source.buffer = audioBuffer
@@ -989,11 +992,18 @@ export class InworldRealtimeService {
         source.connect(this.gainNode)
         this.sourceNodes.push(source)
 
-        // Play immediately with minimal delay
-        source.start(this.audioContext.currentTime)
+        // Play this buffer AFTER the previous one ends (sequential playback)
+        source.start(currentPlaybackTime)
+        console.log(`[Inworld] Queued audio buffer: duration=${audioBuffer.duration.toFixed(3)}s, startTime=${currentPlaybackTime.toFixed(3)}s`)
+
+        // Next buffer starts after this one finishes
+        currentPlaybackTime += audioBuffer.duration
       })
 
-      // After all buffers queued, schedule next processing
+      // Schedule next processing after ALL buffers have finished playing
+      const totalDuration = buffers.reduce((sum, buf) => sum + buf.duration, 0)
+      const delayMs = Math.ceil(totalDuration * 1000) + 50
+
       setTimeout(() => {
         this.isPlayingAudio = false
         if (this.audioQueue.length > 0) {
@@ -1001,7 +1011,7 @@ export class InworldRealtimeService {
         } else {
           this._maybeEmitAudioComplete()
         }
-      }, 100)
+      }, delayMs)
 
     } catch (err) {
       console.error('[Inworld] Error playing decoded buffers:', err)
