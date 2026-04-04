@@ -1456,9 +1456,9 @@ Extras obligatorios:
     }
   }, [config?.botShortcutEnabled, config?.botShortcutKey])
 
-  // === F8 PARA ACTIVAR/DESACTIVAR INTERACTUADOR (MODO MANUAL) ===
+  // === F8 PARA FORZAR UNA RESPUESTA AHORA (SIN MICRÓFONO) ===
   useEffect(() => {
-    const onF8KeyDown = (e) => {
+    const onF8KeyDown = async (e) => {
       if (e.key !== 'F8') return
       e.preventDefault()
 
@@ -1466,15 +1466,28 @@ Extras obligatorios:
       if (tag === 'input' || tag === 'textarea' || document.activeElement?.isContentEditable) return
 
       const fn = shortcutFnRef.current
-      console.log('[F8] Toggle Interactuador - isRecording:', fn.isRecording, 'isLoading:', fn.isLoading)
+      if (fn.isRecording || fn.isLoading) {
+        console.log('[F8] Bot ya está hablando o cargando, ignorado')
+        return
+      }
 
-      if (fn.isRecording) {
-        console.log('[F8] Deteniendo grabación')
-        fn.stopRecording()
-      } else if (!fn.isLoading) {
-        console.log('[F8] Iniciando Interactuador')
-        fn.setInputMode('microphone')
-        fn.startRecording()
+      console.log('[F8] Forzando respuesta ahora...')
+      try {
+        fn.setInputMode('text')  // Use text mode, not microphone
+        armResponseTimeout()
+        latestResponseTextRef.current = ''
+        resetTranscriptCapture({ accept: true })
+        setPttSuppressed(true)
+
+        await ensureBotSession()
+
+        // Send auto-generated prompt to trigger response
+        const autoPrompt = `El chat está diciendo algo. Responde brevemente sobre lo que está sucediendo en el live.`
+        console.log('[F8] Enviando prompt automático:', autoPrompt)
+        await inworldRealtimeService.sendMessage(autoPrompt)
+      } catch (err) {
+        console.error('[F8] Error:', err)
+        setPttSuppressed(false)
       }
     }
 
