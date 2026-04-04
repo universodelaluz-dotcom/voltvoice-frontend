@@ -903,10 +903,12 @@ export function App() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 px-4 bg-gradient-to-r from-purple-500/5 to-cyan-500/5">
+      <section className={`py-20 px-4 ${
+        darkMode ? 'bg-gradient-to-r from-purple-500/5 to-cyan-500/5' : 'bg-slate-50'
+      }`}>
         <div className="max-w-7xl mx-auto">
-          <h3 className="text-4xl font-black text-center mb-16">
-            Lo que dicen nuestros <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">creadores</span>
+          <h3 className={`text-4xl font-black text-center mb-16 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+            Lo que dicen nuestros <span className={darkMode ? "text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500" : "text-slate-700"}>creadores</span>
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

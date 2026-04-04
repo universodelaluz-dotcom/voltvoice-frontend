@@ -72,7 +72,7 @@ function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeh
             onChange={(e) => onValueChange(parseInt(e.target.value) || 0)}
             placeholder={placeholder}
             className={`w-24 px-3 py-1.5 text-sm rounded-lg border ${
-              darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
+              darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
             }`}
           />
         </div>
@@ -236,7 +236,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   }, [presetStatus])
 
   return (
-    <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-gray-900"}>
+    <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-slate-800"}>
       {/* Header */}
       <nav className={`fixed top-0 w-full backdrop-blur-md z-50 transition-colors duration-300 ${darkMode ? 'bg-[#0f0f23]/80 border-b border-cyan-500/20' : 'bg-white/80 border-b border-gray-200 shadow-sm'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
@@ -277,7 +277,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>Preset {idx + 1}</span>
+                      <span className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-slate-800'}`}>Preset {idx + 1}</span>
                       <span className={`text-[11px] ${hasPreset ? (darkMode ? 'text-emerald-300' : 'text-emerald-700') : (darkMode ? 'text-slate-400' : 'text-slate-500')}`}>
                         {hasPreset ? 'Guardado' : 'Vacío'}
                       </span>
@@ -347,13 +347,13 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
               }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`text-[15px] font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>Voz general</span>
+                  <span className={`text-[15px] font-medium ${darkMode ? 'text-white' : 'text-slate-800'}`}>Voz general</span>
                 </div>
                 <select
                   value={config.generalVoiceId || 'es-ES'}
                   onChange={(e) => updateConfig('generalVoiceId', e.target.value)}
                   className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                    darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
+                    darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
                   }`}
                 >
                   {premiumVoiceOptions.map(v => (
@@ -369,16 +369,16 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-cyan-500/10 border-cyan-400/40'
                     : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
                   : config.donorVoiceEnabled
-                    ? 'bg-cyan-50 border-cyan-300 shadow-sm'
-                    : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm'
+                    ? 'bg-slate-100 border-slate-400 shadow-sm'
+                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
                 <button onClick={() => updateConfig('donorVoiceEnabled', !config.donorVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                    config.donorVoiceEnabled ? 'bg-cyan-500 border-cyan-400' : darkMode ? 'border-gray-400' : 'border-gray-400'
+                    config.donorVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
                   }`}>
                     {config.donorVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${config.donorVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz donadores<Hint text="Usa una voz diferente para quienes envían regalos" darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.donorVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz donadores<Hint text="Usa una voz diferente para quienes envían regalos" darkMode={darkMode} /></span>
                 </button>
                 {config.donorVoiceEnabled && (
                   <div className="mt-2 ml-8">
@@ -386,7 +386,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                       value={config.donorVoiceId}
                       onChange={(e) => updateConfig('donorVoiceId', e.target.value)}
                       className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
+                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
                       }`}
                     >
                       {premiumVoiceOptions.map(v => (
@@ -404,16 +404,16 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-cyan-500/10 border-cyan-400/40'
                     : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
                   : config.modVoiceEnabled
-                    ? 'bg-cyan-50 border-cyan-300 shadow-sm'
-                    : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm'
+                    ? 'bg-slate-100 border-slate-400 shadow-sm'
+                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
                 <button onClick={() => updateConfig('modVoiceEnabled', !config.modVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                    config.modVoiceEnabled ? 'bg-cyan-500 border-cyan-400' : darkMode ? 'border-gray-400' : 'border-gray-400'
+                    config.modVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
                   }`}>
                     {config.modVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${config.modVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz moderadores<Hint text="Usa una voz diferente para los moderadores" darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.modVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz moderadores<Hint text="Usa una voz diferente para los moderadores" darkMode={darkMode} /></span>
                 </button>
                 {config.modVoiceEnabled && (
                   <div className="mt-2 ml-8">
@@ -421,7 +421,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                       value={config.modVoiceId || 'Lupita'}
                       onChange={(e) => updateConfig('modVoiceId', e.target.value)}
                       className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
+                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
                       }`}
                     >
                       {premiumVoiceOptions.map(v => (
@@ -439,16 +439,16 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-cyan-500/10 border-cyan-400/40'
                     : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
                   : config.notifVoiceEnabled
-                    ? 'bg-cyan-50 border-cyan-300 shadow-sm'
-                    : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm'
+                    ? 'bg-slate-100 border-slate-400 shadow-sm'
+                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
                 <button onClick={() => updateConfig('notifVoiceEnabled', !config.notifVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                    config.notifVoiceEnabled ? 'bg-cyan-500 border-cyan-400' : darkMode ? 'border-gray-400' : 'border-gray-400'
+                    config.notifVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
                   }`}>
                     {config.notifVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${config.notifVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz notificaciones<Hint text="Usa una voz diferente para las notificaciones del live" darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.notifVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz notificaciones<Hint text="Usa una voz diferente para las notificaciones del live" darkMode={darkMode} /></span>
                 </button>
                 {config.notifVoiceEnabled && (
                   <div className="mt-2 ml-8">
@@ -456,7 +456,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                       value={config.notifVoiceId || 'Lupita'}
                       onChange={(e) => updateConfig('notifVoiceId', e.target.value)}
                       className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
+                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
                       }`}
                     >
                       {premiumVoiceOptions.map(v => (
@@ -560,19 +560,19 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-cyan-500/10 border-cyan-400/40'
                     : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
                   : config.botShortcutEnabled
-                    ? 'bg-cyan-50 border-cyan-300 shadow-sm'
-                    : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm'
+                    ? 'bg-slate-100 border-slate-400 shadow-sm'
+                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
                 <button
                   onClick={() => updateConfig('botShortcutEnabled', !config.botShortcutEnabled)}
                   className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity"
                 >
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                    config.botShortcutEnabled ? 'bg-cyan-500 border-cyan-400' : darkMode ? 'border-gray-400' : 'border-gray-400'
+                    config.botShortcutEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
                   }`}>
                     {config.botShortcutEnabled && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-gray-900'} ${config.botShortcutEnabled ? 'font-semibold' : 'font-medium'}`}>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.botShortcutEnabled ? 'font-semibold' : 'font-medium'}`}>
                     Activar shortcut de teclado (Push-to-Talk)
                     <Hint text="Mantén presionada la tecla para hablar con el bot sin usar el mouse" darkMode={darkMode} />
                   </span>
@@ -610,4 +610,6 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     </div>
   )
 }
+
+
 

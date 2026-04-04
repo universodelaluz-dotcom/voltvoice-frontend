@@ -2366,62 +2366,48 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             <div className={`grid grid-cols-1 md:grid-cols-2 gap-2 rounded-xl px-3 py-2 ${
               darkMode ? 'bg-black/20 border border-white/5' : 'bg-white border border-slate-300'
             }`}>
-              <div className={`rounded-lg px-3 py-2 ${darkMode ? 'bg-slate-900/60 border border-slate-700/70' : 'bg-slate-50 border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]'}`}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className={`text-[10px] uppercase tracking-[0.18em] font-semibold ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                    Volumen
-                  </span>
-                  <span className={`text-xs font-bold min-w-[42px] text-right ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                    {Math.round(volume * 100)}%
-                  </span>
-                </div>
-                <div className={`text-[10px] mb-2 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                  Nivel de salida
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <button
-                    onClick={() => setVolume(v => v > 0 ? 0 : 0.8)}
-                    className={`rounded-md p-1.5 transition-all ${
-                      darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-200'
-                    }`}
-                    title={volume === 0 ? 'Activar audio' : 'Silenciar audio'}
-                  >
-                    {volume === 0
-                      ? <VolumeX className="w-3.5 h-3.5 text-red-400" />
-                      : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-                    }
-                  </button>
-                  <input
-                    type="range" min="0" max="1" step="0.01" value={volume}
-                    onChange={(e) => setVolume(parseFloat(e.target.value))}
-                    className="pro-slider pro-slider-volume flex-1 cursor-pointer"
-                    style={{
-                      background: `linear-gradient(to right, #10b981 ${volume * 100}%, ${darkMode ? '#334155' : '#d1d5db'} ${volume * 100}%)`
-                    }}
-                  />
-                </div>
-              </div>
-              <div className={`rounded-lg px-3 py-2 ${darkMode ? 'bg-slate-900/60 border border-slate-700/70' : 'bg-slate-50 border border-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]'}`}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className={`text-[10px] uppercase tracking-[0.18em] font-semibold ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                    Velocidad
-                  </span>
-                  <span className={`text-xs font-bold ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                    {Number(config.audioSpeed || 1).toFixed(1)}x
-                  </span>
-                </div>
-                <div className={`text-[10px] mb-2 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                  Ritmo de lectura
-                </div>
-                <input
-                  type="range" min="0.5" max="2" step="0.1" value={Number(config.audioSpeed || 1)}
-                  onChange={(e) => updateConfig && updateConfig('audioSpeed', parseFloat(e.target.value))}
-                  className="pro-slider pro-slider-speed w-full cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to right, #2563eb ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%, ${darkMode ? '#334155' : '#d1d5db'} ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%)`
-                  }}
-                />
-              </div>
+            <div className={`h-10 w-[220px] shrink-0 rounded-md px-2 border flex items-center gap-2 ${
+              darkMode ? 'bg-slate-900/60 border-slate-700/70' : 'bg-white border-slate-300'
+            }`}>
+              <button
+                onClick={() => setVolume(v => v > 0 ? 0 : 0.8)}
+                className={`rounded p-1 transition-all ${darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100'}`}
+                title={volume === 0 ? 'Activar audio' : 'Silenciar audio'}
+              >
+                {volume === 0
+                  ? <VolumeX className="w-3.5 h-3.5 text-red-400" />
+                  : <Volume2 className="w-3.5 h-3.5 text-emerald-500" />
+                }
+              </button>
+              <span className={`text-[10px] font-semibold uppercase tracking-wide ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>Vol</span>
+              <input
+                type="range" min="0" max="1" step="0.01" value={volume}
+                onChange={(e) => setVolume(parseFloat(e.target.value))}
+                className="pro-slider pro-slider-volume flex-1 cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, #10b981 ${volume * 100}%, ${darkMode ? '#334155' : '#d1d5db'} ${volume * 100}%)`
+                }}
+              />
+              <span className={`text-xs font-bold min-w-[34px] text-right ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                {Math.round(volume * 100)}%
+              </span>
+            </div>
+            <div className={`h-10 w-[220px] shrink-0 rounded-md px-2 border flex items-center gap-2 ${
+              darkMode ? 'bg-slate-900/60 border-slate-700/70' : 'bg-white border-slate-300'
+            }`}>
+              <span className={`text-[10px] font-semibold uppercase tracking-wide ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>Vel</span>
+              <input
+                type="range" min="0.5" max="2" step="0.1" value={Number(config.audioSpeed || 1)}
+                onChange={(e) => updateConfig && updateConfig('audioSpeed', parseFloat(e.target.value))}
+                className="pro-slider pro-slider-speed flex-1 cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, #2563eb ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%, ${darkMode ? '#334155' : '#d1d5db'} ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%)`
+                }}
+              />
+              <span className={`text-xs font-bold min-w-[32px] text-right ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                {Number(config.audioSpeed || 1).toFixed(1)}x
+              </span>
+            </div>
             </div>
           </div>
 

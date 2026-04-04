@@ -47,14 +47,16 @@ body {
   box-shadow: 0 6px 24px rgba(17, 24, 39, 0.15);
 }
 
-:root:not(.dark) [class*='from-cyan-'][class*='to-purple-'],
-:root:not(.dark) [class*='from-cyan-'][class*='to-blue-'],
-:root:not(.dark) [class*='from-purple-'][class*='to-cyan-'],
-:root:not(.dark) [class*='from-purple-'][class*='to-pink-'],
-:root:not(.dark) [class*='from-blue-'][class*='to-purple-'],
-:root:not(.dark) [class*='from-fuchsia-'][class*='to-violet-'],
-:root:not(.dark) [class*='from-cyan-'][class*='to-fuchsia-'],
-:root:not(.dark) [class*='from-green-'][class*='to-green-'] {
+:root:not(.dark) button[class*='from-cyan-'][class*='to-purple-'],
+:root:not(.dark) button[class*='from-cyan-'][class*='to-blue-'],
+:root:not(.dark) button[class*='from-purple-'][class*='to-cyan-'],
+:root:not(.dark) button[class*='from-purple-'][class*='to-pink-'],
+:root:not(.dark) button[class*='from-blue-'][class*='to-purple-'],
+:root:not(.dark) button[class*='from-fuchsia-'][class*='to-violet-'],
+:root:not(.dark) button[class*='from-cyan-'][class*='to-fuchsia-'],
+:root:not(.dark) button[class*='from-green-'][class*='to-green-'],
+:root:not(.dark) a[class*='from-cyan-'][class*='to-purple-'],
+:root:not(.dark) a[class*='from-cyan-'][class*='to-blue-'] {
   background-image: linear-gradient(120deg, #1f2937, #4b5563) !important;
 }
 
