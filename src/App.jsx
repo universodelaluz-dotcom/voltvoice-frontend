@@ -58,6 +58,10 @@ const DEFAULT_CONFIG = {
   minNewMessagesBeforeResponse: 0,       // Min new messages before responding
   minTimeBetweenResponsesMs: 0,          // Min milliseconds between responses
   botAutoInteractEnabled: true,          // Enable/disable autopilot
+  botShortcutEnabled: true,
+  botShortcutKey: 'F9',
+  interactorShortcutEnabled: true,
+  interactorShortcutKey: 'F8',
   chatFontSize: 14,
   chatNickColorDark: '#22d3ee',
   chatNickColorLight: '#0f766e',

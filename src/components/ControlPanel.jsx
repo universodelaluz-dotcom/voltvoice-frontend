@@ -602,6 +602,56 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   </div>
                 )}
               </div>
+
+              {/* === SHORTCUT INTERACTUADOR (MANUAL) === */}
+              <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
+                darkMode
+                  ? config.interactorShortcutEnabled
+                    ? 'bg-cyan-500/10 border-cyan-400/40'
+                    : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
+                  : config.interactorShortcutEnabled
+                    ? 'bg-slate-100 border-slate-400 shadow-sm'
+                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
+              }`}>
+                <button
+                  onClick={() => updateConfig('interactorShortcutEnabled', !config.interactorShortcutEnabled)}
+                  className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity"
+                >
+                  <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                    config.interactorShortcutEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
+                  }`}>
+                    {config.interactorShortcutEnabled && <Check className="w-4 h-4 text-white" />}
+                  </div>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.interactorShortcutEnabled ? 'font-semibold' : 'font-medium'}`}>
+                    Activar shortcut de teclado (Interactuador)
+                    <Hint text="Dispara una intervención del animador para opinar sobre el chat al instante" darkMode={darkMode} />
+                  </span>
+                </button>
+
+                {config.interactorShortcutEnabled && (
+                  <div className="mt-3 ml-8 space-y-2">
+                    <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Tecla actual:
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <kbd className={`px-3 py-1.5 text-sm font-bold rounded-lg border-2 ${
+                        darkMode
+                          ? 'bg-gray-900 border-cyan-400/50 text-cyan-300'
+                          : 'bg-gray-100 border-gray-400 text-gray-800'
+                      }`}>
+                        {config.interactorShortcutKey || 'F8'}
+                      </kbd>
+                      <BotShortcutCapture
+                        darkMode={darkMode}
+                        onCapture={(key) => updateConfig('interactorShortcutKey', key)}
+                      />
+                    </div>
+                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      💡 Sugerida: <code className="text-cyan-400">F8</code> — rápida para invocar al interactuador manualmente
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
           </div>

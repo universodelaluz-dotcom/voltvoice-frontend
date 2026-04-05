@@ -1459,10 +1459,13 @@ Extras obligatorios:
     }
   }, [config?.botShortcutEnabled, config?.botShortcutKey])
 
-  // === F8 PARA LLAMAR AL INTERACTUADOR MANUALMENTE (UNA SOLA VEZ) ===
+  // === SHORTCUT DE TECLADO PARA LLAMAR AL INTERACTUADOR MANUALMENTE ===
   useEffect(() => {
+    if (!config?.interactorShortcutEnabled) return
+    const interactorShortcutKey = config?.interactorShortcutKey || 'F8'
+
     const onF8KeyDown = async (e) => {
-      if (e.key !== 'F8') return
+      if (e.key !== interactorShortcutKey) return
       e.preventDefault()
 
       const tag = document.activeElement?.tagName?.toLowerCase()
@@ -1539,7 +1542,7 @@ Extras obligatorios:
     return () => {
       window.removeEventListener('keydown', onF8KeyDown)
     }
-  }, [])
+  }, [config?.interactorShortcutEnabled, config?.interactorShortcutKey])
 
   // Effect: track voice selection changes
   useEffect(() => {
