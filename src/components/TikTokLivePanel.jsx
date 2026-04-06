@@ -102,6 +102,7 @@ const hasTrivialSmartChatContent = (text = '') => {
 }
 
 const normalizeTikTokUsername = (value) => String(value || '').trim().replace(/^@+/, '')
+const isEnabledFlag = (value) => value === true || value === 'true' || value === 1 || value === '1'
 const getBanCandidateKeys = (value) => {
   const raw = String(value || '').trim()
   const normalized = normalizeTikTokUsername(raw).toLowerCase()
@@ -1002,13 +1003,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
           // PUNTO 4: Filtros de rol — trabajan como OR entre sí (pasa si cumple CUALQUIERA)
           // Ejemplo: donor + moderador = lee a cualquiera de los dos, no a ambos a la vez
-          const roleFiltersActive = c.onlyDonors || c.onlyModerators || c.onlySubscribers || c.onlyCommunityMembers
+          const onlyDonors = isEnabledFlag(c.onlyDonors)
+          const onlyModerators = isEnabledFlag(c.onlyModerators)
+          const onlySubscribers = isEnabledFlag(c.onlySubscribers)
+          const onlyCommunityMembers = isEnabledFlag(c.onlyCommunityMembers)
+          const roleFiltersActive = onlyDonors || onlyModerators || onlySubscribers || onlyCommunityMembers
           if (roleFiltersActive) {
             const passRoleFilter =
-              (c.onlyDonors && isKnownDonor) ||
-              (c.onlyModerators && msg.isModerator) ||
-              (c.onlySubscribers && (msg.isSubscriber || false)) ||
-              (c.onlyCommunityMembers && msg.isCommunityMember)
+              (onlyDonors && isKnownDonor) ||
+              (onlyModerators && msg.isModerator) ||
+              (onlySubscribers && (msg.isSubscriber || false)) ||
+              (onlyCommunityMembers && msg.isCommunityMember)
             if (!passRoleFilter) { markFilteredMessage(); return }
           }
 
@@ -1447,15 +1452,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       const { text, username } = item
       const remaining = speakQueueRef.current.length
       const c = configRef.current
+      const onlyDonors = isEnabledFlag(c.onlyDonors)
+      const onlyModerators = isEnabledFlag(c.onlyModerators)
+      const onlySubscribers = isEnabledFlag(c.onlySubscribers)
+      const onlyCommunityMembers = isEnabledFlag(c.onlyCommunityMembers)
       const roleFiltersActive =
-        c.onlyDonors || c.onlyModerators || c.onlySubscribers || c.onlyCommunityMembers
+        onlyDonors || onlyModerators || onlySubscribers || onlyCommunityMembers
       if (roleFiltersActive) {
         const normalizedItemUsername = normalizeTikTokUsername(username)
         const passRoleFilter =
-          (c.onlyDonors && (item.isDonor || donors.has(username) || donors.has(normalizedItemUsername))) ||
-          (c.onlyModerators && item.isModerator) ||
-          (c.onlySubscribers && item.isSubscriber) ||
-          (c.onlyCommunityMembers && item.isCommunityMember)
+          (onlyDonors && (item.isDonor || donors.has(username) || donors.has(normalizedItemUsername))) ||
+          (onlyModerators && item.isModerator) ||
+          (onlySubscribers && item.isSubscriber) ||
+          (onlyCommunityMembers && item.isCommunityMember)
 
         if (!passRoleFilter) {
           console.log('[TikTok] processQueue: DROP por filtro de rol activo (item fuera de reglas)')
