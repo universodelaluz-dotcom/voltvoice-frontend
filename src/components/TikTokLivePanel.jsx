@@ -1019,7 +1019,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
           // Filtro: solo preguntas — AND independiente encima de los roles
           // Ejemplo: donor + preguntas = lee donadores QUE ADEMÁS hagan preguntas
-          if (c.onlyQuestions && !isQuestion(msg.text)) { markFilteredMessage(); return }
+          const onlyQuestions = isEnabledFlag(c.onlyQuestions)
+          if (onlyQuestions && !isQuestion(msg.text)) { markFilteredMessage(); return }
 
           // Filtro: saltar repetidos (por usuario, no global)
           const normalizedText = msg.text.trim().toLowerCase()
@@ -1456,6 +1457,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       const onlyModerators = isEnabledFlag(c.onlyModerators)
       const onlySubscribers = isEnabledFlag(c.onlySubscribers)
       const onlyCommunityMembers = isEnabledFlag(c.onlyCommunityMembers)
+      const onlyQuestions = isEnabledFlag(c.onlyQuestions)
       const roleFiltersActive =
         onlyDonors || onlyModerators || onlySubscribers || onlyCommunityMembers
       if (roleFiltersActive) {
@@ -1471,6 +1473,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           markFilteredMessage()
           continue
         }
+      }
+      if (onlyQuestions && !(item.isQuestion || isQuestion(item.rawText || item.text || ''))) {
+        console.log('[TikTok] processQueue: DROP por onlyQuestions (mensaje sin pregunta)')
+        markFilteredMessage()
+        continue
       }
 
       console.log(`[TikTok] REPRODUCIENDO: "${text.substring(0, 50)}" (pendientes: ${remaining})`)
