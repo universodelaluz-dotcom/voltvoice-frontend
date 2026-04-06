@@ -1350,6 +1350,23 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     return false
   }
 
+  const resolveVoiceIdAtEnqueue = (item) => {
+    const c = configRef.current || {}
+    const username = item.username
+    const normalizedItemUsername = normalizeTikTokUsername(username)
+    const isDonorEligible = item.isDonor || donors.has(username) || donors.has(normalizedItemUsername)
+    const isQuestionEligible = item.isQuestion || isQuestion(item.sourceText || item.rawText || item.text || '')
+
+    // Primera coincidencia al llegar: la voz queda fija para este item.
+    if (c.notifVoiceEnabled && item.isNotification) return c.notifVoiceId || 'Lupita'
+    if (c.modVoiceEnabled && item.isModerator) return c.modVoiceId || 'Lupita'
+    if (c.donorVoiceEnabled && isDonorEligible) return c.donorVoiceId || 'Diego'
+    if (c.subscriberVoiceEnabled && item.isSubscriber) return c.subscriberVoiceId || 'Lupita'
+    if (c.communityMemberVoiceEnabled && item.isCommunityMember) return c.communityMemberVoiceId || 'Lupita'
+    if (c.questionVoiceEnabled && isQuestionEligible) return c.questionVoiceId || 'Lupita'
+    return c.generalVoiceId || 'es-ES'
+  }
+
   const queueMessage = (text, username, extra = {}) => {
     const item = {
       text: text.toLowerCase(),
@@ -1359,6 +1376,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       estimatedSpeakSeconds: estimateSpeakSeconds(text, configRef.current?.audioSpeed || 1.0),
       ...extra
     }
+    item.voiceId = resolveVoiceIdAtEnqueue(item)
 
     if (smartChatEnabledRef.current) {
       const metrics = getSmartMetrics()
@@ -1411,24 +1429,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         `skip aprox ${adaptiveSkip}, cola objetivo ${targetQueueSize}, score ${item.smartScore.toFixed(2)}`
       )
     } else {
-      // PUNTO 3: Incluso sin filtro inteligente, priorizar cola por rol
-      // Orden: comunidad > moderadores > donadores > suscriptores > preguntas > general
+      // Sin filtro inteligente: respetar orden de llegada para maximizar cobertura.
       speakQueueRef.current.push(item)
-      const getRoleWeight = (m) => {
-        if (m.isNotification) return 11
-        if (m.isCommunityMember) return 10
-        if (m.isModerator) return 9
-        if (m.isDonor) return 8.5
-        if (m.isSubscriber) return 7.5
-        if (m.isQuestion) return 6.5
-        return 0
-      }
-      // Solo reordenar si hay mensajes de diferentes roles en la cola
-      const hasRoledMessages = speakQueueRef.current.some(m => getRoleWeight(m) > 0)
-      if (hasRoledMessages) {
-        speakQueueRef.current = speakQueueRef.current
-          .sort((a, b) => (getRoleWeight(b) - getRoleWeight(a)) || (a.queuedAt - b.queuedAt))
-      }
     }
 
     console.log(`[TikTok] Agregado a cola (${speakQueueRef.current.length} pendientes)`)
@@ -1512,11 +1514,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
       console.log(`[TikTok] REPRODUCIENDO: "${text.substring(0, 50)}" (pendientes: ${remaining})`)
 
-      // Determinar voz: notificacion > moderador > donador > general
-      let voiceId = c.generalVoiceId || 'es-ES'
-      if (c.donorVoiceEnabled && (item.isDonor || donors.has(username))) voiceId = c.donorVoiceId || 'Diego'
-      if (c.modVoiceEnabled && item.isModerator) voiceId = c.modVoiceId || 'Lupita'
-      if (c.notifVoiceEnabled && item.isNotification) voiceId = c.notifVoiceId || 'Lupita'
+      // Voz congelada al encolar: evita cambios por prioridad al reproducir.
+      const voiceId = item.voiceId || (c.generalVoiceId || 'es-ES')
 
       try {
         const isLocalVoice = voiceId === 'es-ES' || voiceId === 'en-US'

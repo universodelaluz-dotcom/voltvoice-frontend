@@ -433,6 +433,111 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 )}
               </div>
 
+              {/* Voz suscriptores */}
+              <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
+                darkMode
+                  ? config.subscriberVoiceEnabled
+                    ? 'bg-cyan-500/10 border-cyan-400/40'
+                    : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
+                  : config.subscriberVoiceEnabled
+                    ? 'bg-slate-100 border-slate-400 shadow-sm'
+                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
+              }`}>
+                <button onClick={() => updateConfig('subscriberVoiceEnabled', !config.subscriberVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+                  <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                    config.subscriberVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
+                  }`}>
+                    {config.subscriberVoiceEnabled && <Check className="w-4 h-4 text-white" />}
+                  </div>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.subscriberVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz suscriptores<Hint text="Usa una voz diferente para usuarios suscritos" darkMode={darkMode} /></span>
+                </button>
+                {config.subscriberVoiceEnabled && (
+                  <div className="mt-2 ml-8">
+                    <select
+                      value={config.subscriberVoiceId || 'Lupita'}
+                      onChange={(e) => updateConfig('subscriberVoiceId', e.target.value)}
+                      className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                      }`}
+                    >
+                      {premiumVoiceOptions.map(v => (
+                        <option key={v.id} value={v.id}>{v.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Voz miembros de comunidad */}
+              <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
+                darkMode
+                  ? config.communityMemberVoiceEnabled
+                    ? 'bg-cyan-500/10 border-cyan-400/40'
+                    : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
+                  : config.communityMemberVoiceEnabled
+                    ? 'bg-slate-100 border-slate-400 shadow-sm'
+                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
+              }`}>
+                <button onClick={() => updateConfig('communityMemberVoiceEnabled', !config.communityMemberVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+                  <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                    config.communityMemberVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
+                  }`}>
+                    {config.communityMemberVoiceEnabled && <Check className="w-4 h-4 text-white" />}
+                  </div>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.communityMemberVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz miembros de comunidad<Hint text="Usa una voz diferente para Fan/SuperFan del live" darkMode={darkMode} /></span>
+                </button>
+                {config.communityMemberVoiceEnabled && (
+                  <div className="mt-2 ml-8">
+                    <select
+                      value={config.communityMemberVoiceId || 'Lupita'}
+                      onChange={(e) => updateConfig('communityMemberVoiceId', e.target.value)}
+                      className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                      }`}
+                    >
+                      {premiumVoiceOptions.map(v => (
+                        <option key={v.id} value={v.id}>{v.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Voz preguntas */}
+              <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
+                darkMode
+                  ? config.questionVoiceEnabled
+                    ? 'bg-cyan-500/10 border-cyan-400/40'
+                    : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
+                  : config.questionVoiceEnabled
+                    ? 'bg-slate-100 border-slate-400 shadow-sm'
+                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
+              }`}>
+                <button onClick={() => updateConfig('questionVoiceEnabled', !config.questionVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+                  <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                    config.questionVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
+                  }`}>
+                    {config.questionVoiceEnabled && <Check className="w-4 h-4 text-white" />}
+                  </div>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.questionVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz preguntas<Hint text="Usa una voz diferente cuando el mensaje sea una pregunta" darkMode={darkMode} /></span>
+                </button>
+                {config.questionVoiceEnabled && (
+                  <div className="mt-2 ml-8">
+                    <select
+                      value={config.questionVoiceId || 'Lupita'}
+                      onChange={(e) => updateConfig('questionVoiceId', e.target.value)}
+                      className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                      }`}
+                    >
+                      {premiumVoiceOptions.map(v => (
+                        <option key={v.id} value={v.id}>{v.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
               {/* Voz notificaciones */}
               <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
                 darkMode

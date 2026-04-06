@@ -599,13 +599,16 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       }
     }
 
-    const voiceMatch = normalized.match(/(?:cambia|pon|usa|asigna|deja)\s+(?:la\s+)?voz\s+(general|de\s+donadores|de\s+moderadores|de\s+notificaciones)\s+(?:a|por)\s+(.+)/i)
+    const voiceMatch = normalized.match(/(?:cambia|pon|usa|asigna|deja)\s+(?:la\s+)?voz\s+(general|de\s+donadores|de\s+moderadores|de\s+notificaciones|de\s+suscriptores|de\s+comunidad|de\s+preguntas)\s+(?:a|por)\s+(.+)/i)
     if (voiceMatch) {
       const targetMap = {
         general: { key: 'generalVoiceId', label: 'voz general' },
         'de donadores': { key: 'donorVoiceId', label: 'voz de donadores', enableKey: 'donorVoiceEnabled' },
         'de moderadores': { key: 'modVoiceId', label: 'voz de moderadores', enableKey: 'modVoiceEnabled' },
-        'de notificaciones': { key: 'notifVoiceId', label: 'voz de notificaciones', enableKey: 'notifVoiceEnabled' }
+        'de notificaciones': { key: 'notifVoiceId', label: 'voz de notificaciones', enableKey: 'notifVoiceEnabled' },
+        'de suscriptores': { key: 'subscriberVoiceId', label: 'voz de suscriptores', enableKey: 'subscriberVoiceEnabled' },
+        'de comunidad': { key: 'communityMemberVoiceId', label: 'voz de comunidad', enableKey: 'communityMemberVoiceEnabled' },
+        'de preguntas': { key: 'questionVoiceId', label: 'voz de preguntas', enableKey: 'questionVoiceEnabled' }
       }
       const target = targetMap[voiceMatch[1]]
       const voice = resolveVoiceOption(voiceMatch[2])
