@@ -1496,12 +1496,8 @@ Extras obligatorios:
       try {
         // Pick an intent like autopilot does, but skip threshold checks
         console.log('[F8] Step 1: Calling pickAutopilotIntent()')
-        const intent = fn.pickAutopilotIntent()
+        const intent = fn.pickAutopilotIntent() || { type: 'react_to_chat', reason: 'f8-fallback' }
         console.log('[F8] Step 2: pickAutopilotIntent returned:', intent)
-        if (!intent) {
-          console.log('[F8] No hay intent disponible')
-          return
-        }
 
         console.log('[F8] Step 3: Setting state (isLoading, etc)')
         setIsLoading(true)
@@ -1522,13 +1518,12 @@ Extras obligatorios:
           return
         }
 
-        const localResponse = String(localResult || '').trim()
+        let localResponse = String(localResult || '').trim()
         console.log('[F8] Step 6: localResponse:', localResponse?.substring?.(0, 50))
-        if (localResponse === '__SKIP__') {
-          console.log('[F8] Response skipped')
-          setIsLoading(false)
-          unlockChatSuppression()
-          return
+        if (localResponse === '__SKIP__' || !localResponse) {
+          console.log('[F8] Primary intent vacío/skip, fallback directo')
+          const fallbackResult = await fn.executeLocalIntent({ type: 'epic_chat_line' }, 'f8-manual-fallback')
+          localResponse = String(fallbackResult || '').trim()
         }
 
         if (localResponse) {
