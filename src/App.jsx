@@ -14,6 +14,7 @@ import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon,
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 const LOCAL_CONFIG_CACHE_KEY = 'sv-config-cache-v1'
+const LOCAL_CONFIG_CACHE_KEY_PREFIX = 'sv-config-cache-v2'
 
 const DEFAULT_CONFIG = {
   audioSpeed: 1.0,
@@ -104,9 +105,14 @@ const normalizeUserConfig = (rawConfig = {}) => {
   }
 }
 
-const loadCachedConfig = () => {
+const getConfigCacheKey = (userIdentifier = 'guest') => `${LOCAL_CONFIG_CACHE_KEY_PREFIX}:${String(userIdentifier || 'guest')}`
+
+const loadCachedConfig = (userIdentifier = 'guest') => {
   try {
-    const raw = localStorage.getItem(LOCAL_CONFIG_CACHE_KEY)
+    const scopedRaw = localStorage.getItem(getConfigCacheKey(userIdentifier))
+    if (scopedRaw) return JSON.parse(scopedRaw)
+    if (userIdentifier !== 'guest') return null
+    const raw = localStorage.getItem(LOCAL_CONFIG_CACHE_KEY) // compatibilidad legado
     if (!raw) return null
     return JSON.parse(raw)
   } catch {
@@ -139,7 +145,7 @@ export function App() {
   const [userCountry, setUserCountry] = useState(null)
 
   // Config centralizado para todas las opciones
-  const [config, setConfig] = useState(() => normalizeUserConfig(loadCachedConfig() || DEFAULT_CONFIG))
+  const [config, setConfig] = useState(() => normalizeUserConfig(loadCachedConfig('guest') || DEFAULT_CONFIG))
   const [configReady, setConfigReady] = useState(false)
 
   const updateConfig = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
@@ -163,7 +169,7 @@ export function App() {
             setTokens(data.user.tokens || 100)
             localStorage.setItem('sv-user', JSON.stringify(data.user))
             // Cargar config guardada del usuario
-            loadAndApplyUserConfig(savedToken)
+            loadAndApplyUserConfig(savedToken, data.user)
           } else {
             handleLogout()
           }
@@ -229,16 +235,22 @@ export function App() {
     }
   }
 
-  const loadAndApplyUserConfig = async (token) => {
+  const loadAndApplyUserConfig = async (token, userInfo = null) => {
     try {
       const res = await fetch(`${API_URL}/api/settings`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const data = await res.json()
       if (data.success) {
-        const normalizedRemoteConfig = normalizeUserConfig(data.config)
-        const cachedConfig = normalizeUserConfig(loadCachedConfig() || {})
-        const mergedConfig = normalizeUserConfig({ ...normalizedRemoteConfig, ...cachedConfig })
+        const userKey = userInfo?.id || userInfo?.email || 'guest'
+        const cachedConfigRaw = loadCachedConfig(userKey) || {}
+        const remoteConfigRaw = (data.config && typeof data.config === 'object') ? data.config : {}
+        const hasRemoteConfig = Object.keys(remoteConfigRaw).length > 0
+        const mergedConfig = normalizeUserConfig(
+          hasRemoteConfig
+            ? { ...cachedConfigRaw, ...remoteConfigRaw }
+            : cachedConfigRaw
+        )
         setConfig(mergedConfig)
         setDarkMode(mergedConfig.themeMode !== 'light')
         console.log('[Config] Configuracion del usuario cargada')
@@ -286,12 +298,17 @@ export function App() {
   // Auto-guardar config al backend cuando cambia (con debounce)
   const saveTimerRef = useRef(null)
 
-  // Cache local inmediata (respaldo si falla red/backend)
+  // Cache local inmediata por usuario activo (respaldo si falla red/backend)
   useEffect(() => {
     try {
-      localStorage.setItem(LOCAL_CONFIG_CACHE_KEY, JSON.stringify(config))
+      const userKey = user?.id || user?.email || 'guest'
+      localStorage.setItem(getConfigCacheKey(userKey), JSON.stringify(config))
+      // Mantener legado para evitar perder estado de usuarios previos en transición
+      if (!user) {
+        localStorage.setItem(LOCAL_CONFIG_CACHE_KEY, JSON.stringify(config))
+      }
     } catch {}
-  }, [config])
+  }, [config, user])
 
   useEffect(() => {
     const token = localStorage.getItem('sv-token')
@@ -319,7 +336,7 @@ export function App() {
     setAuthToken(token)
     setTokens(userData.tokens || 100)
     setConfigReady(false)
-    loadAndApplyUserConfig(token)
+    loadAndApplyUserConfig(token, userData)
     setCurrentPage('studio')
   }
 
