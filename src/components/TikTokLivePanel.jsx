@@ -139,6 +139,28 @@ const normalizeMessageForMatching = (text = '') => String(text || '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const defaultProfanityWords = [
+  'puta', 'puto', 'putas', 'putos',
+  'pendejo', 'pendeja', 'pendejos', 'pendejas',
+  'verga', 'cabron', 'cabrón', 'culero', 'culera'
+]
+
+const parseProfanityWords = (rawWords) => {
+  const raw = String(rawWords || '')
+  const source = raw.trim().length > 0 ? raw : defaultProfanityWords.join(',')
+  return source
+    .split(/[\n,;]+/g)
+    .map((word) => normalizeMessageForMatching(word))
+    .filter(Boolean)
+}
+
+const containsProfanity = (text = '', words = []) => {
+  if (!words.length) return false
+  const normalizedText = ` ${normalizeMessageForMatching(text)} `
+  if (!normalizedText.trim()) return false
+  return words.some((word) => normalizedText.includes(` ${word} `))
+}
+
 const isEmojiOrSymbolOnly = (text = '') => {
   const withoutEmoji = String(text || '').replace(emojiFullRegex, '').replace(/[\s\W_]+/g, '')
   return withoutEmoji.length === 0
@@ -1019,6 +1041,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           // Ejemplo: donor + preguntas = lee donadores QUE ADEMÁS hagan preguntas
           const onlyQuestions = isEnabledFlag(c.onlyQuestions)
           if (onlyQuestions && !isQuestion(msg.text)) { markFilteredMessage(); return }
+          const profanityFilterEnabled = isEnabledFlag(c.profanityFilterEnabled)
+          if (profanityFilterEnabled) {
+            const profanityWords = parseProfanityWords(c.profanityWords)
+            if (containsProfanity(msg.text, profanityWords)) { markFilteredMessage(); return }
+          }
 
           // Filtro: saltar repetidos (por usuario, no global)
           const normalizedText = msg.text.trim().toLowerCase()
@@ -1117,6 +1144,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
           queueMessage(finalText, msg.username, {
             id: msg.id,
+            sourceText: msg.text,
             isDonor: isKnownDonor,
             isModerator: msg.isModerator,
             isSubscriber: msg.isSubscriber || false,
@@ -1456,6 +1484,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       const onlySubscribers = isEnabledFlag(c.onlySubscribers)
       const onlyCommunityMembers = isEnabledFlag(c.onlyCommunityMembers)
       const onlyQuestions = isEnabledFlag(c.onlyQuestions)
+      const profanityFilterEnabled = isEnabledFlag(c.profanityFilterEnabled)
       const roleFiltersActive =
         onlyDonors || onlyModerators || onlySubscribers || onlyCommunityMembers
       if (roleFiltersActive) {
@@ -1476,6 +1505,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         console.log('[TikTok] processQueue: DROP por onlyQuestions (mensaje sin pregunta)')
         markFilteredMessage()
         continue
+      }
+      if (profanityFilterEnabled) {
+        const profanityWords = parseProfanityWords(c.profanityWords)
+        const contentToValidate = item.sourceText || item.rawText || item.text || ''
+        if (containsProfanity(contentToValidate, profanityWords)) {
+          console.log('[TikTok] processQueue: DROP por filtro de palabrotas')
+          markFilteredMessage()
+          continue
+        }
       }
 
       console.log(`[TikTok] REPRODUCIENDO: "${text.substring(0, 50)}" (pendientes: ${remaining})`)

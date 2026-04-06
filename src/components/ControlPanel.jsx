@@ -480,6 +480,31 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               </div>
 
               <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} hint="No lee links ni URLs en los mensajes" />
+              <CheckOption
+                label="Filtro de palabrotas"
+                checked={config.profanityFilterEnabled}
+                onChange={() => updateConfig('profanityFilterEnabled', !config.profanityFilterEnabled)}
+                darkMode={darkMode}
+                hint="Bloquea mensajes que contengan palabras prohibidas"
+              />
+              {config.profanityFilterEnabled && (
+                <div className={`mb-2 rounded-xl px-4 py-3 border ${
+                  darkMode ? 'bg-cyan-500/10 border-cyan-400/40' : 'bg-slate-100 border-slate-400 shadow-sm'
+                }`}>
+                  <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-200' : 'text-slate-700'}`}>
+                    Palabras prohibidas (separadas por coma o salto de línea)
+                  </label>
+                  <textarea
+                    value={config.profanityWords || ''}
+                    onChange={(e) => updateConfig('profanityWords', e.target.value)}
+                    rows={3}
+                    placeholder="puta, pendejo, cabron"
+                    className={`w-full px-3 py-2 text-sm rounded-lg border resize-y ${
+                      darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                    }`}
+                  />
+                </div>
+              )}
               <CheckOption label="Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint="Limpia el nombre del usuario dejando solo letras" />
               <CheckOption label="No leer emojis en chat" checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} hint="Elimina emojis del mensaje antes de leerlo en voz" />
               <CheckWithInput

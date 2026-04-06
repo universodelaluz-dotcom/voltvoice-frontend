@@ -26,6 +26,8 @@ const DEFAULT_CONFIG = {
   announceFollowers: false,
   announceGifts: false,
   ignoreLinks: false,
+  profanityFilterEnabled: false,
+  profanityWords: 'puta, puto, pendejo, pendeja, pendejos, pendejas, verga, cabron, cabrón, culero, culera',
   ignoreExcessiveEmojis: false,
   maxEmojisAllowed: 3,
   onlyPlainNicks: false,

@@ -92,6 +92,18 @@ const CONFIG_COMMANDS = [
     ]
   },
   {
+    key: 'profanityFilterEnabled',
+    label: 'filtro de palabrotas',
+    aliases: [
+      'filtro de palabrotas',
+      'filtro anti groserias',
+      'filtro anti groserías',
+      'bloquear malas palabras',
+      'bloquear groserias',
+      'bloquear groserías'
+    ]
+  },
+  {
     key: 'onlyPlainNicks',
     label: 'solo nicks simples',
     aliases: [
