@@ -143,6 +143,7 @@ function BotShortcutCapture({ darkMode, onCapture }) {
 export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode, config, updateConfig, user }) {
   const [userVoices, setUserVoices] = useState([])
   const [presetStatus, setPresetStatus] = useState('')
+  const [showProfanityEditor, setShowProfanityEditor] = useState(false)
 
   // Cargar voces del usuario desde la API
   const loadUserVoices = async () => {
@@ -483,7 +484,11 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               <CheckOption
                 label="Filtro de palabrotas"
                 checked={config.profanityFilterEnabled}
-                onChange={() => updateConfig('profanityFilterEnabled', !config.profanityFilterEnabled)}
+                onChange={() => {
+                  const next = !config.profanityFilterEnabled
+                  updateConfig('profanityFilterEnabled', next)
+                  if (!next) setShowProfanityEditor(false)
+                }}
                 darkMode={darkMode}
                 hint="Bloquea mensajes que contengan palabras prohibidas"
               />
@@ -491,18 +496,32 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 <div className={`mb-2 rounded-xl px-4 py-3 border ${
                   darkMode ? 'bg-cyan-500/10 border-cyan-400/40' : 'bg-slate-100 border-slate-400 shadow-sm'
                 }`}>
-                  <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-200' : 'text-slate-700'}`}>
-                    Palabras prohibidas (separadas por coma o salto de línea)
-                  </label>
-                  <textarea
-                    value={config.profanityWords || ''}
-                    onChange={(e) => updateConfig('profanityWords', e.target.value)}
-                    rows={3}
-                    placeholder="puta, pendejo, cabron"
-                    className={`w-full px-3 py-2 text-sm rounded-lg border resize-y ${
-                      darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                  <button
+                    onClick={() => setShowProfanityEditor((prev) => !prev)}
+                    className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
+                      darkMode
+                        ? 'text-cyan-200 border-cyan-400/40 hover:bg-cyan-500/10'
+                        : 'text-slate-700 border-slate-300 hover:bg-white'
                     }`}
-                  />
+                  >
+                    {showProfanityEditor ? 'Ocultar lista' : 'Mostrar lista de palabras'}
+                  </button>
+                  {showProfanityEditor && (
+                    <div className="mt-2">
+                      <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-200' : 'text-slate-700'}`}>
+                        Palabras prohibidas (separadas por coma o salto de línea)
+                      </label>
+                      <textarea
+                        value={config.profanityWords || ''}
+                        onChange={(e) => updateConfig('profanityWords', e.target.value)}
+                        rows={3}
+                        placeholder="Escribe tus palabras aquí"
+                        className={`w-full px-3 py-2 text-sm rounded-lg border resize-y ${
+                          darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                        }`}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
               <CheckOption label="Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint="Limpia el nombre del usuario dejando solo letras" />

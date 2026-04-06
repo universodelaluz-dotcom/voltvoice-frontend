@@ -139,16 +139,10 @@ const normalizeMessageForMatching = (text = '') => String(text || '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultProfanityWords = [
-  'puta', 'puto', 'putas', 'putos',
-  'pendejo', 'pendeja', 'pendejos', 'pendejas',
-  'verga', 'cabron', 'cabrón', 'culero', 'culera'
-]
-
 const parseProfanityWords = (rawWords) => {
   const raw = String(rawWords || '')
-  const source = raw.trim().length > 0 ? raw : defaultProfanityWords.join(',')
-  return source
+  if (!raw.trim()) return []
+  return raw
     .split(/[\n,;]+/g)
     .map((word) => normalizeMessageForMatching(word))
     .filter(Boolean)
