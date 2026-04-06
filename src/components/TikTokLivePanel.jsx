@@ -483,9 +483,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       // Usar requestAnimationFrame para evitar múltiples scrolls en el mismo frame
       pendingScrollRef.current = requestAnimationFrame(() => {
         if (!autoScrollPinnedRef.current) return // User scrolled away, cancel
-        preservePageScroll(() => {
-          container.scrollTop = container.scrollHeight
-        })
+        container.scrollTop = container.scrollHeight
         pendingScrollRef.current = null
       })
     }
@@ -1687,17 +1685,6 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     }
   }
 
-  const preservePageScroll = (fn) => {
-    if (typeof window === 'undefined') {
-      fn()
-      return
-    }
-    const scrollX = window.scrollX || window.pageXOffset || 0
-    const scrollY = window.scrollY || window.pageYOffset || 0
-    fn()
-    window.scrollTo(scrollX, scrollY)
-  }
-
   const keepReadMessageVisible = ({ force = false } = {}) => {
     // Cancelar scroll anterior si uno está pendiente
     if (pendingScrollRef.current) {
@@ -1713,9 +1700,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       }
 
       if (force || autoScrollPinnedRef.current) {
-        preservePageScroll(() => {
-          container.scrollTop = container.scrollHeight
-        })
+        container.scrollTop = container.scrollHeight
       }
       pendingScrollRef.current = null
     })
