@@ -1446,10 +1446,27 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       }
       const { text, username } = item
       const remaining = speakQueueRef.current.length
+      const c = configRef.current
+      const roleFiltersActive =
+        c.onlyDonors || c.onlyModerators || c.onlySubscribers || c.onlyCommunityMembers
+      if (roleFiltersActive) {
+        const normalizedItemUsername = normalizeTikTokUsername(username)
+        const passRoleFilter =
+          (c.onlyDonors && (item.isDonor || donors.has(username) || donors.has(normalizedItemUsername))) ||
+          (c.onlyModerators && item.isModerator) ||
+          (c.onlySubscribers && item.isSubscriber) ||
+          (c.onlyCommunityMembers && item.isCommunityMember)
+
+        if (!passRoleFilter) {
+          console.log('[TikTok] processQueue: DROP por filtro de rol activo (item fuera de reglas)')
+          markFilteredMessage()
+          continue
+        }
+      }
+
       console.log(`[TikTok] REPRODUCIENDO: "${text.substring(0, 50)}" (pendientes: ${remaining})`)
 
-      // Determinar voz: notificación > moderador > donador > general
-      const c = configRef.current
+      // Determinar voz: notificacion > moderador > donador > general
       let voiceId = c.generalVoiceId || 'es-ES'
       if (c.donorVoiceEnabled && (item.isDonor || donors.has(username))) voiceId = c.donorVoiceId || 'Diego'
       if (c.modVoiceEnabled && item.isModerator) voiceId = c.modVoiceId || 'Lupita'
@@ -2754,4 +2771,5 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     </div>
   )
 }
+
 
