@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Check, HelpCircle, Keyboard, ChevronRight } from 'lucide-react'
 
 function Hint({ text, darkMode }) {
@@ -237,8 +237,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   }, [user?.email])
 
   const premiumVoiceOptions = [
-    { id: 'es-ES', name: 'Voz Básica Español (ilimitada)' },
-    { id: 'en-US', name: 'Voz Básica Inglés (ilimitada)' },
+    { id: 'es-ES', name: 'Voz BÃ¡sica EspaÃ±ol (ilimitada)' },
+    { id: 'en-US', name: 'Voz BÃ¡sica InglÃ©s (ilimitada)' },
     { id: 'Diego', name: 'Voz natural de Luis - Premium' },
     { id: 'Lupita', name: 'Voz natural de Sofia - Premium' },
     { id: 'Miguel', name: 'Voz natural de Gustavo - Premium' },
@@ -284,7 +284,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     const key = presetKeys[index]
     const preset = config?.[key]
     if (!preset?.data || typeof preset.data !== 'object') {
-      setPresetStatus(`Preset ${index + 1} vacío`)
+      setPresetStatus(`Preset ${index + 1} vacÃ­o`)
       return
     }
     Object.entries(preset.data).forEach(([k, v]) => updateConfig(k, v))
@@ -329,7 +329,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   const applyQuickBasic = () => {
     clearAllChecks()
     Object.entries(quickBasicChecks).forEach(([key, value]) => updateConfig(key, value))
-    setPresetStatus('Configuración básica aplicada')
+    setPresetStatus('ConfiguraciÃ³n bÃ¡sica aplicada')
   }
 
   return (
@@ -342,7 +342,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
             <span className="text-base">Volver</span>
           </button>
           <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500">
-            Configuración
+            ConfiguraciÃ³n
           </h1>
           <div className="w-20"></div>
         </div>
@@ -356,10 +356,10 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
           }`}>
             <div className="flex items-center justify-between mb-3">
               <h3 className={`text-sm font-black uppercase tracking-widest ${darkMode ? 'text-cyan-300' : 'text-indigo-700'}`}>
-                Presets Rápidos
+                Presets RÃ¡pidos
               </h3>
               <span className={`text-xs ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                Guarda y aplica tu configuración al instante
+                Guarda y aplica tu configuraciÃ³n al instante
               </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -376,7 +376,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     <div className="flex items-center justify-between mb-2">
                       <span className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-slate-800'}`}>Preset {idx + 1}</span>
                       <span className={`text-[11px] ${hasPreset ? (darkMode ? 'text-emerald-300' : 'text-emerald-700') : (darkMode ? 'text-slate-400' : 'text-slate-500')}`}>
-                        {hasPreset ? 'Guardado' : 'Vacío'}
+                        {hasPreset ? 'Guardado' : 'VacÃ­o'}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -415,7 +415,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
           }`}>
             <div className="flex items-center justify-between mb-3">
               <h3 className={`text-sm font-black uppercase tracking-widest ${darkMode ? 'text-fuchsia-300' : 'text-fuchsia-700'}`}>
-                Inicio Rápido
+                Inicio RÃ¡pido
               </h3>
               <span className={`text-xs ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
                 Aplica una base lista en un clic
@@ -430,7 +430,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     : 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:opacity-90 border border-emerald-500/40'
                 }`}
               >
-                Básica
+                BÃ¡sica
               </button>
               <button
                 onClick={clearAllChecks}
@@ -450,9 +450,9 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
             <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-cyan-500/20' : 'bg-white border-slate-200'}`}>
               <SectionHeader title="Lectura" tone="lectura" darkMode={darkMode} />
 
-              <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => updateConfig('readOnlyMessage', !config.readOnlyMessage)} darkMode={darkMode} hint="Lee el mensaje sin mencionar quién lo escribió" />
-              <CheckOption label="Saltar mensajes repetidos" checked={config.skipRepeated} onChange={() => updateConfig('skipRepeated', !config.skipRepeated)} darkMode={darkMode} hint="Ignora mensajes idénticos consecutivos para evitar spam" />
-              <CheckOption label="Leer solo preguntas" checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} hint="Solo lee mensajes que contengan signos de interrogación" />
+              <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => updateConfig('readOnlyMessage', !config.readOnlyMessage)} darkMode={darkMode} hint="Lee el mensaje sin mencionar quiÃ©n lo escribiÃ³" />
+              <CheckOption label="Saltar mensajes repetidos" checked={config.skipRepeated} onChange={() => updateConfig('skipRepeated', !config.skipRepeated)} darkMode={darkMode} hint="Ignora mensajes idÃ©nticos consecutivos para evitar spam" />
+              <CheckOption label="Leer solo preguntas" checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} hint="Solo lee mensajes que contengan signos de interrogaciÃ³n" />
               <CheckOption label="Leer solo donadores" checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron regalos" />
               <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} hint="Solo lee mensajes de moderadores del live" />
               <CheckOption label="Leer solo suscriptores" checked={config.onlySubscribers} onChange={() => updateConfig('onlySubscribers', !config.onlySubscribers)} darkMode={darkMode} hint="Solo lee usuarios suscritos al creador del live" />
@@ -496,7 +496,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   }`}>
                     {config.donorVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.donorVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz donadores<Hint text="Usa una voz diferente para quienes envían regalos" darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.donorVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz donadores<Hint text="Usa una voz diferente para quienes envÃ­an regalos" darkMode={darkMode} /></span>
                 </button>
                 {config.donorVoiceEnabled && (
                   <div className="mt-2 ml-8">
@@ -724,13 +724,13 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   {showProfanityEditor && (
                     <div className="mt-2">
                       <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-200' : 'text-slate-700'}`}>
-                        Palabras prohibidas (separadas por coma o salto de línea)
+                        Palabras prohibidas (separadas por coma o salto de lÃ­nea)
                       </label>
                       <textarea
                         value={config.profanityWords || ''}
                         onChange={(e) => updateConfig('profanityWords', e.target.value)}
                         rows={3}
-                        placeholder="Escribe tus palabras aquí"
+                        placeholder="Escribe tus palabras aquÃ­"
                         className={`w-full px-3 py-2 text-sm rounded-lg border resize-y ${
                           darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
                         }`}
@@ -739,59 +739,59 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   )}
                 </div>
               )}
-              <CheckOption label="Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint="Limpia el nombre del usuario dejando solo letras" />
+              <CheckOption label="Limpiar nicks (No leerÃ¡ sus emojis ni nÃºmeros ni caracteres raros)" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint="Limpia el nombre del usuario dejando solo letras" />
               <CheckOption label="No leer emojis en chat" checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} hint="Elimina emojis del mensaje antes de leerlo en voz" />
               <CheckWithInput
-                label="Ignorar emojis excesivos del chat — cantidad máxima permitida:"
+                label="Ignorar emojis excesivos del chat â€” cantidad mÃ¡xima permitida:"
                 checked={config.ignoreExcessiveEmojis}
                 onToggle={() => updateConfig('ignoreExcessiveEmojis', !config.ignoreExcessiveEmojis)}
                 value={config.maxEmojisAllowed}
                 onValueChange={(v) => updateConfig('maxEmojisAllowed', v)}
                 placeholder="3"
                 darkMode={darkMode}
-                hint="Lee el mensaje pero quita emojis si pasan del límite"
+                hint="Lee el mensaje pero quita emojis si pasan del lÃ­mite"
               />
 
               <CheckWithInput
-                label="Ignorar mensajes muy cortos (mínimo de caracteres)"
+                label="Ignorar mensajes muy cortos (mÃ­nimo de caracteres)"
                 checked={config.minMessageLengthEnabled}
                 onToggle={() => updateConfig('minMessageLengthEnabled', !config.minMessageLengthEnabled)}
                 value={config.minMessageLength}
                 onValueChange={(v) => updateConfig('minMessageLength', v)}
                 placeholder="3"
                 darkMode={darkMode}
-                hint="Ignora mensajes con menos caracteres del mínimo"
+                hint="Ignora mensajes con menos caracteres del mÃ­nimo"
               />
 
               <CheckWithInput
-                label="Límite de caracteres en todos los mensajes (máximo)"
+                label="LÃ­mite de caracteres en todos los mensajes (mÃ¡ximo)"
                 checked={config.donorCharLimitEnabled}
                 onToggle={() => updateConfig('donorCharLimitEnabled', !config.donorCharLimitEnabled)}
                 value={config.donorCharLimit}
                 onValueChange={(v) => updateConfig('donorCharLimit', v)}
                 placeholder="200"
                 darkMode={darkMode}
-                hint="Corta mensajes largos al máximo de caracteres indicado"
+                hint="Corta mensajes largos al mÃ¡ximo de caracteres indicado"
               />
 
               <CheckWithInput
-                label="Límite de mensajes en espera (descarta nuevos si se llena)"
+                label="LÃ­mite de mensajes en espera (descarta nuevos si se llena)"
                 checked={config.maxQueueEnabled}
                 onToggle={() => updateConfig('maxQueueEnabled', !config.maxQueueEnabled)}
                 value={config.maxQueueSize}
                 onValueChange={(v) => updateConfig('maxQueueSize', v)}
                 placeholder="20"
                 darkMode={darkMode}
-                hint="Evita acumulación excesiva de mensajes por leer"
+                hint="Evita acumulaciÃ³n excesiva de mensajes por leer"
               />
 
               <SectionHeader title="Notificaciones en Vivo" tone="notificaciones" darkMode={darkMode} />
 
-              <CheckWithInput label="Anunciar nuevos seguidores — cada (seg)" checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} hint="Anuncia en voz cuando alguien te sigue" />
-              <CheckWithInput label="Anunciar regalos — cada (seg)" checked={config.announceGifts} onToggle={() => updateConfig('announceGifts', !config.announceGifts)} value={config.giftCooldown} onValueChange={(v) => updateConfig('giftCooldown', v)} placeholder="5" darkMode={darkMode} hint="Anuncia en voz cuando recibes un regalo" />
-              <CheckWithInput label="Anunciar conteo de viewers — cada (seg)" checked={config.announceViewers} onToggle={() => updateConfig('announceViewers', !config.announceViewers)} value={config.viewerCooldown} onValueChange={(v) => updateConfig('viewerCooldown', v)} placeholder="120" darkMode={darkMode} hint="Dice cuántos viewers hay en el live periódicamente" />
-              <CheckWithInput label="Anunciar likes — cada (seg)" checked={config.announceLikes} onToggle={() => updateConfig('announceLikes', !config.announceLikes)} value={config.likeCooldown} onValueChange={(v) => updateConfig('likeCooldown', v)} placeholder="60" darkMode={darkMode} hint="Anuncia la cantidad de likes acumulados" />
-              <CheckWithInput label="Anunciar shares — cada (seg)" checked={config.announceShares} onToggle={() => updateConfig('announceShares', !config.announceShares)} value={config.shareCooldown} onValueChange={(v) => updateConfig('shareCooldown', v)} placeholder="15" darkMode={darkMode} hint="Anuncia cuando alguien comparte tu live" />
+              <CheckWithInput label="Anunciar nuevos seguidores â€” cada (seg)" checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} hint="Anuncia en voz cuando alguien te sigue" />
+              <CheckWithInput label="Anunciar regalos â€” cada (seg)" checked={config.announceGifts} onToggle={() => updateConfig('announceGifts', !config.announceGifts)} value={config.giftCooldown} onValueChange={(v) => updateConfig('giftCooldown', v)} placeholder="5" darkMode={darkMode} hint="Anuncia en voz cuando recibes un regalo" />
+              <CheckWithInput label="Anunciar conteo de viewers â€” cada (seg)" checked={config.announceViewers} onToggle={() => updateConfig('announceViewers', !config.announceViewers)} value={config.viewerCooldown} onValueChange={(v) => updateConfig('viewerCooldown', v)} placeholder="120" darkMode={darkMode} hint="Dice cuÃ¡ntos viewers hay en el live periÃ³dicamente" />
+              <CheckWithInput label="Anunciar likes â€” cada (seg)" checked={config.announceLikes} onToggle={() => updateConfig('announceLikes', !config.announceLikes)} value={config.likeCooldown} onValueChange={(v) => updateConfig('likeCooldown', v)} placeholder="60" darkMode={darkMode} hint="Anuncia la cantidad de likes acumulados" />
+              <CheckWithInput label="Anunciar shares â€” cada (seg)" checked={config.announceShares} onToggle={() => updateConfig('announceShares', !config.announceShares)} value={config.shareCooldown} onValueChange={(v) => updateConfig('shareCooldown', v)} placeholder="15" darkMode={darkMode} hint="Anuncia cuando alguien comparte tu live" />
               <CheckOption label="Anunciar batallas" checked={config.announceBattles} onChange={() => updateConfig('announceBattles', !config.announceBattles)} darkMode={darkMode} hint="Anuncia inicio y resultado de batallas en vivo" />
               <CheckOption label="Anunciar encuestas" checked={config.announcePolls} onChange={() => updateConfig('announcePolls', !config.announcePolls)} darkMode={darkMode} hint="Anuncia cuando se crea una encuesta en el live" />
               <CheckOption label="Anunciar metas/goals" checked={config.announceGoals} onChange={() => updateConfig('announceGoals', !config.announceGoals)} darkMode={darkMode} hint="Anuncia progreso de metas del live" />
@@ -811,7 +811,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
                   }`}
                 >
-                  <option value="">Automática (usar la primera disponible)</option>
+                  <option value="">Seleccionar uno</option>
                   {botCharacters.map((character) => (
                     <option key={character.id} value={character.id}>
                       {character.name}
@@ -833,7 +833,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
                   }`}
                 >
-                  <option value="">Automática según personalidad</option>
+                  <option value="">Seleccionar uno</option>
                   {premiumVoiceOptions.map((voice) => (
                     <option key={`bot-voice-${voice.id}`} value={voice.id}>
                       {voice.name}
@@ -876,7 +876,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
               }`}>
                 <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
-                  Tamaño aproximado de caracteres por mensajes de respuesta
+                  TamaÃ±o aproximado de caracteres por mensajes de respuesta
                 </label>
                 <div className="flex items-center gap-3">
                   <input
@@ -890,10 +890,10 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                       darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
                     }`}
                   />
-                  <span className={`text-xs ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>máximo 500</span>
+                  <span className={`text-xs ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>mÃ¡ximo 500</span>
                 </div>
                 <p className={`mt-2 text-xs ${darkMode ? 'text-cyan-200/80' : 'text-slate-600'}`}>
-                  Recomendado: 250 caracteres (valor por defecto). Este límite se aplica internamente al prompt del asistente.
+                  Recomendado: 250 caracteres (valor por defecto). Este lÃ­mite se aplica internamente al prompt del asistente.
                 </p>
               </div>
 
@@ -918,7 +918,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   </div>
                   <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.botShortcutEnabled ? 'font-semibold' : 'font-medium'}`}>
                     Activar shortcut de teclado (Push-to-Talk)
-                    <Hint text="Mantén presionada la tecla para hablar con el bot sin usar el mouse" darkMode={darkMode} />
+                    <Hint text="MantÃ©n presionada la tecla para hablar con el bot sin usar el mouse" darkMode={darkMode} />
                   </span>
                 </button>
 
@@ -941,7 +941,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                       />
                     </div>
                     <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      💡 Sugerida: <code className="text-cyan-400">F9</code> — no interfiere con OBS ni TikTok, fácil de alcanzar
+                      ðŸ’¡ Sugerida: <code className="text-cyan-400">F9</code> â€” no interfiere con OBS ni TikTok, fÃ¡cil de alcanzar
                     </p>
                   </div>
                 )}
@@ -968,7 +968,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   </div>
                   <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.interactorShortcutEnabled ? 'font-semibold' : 'font-medium'}`}>
                     Activar shortcut de teclado (Interactuador)
-                    <Hint text="Dispara una intervención del animador para opinar sobre el chat al instante" darkMode={darkMode} />
+                    <Hint text="Dispara una intervenciÃ³n del animador para opinar sobre el chat al instante" darkMode={darkMode} />
                   </span>
                 </button>
 
@@ -991,7 +991,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                       />
                     </div>
                     <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      💡 Sugerida: <code className="text-cyan-400">F8</code> — rápida para invocar al interactuador manualmente
+                      ðŸ’¡ Sugerida: <code className="text-cyan-400">F8</code> â€” rÃ¡pida para invocar al interactuador manualmente
                     </p>
                   </div>
                 )}
@@ -1004,6 +1004,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     </div>
   )
 }
+
 
 
 

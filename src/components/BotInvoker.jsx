@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+﻿import { useState, useRef, useEffect } from 'react'
 import { Mic2, Send, Volume2 } from 'lucide-react'
 import inworldRealtimeService from '../services/inworldRealtimeService'
 import chatStore from '../services/chatStore.js'
@@ -97,10 +97,10 @@ const CONFIG_COMMANDS = [
     aliases: [
       'filtro de palabrotas',
       'filtro anti groserias',
-      'filtro anti groserías',
+      'filtro anti groserÃ­as',
       'bloquear malas palabras',
       'bloquear groserias',
-      'bloquear groserías'
+      'bloquear groserÃ­as'
     ]
   },
   {
@@ -316,7 +316,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     const raw = String(text || '').trim()
     const maxChars = getAssistantMaxResponseChars()
     if (!raw || raw.length <= maxChars) return raw
-    return `${raw.slice(0, maxChars).trimEnd()}…`
+    return `${raw.slice(0, maxChars).trimEnd()}â€¦`
   }
 
   const beginAssistantResponseWindow = () => {
@@ -521,7 +521,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       responseCompletedRef.current = true
       botIsAudiblySpeakingRef.current = false
       restoreChatAudioImmediate()
-      setResponse((current) => current || 'La IA tardó demasiado en responder. Intenta de nuevo.')
+      setResponse((current) => current || 'La IA tardÃ³ demasiado en responder. Intenta de nuevo.')
     }, 35000)
   }
 
@@ -951,7 +951,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     const token = localStorage.getItem('sv-token')
     const selectedVoice = voiceId || selectedRealtimeVoiceId || 'Clive'
 
-    // Detectar si es una voz básica de Google (no Inworld)
+    // Detectar si es una voz bÃ¡sica de Google (no Inworld)
     const isBasicVoice = selectedVoice === 'es-ES' || selectedVoice === 'en-US'
     const endpoint = isBasicVoice ? '/api/tts/say' : '/api/inworld/tts'
 
@@ -1200,18 +1200,18 @@ Reglas de salida:
 - CRITICO: NUNCA leas en voz alta ni cites textualmente el contenido de mensajes del chat. JAMAS repitas palabra por palabra lo que dijo alguien. Siempre reacciona con TUS PROPIAS PALABRAS originales.
 
 Directiva de comportamiento continuo:
-Mantén al personaje creado siempre fresco, variado y natural.
+MantÃ©n al personaje creado siempre fresco, variado y natural.
 Evita repetir siempre el mismo tipo de frases, bromas o temas.
-Lee el chat reciente y métete en los temas activos reaccionando como si estuvieras presente en tiempo real.
-Detecta patrones, conversaciones activas, tensiones, momentos graciosos y oportunidades para intervenir con humor, observación, preguntas o comentarios inteligentes.
-Alterna tipos de intervención para no volverte predecible.
-Si detectas spam, flood, provocación barata o negatividad insistente, indica brevemente que se aplicó silencio y no te enganches con trolls.
+Lee el chat reciente y mÃ©tete en los temas activos reaccionando como si estuvieras presente en tiempo real.
+Detecta patrones, conversaciones activas, tensiones, momentos graciosos y oportunidades para intervenir con humor, observaciÃ³n, preguntas o comentarios inteligentes.
+Alterna tipos de intervenciÃ³n para no volverte predecible.
+Si detectas spam, flood, provocaciÃ³n barata o negatividad insistente, indica brevemente que se aplicÃ³ silencio y no te enganches con trolls.
 Objetivo: mantener el chat vivo, entretenido, en movimiento y bajo control.
 
 Extras obligatorios:
-1) Evitar repetición: si recientemente hiciste un tipo de comentario, varía el siguiente.
-2) Prioridad a lo interesante: prioriza mensajes que generen conversación, risa, reacción o movimiento del chat.
-3) __SKIP__ SOLO si el mensaje es una repetición exacta (mismo usuario, exactamente el mismo texto, en los últimos 10 segundos). En TODOS los otros casos, SIEMPRE responde con algo contextual y natural.
+1) Evitar repeticiÃ³n: si recientemente hiciste un tipo de comentario, varÃ­a el siguiente.
+2) Prioridad a lo interesante: prioriza mensajes que generen conversaciÃ³n, risa, reacciÃ³n o movimiento del chat.
+3) __SKIP__ SOLO si el mensaje es una repeticiÃ³n exacta (mismo usuario, exactamente el mismo texto, en los Ãºltimos 10 segundos). En TODOS los otros casos, SIEMPRE responde con algo contextual y natural.
 `.trim()
 
     armResponseTimeout()
@@ -1512,7 +1512,7 @@ Extras obligatorios:
         return
       }
 
-      console.log('[F8] ¡LLAMAR AL INTERACTUADOR AHORA!')
+      console.log('[F8] Â¡LLAMAR AL INTERACTUADOR AHORA!')
       try {
         // Pick an intent like autopilot does, but skip threshold checks
         console.log('[F8] Step 1: Calling pickAutopilotIntent()')
@@ -1541,7 +1541,7 @@ Extras obligatorios:
         let localResponse = String(localResult || '').trim()
         console.log('[F8] Step 6: localResponse:', localResponse?.substring?.(0, 50))
         if (localResponse === '__SKIP__' || !localResponse) {
-          console.log('[F8] Primary intent vacío/skip, fallback directo')
+          console.log('[F8] Primary intent vacÃ­o/skip, fallback directo')
           const fallbackResult = await fn.executeLocalIntent({ type: 'epic_chat_line' }, 'f8-manual-fallback')
           localResponse = String(fallbackResult || '').trim()
         }
@@ -1553,7 +1553,7 @@ Extras obligatorios:
           setHasActiveResponse(true)
           hasActiveResponseRef.current = true
           await speakLocalResponse(localResponse, selectedRealtimeVoiceIdRef.current || voiceLabelRef.current)
-          console.log('[F8] ✓ Completado')
+          console.log('[F8] âœ“ Completado')
         } else {
           console.log('[F8] Step 7: No localResponse, cleanup')
           setIsLoading(false)
@@ -1913,7 +1913,7 @@ Extras obligatorios:
         console.log('[Bot] handleAudioStarted: setResponse callback - current:', current?.substring?.(0, 30) || 'null')
         // Clear timeout message, but preserve valid response text
         // Only preserve if it matches the latest response we received
-        if (current === 'La IA tardó demasiado en responder. Intenta de nuevo.') {
+        if (current === 'La IA tardÃ³ demasiado en responder. Intenta de nuevo.') {
           console.log('[Bot] handleAudioStarted: Clearing timeout message')
           return null
         }
@@ -1934,7 +1934,7 @@ Extras obligatorios:
       console.log('[Bot] handleAudioComplete: Waiting for RMS silence to confirm audio is truly done')
       // CRITICAL: Do NOT reset responsePlaybackStartedRef here!
       // Do NOT call restore functions here!
-      // Audio transmission complete ≠ audio playback complete
+      // Audio transmission complete â‰  audio playback complete
       // Wait for handleAudioEnergySilent to confirm via RMS detection
     }
 
@@ -2044,7 +2044,7 @@ Extras obligatorios:
         if (filtered.length > 0) {
           const configuredId = config?.botAssistantCharacterId
           const configuredCharacter = filtered.find((character) => character.id === configuredId)
-          setSelectedCharacterId(configuredCharacter?.id || filtered[0].id)
+          setSelectedCharacterId(configuredCharacter?.id || '')
         }
       }
     } catch (err) {
@@ -2394,7 +2394,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
       .filter((user) => user.negativeScore >= 3 && user.messageCount >= 3)
       .sort((a, b) => (b.negativeScore - a.negativeScore) || (b.messageCount - a.messageCount))[0]
     const questions = chatStore.getQuestions(15)
-    const hasJokes = recent.some((item) => /(jaja|jeje|xd|lol|🤣|😂)/i.test(String(item.text || '')))
+    const hasJokes = recent.some((item) => /(jaja|jeje|xd|lol|ðŸ¤£|ðŸ˜‚)/i.test(String(item.text || '')))
     const hasIntenseFlow = recent.length >= 30
     const celebrationLevel = Number(stats?.giftsToday || 0) + Number(stats?.followsToday || 0) + Number(stats?.sharesToday || 0)
     const lowSignalMessages = recent.filter((item) => {
@@ -2404,7 +2404,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
     }).length
     const questionRate = recent.length > 0 ? (questions.length / recent.length) : 0
     const interestingRate = recent.length > 0
-      ? (recent.filter((item) => /[?¿!]|(jaja|jeje|xd|lol|wow|no manches|contexto|por que|como|cuando|donde|opinan|debate|drama|troll)/i.test(String(item.text || ''))).length / recent.length)
+      ? (recent.filter((item) => /[?Â¿!]|(jaja|jeje|xd|lol|wow|no manches|contexto|por que|como|cuando|donde|opinan|debate|drama|troll)/i.test(String(item.text || ''))).length / recent.length)
       : 0
     const lowSignalRatio = recent.length > 0 ? (lowSignalMessages / recent.length) : 1
 
@@ -2547,7 +2547,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
       {/* Selector de personalidad */}
       <div>
         <label className={`block text-xs font-bold mb-1 ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`}>
-          🎭 Personalidad
+          ðŸŽ­ Personalidad
         </label>
         <select
           value={selectedCharacterId || ''}
@@ -2558,7 +2558,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
               : 'bg-gray-50 border border-indigo-300 text-gray-900'
           }`}
         >
-          <option value="">— Elige una personalidad —</option>
+          <option value="">— Seleccionar uno —</option>
           {characters.map(char => (
             <option key={char.id} value={char.id}>
               {char.name}
@@ -2570,7 +2570,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
       {/* Selector de voz */}
       <div>
         <label className={`block text-xs font-bold mb-1 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-          🔊 Voz a utilizar
+          ðŸ”Š Voz a utilizar
         </label>
         <select
           value={selectedRealtimeVoiceId}
@@ -2581,7 +2581,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
               : 'bg-gray-50 border border-purple-300 text-gray-900'
           }`}
         >
-          <option value="">— Automática según personalidad —</option>
+          <option value="">— Seleccionar uno —</option>
           <optgroup label="Voces Premium">
             <option value="Diego">Voz natural de Luis - Premium</option>
             <option value="Lupita">Voz natural de Sofia - Premium</option>
@@ -2609,7 +2609,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
               : darkMode ? 'bg-[#0f0f23] text-gray-400' : 'bg-slate-100 text-slate-700 border border-slate-300'
           }`}
         >
-          Micrófono
+          MicrÃ³fono
         </button>
         <button
           onClick={() => setInputMode('text')}
@@ -2698,7 +2698,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
                   <Volume2 className="w-4 h-4" />
                 </button>
                 <span className="text-xs text-gray-400">
-                  {isPlayingResponse ? 'La respuesta de voz se está reproduciendo' : 'Si no se oyó, toca este botón para reactivar el audio'}
+                  {isPlayingResponse ? 'La respuesta de voz se estÃ¡ reproduciendo' : 'Si no se oyÃ³, toca este botÃ³n para reactivar el audio'}
                 </span>
               </div>
             )}
@@ -2708,6 +2708,8 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
     </div>
   )
 }
+
+
 
 
 
