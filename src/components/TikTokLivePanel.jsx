@@ -467,6 +467,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const userLastSpokenAtRef = useRef({})
   const recentTopicKeywordsRef = useRef([])
   const recentNormalizedMessagesRef = useRef([])
+  const messageIdCounterRef = useRef(0)
   const sessionReceivedCountRef = useRef(0)
   const sessionReadCountRef = useRef(0)
   const sessionFilteredCountRef = useRef(0)
@@ -966,15 +967,20 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           const isBanned = isUserBannedBySet(bannedRef.current, msg.username)
 
           // Siempre mostrar el mensaje en el chat visual
+          const messageId = String(
+            msg.id
+            || `${Date.now()}-${messageIdCounterRef.current++}-${normalizeTikTokUsername(msg.username)}`
+          )
+
           setMessages((prev) => ([
             ...prev,
             {
-              id: msg.id,
+              id: messageId,
               user: msg.username,
               nickname: msg.nickname || msg.username,
               text: msg.text,
               status: 'received',
-              timestamp: new Date(),
+              timestamp: Date.now(),
               isDonor: isKnownDonor,
               isModerator: msg.isModerator || false,
               isSubscriber: msg.isSubscriber || false,
@@ -1992,7 +1998,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 ) : (
                   messages.slice(-12).map((msg, idx) => (
                     <div
-                      key={msg.id || `${msg.user}-${idx}-${msg.text}`}
+                      key={msg.id || `${msg.timestamp}-${msg.user}-${idx}`}
                       className={darkMode ? "border-l border-cyan-500/30 pl-3 py-2 rounded-r" : "border-l border-indigo-300 pl-3 py-2 rounded-r"}
                     >
                       <p className="font-semibold" style={{ color: chatNickColor, fontSize: `${chatFontSize}px` }}>
@@ -2164,7 +2170,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 const badgeLabel = msg.isModerator ? '⚔️ MOD' : msg.isTopGifter ? '🏆 TOP' : msg.isDonor ? '🎁 DONOR' : msg.isSubscriber ? '⭐ SUB' : msg.isCommunityMember ? '💚 CLUB' : null
                 return (
                 <div
-                  key={msg.id || `${msg.user}-${idx}-${msg.text}`}
+                  key={msg.id || `${msg.timestamp}-${msg.user}-${idx}`}
                   style={{ fontSize: `${chatFontSize}px`, ...(hlColor ? { backgroundColor: `${hlColor}40`, borderLeftColor: hlColor, borderLeftWidth: '4px' } : {}) }}
                   className={`pl-3 py-2 rounded-r relative ${
                     msg.status === 'playing'
@@ -2318,7 +2324,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                                 </p>
                               ) : (
                                 messages.slice(-12).map((msg, idx) => (
-                                  <div key={`mobile-feed-on-${msg.id || idx}`} className={darkMode ? "rounded-md border border-cyan-500/15 bg-cyan-500/5 p-1.5" : "rounded-md border border-cyan-100 bg-white p-1.5"}>
+                                  <div key={`mobile-feed-on-${msg.id || `${msg.timestamp}-${idx}`}`} className={darkMode ? "rounded-md border border-cyan-500/15 bg-cyan-500/5 p-1.5" : "rounded-md border border-cyan-100 bg-white p-1.5"}>
                                     <p className="text-[10px] font-semibold truncate" style={{ color: chatNickColor }}>
                                       {nickOverrides[msg.user] || msg.nickname || msg.user}
                                     </p>
