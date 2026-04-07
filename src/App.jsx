@@ -556,7 +556,7 @@ export function App() {
 
   const benefits = [
     {
-      icon: 'ðŸŽ­',
+      icon: '🎭',
       title: 'Clonación y Sistema de Personajes',
       subtitle: 'Crea identidades únicas dentro de tu stream.',
       description: 'Clona voces y asigna personajes a cada tipo de usuario (chat, donadores, moderadores, etc).'
@@ -568,31 +568,31 @@ export function App() {
       description: 'Filtros inteligentes, control de cola, bloqueo de spam, gestión de mensajes, límites, limpieza automática y más.'
     },
     {
-      icon: 'ðŸ”Š',
+      icon: '🔊',
       title: 'Interacción en Tiempo Real',
       subtitle: 'Tu stream reacciona automáticamente.',
       description: 'Lectura de chat, notificaciones, eventos y acciones sin retrasos.'
     },
     {
-      icon: 'ðŸŽ¨',
+      icon: '🎨',
       title: 'Personalización Total',
       subtitle: 'Diseña la experiencia completa.',
       description: 'Colores, nicks, estilos, tipos de usuario, visual del chat y comportamiento.'
     },
     {
-      icon: 'ðŸ’°',
+      icon: '💰',
       title: 'Optimizado para Engagement y Monetización',
       subtitle: 'Convierte interacción en resultados.',
       description: 'Diferencia donadores, destaca usuarios clave y aumenta participación en tu stream.'
     },
     {
-      icon: 'ðŸŽ®',
+      icon: '🎮',
       title: 'Preparado para Streaming en Vivo',
       subtitle: 'Funciona donde lo necesitas.',
       description: 'Optimizado para TikTok LIVE y flujos en tiempo real.'
     },
     {
-      icon: 'ðŸ”’',
+      icon: '🔒',
       title: 'Seguro y Estable',
       subtitle: 'Sistema confiable para streams largos.',
       description: 'Protección de datos y rendimiento constante.'
@@ -648,13 +648,13 @@ export function App() {
       name: 'María García',
       role: 'TikToker - 500K followers',
       text: 'StreamVoicer cambió mi stream. Mis seguidores aman que sus mensajes se lean en voz. ¡Imprescindible!',
-      avatar: 'ðŸ‘©'
+      avatar: '👩'
     },
     {
       name: 'Juan López',
       role: 'Streamer - Gaming',
       text: 'La calidad de las voces es increíble. No parece robótico. Muy recomendado.',
-      avatar: 'ðŸ‘¨'
+      avatar: '👨'
     },
     {
       name: 'Sofia Rodríguez',
@@ -891,7 +891,7 @@ export function App() {
 
                   {isPopular && (
                     <div className={"text-[10px] font-black tracking-wider mb-4 px-3 py-1 rounded-full text-center w-full bg-gradient-to-r " + gradient + " text-white"}>
-                      🔥 POWER BOOST
+                      🔥 MÁS POPULAR
                     </div>
                   )}
                   {!isPopular && <div className="mb-4 h-6" />}

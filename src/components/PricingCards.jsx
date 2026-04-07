@@ -178,6 +178,13 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                       : 'bg-white border border-gray-200'
                 }`}
               >
+                {plan.popular && (
+                  <div className="mb-3">
+                    <span className="inline-block text-xs font-black tracking-wider px-3 py-1 rounded-full bg-gradient-to-r from-orange-400 to-pink-500 text-white">
+                      🔥 MÁS POPULAR
+                    </span>
+                  </div>
+                )}
                 <h3 className="text-2xl font-black mb-1">{plan.icon} {plan.name}</h3>
                 <div className="mb-4">
                   <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
@@ -243,6 +250,13 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {annualPlans.map((plan) => (
               <div key={plan.name} className={`rounded-lg p-8 ${darkMode ? 'bg-gradient-to-br from-gray-800/70 to-gray-900/70 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+                {(plan.hot || plan.fast) && (
+                  <div className="mb-3">
+                    <span className="inline-block text-xs font-black tracking-wider px-3 py-1 rounded-full bg-gradient-to-r from-orange-400 to-pink-500 text-white">
+                      🔥 MÁS POPULAR
+                    </span>
+                  </div>
+                )}
                 <h3 className="text-2xl font-black mb-2">{plan.icon} {plan.name}{plan.hot ? ' 🔥' : ''}{plan.fast ? ' ⚡' : ''}</h3>
                 <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2">
                   ${plan.price}
