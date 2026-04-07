@@ -10,9 +10,9 @@ interface StripePaymentProps {
 }
 
 const packages = [
-  { tokens: 500, price: 4.99, priceId: 'price_1' },
-  { tokens: 1000, price: 8.99, priceId: 'price_2', popular: true },
-  { tokens: 5000, price: 39.99, priceId: 'price_3' },
+  { tokens: 150000, price: 4.99, priceId: 'price_1' },
+  { tokens: 350000, price: 9.99, priceId: 'price_2', popular: true },
+  { tokens: 700000, price: 14.99, priceId: 'price_3' },
 ]
 
 export function StripePayment({ isOpen, onClose, onSuccess: _onSuccess }: StripePaymentProps) {
@@ -88,7 +88,7 @@ export function StripePayment({ isOpen, onClose, onSuccess: _onSuccess }: Stripe
                     {pkg.tokens.toLocaleString()} Tokens
                     {pkg.popular && <span className="ml-2 text-voltvoice-yellow text-sm">⭐ Popular</span>}
                   </p>
-                  <p className="text-sm text-gray-400">{Math.round(pkg.tokens / 100)} voces</p>
+                  <p className="text-sm text-gray-400">{pkg.tokens.toLocaleString()} caracteres</p>
                 </div>
                 <p className="text-2xl font-black text-voltvoice-cyan">${pkg.price}</p>
               </div>
@@ -99,7 +99,7 @@ export function StripePayment({ isOpen, onClose, onSuccess: _onSuccess }: Stripe
         {/* Info */}
         <div className="bg-white/5 rounded-lg p-4 mb-6 border border-white/10">
           <p className="text-sm text-gray-300">
-            <span className="font-bold text-voltvoice-cyan">1 Token</span> = ~100 caracteres
+            <span className="font-bold text-voltvoice-cyan">Consumo variable</span> segun actividad del chat
           </p>
           <p className="text-sm text-gray-400 mt-2">
             Acceso inmediato después del pago

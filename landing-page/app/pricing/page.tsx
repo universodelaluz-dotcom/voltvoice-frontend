@@ -5,7 +5,7 @@ import { Footer } from '@/components/Footer'
 
 export const metadata = {
   title: 'Pricing - VoltVoice',
-  description: 'Plans simples para todos los streamers. Free, Pro y Enterprise.',
+  description: 'Planes START, CREATOR y PRO con opciones mensuales, anuales y recargas.',
 }
 
 export default function PricingPage() {
