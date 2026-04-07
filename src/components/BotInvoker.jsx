@@ -2580,7 +2580,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
       {/* Selector de personalidad */}
       <div>
         <label className={`block text-xs font-bold mb-1 ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`}>
-          ðŸŽ­ Personalidad
+          Personalidad
         </label>
         <select
           value={selectedCharacterId || ''}
@@ -2591,7 +2591,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
               : 'bg-gray-50 border border-indigo-300 text-gray-900'
           }`}
         >
-          <option value="">â€” Seleccionar uno â€”</option>
+          <option value="">Seleccionar uno</option>
           {characters.map(char => (
             <option key={char.id} value={char.id}>
               {char.name}
@@ -2603,7 +2603,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
       {/* Selector de voz */}
       <div>
         <label className={`block text-xs font-bold mb-1 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-          ðŸ”Š Voz a utilizar
+          Voz a utilizar
         </label>
         <select
           value={selectedRealtimeVoiceId}
@@ -2614,7 +2614,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
               : 'bg-gray-50 border border-purple-300 text-gray-900'
           }`}
         >
-          <option value="">â€” Seleccionar uno â€”</option>
+          <option value="">Seleccionar uno</option>
           <optgroup label="Voces Premium">
             <option value="Diego">Voz natural de Luis - Premium</option>
             <option value="Lupita">Voz natural de Sofia - Premium</option>
@@ -2652,7 +2652,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
               : darkMode ? 'bg-[#0f0f23] text-gray-400' : 'bg-slate-100 text-slate-700 border border-slate-300'
           }`}
         >
-          MicrÃ³fono
+          Microfono
         </button>
         <button
           onClick={() => setInputMode('text')}
@@ -2741,7 +2741,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
                   <Volume2 className="w-4 h-4" />
                 </button>
                 <span className="text-xs text-gray-400">
-                  {isPlayingResponse ? 'La respuesta de voz se estÃ¡ reproduciendo' : 'Si no se oyÃ³, toca este botÃ³n para reactivar el audio'}
+                  {isPlayingResponse ? 'La respuesta de voz se esta reproduciendo' : 'Si no se oyo, toca este boton para reactivar el audio'}
                 </span>
               </div>
             )}
