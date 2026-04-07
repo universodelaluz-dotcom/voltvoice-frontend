@@ -601,25 +601,28 @@ export function App() {
 
   const additionalPackages = [
     {
+      icon: '🟢',
       size: 'MINI BOOST',
       tokens: '150,000',
       price: '$4.99',
       priceMxn: '$4.99 USD',
-      hours: '1.5 - 3 horas'
+      hours: '1.5–3 horas'
     },
     {
+      icon: '🔵',
       size: 'POWER BOOST',
       tokens: '350,000',
       price: '$9.99',
       priceMxn: '$9.99 USD',
-      hours: '4 - 7 horas'
+      hours: '4–7 horas'
     },
     {
+      icon: '🔥',
       size: 'MAX BOOST',
       tokens: '700,000',
       price: '$14.99',
       priceMxn: '$14.99 USD',
-      hours: '8 - 12 horas'
+      hours: '8–12 horas'
     }
   ]
   const howItWorks = [
@@ -837,7 +840,7 @@ export function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-black mb-4">
-              Planes <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Accesibles</span>
+              💰 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">PAQUETES COMPLETOS</span>
             </h3>
             <p className={darkMode ? "text-gray-400" : "text-gray-600"}>Elige el plan perfecto para tu stream</p>
           </div>
@@ -856,7 +859,7 @@ export function App() {
         <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-16">
             <span className={"text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 inline-block " + (darkMode ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "bg-cyan-50 text-cyan-600 border border-cyan-200")}>
-              ⚡ ¿Se te acabaron los tokens?
+              💰 PAQUETES EXTRA (RECARGAS) →
             </span>
             <h3 className="text-5xl font-black mt-4 mb-4">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500">
@@ -869,9 +872,8 @@ export function App() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {additionalPackages.map((pkg, idx) => {
               const gradients = ['from-cyan-500 to-blue-500', 'from-blue-500 to-purple-500', 'from-purple-500 to-pink-500']
-              const icons = ['MINI', 'POWER', 'MAX']
-              const gradient = gradients[idx]
-              const icon = icons[idx]
+                const gradient = gradients[idx]
+                const icon = pkg.icon
               const isPopular = idx === 1
               return (
               <div
@@ -889,7 +891,7 @@ export function App() {
 
                   {isPopular && (
                     <div className={"text-[10px] font-black tracking-wider mb-4 px-3 py-1 rounded-full text-center w-full bg-gradient-to-r " + gradient + " text-white"}>
-                      🔥 MÁS POPULAR
+                      🔥 POWER BOOST
                     </div>
                   )}
                   {!isPopular && <div className="mb-4 h-6" />}
@@ -914,12 +916,12 @@ export function App() {
                     )}
                   </div>
 
-                  <div className={"rounded-xl px-3 py-2 mb-4 " + (darkMode ? "bg-white/5" : "bg-gray-50")}>
-                    <div className={"text-xs " + (darkMode ? "text-gray-500" : "text-gray-400")}>Tokens incluidos</div>
-                    <div className={"font-black text-lg text-transparent bg-clip-text bg-gradient-to-r " + gradient}>{pkg.tokens}</div>
-                  </div>
+                    <div className={"rounded-xl px-3 py-2 mb-4 " + (darkMode ? "bg-white/5" : "bg-gray-50")}>
+                      <div className={"text-xs " + (darkMode ? "text-gray-500" : "text-gray-400")}>🎙️ Caracteres</div>
+                      <div className={"font-black text-lg text-transparent bg-clip-text bg-gradient-to-r " + gradient}>{pkg.tokens}</div>
+                    </div>
 
-                  <p className={"text-sm mb-5 " + (darkMode ? "text-gray-400" : "text-gray-500")}>{pkg.hours}</p>
+                    <p className={"text-sm mb-2 " + (darkMode ? "text-gray-400" : "text-gray-500")}>⏱️ {pkg.hours}</p>
 
                   <button className={"w-full py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r transition-all mt-auto " + gradient + " hover:opacity-90 hover:shadow-lg"}>
                     Comprar ahora →
@@ -932,7 +934,7 @@ export function App() {
 
           {/* Bottom note */}
           <p className={"text-center text-xs mt-10 " + (darkMode ? "text-gray-600" : "text-gray-400")}>
-            🔒 Pagos seguros · Los tokens no expiran · Se acumulan con tu plan
+            🧠 NOTA: El consumo depende de la actividad del chat y la configuración. Puedes extender la duración usando filtros inteligentes y lectura selectiva.
           </p>
         </div>
       </section>

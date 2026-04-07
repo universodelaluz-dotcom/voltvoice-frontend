@@ -1,171 +1,80 @@
-﻿import { useState, useEffect } from 'react'
+﻿import { useState } from 'react'
 import { Check } from 'lucide-react'
+
+const monthlyPlans = [
+  {
+    icon: '🟢',
+    name: 'START',
+    price: 6.99,
+    description: 'Ideal para streams ligeros',
+    cta: 'Adquirir START',
+    popular: false,
+    voices: [
+      '1 voz clonada por IA (editable)',
+      '1 voz natural premium',
+      '1 voz básica (ilimitada)',
+      '200,000 caracteres (~tokens)',
+    ],
+    stream: 'En uso de voz premium rinde aprox 2-4 horas de stream activo',
+    compatibility: [
+      'filtrado inteligente',
+      'lectura selectiva (preguntas, donadores, etc.)',
+      'control de mensajes',
+    ],
+    extension: 'Permite extender la duración optimizando tu chat',
+  },
+  {
+    icon: '🔵',
+    name: 'CREATOR',
+    price: 12.99,
+    description: 'Ideal para streams activos',
+    cta: 'Adquirir CREATOR',
+    popular: true,
+    voices: [
+      '2 voces clonadas por IA (editables)',
+      '2 voces naturales premium',
+      '1 voz básica (ilimitada)',
+      '500,000 caracteres (~tokens)',
+    ],
+    stream: 'Rinde aprox 5-8 horas de stream activo',
+    compatibility: [
+      'lectura inteligente del chat',
+      'voces dinámicas por tipo de usuario',
+      'control avanzado de mensajes',
+    ],
+    extension: 'Mejor rendimiento y eficiencia en el uso de tokens',
+  },
+  {
+    icon: '🔥',
+    name: 'PRO',
+    price: 17.99,
+    description: 'Ideal para interacción constante',
+    cta: 'Adquirir PRO',
+    popular: false,
+    voices: [
+      '5 voces clonadas por IA (editables)',
+      '4 voces naturales premium',
+      '1 voz básica (ilimitada)',
+      '800,000 caracteres (~tokens)',
+    ],
+    stream: 'Rinde aprox 10-15 horas de stream activo',
+    compatibility: [
+      'sistema completo de filtrado',
+      'control total del chat',
+      'optimización máxima del consumo',
+    ],
+    experience: 'Experiencia completa con IA',
+  },
+]
+
+const annualPlans = [
+  { icon: '🟢', name: 'START ANUAL', price: 59, saving: 'Ahorra ~$25 USD' },
+  { icon: '🔵', name: 'CREATOR ANUAL', price: 109, saving: 'Ahorra ~$46 USD', hot: true },
+  { icon: '🔥', name: 'PRO ANUAL', price: 149, saving: 'Ahorra ~$67 USD', fast: true },
+]
 
 export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
   const [billingCycle, setBillingCycle] = useState('monthly')
-  const [exchangeRates, setExchangeRates] = useState(null)
-  const [userCurrency, setUserCurrency] = useState('USD')
-
-  useEffect(() => {
-    const detectLocationAndExchangeRates = async () => {
-      try {
-        setUserCurrency('USD')
-
-        const ratesResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD')
-        const ratesData = await ratesResponse.json()
-
-        if (ratesData.rates) {
-          setExchangeRates(ratesData.rates)
-        }
-      } catch (error) {
-        console.error('Error detectando ubicación/tipos de cambio:', error)
-        setExchangeRates({
-          MXN: 20,
-          ARS: 920,
-          BRL: 5.2,
-          COP: 4100,
-          CLP: 900,
-          PEN: 3.8,
-          UYU: 42,
-        })
-      }
-    }
-
-    detectLocationAndExchangeRates()
-  }, [])
-
-  const convertPrice = (usdPrice) => {
-    if (!exchangeRates || userCurrency === 'USD') {
-      return { amount: usdPrice, currency: 'USD', display: `$${usdPrice.toFixed(2)} USD` }
-    }
-
-    const rate = exchangeRates[userCurrency] || 1
-    const convertedAmount = parseFloat((usdPrice * rate).toFixed(2))
-    const symbols = {
-      MXN: '$',
-      ARS: '$',
-      BRL: 'R$',
-      COP: '$',
-      CLP: '$',
-      PEN: 'S/',
-      UYU: '$',
-      EUR: 'EUR ',
-      GBP: 'GBP ',
-      JPY: 'JPY ',
-      CNY: 'CNY ',
-      INR: 'INR ',
-      AUD: '$',
-      CAD: '$',
-    }
-
-    const symbol = symbols[userCurrency] || '$'
-    return {
-      amount: convertedAmount,
-      currency: userCurrency,
-      display: `${symbol}${convertedAmount.toLocaleString()} ${userCurrency}`,
-    }
-  }
-
-  const monthlyPlans = [
-    {
-      icon: '🟢',
-      name: 'START',
-      price: 6.99,
-      description: 'Ideal para streams ligeros',
-      cta: 'Adquirir START',
-      popular: false,
-      features: [
-        { text: '1 voz clonada por IA (editable)', included: true },
-        { text: '1 voz natural premium', included: true },
-        { text: '1 voz básica (ilimitada)', included: true },
-        { text: '200,000 caracteres (~tokens)', included: true },
-        { text: 'Rinde aprox 2-4 horas de stream activo', included: true },
-      ],
-    },
-    {
-      icon: '🔵',
-      name: 'CREATOR',
-      price: 12.99,
-      description: 'Ideal para streams activos',
-      cta: 'Adquirir CREATOR',
-      popular: true,
-      features: [
-        { text: '2 voces clonadas por IA (editables)', included: true },
-        { text: '2 voces naturales premium', included: true },
-        { text: '1 voz básica (ilimitada)', included: true },
-        { text: '500,000 caracteres (~tokens)', included: true },
-        { text: 'Rinde aprox 5-8 horas de stream activo', included: true },
-      ],
-    },
-    {
-      icon: '🔥',
-      name: 'PRO',
-      price: 17.99,
-      description: 'Ideal para interacción constante',
-      cta: 'Adquirir PRO',
-      popular: false,
-      features: [
-        { text: '5 voces clonadas por IA (editables)', included: true },
-        { text: '4 voces naturales premium', included: true },
-        { text: '1 voz básica (ilimitada)', included: true },
-        { text: '800,000 caracteres (~tokens)', included: true },
-        { text: 'Rinde aprox 10-15 horas de stream activo', included: true },
-      ],
-    },
-  ]
-
-  const annualPlans = [
-    {
-      icon: '🟢',
-      name: 'START',
-      price: 59,
-      pricePerMonth: (59 / 12).toFixed(2),
-      description: 'Plan anual START',
-      cta: 'Suscribir START Anual',
-      popular: false,
-      badge: 'Ahorra ~$25',
-      features: [
-        { text: '1 voz clonada por IA (editable)', included: true },
-        { text: '1 voz natural premium', included: true },
-        { text: '1 voz básica (ilimitada)', included: true },
-        { text: '200,000 caracteres (~tokens)', included: true },
-      ],
-    },
-    {
-      icon: '🔵',
-      name: 'CREATOR',
-      price: 109,
-      pricePerMonth: (109 / 12).toFixed(2),
-      description: 'Plan anual CREATOR',
-      cta: 'Suscribir CREATOR Anual',
-      popular: true,
-      badge: 'Ahorra ~$46',
-      features: [
-        { text: '2 voces clonadas por IA (editables)', included: true },
-        { text: '2 voces naturales premium', included: true },
-        { text: '1 voz básica (ilimitada)', included: true },
-        { text: '500,000 caracteres (~tokens)', included: true },
-      ],
-    },
-    {
-      icon: '🔥',
-      name: 'PRO',
-      price: 149,
-      pricePerMonth: (149 / 12).toFixed(2),
-      description: 'Plan anual PRO',
-      cta: 'Suscribir PRO Anual',
-      popular: false,
-      badge: 'Ahorra ~$67',
-      features: [
-        { text: '5 voces clonadas por IA (editables)', included: true },
-        { text: '4 voces naturales premium', included: true },
-        { text: '1 voz básica (ilimitada)', included: true },
-        { text: '800,000 caracteres (~tokens)', included: true },
-      ],
-    },
-  ]
-
-  const plans = billingCycle === 'monthly' ? monthlyPlans : annualPlans
 
   return (
     <div>
@@ -196,102 +105,123 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {plans.map((plan) => (
-          <div
-            key={plan.name}
-            className={`relative rounded-lg transition-all duration-300 ${
-              plan.popular
-                ? darkMode
-                  ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-cyan-400 shadow-2xl shadow-cyan-400/30 scale-105'
-                  : 'bg-white border-2 border-cyan-400 shadow-2xl scale-105'
-                : darkMode
-                  ? 'bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-700 hover:border-cyan-400/50'
-                  : 'bg-white border border-gray-200 hover:border-cyan-400/50'
-            } p-8`}
-          >
-            {plan.popular && (
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <div className="bg-gradient-to-r from-green-400 to-green-500 text-black px-4 py-1 rounded-full text-sm font-bold whitespace-nowrap">
-                  Recomendado
-                </div>
-              </div>
-            )}
-
-            <div className="text-sm font-bold tracking-wide mb-3 text-cyan-400">{plan.icon}</div>
-            <h3 className="text-3xl font-black mb-1">{plan.name}</h3>
-            <p className={`text-base mb-5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              {plan.description}
+      {billingCycle === 'monthly' && (
+        <>
+          <div className="text-center mb-8">
+            <p className={`text-sm font-bold tracking-wider ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
+              💰 PAQUETES COMPLETOS
             </p>
-
-            <div className="mb-5">
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-                  ${billingCycle === 'monthly' ? plan.price.toFixed(2) : plan.price}
-                </span>
-                <span className={`text-xl ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  USD/{billingCycle === 'monthly' ? 'mes' : 'año'}
-                </span>
-              </div>
-
-              {exchangeRates && userCurrency !== 'USD' && plan.price > 0 && (
-                <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {(() => {
-                    const converted = convertPrice(plan.price)
-                    return `~ ${converted.display} aprox./${billingCycle === 'monthly' ? 'mes' : 'año'}`
-                  })()}
-                </p>
-              )}
-
-              {billingCycle === 'annual' && (
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                    ~${plan.pricePerMonth} USD/mes
-                  </span>
-                  {plan.badge && (
-                    <span className="text-sm font-bold px-2.5 py-1 rounded bg-green-500/20 text-green-400">
-                      {plan.badge}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={() => onPlanAction?.(plan, { billingCycle })}
-              className={`w-full py-3.5 rounded-lg font-bold text-base transition-all mb-6 ${
-                plan.popular
-                  ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white hover:shadow-lg hover:shadow-cyan-400/50'
-                  : darkMode
-                    ? 'border border-cyan-400 text-cyan-400 hover:bg-cyan-400/10'
-                    : 'border border-cyan-400 text-cyan-400 hover:bg-cyan-400/10'
-              }`}
-            >
-              {plan.cta}
-            </button>
-
-            <div className={`border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} pt-6`}>
-              <div className="space-y-4">
-                {plan.features.map((feature, idx) => (
-                  <div key={idx} className="flex items-start gap-3">
-                    <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span className={`text-base font-medium ${darkMode ? 'text-gray-100' : 'text-gray-700'}`}>
-                      {feature.text}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
-        ))}
-      </div>
 
-      <div className="mt-8 text-center">
-        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          El consumo depende de la actividad del chat y la configuración. Puedes extender la duración usando filtros inteligentes y lectura selectiva.
-        </p>
-      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {monthlyPlans.map((plan) => (
+              <div
+                key={plan.name}
+                className={`rounded-lg p-8 transition-all duration-300 ${
+                  plan.popular
+                    ? darkMode
+                      ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-cyan-400 shadow-2xl shadow-cyan-400/30 scale-105'
+                      : 'bg-white border-2 border-cyan-400 shadow-2xl scale-105'
+                    : darkMode
+                      ? 'bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-700'
+                      : 'bg-white border border-gray-200'
+                }`}
+              >
+                <h3 className="text-2xl font-black mb-1">{plan.icon} {plan.name}</h3>
+                <div className="mb-4">
+                  <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
+                    ${plan.price.toFixed(2)}
+                  </span>
+                  <span className={`ml-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>USD</span>
+                </div>
+
+                <p className={`text-sm mb-5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>⚡ {plan.description}</p>
+
+                <div className="space-y-2 mb-4">
+                  {plan.voices.map((line, idx) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      <span>🎙️</span>
+                      <span className={darkMode ? 'text-gray-100' : 'text-gray-700'}>{line}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <p className={`text-sm mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>⏱️ {plan.stream}</p>
+                {plan.experience && (
+                  <p className={`text-sm mb-2 font-semibold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>🧠 {plan.experience}</p>
+                )}
+
+                <p className={`text-sm font-bold mt-4 mb-2 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>🛠️ Compatible con:</p>
+                <div className="space-y-2 mb-4">
+                  {plan.compatibility.map((line, idx) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      <Check className="w-4 h-4 mt-0.5 text-green-400" />
+                      <span className={darkMode ? 'text-gray-200' : 'text-gray-700'}>{line}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {plan.extension && (
+                  <p className={`text-sm mb-6 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>👉 {plan.extension}</p>
+                )}
+
+                <button
+                  onClick={() => onPlanAction?.(plan, { billingCycle: 'monthly' })}
+                  className={`w-full py-3 rounded-lg font-bold transition-all ${
+                    plan.popular
+                      ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white hover:shadow-lg hover:shadow-cyan-400/50'
+                      : 'border border-cyan-400 text-cyan-400 hover:bg-cyan-400/10'
+                  }`}
+                >
+                  {plan.cta}
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {billingCycle === 'annual' && (
+        <>
+          <div className="text-center mb-8">
+            <p className={`text-sm font-bold tracking-wider ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
+              💎 PLANES ANUALES (aquí haces cash 💰)
+            </p>
+            <p className={`text-sm mt-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              👉 Estrategia: dar ~2 meses gratis
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {annualPlans.map((plan) => (
+              <div key={plan.name} className={`rounded-lg p-8 ${darkMode ? 'bg-gradient-to-br from-gray-800/70 to-gray-900/70 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+                <h3 className="text-2xl font-black mb-2">{plan.icon} {plan.name}{plan.hot ? ' 🔥' : ''}{plan.fast ? ' ⚡' : ''}</h3>
+                <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2">
+                  ${plan.price}
+                </p>
+                <p className={darkMode ? 'text-gray-300 mb-1' : 'text-gray-700 mb-1'}>USD / año</p>
+                <p className="text-sm text-green-400">({plan.saving})</p>
+                <button
+                  onClick={() => onPlanAction?.(plan, { billingCycle: 'annual' })}
+                  className="w-full mt-6 py-3 rounded-lg font-bold border border-cyan-400 text-cyan-400 hover:bg-cyan-400/10 transition-all"
+                >
+                  Comprar {plan.name}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 text-center">
+            <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>🧠 NOTA</p>
+            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              El consumo depende de la actividad del chat y la configuración.
+            </p>
+            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Puedes extender la duración usando filtros inteligentes y lectura selectiva.
+            </p>
+          </div>
+        </>
+      )}
     </div>
   )
 }
-
