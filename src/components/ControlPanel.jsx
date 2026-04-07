@@ -81,6 +81,50 @@ function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeh
   )
 }
 
+function SectionHeader({ title, tone, darkMode }) {
+  const tones = {
+    lectura: {
+      dark: { bg: '#052e26', border: '#10b981', text: '#d1fae5', left: '#34d399' },
+      light: { bg: '#d1fae5', border: '#059669', text: '#065f46', left: '#059669' },
+    },
+    voces: {
+      dark: { bg: '#082f3e', border: '#22d3ee', text: '#cffafe', left: '#06b6d4' },
+      light: { bg: '#cffafe', border: '#0891b2', text: '#155e75', left: '#0891b2' },
+    },
+    filtros: {
+      dark: { bg: '#422006', border: '#f59e0b', text: '#fef3c7', left: '#f59e0b' },
+      light: { bg: '#fef3c7', border: '#d97706', text: '#78350f', left: '#d97706' },
+    },
+    notificaciones: {
+      dark: { bg: '#4a0419', border: '#fb7185', text: '#ffe4e6', left: '#f43f5e' },
+      light: { bg: '#ffe4e6', border: '#e11d48', text: '#9f1239', left: '#e11d48' },
+    },
+    asistente: {
+      dark: { bg: '#2b0f5a', border: '#a78bfa', text: '#ede9fe', left: '#8b5cf6' },
+      light: { bg: '#ede9fe', border: '#7c3aed', text: '#4c1d95', left: '#7c3aed' },
+    },
+  }
+
+  const selected = tones[tone] || tones.lectura
+  const palette = darkMode ? selected.dark : selected.light
+
+  return (
+    <div
+      className="section-strip w-full mt-7 mb-4 px-5 py-3.5 border-2 shadow-sm"
+      style={{
+        backgroundColor: palette.bg,
+        borderColor: palette.border,
+        borderLeftColor: palette.left,
+        borderLeftWidth: '14px',
+        color: palette.text,
+        boxShadow: darkMode ? '0 8px 24px rgba(2, 6, 23, 0.35)' : '0 8px 18px rgba(15, 23, 42, 0.12)',
+      }}
+    >
+      <span className="text-sm md:text-base font-extrabold uppercase tracking-[0.14em]">{title}</span>
+    </div>
+  )
+}
+
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
 function BotShortcutCapture({ darkMode, onCapture }) {
@@ -289,15 +333,15 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   }
 
   return (
-    <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-slate-800"}>
+    <div className={`control-panel-remaster ${darkMode ? "min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white" : "min-h-screen bg-gradient-to-b from-slate-100 via-white to-slate-100 text-slate-800"}`}>
       {/* Header */}
-      <nav className={`fixed top-0 w-full backdrop-blur-md z-50 transition-colors duration-300 ${darkMode ? 'bg-[#0f0f23]/80 border-b border-cyan-500/20' : 'bg-white/80 border-b border-gray-200 shadow-sm'}`}>
+      <nav className={`fixed top-0 w-full backdrop-blur-md z-50 transition-colors duration-300 ${darkMode ? 'bg-slate-950/80 border-b border-cyan-500/20' : 'bg-white/85 border-b border-slate-200 shadow-sm'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <button onClick={onClose} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <ArrowLeft className="w-5 h-5" />
-            <span>Volver</span>
+            <span className="text-base">Volver</span>
           </button>
-          <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
+          <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500">
             Configuración
           </h1>
           <div className="w-20"></div>
@@ -305,8 +349,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
       </nav>
 
       {/* Content */}
-      <div className="pt-28 pb-20 px-6">
-        <div className="max-w-7xl mx-auto">
+      <div className="pt-28 pb-20 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto">
           <div className={`mb-4 rounded-2xl border p-4 ${
             darkMode ? 'border-cyan-500/20 bg-[#12122a]/70' : 'border-indigo-200 bg-white/80'
           }`}>
@@ -403,15 +447,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
             {/* LEFT COLUMN */}
-            <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-[#1a1a2e]/60 border-cyan-500/20' : 'bg-indigo-50/40 border-indigo-200/50'}`}>
-              {/* === SECCIÓN: LECTURA === */}
-              <div className={`mx-1 mt-4 mb-3 px-4 py-2 rounded-xl border ${
-                darkMode
-                  ? 'bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-cyan-500/20 text-cyan-400'
-                  : 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 text-indigo-600'
-              }`}>
-                <span className="text-xs font-bold uppercase tracking-widest">📖 Lectura</span>
-              </div>
+            <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-cyan-500/20' : 'bg-white border-slate-200'}`}>
+              <SectionHeader title="Lectura" tone="lectura" darkMode={darkMode} />
 
               <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => updateConfig('readOnlyMessage', !config.readOnlyMessage)} darkMode={darkMode} hint="Lee el mensaje sin mencionar quién lo escribió" />
               <CheckOption label="Saltar mensajes repetidos" checked={config.skipRepeated} onChange={() => updateConfig('skipRepeated', !config.skipRepeated)} darkMode={darkMode} hint="Ignora mensajes idénticos consecutivos para evitar spam" />
@@ -421,14 +458,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               <CheckOption label="Leer solo suscriptores" checked={config.onlySubscribers} onChange={() => updateConfig('onlySubscribers', !config.onlySubscribers)} darkMode={darkMode} hint="Solo lee usuarios suscritos al creador del live" />
               <CheckOption label="Filtro de miembros de comunidad" checked={config.onlyCommunityMembers} onChange={() => updateConfig('onlyCommunityMembers', !config.onlyCommunityMembers)} darkMode={darkMode} hint="Solo lee usuarios Fan o SuperFan del LIVE bajo el mismo filtro de comunidad" />
 
-              {/* === SECCIÓN: VOCES === */}
-              <div className={`mx-1 mt-4 mb-3 px-4 py-2 rounded-xl border ${
-                darkMode
-                  ? 'bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-cyan-500/20 text-cyan-400'
-                  : 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 text-indigo-600'
-              }`}>
-                <span className="text-xs font-bold uppercase tracking-widest">🎤 Voces</span>
-              </div>
+              <SectionHeader title="Voces" tone="voces" darkMode={darkMode} />
 
               {/* Voz general */}
               <div className={`mb-2 rounded-xl px-4 py-3 border ${
@@ -662,15 +692,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
             </div>
 
             {/* RIGHT COLUMN */}
-            <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-[#1a1a2e]/60 border-purple-500/20' : 'bg-purple-50/40 border-purple-200/50'}`}>
-              {/* === SECCIÓN: FILTROS === */}
-              <div className={`mx-1 mt-0 mb-3 px-4 py-2 rounded-xl border ${
-                darkMode
-                  ? 'bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-cyan-500/20 text-cyan-400'
-                  : 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 text-indigo-600'
-              }`}>
-                <span className="text-xs font-bold uppercase tracking-widest">🔍 Filtros</span>
-              </div>
+            <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/60 border-violet-400/25' : 'bg-slate-50 border-slate-300'}`}>
+              <SectionHeader title="Filtros" tone="filtros" darkMode={darkMode} />
 
               <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} hint="No lee links ni URLs en los mensajes" />
               <CheckOption
@@ -762,14 +785,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 hint="Evita acumulación excesiva de mensajes por leer"
               />
 
-              {/* === SECCIÓN: NOTIFICACIONES === */}
-              <div className={`mx-1 mt-4 mb-3 px-4 py-2 rounded-xl border ${
-                darkMode
-                  ? 'bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-cyan-500/20 text-cyan-400'
-                  : 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 text-indigo-600'
-              }`}>
-                <span className="text-xs font-bold uppercase tracking-widest">🔔 Notificaciones en Vivo</span>
-              </div>
+              <SectionHeader title="Notificaciones en Vivo" tone="notificaciones" darkMode={darkMode} />
 
               <CheckWithInput label="Anunciar nuevos seguidores — cada (seg)" checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} hint="Anuncia en voz cuando alguien te sigue" />
               <CheckWithInput label="Anunciar regalos — cada (seg)" checked={config.announceGifts} onToggle={() => updateConfig('announceGifts', !config.announceGifts)} value={config.giftCooldown} onValueChange={(v) => updateConfig('giftCooldown', v)} placeholder="5" darkMode={darkMode} hint="Anuncia en voz cuando recibes un regalo" />
@@ -780,14 +796,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               <CheckOption label="Anunciar encuestas" checked={config.announcePolls} onChange={() => updateConfig('announcePolls', !config.announcePolls)} darkMode={darkMode} hint="Anuncia cuando se crea una encuesta en el live" />
               <CheckOption label="Anunciar metas/goals" checked={config.announceGoals} onChange={() => updateConfig('announceGoals', !config.announceGoals)} darkMode={darkMode} hint="Anuncia progreso de metas del live" />
 
-              {/* === SECCIÓN: ASISTENTE DE IA === */}
-              <div className={`mx-1 mt-4 mb-3 px-4 py-2 rounded-xl border ${
-                darkMode
-                  ? 'bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-cyan-500/20 text-cyan-400'
-                  : 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 text-indigo-600'
-              }`}>
-                <span className="text-xs font-bold uppercase tracking-widest">🤖 Asistente de IA</span>
-              </div>
+              <SectionHeader title="Asistente de IA" tone="asistente" darkMode={darkMode} />
 
               <div className={`mb-2 rounded-xl px-4 py-3 border ${
                 darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
