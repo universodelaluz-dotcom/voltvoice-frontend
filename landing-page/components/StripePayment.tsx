@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 
 interface StripePaymentProps {
@@ -18,6 +18,36 @@ const packages = [
 export function StripePayment({ isOpen, onClose, onSuccess: _onSuccess }: StripePaymentProps) {
   const [loading, setLoading] = useState(false)
   const [selectedPackage, setSelectedPackage] = useState(packages[1])
+  const [usdMxn, setUsdMxn] = useState(17)
+
+  useEffect(() => {
+    let active = true
+
+    const loadRate = async () => {
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/USD')
+        const data = await res.json()
+        const nextRate = Number(data?.rates?.MXN)
+        if (active && Number.isFinite(nextRate) && nextRate > 0) {
+          setUsdMxn(nextRate)
+        }
+      } catch {
+        // fallback
+      }
+    }
+
+    loadRate()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const formatMxnApprox = (usdPrice: number) =>
+    new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN',
+      maximumFractionDigits: 0,
+    }).format(usdPrice * usdMxn)
 
   const handlePayment = async (pkg: typeof packages[0]) => {
     setLoading(true)
@@ -44,7 +74,7 @@ export function StripePayment({ isOpen, onClose, onSuccess: _onSuccess }: Stripe
         // En desarrollo, usar sandbox
         window.location.href = data.sandboxUrl
       } else {
-        alert('Error al crear la sesi√≥n de pago')
+        alert('Error al crear la sesiÛn de pago')
       }
     } catch (error) {
       alert('Error al procesar el pago')
@@ -86,11 +116,15 @@ export function StripePayment({ isOpen, onClose, onSuccess: _onSuccess }: Stripe
                 <div>
                   <p className="font-bold text-lg">
                     {pkg.tokens.toLocaleString()} Tokens
-                    {pkg.popular && <span className="ml-2 text-voltvoice-yellow text-sm">‚≠ê Popular</span>}
+                    {pkg.popular && <span className="ml-2 text-voltvoice-yellow text-sm">? Popular</span>}
                   </p>
                   <p className="text-sm text-gray-400">{pkg.tokens.toLocaleString()} caracteres</p>
+                  <p className="text-[11px] text-gray-400">Aprox. {formatMxnApprox(pkg.price)} MXN</p>
                 </div>
-                <p className="text-2xl font-black text-voltvoice-cyan">${pkg.price}</p>
+                <div className="text-right">
+                  <p className="text-2xl font-black text-voltvoice-cyan">${pkg.price}</p>
+                  <p className="text-[11px] text-gray-400">USD</p>
+                </div>
               </div>
             </button>
           ))}
@@ -102,7 +136,10 @@ export function StripePayment({ isOpen, onClose, onSuccess: _onSuccess }: Stripe
             <span className="font-bold text-voltvoice-cyan">Consumo variable</span> segun actividad del chat
           </p>
           <p className="text-sm text-gray-400 mt-2">
-            Acceso inmediato despu√©s del pago
+            Acceso inmediato despuÈs del pago
+          </p>
+          <p className="text-[11px] text-gray-500 mt-2">
+            Referencia en MXN aproximada; se adapta al tipo de cambio USD/MXN del dÌa.
           </p>
         </div>
 
@@ -119,7 +156,7 @@ export function StripePayment({ isOpen, onClose, onSuccess: _onSuccess }: Stripe
             disabled={loading}
             className="flex-1 px-4 py-3 bg-gradient-to-r from-voltvoice-cyan to-voltvoice-purple rounded-lg font-bold text-white hover:shadow-glow-cyan transition-all disabled:opacity-50"
           >
-            {loading ? '‚è≥ Procesando...' : `Pagar $${selectedPackage.price}`}
+            {loading ? '? Procesando...' : `Pagar $${selectedPackage.price}`}
           </button>
         </div>
 

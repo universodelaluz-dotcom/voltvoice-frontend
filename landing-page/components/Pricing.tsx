@@ -1,17 +1,18 @@
-ï»¿'use client'
+'use client'
 
+import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
 
 const plans = [
   {
     name: 'START',
-    price: '$6.99',
+    usdPrice: 6.99,
     period: '/mes',
     description: 'Ideal para streams ligeros',
     features: [
       '1 voz clonada por IA (editable)',
       '1 voz natural premium',
-      '1 voz bÃ¡sica (ilimitada)',
+      '1 voz básica (ilimitada)',
       '200,000 caracteres (~tokens)',
       'Rinde aprox 2-4 horas de stream activo',
     ],
@@ -20,13 +21,13 @@ const plans = [
   },
   {
     name: 'CREATOR',
-    price: '$12.99',
+    usdPrice: 12.99,
     period: '/mes',
     description: 'Ideal para streams activos',
     features: [
       '2 voces clonadas por IA (editables)',
       '2 voces naturales premium',
-      '1 voz bÃ¡sica (ilimitada)',
+      '1 voz básica (ilimitada)',
       '500,000 caracteres (~tokens)',
       'Rinde aprox 5-8 horas de stream activo',
     ],
@@ -35,13 +36,13 @@ const plans = [
   },
   {
     name: 'PRO',
-    price: '$17.99',
+    usdPrice: 17.99,
     period: '/mes',
-    description: 'Ideal para interacciÃ³n constante',
+    description: 'Ideal para interacción constante',
     features: [
       '5 voces clonadas por IA (editables)',
       '4 voces naturales premium',
-      '1 voz bÃ¡sica (ilimitada)',
+      '1 voz básica (ilimitada)',
       '800,000 caracteres (~tokens)',
       'Rinde aprox 10-15 horas de stream activo',
     ],
@@ -51,18 +52,49 @@ const plans = [
 ]
 
 const annualPlans = [
-  { name: 'START ANUAL', price: '$59 / aÃ±o', saving: 'Ahorra ~$25 USD' },
-  { name: 'CREATOR ANUAL', price: '$109 / aÃ±o', saving: 'Ahorra ~$46 USD' },
-  { name: 'PRO ANUAL', price: '$149 / aÃ±o', saving: 'Ahorra ~$67 USD' },
+  { name: 'START ANUAL', usdPrice: 59, saving: 'Ahorra ~$25 USD' },
+  { name: 'CREATOR ANUAL', usdPrice: 109, saving: 'Ahorra ~$46 USD' },
+  { name: 'PRO ANUAL', usdPrice: 149, saving: 'Ahorra ~$67 USD' },
 ]
 
 const boosts = [
-  { name: 'MINI BOOST', price: '$4.99', chars: '150,000 caracteres', hours: '1.5-3 horas' },
-  { name: 'POWER BOOST', price: '$9.99', chars: '350,000 caracteres', hours: '4-7 horas' },
-  { name: 'MAX BOOST', price: '$14.99', chars: '700,000 caracteres', hours: '8-12 horas' },
+  { name: 'MINI BOOST', usdPrice: 4.99, chars: '150,000 caracteres', hours: '1.5-3 horas' },
+  { name: 'POWER BOOST', usdPrice: 9.99, chars: '350,000 caracteres', hours: '4-7 horas' },
+  { name: 'MAX BOOST', usdPrice: 14.99, chars: '700,000 caracteres', hours: '8-12 horas' },
 ]
 
 export function Pricing() {
+  const [usdMxn, setUsdMxn] = useState(17)
+
+  useEffect(() => {
+    let active = true
+
+    const loadRate = async () => {
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/USD')
+        const data = await res.json()
+        const nextRate = Number(data?.rates?.MXN)
+        if (active && Number.isFinite(nextRate) && nextRate > 0) {
+          setUsdMxn(nextRate)
+        }
+      } catch {
+        // fallback
+      }
+    }
+
+    loadRate()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const formatMxnApprox = (usdPrice: number) =>
+    new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN',
+      maximumFractionDigits: 0,
+    }).format(usdPrice * usdMxn)
+
   return (
     <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       <div className="max-w-7xl mx-auto">
@@ -72,7 +104,7 @@ export function Pricing() {
             <span className="gradient-text">Mensual, Anual y Boosts</span>
           </h2>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            El consumo depende de la actividad del chat y la configuraciÃ³n.
+            El consumo depende de la actividad del chat y la configuración.
           </p>
         </div>
 
@@ -86,8 +118,9 @@ export function Pricing() {
               <div className={`glass-effect-strong p-8 rounded-xl relative h-full flex flex-col ${plan.highlight ? 'border-voltvoice-cyan/50' : ''}`}>
                 <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
                 <div className="mb-4">
-                  <span className="text-5xl font-black gradient-text">{plan.price}</span>
+                  <span className="text-5xl font-black gradient-text">${plan.usdPrice.toFixed(2)}</span>
                   <span className="text-gray-400 ml-2">{plan.period}</span>
+                  <p className="text-[11px] text-gray-400 mt-1">Aprox. {formatMxnApprox(plan.usdPrice)} MXN</p>
                 </div>
                 <p className="text-gray-400 mb-6 text-sm">{plan.description}</p>
 
@@ -122,8 +155,9 @@ export function Pricing() {
                   <div>
                     <p className="text-white font-semibold">{p.name}</p>
                     <p className="text-xs text-green-400">{p.saving}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">Aprox. {formatMxnApprox(p.usdPrice)} MXN</p>
                   </div>
-                  <p className="text-cyan-300 font-bold">{p.price}</p>
+                  <p className="text-cyan-300 font-bold">${p.usdPrice} / año</p>
                 </div>
               ))}
             </div>
@@ -136,16 +170,20 @@ export function Pricing() {
                 <div key={b.name} className="flex justify-between items-center border-b border-white/10 pb-2">
                   <div>
                     <p className="text-white font-semibold">{b.name}</p>
-                    <p className="text-xs text-gray-400">{b.chars} â€¢ {b.hours}</p>
+                    <p className="text-xs text-gray-400">{b.chars} • {b.hours}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">Aprox. {formatMxnApprox(b.usdPrice)} MXN</p>
                   </div>
-                  <p className="text-cyan-300 font-bold">{b.price}</p>
+                  <p className="text-cyan-300 font-bold">${b.usdPrice.toFixed(2)}</p>
                 </div>
               ))}
             </div>
           </div>
         </div>
+
+        <p className="text-[11px] text-gray-500 mt-4 text-center">
+          Referencia en MXN aproximada; se adapta al tipo de cambio USD/MXN del día.
+        </p>
       </div>
     </section>
   )
 }
-
