@@ -1,21 +1,16 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { Check } from 'lucide-react'
 
 export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
   const [billingCycle, setBillingCycle] = useState('monthly')
   const [exchangeRates, setExchangeRates] = useState(null)
   const [userCurrency, setUserCurrency] = useState('USD')
-  const [userCountry, setUserCountry] = useState(null)
 
-  // Detectar ubicación por IP y obtener tipos de cambio
   useEffect(() => {
     const detectLocationAndExchangeRates = async () => {
       try {
-        // Detectar país por IP
-        setUserCountry('US')
         setUserCurrency('USD')
 
-        // Obtener tipos de cambio desde USD
         const ratesResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD')
         const ratesData = await ratesResponse.json()
 
@@ -23,8 +18,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
           setExchangeRates(ratesData.rates)
         }
       } catch (error) {
-        console.error('Error detectando ubicación/tipos de cambio:', error)
-        // Fallback
+        console.error('Error detectando ubicacion/tipos de cambio:', error)
         setExchangeRates({
           MXN: 20,
           ARS: 920,
@@ -32,7 +26,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
           COP: 4100,
           CLP: 900,
           PEN: 3.8,
-          UYU: 42
+          UYU: 42,
         })
       }
     }
@@ -40,7 +34,6 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
     detectLocationAndExchangeRates()
   }, [])
 
-  // Convertir precio USD a moneda local
   const convertPrice = (usdPrice) => {
     if (!exchangeRates || userCurrency === 'USD') {
       return { amount: usdPrice, currency: 'USD', display: `$${usdPrice.toFixed(2)} USD` }
@@ -56,138 +49,126 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
       CLP: '$',
       PEN: 'S/',
       UYU: '$',
-      EUR: '€',
-      GBP: '£',
-      JPY: '¥',
-      CNY: '¥',
-      INR: '₹',
+      EUR: 'EUR ',
+      GBP: 'GBP ',
+      JPY: 'JPY ',
+      CNY: 'CNY ',
+      INR: 'INR ',
       AUD: '$',
-      CAD: '$'
+      CAD: '$',
     }
 
     const symbol = symbols[userCurrency] || '$'
     return {
       amount: convertedAmount,
       currency: userCurrency,
-      display: `${symbol}${convertedAmount.toLocaleString()} ${userCurrency}`
+      display: `${symbol}${convertedAmount.toLocaleString()} ${userCurrency}`,
     }
   }
 
   const monthlyPlans = [
     {
-      icon: '🧪',
-      name: 'FREE',
-      price: 0,
-      description: 'Para probar StreamVoicer',
-      cta: 'Empezar Gratis',
+      icon: 'START',
+      name: 'START',
+      price: 6.99,
+      description: 'Ideal para streams ligeros',
+      cta: 'Adquirir START',
       popular: false,
       features: [
-        { text: '0 personajes', included: true },
-        { text: 'Funciones básicas', included: true },
-        { text: '20,000 tokens', included: true },
-        { text: '≈ 0.5 – 1 hora / semana', included: true },
-      ]
+        { text: '1 voz clonada por IA (editable)', included: true },
+        { text: '1 voz natural premium', included: true },
+        { text: '1 voz basica (ilimitada)', included: true },
+        { text: '200,000 caracteres (~tokens)', included: true },
+        { text: 'Rinde aprox 2-4 horas de stream activo', included: true },
+      ],
     },
     {
-      icon: '⚡',
+      icon: 'CREATOR',
       name: 'CREATOR',
-      price: 7.99,
-      description: 'Para streamers que inician',
-      cta: 'Adquirir Ahora',
-      popular: false,
-      features: [
-        { text: '1 personaje', included: true },
-        { text: 'Herramientas interactivas', included: true },
-        { text: '120,000 tokens', included: true },
-        { text: '≈ 2 – 4 horas / semana', included: true },
-      ]
-    },
-    {
-      icon: '🔥',
-      name: 'PRO',
-      price: 19.99,
-      description: 'Para streamers activos',
-      cta: 'Adquirir Ahora',
+      price: 12.99,
+      description: 'Ideal para streams activos',
+      cta: 'Adquirir CREATOR',
       popular: true,
       features: [
-        { text: '3–5 personajes', included: true },
-        { text: 'Herramientas avanzadas', included: true },
-        { text: '500,000 tokens', included: true },
-        { text: '≈ 8 – 12 horas / semana', included: true },
-      ]
+        { text: '2 voces clonadas por IA (editables)', included: true },
+        { text: '2 voces naturales premium', included: true },
+        { text: '1 voz basica (ilimitada)', included: true },
+        { text: '500,000 caracteres (~tokens)', included: true },
+        { text: 'Rinde aprox 5-8 horas de stream activo', included: true },
+      ],
     },
     {
-      icon: '👑',
-      name: 'ELITE',
-      price: 39.99,
-      description: 'Para profesionales del streaming',
-      cta: 'Adquirir Ahora',
+      icon: 'PRO',
+      name: 'PRO',
+      price: 17.99,
+      description: 'Ideal para interaccion constante',
+      cta: 'Adquirir PRO',
       popular: false,
       features: [
-        { text: 'Hasta 10 personajes', included: true },
-        { text: 'Sistema completo', included: true },
-        { text: '1,500,000 tokens', included: true },
-        { text: '≈ 25 – 40 horas / semana', included: true },
-      ]
-    }
+        { text: '5 voces clonadas por IA (editables)', included: true },
+        { text: '4 voces naturales premium', included: true },
+        { text: '1 voz basica (ilimitada)', included: true },
+        { text: '800,000 caracteres (~tokens)', included: true },
+        { text: 'Rinde aprox 10-15 horas de stream activo', included: true },
+      ],
+    },
   ]
 
   const annualPlans = [
     {
-      icon: '⚡',
+      icon: 'START',
+      name: 'START',
+      price: 59,
+      pricePerMonth: (59 / 12).toFixed(2),
+      description: 'Plan anual START',
+      cta: 'Suscribir START Anual',
+      popular: false,
+      badge: 'Ahorra ~$25',
+      features: [
+        { text: '1 voz clonada por IA (editable)', included: true },
+        { text: '1 voz natural premium', included: true },
+        { text: '1 voz basica (ilimitada)', included: true },
+        { text: '200,000 caracteres (~tokens)', included: true },
+      ],
+    },
+    {
+      icon: 'CREATOR',
       name: 'CREATOR',
-      price: 79,
-      pricePerMonth: (79 / 12).toFixed(2),
-      description: 'Para streamers que inician',
-      cta: 'Suscribir Anual',
-      popular: false,
-      badge: 'Ahorra 18%',
-      features: [
-        { text: '1 personaje', included: true },
-        { text: 'Herramientas interactivas', included: true },
-        { text: '120,000 tokens / mes', included: true },
-        { text: '≈ 2 – 4 horas / semana', included: true },
-      ]
-    },
-    {
-      icon: '🔥',
-      name: 'PRO',
-      price: 199,
-      pricePerMonth: (199 / 12).toFixed(2),
-      description: 'Para streamers activos',
-      cta: 'Suscribir Anual',
+      price: 109,
+      pricePerMonth: (109 / 12).toFixed(2),
+      description: 'Plan anual CREATOR',
+      cta: 'Suscribir CREATOR Anual',
       popular: true,
-      badge: 'Ahorra 17%',
+      badge: 'Ahorra ~$46',
       features: [
-        { text: '3–5 personajes', included: true },
-        { text: 'Herramientas avanzadas', included: true },
-        { text: '500,000 tokens / mes', included: true },
-        { text: '≈ 8 – 12 horas / semana', included: true },
-      ]
+        { text: '2 voces clonadas por IA (editables)', included: true },
+        { text: '2 voces naturales premium', included: true },
+        { text: '1 voz basica (ilimitada)', included: true },
+        { text: '500,000 caracteres (~tokens)', included: true },
+      ],
     },
     {
-      icon: '👑',
-      name: 'ELITE',
-      price: 399,
-      pricePerMonth: (399 / 12).toFixed(2),
-      description: 'Para profesionales del streaming',
-      cta: 'Suscribir Anual',
+      icon: 'PRO',
+      name: 'PRO',
+      price: 149,
+      pricePerMonth: (149 / 12).toFixed(2),
+      description: 'Plan anual PRO',
+      cta: 'Suscribir PRO Anual',
       popular: false,
-      badge: 'Ahorra 17%',
+      badge: 'Ahorra ~$67',
       features: [
-        { text: 'Hasta 10 personajes', included: true },
-        { text: 'Sistema completo', included: true },
-        { text: '1,500,000 tokens / mes', included: true },
-        { text: '≈ 25 – 40 horas / semana', included: true },
-      ]
-    }
+        { text: '5 voces clonadas por IA (editables)', included: true },
+        { text: '4 voces naturales premium', included: true },
+        { text: '1 voz basica (ilimitada)', included: true },
+        { text: '800,000 caracteres (~tokens)', included: true },
+      ],
+    },
   ]
 
   const plans = billingCycle === 'monthly' ? monthlyPlans : annualPlans
 
   return (
     <div>
-      {/* Toggle */}
       {showToggle && (
         <div className="flex justify-center mb-12">
           <div className={`inline-flex rounded-full p-1 ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>
@@ -215,8 +196,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
         </div>
       )}
 
-      {/* Cards */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 ${plans.length === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6`}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {plans.map((plan) => (
           <div
             key={plan.name}
@@ -230,7 +210,6 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   : 'bg-white border border-gray-200 hover:border-cyan-400/50'
             } p-8`}
           >
-            {/* Popular Badge */}
             {plan.popular && (
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                 <div className="bg-gradient-to-r from-green-400 to-green-500 text-black px-4 py-1 rounded-full text-sm font-bold whitespace-nowrap">
@@ -239,35 +218,31 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
               </div>
             )}
 
-            {/* Icon + Plan Name */}
-            <div className="text-4xl mb-3">{plan.icon}</div>
+            <div className="text-sm font-bold tracking-wide mb-3 text-cyan-400">{plan.icon}</div>
             <h3 className="text-3xl font-black mb-1">{plan.name}</h3>
             <p className={`text-base mb-5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               {plan.description}
             </p>
 
-            {/* Price */}
             <div className="mb-5">
               <div className="flex items-baseline gap-2 mb-1">
                 <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
                   ${billingCycle === 'monthly' ? plan.price.toFixed(2) : plan.price}
                 </span>
                 <span className={`text-xl ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  USD/{billingCycle === 'monthly' ? 'mes' : 'año'}
+                  USD/{billingCycle === 'monthly' ? 'mes' : 'ano'}
                 </span>
               </div>
 
-              {/* Local currency equivalent */}
               {exchangeRates && userCurrency !== 'USD' && plan.price > 0 && (
                 <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   {(() => {
                     const converted = convertPrice(plan.price)
-                    return `≈ ${converted.display} aprox./${billingCycle === 'monthly' ? 'mes' : 'año'}`
+                    return `~ ${converted.display} aprox./${billingCycle === 'monthly' ? 'mes' : 'ano'}`
                   })()}
                 </p>
               )}
 
-              {/* Badge + per month for annual */}
               {billingCycle === 'annual' && (
                 <div className="flex items-center gap-2 mt-1">
                   <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
@@ -282,25 +257,19 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
               )}
             </div>
 
-            {/* CTA Button */}
             <button
               onClick={() => onPlanAction?.(plan, { billingCycle })}
               className={`w-full py-3.5 rounded-lg font-bold text-base transition-all mb-6 ${
                 plan.popular
                   ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white hover:shadow-lg hover:shadow-cyan-400/50'
-                  : plan.price === 0
-                    ? darkMode
-                      ? 'border border-gray-600 text-gray-300 hover:bg-gray-700'
-                      : 'border border-gray-300 text-gray-600 hover:bg-gray-100'
-                    : darkMode
-                      ? 'border border-cyan-400 text-cyan-400 hover:bg-cyan-400/10'
-                      : 'border border-cyan-400 text-cyan-400 hover:bg-cyan-400/10'
+                  : darkMode
+                    ? 'border border-cyan-400 text-cyan-400 hover:bg-cyan-400/10'
+                    : 'border border-cyan-400 text-cyan-400 hover:bg-cyan-400/10'
               }`}
             >
               {plan.cta}
             </button>
 
-            {/* Features */}
             <div className={`border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} pt-6`}>
               <div className="space-y-4">
                 {plan.features.map((feature, idx) => (
@@ -317,13 +286,12 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
         ))}
       </div>
 
-      {/* Nota */}
       <div className="mt-8 text-center">
         <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          Estimado basado en chats promedio de 15–30 mensajes por minuto y mensajes de 40–60 caracteres.
-          El uso real puede variar según la actividad del stream y configuración.
+          El consumo depende de la actividad del chat y la configuracion. Puedes extender la duracion usando filtros inteligentes y lectura selectiva.
         </p>
       </div>
     </div>
   )
 }
+

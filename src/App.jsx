@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { StripePayment } from './components/StripePayment'
 import { SynthesisStudio } from './components/SynthesisStudio'
 import VoiceWorkshopPanel from './components/VoiceCloningPanel'
@@ -151,7 +151,7 @@ export function App() {
   const [cookieConsent, setCookieConsent] = useState(() => {
     return localStorage.getItem('cookieConsent') === 'true'
   })
-  const [selectedPaymentPackage, setSelectedPaymentPackage] = useState(250000)
+  const [selectedPaymentPackage, setSelectedPaymentPackage] = useState(350000)
   const [selectedCheckoutItem, setSelectedCheckoutItem] = useState(null)
 
   // Auth state
@@ -170,7 +170,7 @@ export function App() {
 
   const updateConfig = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
 
-  // Restaurar sesión al cargar
+  // Restaurar sesiÃ³n al cargar
   useEffect(() => {
     const savedToken = localStorage.getItem('sv-token')
     const savedUser = localStorage.getItem('sv-user')
@@ -206,11 +206,11 @@ export function App() {
     }
   }, [])
 
-  // Detectar ubicación y tipos de cambio
+  // Detectar ubicaciÃ³n y tipos de cambio
   useEffect(() => {
     const detectLocationAndExchangeRates = async () => {
       try {
-        // Detectar país por IP
+        // Detectar paÃ­s por IP
         setUserCountry('US')
         setUserCurrency('USD')
 
@@ -222,7 +222,7 @@ export function App() {
           setExchangeRates(ratesData.rates)
         }
       } catch (error) {
-        console.error('Error detectando ubicación/tipos de cambio:', error)
+        console.error('Error detectando ubicaciÃ³n/tipos de cambio:', error)
         // Fallback si hay error
         setExchangeRates({
           MXN: 20,
@@ -248,7 +248,7 @@ export function App() {
       const data = await res.json()
       if (data.success && data.config && Object.keys(data.config).length > 0) {
         setConfig(prev => ({ ...prev, ...data.config }))
-        console.log('[Config] Configuración del usuario cargada')
+        console.log('[Config] ConfiguraciÃ³n del usuario cargada')
       }
     } catch (err) {
       console.error('[Config] Error cargando config:', err)
@@ -298,11 +298,11 @@ export function App() {
       CLP: '$',
       PEN: 'S/',
       UYU: '$',
-      EUR: '€',
-      GBP: '£',
-      JPY: '¥',
-      CNY: '¥',
-      INR: '₹',
+      EUR: 'â‚¬',
+      GBP: 'Â£',
+      JPY: 'Â¥',
+      CNY: 'Â¥',
+      INR: 'â‚¹',
       AUD: '$',
       CAD: '$'
     }
@@ -323,7 +323,7 @@ export function App() {
     try {
       const userKey = user?.id || user?.email || 'guest'
       localStorage.setItem(getConfigCacheKey(userKey), JSON.stringify(config))
-      // Mantener legado para evitar perder estado de usuarios previos en transición
+      // Mantener legado para evitar perder estado de usuarios previos en transiciÃ³n
       if (!user) {
         localStorage.setItem(LOCAL_CONFIG_CACHE_KEY, JSON.stringify(config))
       }
@@ -344,9 +344,9 @@ export function App() {
         },
         body: JSON.stringify({ config })
       }).then(() => {
-        console.log('[Config] Guardado automático')
+        console.log('[Config] Guardado automÃ¡tico')
       }).catch(() => {})
-    }, 2000) // Espera 2 segundos después del último cambio
+    }, 2000) // Espera 2 segundos despuÃ©s del Ãºltimo cambio
 
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
   }, [config, user, configReady])
@@ -386,19 +386,19 @@ export function App() {
     }
 
     const planMapping = {
+      START: 'start',
       CREATOR: 'creator',
       PRO: 'pro',
-      ELITE: 'elite',
     }
 
     const billingCycle = meta.billingCycle || 'monthly'
     const recommendedPackages = {
-      CREATOR: 250000,
-      PRO: 500000,
-      ELITE: 1000000,
+      START: 150000,
+      CREATOR: 350000,
+      PRO: 700000,
     }
 
-    setSelectedPaymentPackage(recommendedPackages[plan.name] || 250000)
+    setSelectedPaymentPackage(recommendedPackages[plan.name] || 350000)
     setSelectedCheckoutItem({
       type: 'plan',
       planId: planMapping[plan.name] || plan.name.toLowerCase(),
@@ -456,7 +456,7 @@ export function App() {
     return <PricingPage onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} onPlanAction={handlePlanAction} />
   }
 
-  // Voice Workshop Page (se desmonta al salir, no tiene estado persistente crítico)
+  // Voice Workshop Page (se desmonta al salir, no tiene estado persistente crÃ­tico)
   if (currentPage === 'voice-workshop') {
     return (
       <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-gray-900"}>
@@ -486,7 +486,7 @@ export function App() {
               Preparativos <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">de Voces</span>
             </h2>
             <p className={`text-lg mb-12 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              Aquí puedes clonar y preparar tus voces personalizadas antes de usarlas en el Studio.
+              AquÃ­ puedes clonar y preparar tus voces personalizadas antes de usarlas en el Studio.
             </p>
             <VoiceWorkshopPanel onCloneSuccess={() => {/* Success message shown in panel, no reload */}} darkModeOverride={darkMode} config={config} updateConfig={updateConfig} user={user} />
           </div>
@@ -556,80 +556,72 @@ export function App() {
 
   const benefits = [
     {
-      icon: '🎭',
-      title: 'Clonación y Sistema de Personajes',
-      subtitle: 'Crea identidades únicas dentro de tu stream.',
+      icon: 'ðŸŽ­',
+      title: 'ClonaciÃ³n y Sistema de Personajes',
+      subtitle: 'Crea identidades Ãºnicas dentro de tu stream.',
       description: 'Clona voces y asigna personajes a cada tipo de usuario (chat, donadores, moderadores, etc).'
     },
     {
-      icon: '⚙️',
-      title: 'Más de 30 Herramientas de Control',
-      subtitle: 'Tú decides cómo se comporta tu chat.',
-      description: 'Filtros inteligentes, control de cola, bloqueo de spam, gestión de mensajes, límites, limpieza automática y más.'
+      icon: 'âš™ï¸',
+      title: 'MÃ¡s de 30 Herramientas de Control',
+      subtitle: 'TÃº decides cÃ³mo se comporta tu chat.',
+      description: 'Filtros inteligentes, control de cola, bloqueo de spam, gestiÃ³n de mensajes, lÃ­mites, limpieza automÃ¡tica y mÃ¡s.'
     },
     {
-      icon: '🔊',
-      title: 'Interacción en Tiempo Real',
-      subtitle: 'Tu stream reacciona automáticamente.',
+      icon: 'ðŸ”Š',
+      title: 'InteracciÃ³n en Tiempo Real',
+      subtitle: 'Tu stream reacciona automÃ¡ticamente.',
       description: 'Lectura de chat, notificaciones, eventos y acciones sin retrasos.'
     },
     {
-      icon: '🎨',
-      title: 'Personalización Total',
-      subtitle: 'Diseña la experiencia completa.',
+      icon: 'ðŸŽ¨',
+      title: 'PersonalizaciÃ³n Total',
+      subtitle: 'DiseÃ±a la experiencia completa.',
       description: 'Colores, nicks, estilos, tipos de usuario, visual del chat y comportamiento.'
     },
     {
-      icon: '💰',
-      title: 'Optimizado para Engagement y Monetización',
-      subtitle: 'Convierte interacción en resultados.',
-      description: 'Diferencia donadores, destaca usuarios clave y aumenta participación en tu stream.'
+      icon: 'ðŸ’°',
+      title: 'Optimizado para Engagement y MonetizaciÃ³n',
+      subtitle: 'Convierte interacciÃ³n en resultados.',
+      description: 'Diferencia donadores, destaca usuarios clave y aumenta participaciÃ³n en tu stream.'
     },
     {
-      icon: '🎮',
+      icon: 'ðŸŽ®',
       title: 'Preparado para Streaming en Vivo',
       subtitle: 'Funciona donde lo necesitas.',
       description: 'Optimizado para TikTok LIVE y flujos en tiempo real.'
     },
     {
-      icon: '🔒',
+      icon: 'ðŸ”’',
       title: 'Seguro y Estable',
       subtitle: 'Sistema confiable para streams largos.',
-      description: 'Protección de datos y rendimiento constante.'
+      description: 'ProtecciÃ³n de datos y rendimiento constante.'
     }
   ]
 
   const additionalPackages = [
     {
-      size: 'S',
-      tokens: '100,000',
-      price: '$3.99',
-      priceMxn: '≈ 80 MXN',
-      hours: '≈ 2 – 3 horas extra'
+      size: 'MINI BOOST',
+      tokens: '150,000',
+      price: '$4.99',
+      priceMxn: '$4.99 USD',
+      hours: '1.5 - 3 horas'
     },
     {
-      size: 'M',
-      tokens: '300,000',
+      size: 'POWER BOOST',
+      tokens: '350,000',
       price: '$9.99',
-      priceMxn: '≈ 200 MXN',
-      hours: '≈ 5 – 8 horas extra'
+      priceMxn: '$9.99 USD',
+      hours: '4 - 7 horas'
     },
     {
-      size: 'L',
-      tokens: '1,000,000',
-      price: '$24.99',
-      priceMxn: '≈ 500 MXN',
-      hours: '≈ 16 – 30 horas extra'
-    },
-    {
-      size: 'XL',
-      tokens: '2,500,000',
-      price: '$49.99',
-      priceMxn: '≈ 1,000 MXN',
-      hours: '≈ 40 – 75 horas extra'
+      size: 'MAX BOOST',
+      tokens: '700,000',
+      price: '$14.99',
+      priceMxn: '$14.99 USD',
+      hours: '8 - 12 horas'
     }
   ]
-
   const howItWorks = [
     {
       step: '1',
@@ -644,28 +636,28 @@ export function App() {
     {
       step: '3',
       title: 'Disfruta',
-      description: 'Los mensajes se leen automáticamente durante tu stream'
+      description: 'Los mensajes se leen automÃ¡ticamente durante tu stream'
     }
   ]
 
   const testimonials = [
     {
-      name: 'María García',
+      name: 'MarÃ­a GarcÃ­a',
       role: 'TikToker - 500K followers',
-      text: 'StreamVoicer cambió mi stream. Mis seguidores aman que sus mensajes se lean en voz. ¡Imprescindible!',
-      avatar: '👩'
+      text: 'StreamVoicer cambiÃ³ mi stream. Mis seguidores aman que sus mensajes se lean en voz. Â¡Imprescindible!',
+      avatar: 'ðŸ‘©'
     },
     {
-      name: 'Juan López',
+      name: 'Juan LÃ³pez',
       role: 'Streamer - Gaming',
-      text: 'La calidad de las voces es increíble. No parece robótico. Muy recomendado.',
-      avatar: '👨'
+      text: 'La calidad de las voces es increÃ­ble. No parece robÃ³tico. Muy recomendado.',
+      avatar: 'ðŸ‘¨'
     },
     {
-      name: 'Sofia Rodríguez',
+      name: 'Sofia RodrÃ­guez',
       role: 'Youtuber - Lifestyle',
-      text: 'Mis viewers interactúan más ahora. StreamVoicer es un game changer para creadores.',
-      avatar: '👩‍🦱'
+      text: 'Mis viewers interactÃºan mÃ¡s ahora. StreamVoicer es un game changer para creadores.',
+      avatar: 'ðŸ‘©â€ðŸ¦±'
     }
   ]
 
@@ -702,7 +694,7 @@ export function App() {
             <button
               onClick={handleLogout}
               className={"p-2 rounded-lg transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-red-400" : "bg-white/90 hover:bg-white text-red-500 shadow-md")}
-              title="Cerrar sesión"
+              title="Cerrar sesiÃ³n"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -712,7 +704,7 @@ export function App() {
             onClick={() => setCurrentPage('auth')}
             className={"px-4 py-2 rounded-lg font-semibold text-sm transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-white border border-white/20" : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm")}
           >
-            Iniciar Sesión
+            Iniciar SesiÃ³n
           </button>
         )}
       </div>
@@ -779,7 +771,7 @@ export function App() {
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <h3 className="text-4xl font-black text-center mb-16">
-            ¿Por qué elegir <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">StreamVoicer</span>?
+            Â¿Por quÃ© elegir <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">StreamVoicer</span>?
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -808,7 +800,7 @@ export function App() {
       }`}>
         <div className="max-w-7xl mx-auto">
           <h3 className={`text-4xl font-black text-center mb-16 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-            Así de <span className={darkMode ? "text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500" : "text-slate-700"}>fácil</span> es empezar
+            AsÃ­ de <span className={darkMode ? "text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500" : "text-slate-700"}>fÃ¡cil</span> es empezar
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -864,7 +856,7 @@ export function App() {
         <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-16">
             <span className={"text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 inline-block " + (darkMode ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "bg-cyan-50 text-cyan-600 border border-cyan-200")}>
-              ⚡ ¿Se te acabaron los tokens?
+              âš¡ Â¿Se te acabaron los tokens?
             </span>
             <h3 className="text-5xl font-black mt-4 mb-4">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500">
@@ -874,13 +866,13 @@ export function App() {
             <p className={"text-xl font-medium " + (darkMode ? "text-gray-200" : "text-gray-700")}>Si tu plan mensual se queda corto, recarga al instante sin esperar al siguiente mes.</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {additionalPackages.map((pkg, idx) => {
-              const gradients = ['from-cyan-500 to-blue-500', 'from-blue-500 to-purple-500', 'from-purple-500 to-pink-500', 'from-yellow-400 to-orange-500']
-              const icons = ['🔋', '⚡', '🚀', '💎']
+              const gradients = ['from-cyan-500 to-blue-500', 'from-blue-500 to-purple-500', 'from-purple-500 to-pink-500']
+              const icons = ['MINI', 'POWER', 'MAX']
               const gradient = gradients[idx]
               const icon = icons[idx]
-              const isPopular = idx === 2
+              const isPopular = idx === 1
               return (
               <div
                 key={idx}
@@ -888,8 +880,8 @@ export function App() {
                 style={{ background: isPopular ? 'linear-gradient(135deg, #a855f7, #ec4899)' : undefined }}
                 onClick={() => {
                   setSelectedCheckoutItem(null)
-                  const tokenPackageMap = { S: 100000, M: 250000, L: 1000000, XL: 1000000 }
-                  setSelectedPaymentPackage(tokenPackageMap[pkg.size] || 250000)
+                  const tokenPackageMap = { 'MINI BOOST': 150000, 'POWER BOOST': 350000, 'MAX BOOST': 700000 }
+                  setSelectedPaymentPackage(tokenPackageMap[pkg.size] || 350000)
                   setIsPaymentOpen(true)
                 }}
               >
@@ -897,7 +889,7 @@ export function App() {
 
                   {isPopular && (
                     <div className={"text-[10px] font-black tracking-wider mb-4 px-3 py-1 rounded-full text-center w-full bg-gradient-to-r " + gradient + " text-white"}>
-                      🔥 MÁS POPULAR
+                      ðŸ”¥ MÃS POPULAR
                     </div>
                   )}
                   {!isPopular && <div className="mb-4 h-6" />}
@@ -916,7 +908,7 @@ export function App() {
                         {(() => {
                           const priceNum = parseFloat(pkg.price.replace('$', ''))
                           const converted = convertPrice(priceNum)
-                          return `≈ ${converted.display} aprox.`
+                          return `â‰ˆ ${converted.display} aprox.`
                         })()}
                       </div>
                     )}
@@ -930,7 +922,7 @@ export function App() {
                   <p className={"text-sm mb-5 " + (darkMode ? "text-gray-400" : "text-gray-500")}>{pkg.hours}</p>
 
                   <button className={"w-full py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r transition-all mt-auto " + gradient + " hover:opacity-90 hover:shadow-lg"}>
-                    Comprar ahora →
+                    Comprar ahora â†’
                   </button>
                 </div>
               </div>
@@ -940,7 +932,7 @@ export function App() {
 
           {/* Bottom note */}
           <p className={"text-center text-xs mt-10 " + (darkMode ? "text-gray-600" : "text-gray-400")}>
-            🔒 Pagos seguros · Los tokens no expiran · Se acumulan con tu plan
+            ðŸ”’ Pagos seguros Â· Los tokens no expiran Â· Se acumulan con tu plan
           </p>
         </div>
       </section>
@@ -966,7 +958,7 @@ export function App() {
                 </div>
                 <div className="flex gap-1 mb-4">
                   {[...Array(5)].map((_, i) => (
-                    <span key={i} className="text-yellow-400">⭐</span>
+                    <span key={i} className="text-yellow-400">â­</span>
                   ))}
                 </div>
                 <p className={`italic ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>"{testimonial.text}"</p>
@@ -984,7 +976,7 @@ export function App() {
               Listo para revolucionar tus streams?
             </h3>
             <p className={`text-xl mb-8 ${darkMode ? 'text-gray-300' : 'text-slate-200'}`}>
-              Únete a miles de creadores que ya están usando StreamVoicer
+              Ãšnete a miles de creadores que ya estÃ¡n usando StreamVoicer
             </p>
             <div className="flex gap-4 justify-center">
               <button
@@ -1018,12 +1010,12 @@ export function App() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <h4 className="font-bold mb-4">StreamVoicer</h4>
-              <p className="text-sm text-gray-400">La mejor solución para leer chats en vivo</p>
+              <p className="text-sm text-gray-400">La mejor soluciÃ³n para leer chats en vivo</p>
             </div>
             <div>
               <h4 className="font-bold mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><button onClick={() => setShowTerms(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Términos</button></li>
+                <li><button onClick={() => setShowTerms(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">TÃ©rminos</button></li>
                 <li><button onClick={() => setShowPrivacy(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Privacidad</button></li>
                 <li><button onClick={() => setShowCookies(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Cookies</button></li>
               </ul>
@@ -1051,44 +1043,44 @@ export function App() {
         initialCheckoutItem={selectedCheckoutItem}
       />
 
-      {/* Términos Modal */}
+      {/* TÃ©rminos Modal */}
       {showTerms && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
           <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Términos de Servicio</h2>
-              <button onClick={() => setShowTerms(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>TÃ©rminos de Servicio</h2>
+              <button onClick={() => setShowTerms(false)} className="text-2xl opacity-50 hover:opacity-100">Ã—</button>
             </div>
             <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. Aceptación de Términos</h3>
-                <p>Al usar StreamVoicer, aceptas estos términos y condiciones. Si no estás de acuerdo, no uses el servicio.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. AceptaciÃ³n de TÃ©rminos</h3>
+                <p>Al usar StreamVoicer, aceptas estos tÃ©rminos y condiciones. Si no estÃ¡s de acuerdo, no uses el servicio.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. Descripción del Servicio</h3>
-                <p>StreamVoicer es una plataforma de síntesis de voz (TTS) para streamers. Proporciona características para leer mensajes en vivo usando inteligencia artificial.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. DescripciÃ³n del Servicio</h3>
+                <p>StreamVoicer es una plataforma de sÃ­ntesis de voz (TTS) para streamers. Proporciona caracterÃ­sticas para leer mensajes en vivo usando inteligencia artificial.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Uso Permitido</h3>
-                <p>Debes usar StreamVoicer solo para propósitos legales y éticos. Se prohíbe:</p>
+                <p>Debes usar StreamVoicer solo para propÃ³sitos legales y Ã©ticos. Se prohÃ­be:</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>Contenido ofensivo, discriminatorio o ilegal</li>
-                  <li>Intentos de piratería o acceso no autorizado</li>
+                  <li>Intentos de piraterÃ­a o acceso no autorizado</li>
                   <li>Spam o abuso del servicio</li>
-                  <li>Violación de derechos de terceros</li>
+                  <li>ViolaciÃ³n de derechos de terceros</li>
                 </ul>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Suscripciones y Pagos</h3>
-                <p>Los planes son recurrentes. Puedes cancelar en cualquier momento. No hay reembolsos por uso parcial del período.</p>
+                <p>Los planes son recurrentes. Puedes cancelar en cualquier momento. No hay reembolsos por uso parcial del perÃ­odo.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Limitaciones de Responsabilidad</h3>
-                <p>StreamVoicer se proporciona "tal cual". No garantizamos disponibilidad continua. No somos responsables por daños indirectos.</p>
+                <p>StreamVoicer se proporciona "tal cual". No garantizamos disponibilidad continua. No somos responsables por daÃ±os indirectos.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en los Términos</h3>
-                <p>Nos reservamos el derecho de modificar estos términos. Te notificaremos de cambios significativos.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en los TÃ©rminos</h3>
+                <p>Nos reservamos el derecho de modificar estos tÃ©rminos. Te notificaremos de cambios significativos.</p>
               </section>
             </div>
             <button onClick={() => setShowTerms(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
@@ -1103,17 +1095,17 @@ export function App() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
           <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Política de Privacidad</h2>
-              <button onClick={() => setShowPrivacy(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>PolÃ­tica de Privacidad</h2>
+              <button onClick={() => setShowPrivacy(false)} className="text-2xl opacity-50 hover:opacity-100">Ã—</button>
             </div>
             <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. Información que Recolectamos</h3>
-                <p>Recolectamos información que voluntariamente proporcionas, como nombre, email, y datos de suscripción.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. InformaciÃ³n que Recolectamos</h3>
+                <p>Recolectamos informaciÃ³n que voluntariamente proporcionas, como nombre, email, y datos de suscripciÃ³n.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. Cómo Usamos Tu Información</h3>
-                <p>Usamos tu información para:</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. CÃ³mo Usamos Tu InformaciÃ³n</h3>
+                <p>Usamos tu informaciÃ³n para:</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>Proporcionar y mejorar nuestros servicios</li>
                   <li>Procesar pagos y suscripciones</li>
@@ -1123,23 +1115,23 @@ export function App() {
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Seguridad de Datos</h3>
-                <p>Implementamos medidas de seguridad estándar para proteger tu información. Sin embargo, no podemos garantizar seguridad absoluta.</p>
+                <p>Implementamos medidas de seguridad estÃ¡ndar para proteger tu informaciÃ³n. Sin embargo, no podemos garantizar seguridad absoluta.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Cookies y Tecnologías Similares</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Cookies y TecnologÃ­as Similares</h3>
                 <p>Usamos cookies para mejorar tu experiencia y analizar el uso del servicio.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Derechos del Usuario</h3>
-                <p>Tienes derecho a acceder, modificar o eliminar tu información personal. Contacta al correo de soporte para solicitar estos derechos.</p>
+                <p>Tienes derecho a acceder, modificar o eliminar tu informaciÃ³n personal. Contacta al correo de soporte para solicitar estos derechos.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en la Política</h3>
-                <p>Nos reservamos el derecho de actualizar esta política. Los cambios serán notificados en esta página.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en la PolÃ­tica</h3>
+                <p>Nos reservamos el derecho de actualizar esta polÃ­tica. Los cambios serÃ¡n notificados en esta pÃ¡gina.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>7. Contacto</h3>
-                <p>Para preguntas sobre privacidad, contáctanos a: support@streamvoicer.com</p>
+                <p>Para preguntas sobre privacidad, contÃ¡ctanos a: support@streamvoicer.com</p>
               </section>
             </div>
             <button onClick={() => setShowPrivacy(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
@@ -1155,12 +1147,12 @@ export function App() {
           <div className={`rounded-2xl p-8 max-w-md w-full ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
             <div className="flex justify-between items-center mb-6">
               <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Contacto</h2>
-              <button onClick={() => setShowContact(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
+              <button onClick={() => setShowContact(false)} className="text-2xl opacity-50 hover:opacity-100">Ã—</button>
             </div>
             <div className={`space-y-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              <p>¿Tienes preguntas o necesitas ayuda? Nos encantaría escucharte.</p>
+              <p>Â¿Tienes preguntas o necesitas ayuda? Nos encantarÃ­a escucharte.</p>
               <div className="bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl p-4 text-center">
-                <p className="text-white text-sm mb-2 font-bold">Envíanos un correo a:</p>
+                <p className="text-white text-sm mb-2 font-bold">EnvÃ­anos un correo a:</p>
                 <a href="mailto:opusvolt@gmail.com" className="text-white text-lg font-black hover:opacity-80 transition">
                   opusvolt@gmail.com
                 </a>
@@ -1180,48 +1172,48 @@ export function App() {
           <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
             <div className="flex justify-between items-center mb-6">
               <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Preguntas Frecuentes</h2>
-              <button onClick={() => setShowFAQ(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
+              <button onClick={() => setShowFAQ(false)} className="text-2xl opacity-50 hover:opacity-100">Ã—</button>
             </div>
             <div className={`space-y-6 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Cómo funciona StreamVoicer?</h3>
-                <p>StreamVoicer es una plataforma de síntesis de voz (TTS) que lee automáticamente los mensajes de tu chat de TikTok LIVE usando inteligencia artificial con voces naturales en español.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Â¿CÃ³mo funciona StreamVoicer?</h3>
+                <p>StreamVoicer es una plataforma de sÃ­ntesis de voz (TTS) que lee automÃ¡ticamente los mensajes de tu chat de TikTok LIVE usando inteligencia artificial con voces naturales en espaÃ±ol.</p>
               </div>
               <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Qué es un token?</h3>
-                <p>Un token representa caracteres de texto. Cuando un usuario envía un mensaje, se consumen tokens según la cantidad de caracteres. Cada plan incluye una cantidad mensual de tokens renovables.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Â¿QuÃ© es un token?</h3>
+                <p>Un token representa caracteres de texto. Cuando un usuario envÃ­a un mensaje, se consumen tokens segÃºn la cantidad de caracteres. Cada plan incluye una cantidad mensual de tokens renovables.</p>
               </div>
               <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Puedo cambiar de plan cuando quiera?</h3>
-                <p>Sí, puedes cambiar o cancelar tu plan en cualquier momento. Los cambios se reflejan en tu próximo período de facturación.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Â¿Puedo cambiar de plan cuando quiera?</h3>
+                <p>SÃ­, puedes cambiar o cancelar tu plan en cualquier momento. Los cambios se reflejan en tu prÃ³ximo perÃ­odo de facturaciÃ³n.</p>
               </div>
               <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Qué hago si se me acaban los tokens?</h3>
-                <p>Puedes comprar tokens adicionales en cualquier momento en la sección "Recarga de Tokens". Los tokens se acumulan con los de tu plan actual.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Â¿QuÃ© hago si se me acaban los tokens?</h3>
+                <p>Puedes comprar tokens adicionales en cualquier momento en la secciÃ³n "Recarga de Tokens". Los tokens se acumulan con los de tu plan actual.</p>
               </div>
               <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Los tokens expiran?</h3>
-                <p>No, los tokens no expiran. Se acumulan en tu cuenta y puedes usarlos cuando quieras mientras tengas una suscripción activa.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Â¿Los tokens expiran?</h3>
+                <p>No, los tokens no expiran. Se acumulan en tu cuenta y puedes usarlos cuando quieras mientras tengas una suscripciÃ³n activa.</p>
               </div>
               <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Funciona con otros idiomas?</h3>
-                <p>Actualmente StreamVoicer está optimizado para español. Estamos trabajando en agregar más idiomas próximamente.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Â¿Funciona con otros idiomas?</h3>
+                <p>Actualmente StreamVoicer estÃ¡ optimizado para espaÃ±ol. Estamos trabajando en agregar mÃ¡s idiomas prÃ³ximamente.</p>
               </div>
               <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Cuánto tiempo toma procesar un mensaje?</h3>
-                <p>Los mensajes se procesan en tiempo real. Típicamente entre 2-5 segundos dependiendo de la longitud y el servidor.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Â¿CuÃ¡nto tiempo toma procesar un mensaje?</h3>
+                <p>Los mensajes se procesan en tiempo real. TÃ­picamente entre 2-5 segundos dependiendo de la longitud y el servidor.</p>
               </div>
               <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Puedo personalizar las voces?</h3>
-                <p>Sí, en el panel de control puedes elegir entre diferentes voces en español y configurar qué mensajes se leen según tus reglas.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Â¿Puedo personalizar las voces?</h3>
+                <p>SÃ­, en el panel de control puedes elegir entre diferentes voces en espaÃ±ol y configurar quÃ© mensajes se leen segÃºn tus reglas.</p>
               </div>
               <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Es seguro dar acceso a mi TikTok?</h3>
-                <p>Sí, solo solicitamos acceso a la información pública de tu stream LIVE. Tus datos están protegidos y no compartimos información con terceros.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Â¿Es seguro dar acceso a mi TikTok?</h3>
+                <p>SÃ­, solo solicitamos acceso a la informaciÃ³n pÃºblica de tu stream LIVE. Tus datos estÃ¡n protegidos y no compartimos informaciÃ³n con terceros.</p>
               </div>
               <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Hay período de prueba gratuito?</h3>
-                <p>Sí, ofrecemos un plan FREE con 20,000 tokens mensuales para que pruebes todas las características.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Â¿Hay perÃ­odo de prueba gratuito?</h3>
+                <p>Si prefieres primero una prueba, puedes empezar con START y luego subir a CREATOR o PRO cuando tu chat crezca.</p>
               </div>
             </div>
             <button onClick={() => setShowFAQ(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
@@ -1236,45 +1228,45 @@ export function App() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
           <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Política de Cookies</h2>
-              <button onClick={() => setShowCookies(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>PolÃ­tica de Cookies</h2>
+              <button onClick={() => setShowCookies(false)} className="text-2xl opacity-50 hover:opacity-100">Ã—</button>
             </div>
             <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Qué son las cookies?</h3>
-                <p>Las cookies son pequeños archivos de texto que se guardan en tu dispositivo cuando visitas nuestro sitio. Nos ayudan a mejorar tu experiencia y analizar cómo usas StreamVoicer.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Â¿QuÃ© son las cookies?</h3>
+                <p>Las cookies son pequeÃ±os archivos de texto que se guardan en tu dispositivo cuando visitas nuestro sitio. Nos ayudan a mejorar tu experiencia y analizar cÃ³mo usas StreamVoicer.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Tipos de Cookies que Usamos</h3>
                 <ul className="list-disc pl-5 space-y-2">
-                  <li><strong>Cookies Esenciales:</strong> Necesarias para el funcionamiento básico del sitio (autenticación, seguridad)</li>
-                  <li><strong>Cookies de Rendimiento:</strong> Nos ayudan a entender cómo usas el sitio y mejorarlo</li>
-                  <li><strong>Cookies de Análisis:</strong> Rastrean cómo interactúas con StreamVoicer para optimizar la experiencia</li>
-                  <li><strong>Cookies de Publicidad:</strong> Permiten mostrar anuncios relevantes según tus intereses</li>
+                  <li><strong>Cookies Esenciales:</strong> Necesarias para el funcionamiento bÃ¡sico del sitio (autenticaciÃ³n, seguridad)</li>
+                  <li><strong>Cookies de Rendimiento:</strong> Nos ayudan a entender cÃ³mo usas el sitio y mejorarlo</li>
+                  <li><strong>Cookies de AnÃ¡lisis:</strong> Rastrean cÃ³mo interactÃºas con StreamVoicer para optimizar la experiencia</li>
+                  <li><strong>Cookies de Publicidad:</strong> Permiten mostrar anuncios relevantes segÃºn tus intereses</li>
                 </ul>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Cómo Usamos las Cookies?</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Â¿CÃ³mo Usamos las Cookies?</h3>
                 <p>Usamos cookies para:</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li>Mantener tu sesión iniciada</li>
+                  <li>Mantener tu sesiÃ³n iniciada</li>
                   <li>Recordar tus preferencias de idioma y tema</li>
-                  <li>Analizar el tráfico del sitio con Google Analytics</li>
-                  <li>Personalizar contenido según tu actividad</li>
+                  <li>Analizar el trÃ¡fico del sitio con Google Analytics</li>
+                  <li>Personalizar contenido segÃºn tu actividad</li>
                   <li>Prevenir fraude y mejorar la seguridad</li>
                 </ul>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Control de Cookies</h3>
-                <p>Puedes controlar o eliminar cookies desde la configuración de tu navegador. Ten en cuenta que desactivarlas puede afectar la funcionalidad del sitio.</p>
+                <p>Puedes controlar o eliminar cookies desde la configuraciÃ³n de tu navegador. Ten en cuenta que desactivarlas puede afectar la funcionalidad del sitio.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cookies de Terceros</h3>
-                <p>Usamos servicios de terceros como Google Analytics que también pueden guardar cookies. Consulta sus políticas para más información.</p>
+                <p>Usamos servicios de terceros como Google Analytics que tambiÃ©n pueden guardar cookies. Consulta sus polÃ­ticas para mÃ¡s informaciÃ³n.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cambios en la Política</h3>
-                <p>Nos reservamos el derecho de actualizar esta política en cualquier momento. Te notificaremos de cambios significativos.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cambios en la PolÃ­tica</h3>
+                <p>Nos reservamos el derecho de actualizar esta polÃ­tica en cualquier momento. Te notificaremos de cambios significativos.</p>
               </section>
             </div>
             <button onClick={() => setShowCookies(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
@@ -1292,7 +1284,7 @@ export function App() {
               <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 Usamos cookies para mejorar tu experiencia. Al continuar, aceptas nuestra{' '}
                 <button onClick={() => setShowCookies(true)} className="underline hover:no-underline text-cyan-400 font-semibold">
-                  política de cookies
+                  polÃ­tica de cookies
                 </button>
               </p>
             </div>
@@ -1317,3 +1309,6 @@ export function App() {
   )
 }
 // Cache buster 1774553392
+
+
+
