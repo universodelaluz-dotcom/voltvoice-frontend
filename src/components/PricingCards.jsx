@@ -68,9 +68,60 @@ const monthlyPlans = [
 ]
 
 const annualPlans = [
-  { icon: '🟢', name: 'START ANUAL', price: 59, saving: 'Ahorra ~$25 USD' },
-  { icon: '🔵', name: 'CREATOR ANUAL', price: 109, saving: 'Ahorra ~$46 USD', hot: true },
-  { icon: '🔥', name: 'PRO ANUAL', price: 149, saving: 'Ahorra ~$67 USD', fast: true },
+  {
+    icon: '🟢',
+    name: 'START ANUAL',
+    price: 59,
+    saving: 'Ahorra ~$25 USD',
+    planName: 'START',
+    benefits: [
+      '1 voz clonada por IA (editable)',
+      '1 voz natural premium',
+      '1 voz básica (ilimitada)',
+      '200,000 caracteres (~tokens)',
+      'Rinde aprox 2-4 horas de stream activo',
+      'filtrado inteligente',
+      'lectura selectiva (preguntas, donadores, etc.)',
+      'control de mensajes',
+    ],
+  },
+  {
+    icon: '🔵',
+    name: 'CREATOR ANUAL',
+    price: 109,
+    saving: 'Ahorra ~$46 USD',
+    hot: true,
+    planName: 'CREATOR',
+    benefits: [
+      '2 voces clonadas por IA (editables)',
+      '2 voces naturales premium',
+      '1 voz básica (ilimitada)',
+      '500,000 caracteres (~tokens)',
+      'Rinde aprox 5-8 horas de stream activo',
+      'lectura inteligente del chat',
+      'voces dinámicas por tipo de usuario',
+      'control avanzado de mensajes',
+    ],
+  },
+  {
+    icon: '🔥',
+    name: 'PRO ANUAL',
+    price: 149,
+    saving: 'Ahorra ~$67 USD',
+    fast: true,
+    planName: 'PRO',
+    benefits: [
+      '5 voces clonadas por IA (editables)',
+      '4 voces naturales premium',
+      '1 voz básica (ilimitada)',
+      '800,000 caracteres (~tokens)',
+      'Rinde aprox 10-15 horas de stream activo',
+      'Experiencia completa con IA',
+      'sistema completo de filtrado',
+      'control total del chat',
+      'optimización máxima del consumo',
+    ],
+  },
 ]
 
 export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
@@ -185,10 +236,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
         <>
           <div className="text-center mb-8">
             <p className={`text-sm font-bold tracking-wider ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
-              💎 PLANES ANUALES (aquí haces cash 💰)
-            </p>
-            <p className={`text-sm mt-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              👉 Estrategia: dar ~2 meses gratis
+              💎 PLANES ANUALES
             </p>
           </div>
 
@@ -201,8 +249,16 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                 </p>
                 <p className={darkMode ? 'text-gray-300 mb-1' : 'text-gray-700 mb-1'}>USD / año</p>
                 <p className="text-sm text-green-400">({plan.saving})</p>
+                <div className="space-y-2 mt-4 mb-4">
+                  {plan.benefits.map((benefit, idx) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      <Check className="w-4 h-4 mt-0.5 text-green-400" />
+                      <span className={darkMode ? 'text-gray-200 text-sm' : 'text-gray-700 text-sm'}>{benefit}</span>
+                    </div>
+                  ))}
+                </div>
                 <button
-                  onClick={() => onPlanAction?.(plan, { billingCycle: 'annual' })}
+                  onClick={() => onPlanAction?.({ name: plan.planName || plan.name.replace(' ANUAL', ''), price: plan.price }, { billingCycle: 'annual' })}
                   className="w-full mt-6 py-3 rounded-lg font-bold border border-cyan-400 text-cyan-400 hover:bg-cyan-400/10 transition-all"
                 >
                   Comprar {plan.name}
