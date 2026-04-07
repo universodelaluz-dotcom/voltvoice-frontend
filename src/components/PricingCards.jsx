@@ -295,6 +295,9 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   ${plan.price}
                 </p>
                 <p className={darkMode ? 'text-gray-300 mb-1' : 'text-gray-700 mb-1'}>USD / año</p>
+                <p className={darkMode ? 'text-[11px] font-bold text-cyan-300 mb-1' : 'text-[11px] font-bold text-cyan-700 mb-1'}>
+                  (~${(plan.price / 12).toFixed(2)} USD/mes)
+                </p>
                 <p className={`text-xs ${darkMode ? 'text-gray-400 mb-1' : 'text-gray-500 mb-1'}`}>
                   Aprox. {formatMxnApprox(plan.price)} MXN
                 </p>

@@ -462,7 +462,17 @@ export function App() {
 
   // Pricing Page
   if (currentPage === 'pricing') {
-    return <PricingPage onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} onPlanAction={handlePlanAction} />
+    return (
+      <>
+        <PricingPage onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} onPlanAction={handlePlanAction} />
+        <StripePayment
+          isOpen={isPaymentOpen}
+          onClose={() => setIsPaymentOpen(false)}
+          initialPackageTokens={selectedPaymentPackage}
+          initialCheckoutItem={selectedCheckoutItem}
+        />
+      </>
+    )
   }
 
   // Voice Workshop Page (se desmonta al salir, no tiene estado persistente crítico)

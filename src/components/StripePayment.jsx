@@ -1,5 +1,5 @@
-﻿import { useState, useEffect } from 'react'
-import { X, Zap } from 'lucide-react'
+﻿import { useState, useEffect, useCallback } from 'react'
+import { X, Zap, Check, AlertCircle, Loader2 } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
@@ -13,6 +13,9 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
   const [selectedPackage, setSelectedPackage] = useState(tokenPackages[1])
   const [checkoutItem, setCheckoutItem] = useState(() => initialCheckoutItem || { type: 'tokens', package: tokenPackages[1] })
+  const [couponCode, setCouponCode] = useState('')
+  const [couponValidation, setCouponValidation] = useState(null) // { valid, message, discount, finalAmount, coupon }
+  const [couponLoading, setCouponLoading] = useState(false)
   const [loading, setLoading] = useState(null)
   const [usdMxn, setUsdMxn] = useState(17)
 
@@ -25,6 +28,9 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
 
   useEffect(() => {
     if (!isOpen) return
+
+    setCouponCode('')
+    setCouponValidation(null)
 
     if (initialCheckoutItem?.type === 'plan') {
       setCheckoutItem(initialCheckoutItem)
@@ -74,19 +80,67 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     }
   }
 
+  const getCurrentPrice = () => {
+    if (checkoutItem?.type === 'plan') return parseFloat(checkoutItem.price)
+    return selectedPackage.price
+  }
+
+  const validateCoupon = useCallback(async () => {
+    const code = couponCode.trim()
+    if (!code) {
+      setCouponValidation(null)
+      return
+    }
+    setCouponLoading(true)
+    try {
+      const authHeaders = getAuthHeaders()
+      if (!authHeaders) { setCouponLoading(false); return }
+
+      const ci = checkoutItem?.type === 'plan' ? checkoutItem : { type: 'tokens', package: selectedPackage }
+      const res = await fetch(API_URL + '/api/coupons/validate', {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          code,
+          amount: getCurrentPrice(),
+          itemType: ci.type,
+          itemId: ci.type === 'plan' ? ci.planId : ci.package?.tokens
+        })
+      })
+      const data = await res.json()
+      setCouponValidation(data)
+    } catch (e) {
+      setCouponValidation({ valid: false, message: 'Error validando cupón' })
+    }
+    setCouponLoading(false)
+  }, [couponCode, checkoutItem, selectedPackage])
+
+  // Reset coupon validation when package changes
+  useEffect(() => {
+    if (couponCode.trim() && couponValidation?.valid) {
+      validateCoupon()
+    }
+  }, [selectedPackage])
+
   const currentItem = checkoutItem?.type === 'plan'
     ? checkoutItem
     : { type: 'tokens', package: selectedPackage }
+
+  const validCoupon = couponValidation?.valid ? couponValidation : null
 
   const requestPayload = currentItem.type === 'plan'
     ? {
         planId: currentItem.planId,
         billingCycle: currentItem.billingCycle,
         itemType: 'plan',
+        couponCode: validCoupon ? couponCode.trim() : undefined,
+        couponId: validCoupon?.coupon?.id || undefined,
       }
     : {
         tokensPackage: currentItem.package.tokens,
         itemType: 'tokens',
+        couponCode: validCoupon ? couponCode.trim() : undefined,
+        couponId: validCoupon?.coupon?.id || undefined,
       }
 
   const handleMercadoPago = async () => {
@@ -253,6 +307,71 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
           >
             {loading === 'paypal' ? 'Procesando...' : 'Pagar con PayPal'}
           </button>
+
+          <div className="pt-0.5">
+            <label className={`block text-[10px] font-medium mb-1 ${dm ? 'text-gray-500' : 'text-gray-500'}`}>
+              Cupón de descuento
+            </label>
+            <div className="flex gap-1.5 items-start">
+              <div className="flex-1 max-w-[180px]">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => { setCouponCode(e.target.value.toUpperCase().slice(0, 24)); setCouponValidation(null) }}
+                  placeholder="STREAM10"
+                  className={`w-full h-7 px-2 rounded-md text-[11px] border outline-none transition ${
+                    couponValidation?.valid
+                      ? 'border-green-500 bg-green-500/10 text-green-300'
+                      : couponValidation && !couponValidation.valid
+                        ? 'border-red-500/50 bg-red-500/5'
+                        : ''
+                  } ${
+                    dm
+                      ? 'bg-white/5 border-white/10 text-gray-200 placeholder:text-gray-600 focus:border-cyan-500/40'
+                      : 'bg-white border-gray-300 text-gray-700 placeholder:text-gray-400 focus:border-cyan-500'
+                  }`}
+                />
+              </div>
+              <button
+                onClick={validateCoupon}
+                disabled={!couponCode.trim() || couponLoading}
+                className={`h-7 px-3 rounded-md text-[11px] font-bold transition-all disabled:opacity-40 ${
+                  dm
+                    ? 'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 border border-cyan-500/30'
+                    : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100 border border-cyan-200'
+                }`}
+              >
+                {couponLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Aplicar'}
+              </button>
+            </div>
+            {couponValidation && (
+              <div className={`flex items-center gap-1.5 mt-1.5 text-[10px] font-medium ${
+                couponValidation.valid ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {couponValidation.valid
+                  ? <Check className="w-3 h-3" />
+                  : <AlertCircle className="w-3 h-3" />
+                }
+                <span>{couponValidation.message}</span>
+              </div>
+            )}
+            {validCoupon && (
+              <div className={`mt-2 rounded-lg p-2 text-[11px] ${dm ? 'bg-green-500/10 border border-green-500/20' : 'bg-green-50 border border-green-200'}`}>
+                <div className="flex justify-between">
+                  <span className={dm ? 'text-gray-400' : 'text-gray-500'}>Subtotal</span>
+                  <span>${validCoupon.originalAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-green-400 font-bold">
+                  <span>Descuento</span>
+                  <span>-${validCoupon.discount.toFixed(2)}</span>
+                </div>
+                <div className={`flex justify-between font-black pt-1 mt-1 border-t ${dm ? 'border-white/10' : 'border-gray-200'}`}>
+                  <span>Total</span>
+                  <span className="text-cyan-400">${validCoupon.finalAmount.toFixed(2)} USD</span>
+                </div>
+              </div>
+            )}
+          </div>
 
           <button
             onClick={onClose}

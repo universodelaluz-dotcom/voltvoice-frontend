@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Users, Zap, TrendingUp, Activity, Search, ChevronLeft,
-  RefreshCw, Shield, Edit2, Check, X, Plus, BarChart2, Wifi
+  RefreshCw, Shield, Edit2, Check, X, Plus, BarChart2, Wifi, Tag
 } from 'lucide-react'
+import CouponManager from './CouponManager'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
@@ -159,14 +160,14 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
             </span>
           </div>
           <button
-            onClick={tab === 'dashboard' ? loadStats : loadUsers}
+            onClick={tab === 'dashboard' ? loadStats : tab === 'users' ? loadUsers : null}
             className={`p-2 rounded-lg ${darkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
         <div className="max-w-7xl mx-auto px-4 flex gap-1">
-          {[{ id: 'dashboard', label: 'Dashboard', icon: BarChart2 }, { id: 'users', label: 'Usuarios', icon: Users }].map(t => (
+          {[{ id: 'dashboard', label: 'Dashboard', icon: BarChart2 }, { id: 'users', label: 'Usuarios', icon: Users }, { id: 'coupons', label: 'Cupones', icon: Tag }].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all ${tab === t.id ? 'border-red-400 text-red-400' : `border-transparent ${darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}`}>
               <t.icon className="w-4 h-4" />{t.label}
@@ -286,6 +287,11 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
               </div>
             </div>
           </div>
+        )}
+
+        {/* ===== CUPONES ===== */}
+        {tab === 'coupons' && (
+          <CouponManager darkMode={darkMode} authToken={authToken} />
         )}
 
         {/* ===== USUARIOS ===== */}

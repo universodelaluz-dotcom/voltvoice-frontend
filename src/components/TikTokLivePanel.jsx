@@ -1788,6 +1788,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const currentReadingMessage = messages.find((msg) => msg.status === 'playing') || null
   const showConnectedView = isConnected || showSessionSummary
   const mobilePreviewUsername = normalizeTikTokUsername(connectedTikTokUser || tiktokUser || config.lastTiktokUser || '')
+  const sessionTikTokUsername = normalizeTikTokUsername(connectedTikTokUser || tiktokUser || config.lastTiktokUser || '')
+  const sessionTikTokHandle = sessionTikTokUsername ? `@${sessionTikTokUsername}` : ''
   const mobilePreviewLiveUrl = mobilePreviewUsername ? `https://www.tiktok.com/@${mobilePreviewUsername}/live` : ''
   const mobilePreviewFrameUrl = ''
   const oneMinuteAgo = Date.now() - 60000
@@ -1873,22 +1875,43 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
   return (
     <div className={`relative overflow-visible ${darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6 mb-6" : "bg-white border border-indigo-200 rounded-lg p-6 mb-6 shadow-sm"}`}>
-      <div className="flex items-center gap-3 mb-4">
-        <MessageCircle className="w-6 h-6 text-cyan-300" />
-        <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>TikTok LIVE en Tiempo Real</h2>
-        <span
-          className={`ml-auto px-3 py-1 rounded-full text-xs font-semibold ${
-            isConnected
-              ? (darkMode
-                  ? 'bg-green-500/20 border border-green-500/50 text-green-300'
-                  : 'bg-slate-700 border border-slate-600 text-white')
-              : isWaitingForLive
-                ? 'bg-red-500/15 border border-red-500/60 text-red-300 animate-pulse'
-                : (darkMode ? 'bg-gray-700/50 border border-gray-600/50 text-gray-300' : 'bg-slate-200 border border-slate-300 text-slate-700')
-          }`}
-        >
-          {isConnected ? '🔴 EN VIVO' : isWaitingForLive ? 'ESPERANDO LIVE' : 'DESCONECTADO'}
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <MessageCircle className="w-6 h-6 text-cyan-300" />
+          <h2 className={darkMode ? "text-xl font-bold text-white truncate" : "text-xl font-bold text-gray-900 truncate"}>TikTok LIVE en Tiempo Real</h2>
+        </div>
+        <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
+          {sessionTikTokHandle && (
+            <div className={darkMode
+              ? "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-400/35 bg-cyan-500/10 text-cyan-100 shadow-[0_0_0_1px_rgba(34,211,238,0.12)]"
+              : "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-300 bg-cyan-50 text-cyan-800 shadow-sm"}
+            >
+              <span className={darkMode ? "text-[10px] uppercase tracking-[0.16em] text-cyan-300/85" : "text-[10px] uppercase tracking-[0.16em] text-cyan-600"}>Sesion</span>
+              <span className="text-xs font-semibold">{sessionTikTokHandle}</span>
+            </div>
+          )}
+          <span
+            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all ${
+              isConnected
+                ? (darkMode
+                    ? 'bg-gradient-to-r from-rose-500/30 via-red-500/35 to-orange-500/30 border border-red-400/65 text-red-100 shadow-[0_0_22px_rgba(248,113,113,0.45)]'
+                    : 'bg-gradient-to-r from-red-500 to-rose-500 border border-red-600 text-white shadow-md')
+                : isWaitingForLive
+                  ? 'bg-red-500/15 border border-red-500/60 text-red-300 animate-pulse'
+                  : (darkMode ? 'bg-gray-700/50 border border-gray-600/50 text-gray-300' : 'bg-slate-200 border border-slate-300 text-slate-700')
+            }`}
+          >
+            {isConnected ? (
+              <>
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-80 animate-ping" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+                </span>
+                <span className="animate-pulse">EN VIVO</span>
+              </>
+            ) : isWaitingForLive ? 'ESPERANDO LIVE' : 'DESCONECTADO'}
+          </span>
+        </div>
       </div>
 
       {!showConnectedView ? (
