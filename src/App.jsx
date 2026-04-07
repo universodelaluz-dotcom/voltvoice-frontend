@@ -210,9 +210,18 @@ export function App() {
   useEffect(() => {
     const detectLocationAndExchangeRates = async () => {
       try {
-        // Detectar país por IP
-        setUserCountry('US')
-        setUserCurrency('USD')
+        // Detectar país por navegador/zona horaria
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''
+        const lang = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : ''
+        const isMexico = tz.includes('Mexico') || /-MX$/i.test(lang)
+
+        if (isMexico) {
+          setUserCountry('MX')
+          setUserCurrency('MXN')
+        } else {
+          setUserCountry('US')
+          setUserCurrency('USD')
+        }
 
         // Obtener tipos de cambio desde USD a todas las monedas principales
         const ratesResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD')
@@ -905,12 +914,17 @@ export function App() {
                     <div className={"text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r " + gradient}>
                       {pkg.price} <span className={"text-base font-bold " + (darkMode ? "text-gray-400" : "text-gray-500")}>USD</span>
                     </div>
-                    {exchangeRates && userCurrency !== 'USD' && (
+                    {exchangeRates?.MXN && (
                       <div className={"text-xs font-medium " + (darkMode ? "text-gray-500" : "text-gray-400")}>
                         {(() => {
                           const priceNum = parseFloat(pkg.price.replace('$', ''))
-                          const converted = convertPrice(priceNum)
-                          return `≈ ${converted.display} aprox.`
+                          const mxnAmount = priceNum * exchangeRates.MXN
+                          const mxnDisplay = new Intl.NumberFormat('es-MX', {
+                            style: 'currency',
+                            currency: 'MXN',
+                            maximumFractionDigits: 0
+                          }).format(mxnAmount)
+                          return `Aprox. ${mxnDisplay} MXN`
                         })()}
                       </div>
                     )}
