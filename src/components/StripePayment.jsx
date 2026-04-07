@@ -64,7 +64,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     try {
       const headers = getAuthHeaders()
       if (!headers) {
-        alert('Inicia sesion para continuar con el pago.')
+        alert('Inicia sesión para continuar con el pago.')
         setLoading(null)
         return
       }
@@ -90,7 +90,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     try {
       const headers = getAuthHeaders()
       if (!headers) {
-        alert('Inicia sesion para continuar con el pago.')
+        alert('Inicia sesión para continuar con el pago.')
         setLoading(null)
         return
       }
@@ -182,19 +182,19 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
               <>
                 <span className="font-bold text-cyan-400">{currentItem.label}</span>{' '}por{' '}
                 <span className="font-bold">${currentItem.price} USD</span>{' '}
-                <span>- facturacion {currentItem.billingCycle === 'annual' ? 'anual' : 'mensual'}</span>
+                <span>- facturación {currentItem.billingCycle === 'annual' ? 'anual' : 'mensual'}</span>
               </>
             ) : (
               <>
                 <span className="font-bold text-cyan-400">{selectedPackage.size}</span>{' '}por{' '}
-                <span className="font-bold">${selectedPackage.price} USD</span> - consumo segun actividad del chat
+                <span className="font-bold">${selectedPackage.price} USD</span> - consumo según actividad del chat
               </>
             )}
           </p>
         </div>
 
         <div className="space-y-3">
-          <p className={`text-xs text-center ${dm ? 'text-gray-500' : 'text-gray-400'}`}>Elige metodo de pago</p>
+          <p className={`text-xs text-center ${dm ? 'text-gray-500' : 'text-gray-400'}`}>Elige método de pago</p>
 
           <button
             onClick={handleMercadoPago}

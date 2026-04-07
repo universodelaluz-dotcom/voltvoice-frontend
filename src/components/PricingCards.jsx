@@ -18,7 +18,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
           setExchangeRates(ratesData.rates)
         }
       } catch (error) {
-        console.error('Error detectando ubicacion/tipos de cambio:', error)
+        console.error('Error detectando ubicación/tipos de cambio:', error)
         setExchangeRates({
           MXN: 20,
           ARS: 920,
@@ -68,7 +68,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
 
   const monthlyPlans = [
     {
-      icon: 'START',
+      icon: '🟢',
       name: 'START',
       price: 6.99,
       description: 'Ideal para streams ligeros',
@@ -77,13 +77,13 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
       features: [
         { text: '1 voz clonada por IA (editable)', included: true },
         { text: '1 voz natural premium', included: true },
-        { text: '1 voz basica (ilimitada)', included: true },
+        { text: '1 voz básica (ilimitada)', included: true },
         { text: '200,000 caracteres (~tokens)', included: true },
         { text: 'Rinde aprox 2-4 horas de stream activo', included: true },
       ],
     },
     {
-      icon: 'CREATOR',
+      icon: '🔵',
       name: 'CREATOR',
       price: 12.99,
       description: 'Ideal para streams activos',
@@ -92,22 +92,22 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
       features: [
         { text: '2 voces clonadas por IA (editables)', included: true },
         { text: '2 voces naturales premium', included: true },
-        { text: '1 voz basica (ilimitada)', included: true },
+        { text: '1 voz básica (ilimitada)', included: true },
         { text: '500,000 caracteres (~tokens)', included: true },
         { text: 'Rinde aprox 5-8 horas de stream activo', included: true },
       ],
     },
     {
-      icon: 'PRO',
+      icon: '🔥',
       name: 'PRO',
       price: 17.99,
-      description: 'Ideal para interaccion constante',
+      description: 'Ideal para interacción constante',
       cta: 'Adquirir PRO',
       popular: false,
       features: [
         { text: '5 voces clonadas por IA (editables)', included: true },
         { text: '4 voces naturales premium', included: true },
-        { text: '1 voz basica (ilimitada)', included: true },
+        { text: '1 voz básica (ilimitada)', included: true },
         { text: '800,000 caracteres (~tokens)', included: true },
         { text: 'Rinde aprox 10-15 horas de stream activo', included: true },
       ],
@@ -116,7 +116,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
 
   const annualPlans = [
     {
-      icon: 'START',
+      icon: '🟢',
       name: 'START',
       price: 59,
       pricePerMonth: (59 / 12).toFixed(2),
@@ -127,12 +127,12 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
       features: [
         { text: '1 voz clonada por IA (editable)', included: true },
         { text: '1 voz natural premium', included: true },
-        { text: '1 voz basica (ilimitada)', included: true },
+        { text: '1 voz básica (ilimitada)', included: true },
         { text: '200,000 caracteres (~tokens)', included: true },
       ],
     },
     {
-      icon: 'CREATOR',
+      icon: '🔵',
       name: 'CREATOR',
       price: 109,
       pricePerMonth: (109 / 12).toFixed(2),
@@ -143,12 +143,12 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
       features: [
         { text: '2 voces clonadas por IA (editables)', included: true },
         { text: '2 voces naturales premium', included: true },
-        { text: '1 voz basica (ilimitada)', included: true },
+        { text: '1 voz básica (ilimitada)', included: true },
         { text: '500,000 caracteres (~tokens)', included: true },
       ],
     },
     {
-      icon: 'PRO',
+      icon: '🔥',
       name: 'PRO',
       price: 149,
       pricePerMonth: (149 / 12).toFixed(2),
@@ -159,7 +159,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
       features: [
         { text: '5 voces clonadas por IA (editables)', included: true },
         { text: '4 voces naturales premium', included: true },
-        { text: '1 voz basica (ilimitada)', included: true },
+        { text: '1 voz básica (ilimitada)', included: true },
         { text: '800,000 caracteres (~tokens)', included: true },
       ],
     },
@@ -230,7 +230,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   ${billingCycle === 'monthly' ? plan.price.toFixed(2) : plan.price}
                 </span>
                 <span className={`text-xl ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  USD/{billingCycle === 'monthly' ? 'mes' : 'ano'}
+                  USD/{billingCycle === 'monthly' ? 'mes' : 'año'}
                 </span>
               </div>
 
@@ -238,7 +238,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                 <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   {(() => {
                     const converted = convertPrice(plan.price)
-                    return `~ ${converted.display} aprox./${billingCycle === 'monthly' ? 'mes' : 'ano'}`
+                    return `~ ${converted.display} aprox./${billingCycle === 'monthly' ? 'mes' : 'año'}`
                   })()}
                 </p>
               )}
@@ -288,7 +288,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
 
       <div className="mt-8 text-center">
         <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          El consumo depende de la actividad del chat y la configuracion. Puedes extender la duracion usando filtros inteligentes y lectura selectiva.
+          El consumo depende de la actividad del chat y la configuración. Puedes extender la duración usando filtros inteligentes y lectura selectiva.
         </p>
       </div>
     </div>
