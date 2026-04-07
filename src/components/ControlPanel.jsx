@@ -142,8 +142,16 @@ function BotShortcutCapture({ darkMode, onCapture }) {
 
 export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode, config, updateConfig, user }) {
   const [userVoices, setUserVoices] = useState([])
+  const [botCharacters, setBotCharacters] = useState([])
   const [presetStatus, setPresetStatus] = useState('')
   const [showProfanityEditor, setShowProfanityEditor] = useState(false)
+  const quickBasicChecks = {
+    skipRepeated: true,
+    ignoreLinks: true,
+    profanityFilterEnabled: true,
+    onlyPlainNicks: true,
+    stripChatEmojis: true,
+  }
 
   // Cargar voces del usuario desde la API
   const loadUserVoices = async () => {
@@ -173,6 +181,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   // Cargar voces al montar y escuchar evento de voz nueva
   useEffect(() => {
     loadUserVoices()
+    loadBotCharacters()
 
     // Escuchar evento cuando se agrega una voz nueva
     const handleVoiceAdded = () => {
@@ -192,6 +201,14 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     { id: 'Rafael', name: 'Voz natural de Leonel - Premium' },
     ...userVoices,
   ]
+
+  const botAssistantVoiceSpeed = Number.isFinite(Number(config?.botAssistantVoiceSpeed))
+    ? Math.min(2, Math.max(0.5, Number(config.botAssistantVoiceSpeed)))
+    : 1
+
+  const botAssistantMaxResponseChars = Number.isFinite(Number(config?.botAssistantMaxResponseChars))
+    ? Math.min(500, Math.max(50, Math.round(Number(config.botAssistantMaxResponseChars))))
+    : 250
 
   const presetKeys = ['configPreset1', 'configPreset2', 'configPreset3']
 
@@ -235,6 +252,41 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     const t = setTimeout(() => setPresetStatus(''), 2200)
     return () => clearTimeout(t)
   }, [presetStatus])
+
+  const clearAllChecks = () => {
+    Object.entries(config || {}).forEach(([key, value]) => {
+      if (typeof value === 'boolean' && value) {
+        updateConfig(key, false)
+      }
+    })
+    setShowProfanityEditor(false)
+    setPresetStatus('Todas las opciones fueron limpiadas')
+  }
+
+  const loadBotCharacters = async () => {
+    try {
+      const token = localStorage.getItem('sv-token')
+      if (!token) return
+
+      const res = await fetch(`${API_URL}/api/bot/characters`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+
+      if (res.ok && data?.success && Array.isArray(data.characters)) {
+        const customCharacters = data.characters.filter((character) => character?.is_custom)
+        setBotCharacters(customCharacters)
+      }
+    } catch (err) {
+      console.error('[ControlPanel] Error cargando personalidades del asistente:', err)
+    }
+  }
+
+  const applyQuickBasic = () => {
+    clearAllChecks()
+    Object.entries(quickBasicChecks).forEach(([key, value]) => updateConfig(key, value))
+    setPresetStatus('Configuración básica aplicada')
+  }
 
   return (
     <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-slate-800"}>
@@ -312,6 +364,41 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
             {presetStatus && (
               <p className={`mt-3 text-xs font-semibold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{presetStatus}</p>
             )}
+          </div>
+
+          <div className={`mb-4 rounded-2xl border p-4 ${
+            darkMode ? 'border-fuchsia-500/20 bg-[#12122a]/70' : 'border-fuchsia-200 bg-white/80'
+          }`}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className={`text-sm font-black uppercase tracking-widest ${darkMode ? 'text-fuchsia-300' : 'text-fuchsia-700'}`}>
+                Inicio Rápido
+              </h3>
+              <span className={`text-xs ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                Aplica una base lista en un clic
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <button
+                onClick={applyQuickBasic}
+                className={`rounded-xl py-3 text-sm font-bold transition ${
+                  darkMode
+                    ? 'bg-gradient-to-r from-emerald-500/40 to-cyan-500/40 text-white hover:from-emerald-500/60 hover:to-cyan-500/60 border border-emerald-400/40'
+                    : 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:opacity-90 border border-emerald-500/40'
+                }`}
+              >
+                Básica
+              </button>
+              <button
+                onClick={clearAllChecks}
+                className={`rounded-xl py-3 text-sm font-bold transition ${
+                  darkMode
+                    ? 'bg-gradient-to-r from-rose-500/40 to-orange-500/40 text-white hover:from-rose-500/60 hover:to-orange-500/60 border border-rose-400/40'
+                    : 'bg-gradient-to-r from-rose-500 to-orange-500 text-white hover:opacity-90 border border-rose-500/40'
+                }`}
+              >
+                Limpiar opciones
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
@@ -700,6 +787,105 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   : 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 text-indigo-600'
               }`}>
                 <span className="text-xs font-bold uppercase tracking-widest">🤖 Asistente de IA</span>
+              </div>
+
+              <div className={`mb-2 rounded-xl px-4 py-3 border ${
+                darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
+              }`}>
+                <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
+                  Personalidad a elegir
+                </label>
+                <select
+                  value={config.botAssistantCharacterId || ''}
+                  onChange={(e) => updateConfig('botAssistantCharacterId', e.target.value)}
+                  className={`w-full px-3 py-2 text-sm rounded-lg border ${
+                    darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                  }`}
+                >
+                  <option value="">Automática (usar la primera disponible)</option>
+                  {botCharacters.map((character) => (
+                    <option key={character.id} value={character.id}>
+                      {character.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={`mb-2 rounded-xl px-4 py-3 border ${
+                darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
+              }`}>
+                <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
+                  Voz a utilizar
+                </label>
+                <select
+                  value={config.botAssistantVoiceId || ''}
+                  onChange={(e) => updateConfig('botAssistantVoiceId', e.target.value)}
+                  className={`w-full px-3 py-2 text-sm rounded-lg border ${
+                    darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                  }`}
+                >
+                  <option value="">Automática según personalidad</option>
+                  {premiumVoiceOptions.map((voice) => (
+                    <option key={`bot-voice-${voice.id}`} value={voice.id}>
+                      {voice.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={`mb-2 rounded-xl px-4 py-3 border ${
+                darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
+              }`}>
+                <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
+                  Velocidad de la voz
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2"
+                    step="0.05"
+                    value={botAssistantVoiceSpeed}
+                    onChange={(e) => updateConfig('botAssistantVoiceSpeed', Number(e.target.value))}
+                    className="flex-1"
+                  />
+                  <input
+                    type="number"
+                    min="0.5"
+                    max="2"
+                    step="0.05"
+                    value={botAssistantVoiceSpeed}
+                    onChange={(e) => updateConfig('botAssistantVoiceSpeed', Math.min(2, Math.max(0.5, Number(e.target.value) || 1)))}
+                    className={`w-20 px-2 py-1.5 text-sm rounded-lg border ${
+                      darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className={`mb-2 rounded-xl px-4 py-3 border ${
+                darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
+              }`}>
+                <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
+                  Tamaño aproximado de caracteres por mensajes de respuesta
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min="50"
+                    max="500"
+                    step="10"
+                    value={botAssistantMaxResponseChars}
+                    onChange={(e) => updateConfig('botAssistantMaxResponseChars', Math.min(500, Math.max(50, Number(e.target.value) || 250)))}
+                    className={`w-28 px-2 py-1.5 text-sm rounded-lg border ${
+                      darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                    }`}
+                  />
+                  <span className={`text-xs ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>máximo 500</span>
+                </div>
+                <p className={`mt-2 text-xs ${darkMode ? 'text-cyan-200/80' : 'text-slate-600'}`}>
+                  Recomendado: 250 caracteres (valor por defecto). Este límite se aplica internamente al prompt del asistente.
+                </p>
               </div>
 
               {/* === SHORTCUT PUSH-TO-TALK === */}

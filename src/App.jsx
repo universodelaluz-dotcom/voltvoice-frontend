@@ -71,6 +71,10 @@ const DEFAULT_CONFIG = {
   botShortcutKey: 'F9',
   interactorShortcutEnabled: true,
   interactorShortcutKey: 'F8',
+  botAssistantCharacterId: '',
+  botAssistantVoiceId: '',
+  botAssistantVoiceSpeed: 1.0,
+  botAssistantMaxResponseChars: 250,
   chatFontSize: 14,
   chatNickColorDark: '#22d3ee',
   chatNickColorLight: '#0f766e',
@@ -95,6 +99,14 @@ const DEFAULT_CONFIG = {
 
 const normalizeUserConfig = (rawConfig = {}) => {
   const config = rawConfig && typeof rawConfig === 'object' ? rawConfig : {}
+  const assistantVoiceSpeed = Number(config.botAssistantVoiceSpeed)
+  const assistantMaxChars = Number(config.botAssistantMaxResponseChars)
+  const normalizedVoiceSpeed = Number.isFinite(assistantVoiceSpeed)
+    ? Math.min(2, Math.max(0.5, assistantVoiceSpeed))
+    : DEFAULT_CONFIG.botAssistantVoiceSpeed
+  const normalizedMaxChars = Number.isFinite(assistantMaxChars)
+    ? Math.min(500, Math.max(50, Math.round(assistantMaxChars)))
+    : DEFAULT_CONFIG.botAssistantMaxResponseChars
 
   return {
     ...DEFAULT_CONFIG,
@@ -104,6 +116,8 @@ const normalizeUserConfig = (rawConfig = {}) => {
     chatMsgColorDark: config.chatMsgColorDark || config.chatMsgColor || DEFAULT_CONFIG.chatMsgColorDark,
     chatMsgColorLight: config.chatMsgColorLight || DEFAULT_CONFIG.chatMsgColorLight,
     themeMode: config.themeMode || DEFAULT_CONFIG.themeMode,
+    botAssistantVoiceSpeed: normalizedVoiceSpeed,
+    botAssistantMaxResponseChars: normalizedMaxChars,
     highlightRules: {
       ...DEFAULT_CONFIG.highlightRules,
       ...(config.highlightRules || {}),

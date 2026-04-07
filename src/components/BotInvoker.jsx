@@ -247,8 +247,8 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const [characters, setCharacters] = useState([])
   const [userVoices, setUserVoices] = useState([])
   const [voicesLoaded, setVoicesLoaded] = useState(false)
-  const [selectedCharacterId, setSelectedCharacterId] = useState(null)
-  const [selectedRealtimeVoiceId, setSelectedRealtimeVoiceId] = useState('')
+  const [selectedCharacterId, setSelectedCharacterId] = useState(() => config?.botAssistantCharacterId || null)
+  const [selectedRealtimeVoiceId, setSelectedRealtimeVoiceId] = useState(() => config?.botAssistantVoiceId || '')
   const [inputMode, setInputMode] = useState('microphone')
   const [inputText, setInputText] = useState('')
   const [isRecording, setIsRecording] = useState(false)
@@ -299,6 +299,25 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const messagesCountSinceLastResponseRef = useRef(0)  // How many messages since last response
 
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+
+  const getAssistantMaxResponseChars = () => {
+    const configured = Number(config?.botAssistantMaxResponseChars)
+    if (!Number.isFinite(configured)) return 250
+    return Math.min(500, Math.max(50, Math.round(configured)))
+  }
+
+  const getAssistantVoiceSpeed = () => {
+    const configured = Number(config?.botAssistantVoiceSpeed)
+    if (!Number.isFinite(configured)) return 1
+    return Math.min(2, Math.max(0.5, configured))
+  }
+
+  const applyAssistantLengthLimit = (text = '') => {
+    const raw = String(text || '').trim()
+    const maxChars = getAssistantMaxResponseChars()
+    if (!raw || raw.length <= maxChars) return raw
+    return `${raw.slice(0, maxChars).trimEnd()}…`
+  }
 
   const beginAssistantResponseWindow = () => {
     console.log('[Bot] beginAssistantResponseWindow: CALLED - resetting state for new response')
@@ -968,6 +987,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
     const audio = new Audio(data.audio || data.audioUrl)
     localAudioRef.current = audio
+    audio.playbackRate = getAssistantVoiceSpeed()
 
     audio.onplay = () => {
       lockChatSuppression()
@@ -1561,6 +1581,34 @@ Extras obligatorios:
   }, [selectedRealtimeVoiceId])
 
   useEffect(() => {
+    const configuredCharacter = config?.botAssistantCharacterId || null
+    if (configuredCharacter !== selectedCharacterId) {
+      setSelectedCharacterId(configuredCharacter)
+    }
+  }, [config?.botAssistantCharacterId])
+
+  useEffect(() => {
+    const configuredVoice = config?.botAssistantVoiceId || ''
+    if (configuredVoice !== selectedRealtimeVoiceId) {
+      setSelectedRealtimeVoiceId(configuredVoice)
+    }
+  }, [config?.botAssistantVoiceId])
+
+  useEffect(() => {
+    if (!updateConfig) return
+    if ((config?.botAssistantCharacterId || null) !== (selectedCharacterId || null)) {
+      updateConfig('botAssistantCharacterId', selectedCharacterId || '')
+    }
+  }, [selectedCharacterId])
+
+  useEffect(() => {
+    if (!updateConfig) return
+    if ((config?.botAssistantVoiceId || '') !== (selectedRealtimeVoiceId || '')) {
+      updateConfig('botAssistantVoiceId', selectedRealtimeVoiceId || '')
+    }
+  }, [selectedRealtimeVoiceId])
+
+  useEffect(() => {
     voiceLabelRef.current = voiceLabel
   }, [voiceLabel])
 
@@ -1569,7 +1617,7 @@ Extras obligatorios:
       console.log('[Bot] handleTextResponse FIRED with data:', data?.text ? `"${String(data.text).substring(0, 50)}..."` : 'NO TEXT')
       console.log('[Bot] handleTextResponse: Current response state before update:', response?.substring?.(0, 30) || 'null')
       if (data?.text) {
-        const normalized = String(data.text || '').trim()
+        const normalized = applyAssistantLengthLimit(String(data.text || '').trim())
         if (normalized === '__SKIP__') {
           console.log('[Bot] Text response is __SKIP__, skipping this response')
           skipCurrentResponseRef.current = true
@@ -1598,11 +1646,11 @@ Extras obligatorios:
         }
 
         console.log('[Bot] Setting response text:', normalized.substring(0, 50))
-        latestResponseTextRef.current = data.text
+        latestResponseTextRef.current = normalized
         setHasActiveResponse(true)
         hasActiveResponseRef.current = true
-        console.log('[Bot] handleTextResponse: About to call setResponse with:', data.text.substring(0, 50))
-        setResponse(data.text)
+        console.log('[Bot] handleTextResponse: About to call setResponse with:', normalized.substring(0, 50))
+        setResponse(normalized)
         setIsLoading(false)
         clearResponseTimeout()
       } else {
@@ -1994,7 +2042,9 @@ Extras obligatorios:
         const filtered = data.characters.filter((c) => c.is_custom)
         setCharacters(filtered)
         if (filtered.length > 0) {
-          setSelectedCharacterId(filtered[0].id)
+          const configuredId = config?.botAssistantCharacterId
+          const configuredCharacter = filtered.find((character) => character.id === configuredId)
+          setSelectedCharacterId(configuredCharacter?.id || filtered[0].id)
         }
       }
     } catch (err) {
@@ -2094,6 +2144,8 @@ Extras obligatorios:
     console.log('[Bot] Using realtime voice:', realtimeVoice || 'Clive')
 
     const basePrompt = character?.system_prompt || ''
+    const maxResponseChars = getAssistantMaxResponseChars()
+    const assistantVoiceSpeed = getAssistantVoiceSpeed()
     const toolInstructions = `
 
 IMPORTANT: You are the streamer's AI assistant with access to the TikTok live chat.
@@ -2101,7 +2153,10 @@ You have tools to: read chat messages, search chat, get questions from chat, ban
 When the streamer asks about the chat, USE the tools to get real data. Do not make up chat messages.
 When the streamer asks to ban someone, highlight someone, or change a nickname, USE the corresponding tool.
 Always respond in Spanish unless told otherwise.
-After using a tool, summarize the result conversationally.`
+After using a tool, summarize the result conversationally.
+Hidden platform rule: each assistant response must be concise and stay around ${maxResponseChars} characters maximum.
+Recommended target length is 250 characters.
+Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
 
     await inworldRealtimeService.startSession(
       selectedCharacterId,
