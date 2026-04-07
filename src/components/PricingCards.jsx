@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
 
 const monthlyPlans = [
@@ -126,6 +126,36 @@ const annualPlans = [
 
 export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
   const [billingCycle, setBillingCycle] = useState('monthly')
+  const [usdMxn, setUsdMxn] = useState(17)
+
+  useEffect(() => {
+    let active = true
+
+    const loadRate = async () => {
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/USD')
+        const data = await res.json()
+        const nextRate = Number(data?.rates?.MXN)
+        if (active && Number.isFinite(nextRate) && nextRate > 0) {
+          setUsdMxn(nextRate)
+        }
+      } catch {
+        // fallback
+      }
+    }
+
+    loadRate()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const formatMxnApprox = (usdPrice) =>
+    new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN',
+      maximumFractionDigits: 0,
+    }).format(usdPrice * usdMxn)
 
   return (
     <div>
@@ -191,6 +221,9 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                     ${plan.price.toFixed(2)}
                   </span>
                   <span className={`ml-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>USD</span>
+                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Aprox. {formatMxnApprox(plan.price)} MXN
+                  </p>
                 </div>
 
                 <p className={`text-sm mb-5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>⚡ {plan.description}</p>
@@ -262,6 +295,9 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   ${plan.price}
                 </p>
                 <p className={darkMode ? 'text-gray-300 mb-1' : 'text-gray-700 mb-1'}>USD / año</p>
+                <p className={`text-xs ${darkMode ? 'text-gray-400 mb-1' : 'text-gray-500 mb-1'}`}>
+                  Aprox. {formatMxnApprox(plan.price)} MXN
+                </p>
                 <p className="text-sm text-green-400">({plan.saving})</p>
                 <div className="space-y-2 mt-4 mb-4">
                   {plan.benefits.map((benefit, idx) => (
@@ -289,9 +325,13 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Puedes extender la duración usando filtros inteligentes y lectura selectiva.
             </p>
+            <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+              Referencia en MXN aproximada; se adapta al tipo de cambio USD/MXN del día.
+            </p>
           </div>
         </>
       )}
     </div>
   )
 }
+

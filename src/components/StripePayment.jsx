@@ -14,6 +14,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
   const [selectedPackage, setSelectedPackage] = useState(tokenPackages[1])
   const [checkoutItem, setCheckoutItem] = useState(() => initialCheckoutItem || { type: 'tokens', package: tokenPackages[1] })
   const [loading, setLoading] = useState(null)
+  const [usdMxn, setUsdMxn] = useState(17)
 
   useEffect(() => {
     const sync = () => setDarkMode(localStorage.getItem('voltvoice-theme') !== 'light')
@@ -34,6 +35,35 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     setSelectedPackage(matchedPackage)
     setCheckoutItem({ type: 'tokens', package: matchedPackage })
   }, [isOpen, initialPackageTokens, initialCheckoutItem])
+
+  useEffect(() => {
+    let active = true
+
+    const loadRate = async () => {
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/USD')
+        const data = await res.json()
+        const nextRate = Number(data?.rates?.MXN)
+        if (active && Number.isFinite(nextRate) && nextRate > 0) {
+          setUsdMxn(nextRate)
+        }
+      } catch {
+        // fallback
+      }
+    }
+
+    loadRate()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const formatMxnApprox = (usdPrice) =>
+    new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN',
+      maximumFractionDigits: 0,
+    }).format(usdPrice * usdMxn)
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('sv-token')
@@ -169,6 +199,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
                   <p className="text-xl font-black text-cyan-400">{pkg.size}</p>
                   <p className={`text-xs mb-1 ${dm ? 'text-gray-400' : 'text-gray-500'}`}>{pkg.label} caracteres</p>
                   <p className={`text-base font-black ${dm ? 'text-white' : 'text-gray-900'}`}>${pkg.price} USD</p>
+                  <p className={`text-[11px] ${dm ? 'text-gray-500' : 'text-gray-500'}`}>Aprox. {formatMxnApprox(pkg.price)} MXN</p>
                 </button>
               )
             })}
@@ -183,15 +214,24 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
                 <span className="font-bold text-cyan-400">{currentItem.label}</span>{' '}por{' '}
                 <span className="font-bold">${currentItem.price} USD</span>{' '}
                 <span>- facturación {currentItem.billingCycle === 'annual' ? 'anual' : 'mensual'}</span>
+                <span className={`block text-[11px] ${dm ? 'text-gray-500' : 'text-gray-500'}`}>
+                  Aprox. {formatMxnApprox(Number(currentItem.price))} MXN
+                </span>
               </>
             ) : (
               <>
                 <span className="font-bold text-cyan-400">{selectedPackage.size}</span>{' '}por{' '}
                 <span className="font-bold">${selectedPackage.price} USD</span> - consumo según actividad del chat
+                <span className={`block text-[11px] ${dm ? 'text-gray-500' : 'text-gray-500'}`}>
+                  Aprox. {formatMxnApprox(selectedPackage.price)} MXN
+                </span>
               </>
             )}
           </p>
         </div>
+        <p className={`text-[11px] mb-3 text-center ${dm ? 'text-gray-600' : 'text-gray-500'}`}>
+          Referencia en MXN aproximada; se adapta al tipo de cambio USD/MXN del día.
+        </p>
 
         <div className="space-y-3">
           <p className={`text-xs text-center ${dm ? 'text-gray-500' : 'text-gray-400'}`}>Elige método de pago</p>
