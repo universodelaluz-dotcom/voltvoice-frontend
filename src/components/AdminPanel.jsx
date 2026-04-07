@@ -7,14 +7,14 @@ import CouponManager from './CouponManager'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
-const PLANS = ['all', 'free', 'creator', 'pro', 'elite', 'admin']
+const PLANS = ['all', 'free', 'start', 'creator', 'pro', 'admin']
 
 const PLAN_STYLE = {
   all:     { bg: 'bg-white/10',          text: 'text-white',        dot: 'bg-white' },
   free:    { bg: 'bg-gray-500/20',       text: 'text-gray-300',     dot: 'bg-gray-400' },
+  start:   { bg: 'bg-emerald-500/20',    text: 'text-emerald-300',  dot: 'bg-emerald-400' },
   creator: { bg: 'bg-blue-500/20',       text: 'text-blue-300',     dot: 'bg-blue-400' },
   pro:     { bg: 'bg-purple-500/20',     text: 'text-purple-300',   dot: 'bg-purple-400' },
-  elite:   { bg: 'bg-yellow-500/20',     text: 'text-yellow-300',   dot: 'bg-yellow-400' },
   admin:   { bg: 'bg-red-500/20',        text: 'text-red-300',      dot: 'bg-red-400' },
 }
 
@@ -69,7 +69,10 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
 
   useEffect(() => {
     if (tab === 'dashboard') loadStats()
-    if (tab === 'users') loadUsers()
+    if (tab === 'users') {
+      loadUsers()
+      loadStats()
+    }
   }, [tab, page, planFilter])
 
   useEffect(() => {
@@ -219,8 +222,8 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                   {stats.onlineUsers} online ahora
                 </span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                {['free', 'creator', 'pro', 'elite', 'admin'].map(plan => {
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                {['free', 'start', 'creator', 'pro', 'admin'].map(plan => {
                   const s = planStyle(plan)
                   const count = planCount(plan)
                   const online = planOnline(plan)
@@ -365,7 +368,8 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                       <th className="text-left px-4 py-3">Estado</th>
                       <th className="text-left px-4 py-3">Email</th>
                       <th className="text-left px-4 py-3">Plan</th>
-                      <th className="text-left px-4 py-3">Tokens</th>
+                      <th className="text-left px-4 py-3">Comprados</th>
+                      <th className="text-left px-4 py-3">Restantes</th>
                       <th className="text-left px-4 py-3">Usados</th>
                       <th className="text-left px-4 py-3">Acciones</th>
                     </tr>
@@ -373,7 +377,8 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                   <tbody>
                     {users.map(u => {
                       const online = isOnline(u.last_seen)
-                      const s = planStyle(u.plan)
+                      const userPlan = u.normalized_plan || u.plan || 'free'
+                      const s = planStyle(userPlan)
                       return (
                         <tr key={u.id} className={`border-t ${darkMode ? 'border-white/5 hover:bg-white/5' : 'border-gray-100 hover:bg-gray-50'}`}>
 
@@ -400,18 +405,25 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                             {editingUser === u.id ? (
                               <select className={inp} value={editValues.plan || u.plan}
                                 onChange={e => setEditValues(p => ({ ...p, plan: e.target.value }))}>
-                                {['free', 'creator', 'pro', 'elite', 'admin'].map(p => (
+                                {['free', 'start', 'creator', 'pro', 'admin'].map(p => (
                                   <option key={p} value={p}>{p}</option>
                                 ))}
                               </select>
                             ) : (
                               <span className={`text-xs px-2 py-0.5 rounded-full ${s.bg} ${s.text}`}>
-                                {u.plan?.toUpperCase()}
+                                {String(userPlan || 'free').toUpperCase()}
                               </span>
                             )}
                           </td>
 
-                          {/* Tokens */}
+                          {/* Tokens comprados */}
+                          <td className="px-4 py-3">
+                            <span className="text-cyan-400 font-bold text-xs">
+                              {parseInt(u.total_tokens_purchased || 0).toLocaleString()}
+                            </span>
+                          </td>
+
+                          {/* Tokens restantes */}
                           <td className="px-4 py-3">
                             {editingUser === u.id ? (
                               <input type="number" className={`${inp} w-24`}
@@ -437,7 +449,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                                 </>
                               ) : (
                                 <>
-                                  <button onClick={() => { setEditingUser(u.id); setEditValues({ plan: u.plan, tokens: u.tokens }) }}
+                                  <button onClick={() => { setEditingUser(u.id); setEditValues({ plan: userPlan, tokens: u.tokens }) }}
                                     className={`p-1 rounded ${darkMode ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`} title="Editar">
                                     <Edit2 className="w-3.5 h-3.5" />
                                   </button>
