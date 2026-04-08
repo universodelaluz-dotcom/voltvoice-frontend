@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const AUDIO_GRAPH_SYMBOL = Symbol.for('voltvoice.audioGraph')
-const BAR_COUNT = 56
 
 export default function AudioVisualizer({ audioElement, isPlaying }) {
   const analyserRef = useRef(null)
   const phaseRef = useRef(0)
+  const rafRef = useRef(0)
   const [detectedPlaying, setDetectedPlaying] = useState(false)
-  const [levels, setLevels] = useState(() => Array(BAR_COUNT).fill(0.14))
+  const [pathMain, setPathMain] = useState('M 0 50 L 600 50')
+  const [pathGlow, setPathGlow] = useState('M 0 50 L 600 50')
 
   useEffect(() => {
     const targetAudio = audioElement
@@ -18,7 +19,7 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
       const analyser = audioCtx.createAnalyser()
       analyser.fftSize = 2048
-      analyser.smoothingTimeConstant = 0.86
+      analyser.smoothingTimeConstant = 0.9
 
       try {
         const source = audioCtx.createMediaElementSource(targetAudio)
@@ -65,73 +66,84 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
     return () => clearInterval(interval)
   }, [audioElement])
 
-  const effectivePlaying = Boolean(isPlaying || detectedPlaying)
-
   useEffect(() => {
-    let raf = 0
+    const points = 96
+    const width = 600
+    const mid = 50
 
     const tick = () => {
       const analyser = analyserRef.current
-      const next = new Array(BAR_COUNT)
+      const active = Boolean(isPlaying || detectedPlaying)
 
-      if (effectivePlaying) {
-        if (analyser) {
-          const freq = new Uint8Array(analyser.frequencyBinCount)
-          analyser.getByteFrequencyData(freq)
-          for (let i = 0; i < BAR_COUNT; i++) {
-            const idx = Math.min(freq.length - 1, Math.floor((i / BAR_COUNT) * freq.length * 0.55))
-            const raw = freq[idx] / 255
-            const pulse = Math.abs(Math.sin((phaseRef.current * 0.75) + i * 0.13))
-            next[i] = Math.max(0.1, Math.min(1, raw * 0.95 + pulse * 0.18))
-          }
-        } else {
-          for (let i = 0; i < BAR_COUNT; i++) {
-            const wave = Math.abs(Math.sin((phaseRef.current * 0.9) + i * 0.14))
-            next[i] = 0.16 + wave * 0.5
-          }
+      let values = new Array(points).fill(0)
+      let energy = 0
+
+      if (active && analyser) {
+        const timeData = new Float32Array(analyser.fftSize)
+        const freqData = new Uint8Array(analyser.frequencyBinCount)
+        analyser.getFloatTimeDomainData(timeData)
+        analyser.getByteFrequencyData(freqData)
+
+        for (let i = 0; i < freqData.length; i++) energy += freqData[i]
+        energy = (energy / freqData.length) / 255
+
+        for (let i = 0; i < points; i++) {
+          const idx = Math.min(timeData.length - 1, Math.floor((i / points) * timeData.length))
+          values[i] = timeData[idx]
         }
       } else {
-        for (let i = 0; i < BAR_COUNT; i++) {
-          const wave = Math.abs(Math.sin((phaseRef.current * 0.35) + i * 0.11))
-          next[i] = 0.08 + wave * 0.16
+        phaseRef.current += 0.022
+        for (let i = 0; i < points; i++) {
+          const t = i / points
+          values[i] =
+            Math.sin(t * 10 + phaseRef.current) * 0.18 +
+            Math.sin(t * 4 + phaseRef.current * 0.8) * 0.08
         }
+        energy = 0.12
       }
 
-      setLevels((prev) => prev.map((v, i) => v + (next[i] - v) * 0.25))
-      phaseRef.current += effectivePlaying ? 0.07 : 0.03
-      raf = requestAnimationFrame(tick)
+      const amp = active ? (16 + energy * 24) : 6
+      const ampGlow = active ? (11 + energy * 18) : 4
+
+      let main = ''
+      let glow = ''
+
+      for (let i = 0; i < points; i++) {
+        const x = (i / (points - 1)) * width
+        const yMain = mid + values[i] * amp
+        const yGlow = mid + values[i] * ampGlow + Math.sin((i * 0.2) + phaseRef.current) * (active ? 1.6 : 0.6)
+
+        main += `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${yMain.toFixed(2)} `
+        glow += `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${yGlow.toFixed(2)} `
+      }
+
+      setPathGlow(glow.trim())
+      setPathMain(main.trim())
+
+      phaseRef.current += active ? 0.045 : 0.018
+      rafRef.current = requestAnimationFrame(tick)
     }
 
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [effectivePlaying])
-
-  const bars = useMemo(() => levels.map((level, i) => {
-    const h = 8 + level * 52
-    const alpha = 0.25 + level * 0.55
-    return {
-      key: i,
-      h,
-      alpha
-    }
-  }), [levels])
+    rafRef.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [isPlaying, detectedPlaying])
 
   return (
-    <div className="w-full rounded-lg overflow-hidden bg-black h-[100px] border border-cyan-400/15">
-      <div className="h-full w-full flex items-center gap-[2px] px-2">
-        {bars.map((b) => (
-          <div
-            key={b.key}
-            className="flex-1 rounded-[1px]"
-            style={{
-              height: `${b.h}px`,
-              background: `rgba(0, 220, 255, ${b.alpha})`,
-              boxShadow: '0 0 8px rgba(0, 220, 255, 0.25)',
-              transition: 'height 90ms linear, opacity 90ms linear'
-            }}
-          />
-        ))}
-      </div>
+    <div className="w-full rounded-lg overflow-hidden bg-black h-[100px] border border-cyan-400/20 flex items-center px-2">
+      <svg viewBox="0 0 600 100" className="w-full h-full" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <filter id="vv-glow" x="-20%" y="-50%" width="140%" height="200%">
+            <feGaussianBlur stdDeviation="2.8" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        <path d={pathGlow} fill="none" stroke="rgba(0,220,255,0.45)" strokeWidth="2" filter="url(#vv-glow)" />
+        <path d={pathMain} fill="none" stroke="rgba(180,245,255,0.96)" strokeWidth="1.2" strokeLinecap="round" />
+      </svg>
     </div>
   )
 }
