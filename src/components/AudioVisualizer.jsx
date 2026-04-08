@@ -87,23 +87,33 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
         for (let i = 0; i < freqData.length; i++) energy += freqData[i]
         energy = (energy / freqData.length) / 255
 
+        // RMS + ganancia dinámica para evitar espectro "plano"
+        let rms = 0
+        for (let i = 0; i < timeData.length; i++) rms += timeData[i] * timeData[i]
+        rms = Math.sqrt(rms / timeData.length)
+        const autoGain = Math.max(1.8, Math.min(9, 0.2 / Math.max(rms, 0.0008)))
+        const minEnergyFloor = 0.28
+
         for (let i = 0; i < points; i++) {
           const idx = Math.min(timeData.length - 1, Math.floor((i / points) * timeData.length))
-          values[i] = timeData[idx]
+          const pulse = Math.sin((i * 0.16) + phaseRef.current * 1.2) * 0.12
+          values[i] = (timeData[idx] * autoGain) + pulse
         }
+        energy = Math.max(minEnergyFloor, energy)
       } else {
-        phaseRef.current += 0.022
+        phaseRef.current += 0.035
         for (let i = 0; i < points; i++) {
           const t = i / points
           values[i] =
-            Math.sin(t * 10 + phaseRef.current) * 0.18 +
-            Math.sin(t * 4 + phaseRef.current * 0.8) * 0.08
+            Math.sin(t * 11 + phaseRef.current) * 0.28 +
+            Math.sin(t * 4.4 + phaseRef.current * 0.82) * 0.14 +
+            Math.sin(t * 1.8 + phaseRef.current * 0.45) * 0.08
         }
-        energy = 0.12
+        energy = 0.32
       }
 
-      const amp = active ? (16 + energy * 24) : 6
-      const ampGlow = active ? (11 + energy * 18) : 4
+      const amp = active ? (24 + energy * 34) : 9
+      const ampGlow = active ? (16 + energy * 24) : 6
 
       let main = ''
       let glow = ''
@@ -120,7 +130,7 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       setPathGlow(glow.trim())
       setPathMain(main.trim())
 
-      phaseRef.current += active ? 0.045 : 0.018
+      phaseRef.current += active ? 0.065 : 0.028
       rafRef.current = requestAnimationFrame(tick)
     }
 
