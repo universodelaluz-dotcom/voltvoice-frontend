@@ -1,6 +1,5 @@
 ﻿import { useState, useRef, useEffect } from 'react'
 import { Mic2, Send, Volume2 } from 'lucide-react'
-import AudioVisualizer from './AudioVisualizer'
 import inworldRealtimeService from '../services/inworldRealtimeService'
 import chatStore from '../services/chatStore.js'
 
@@ -304,6 +303,12 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
+  const emitAssistantVisualizerState = (active) => {
+    window.dispatchEvent(new CustomEvent('voltvoice:assistant-visualizer', {
+      detail: { active: Boolean(active) }
+    }))
+  }
+
   const bindRealtimeAudioToVisualizer = () => {
     if (localAudioRef.current) {
       setAssistantAudioElement(localAudioRef.current)
@@ -362,6 +367,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const beginAssistantResponseWindow = () => {
     console.log('[Bot] beginAssistantResponseWindow: CALLED - resetting state for new response')
     setAssistantVisualActive(true)
+    emitAssistantVisualizerState(true)
     assistantResponseActiveRef.current = true
     assistantResponseHadAudioRef.current = false
     heardSpeechThisTurnRef.current = false
@@ -378,6 +384,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
   const endAssistantResponseWindow = () => {
     setAssistantVisualActive(false)
+    emitAssistantVisualizerState(false)
     assistantResponseActiveRef.current = false
     assistantResponseHadAudioRef.current = false
     heardSpeechThisTurnRef.current = false
@@ -2003,6 +2010,7 @@ Extras obligatorios:
       setIsLoading(false)
       setIsRecording(false)
       setAssistantVisualActive(false)
+      emitAssistantVisualizerState(false)
       responseCompletedRef.current = true
       botIsAudiblySpeakingRef.current = false
       restoreChatAudioImmediate()
@@ -2052,6 +2060,7 @@ Extras obligatorios:
       setPttSuppressed(false)
       responseCompletedRef.current = true
       botIsAudiblySpeakingRef.current = false
+      emitAssistantVisualizerState(false)
       restoreChatAudioImmediate()
       resetTranscriptCapture({ accept: false })
       inworldRealtimeService.closeSession()
@@ -2775,12 +2784,6 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
           Procesando...
         </div>
       )}
-
-      <AudioVisualizer
-        audioElement={assistantAudioElement}
-        isPlaying={isPlayingResponse || assistantVisualActive}
-        darkMode={darkMode}
-      />
 
       {/* Response container with fixed min-height to prevent scroll glitch */}
       <div className={`rounded p-3 text-sm min-h-[60px] transition-opacity duration-300 ${

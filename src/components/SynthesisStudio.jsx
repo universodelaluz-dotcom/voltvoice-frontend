@@ -32,6 +32,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const [audioPlaybackNonce, setAudioPlaybackNonce] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [localSpeechActive, setLocalSpeechActive] = useState(false)
+  const [assistantSpeechActive, setAssistantSpeechActive] = useState(false)
   const audioRef = useRef(null)
   const [tokensUsed, setTokensUsed] = useState(0)
   const [error, setError] = useState(null)
@@ -185,6 +186,15 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
     window.addEventListener('voltvoice:tokens-updated', handleTokenUpdate)
     return () => window.removeEventListener('voltvoice:tokens-updated', handleTokenUpdate)
+  }, [])
+
+  useEffect(() => {
+    const handleAssistantVisualizer = (event) => {
+      setAssistantSpeechActive(Boolean(event?.detail?.active))
+    }
+
+    window.addEventListener('voltvoice:assistant-visualizer', handleAssistantVisualizer)
+    return () => window.removeEventListener('voltvoice:assistant-visualizer', handleAssistantVisualizer)
   }, [])
 
   const handleSynthesize = async () => {
@@ -539,7 +549,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
           <div className="lg:col-span-1 space-y-6">
             {/* Audio Player - with Visualizer */}
             <div className="space-y-2">
-              <AudioVisualizer audioElement={audioRef.current} isPlaying={isPlaying || localSpeechActive} darkMode={darkMode} />
+              <AudioVisualizer audioElement={audioRef.current} isPlaying={isPlaying || localSpeechActive || assistantSpeechActive} darkMode={darkMode} />
               {audioUrl && (
                 <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30 rounded-lg">
                   <button
