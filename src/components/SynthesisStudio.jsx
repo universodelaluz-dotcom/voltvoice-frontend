@@ -227,6 +227,10 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
         // Usar Web Speech API — voces locales del navegador/OS, gratis, sin backend
         const lang = selectedVoice === "en-US" ? "en-US" : "es-ES"
         const utterance = new SpeechSynthesisUtterance(text)
+        let localPulseTimer = null
+        const emitKick = (level = 0.55) => {
+          window.dispatchEvent(new CustomEvent('voltvoice:visualizer-kick', { detail: { level } }))
+        }
         utterance.rate = audioSpeed
         utterance.pitch = 1.0
         utterance.volume = 1.0
@@ -244,19 +248,34 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
         utterance.onstart = () => {
           setIsPlaying(true)
           setLocalSpeechActive(true)
+          emitKick(0.85)
+          localPulseTimer = setInterval(() => emitKick(0.48), 120)
         }
         utterance.onend = () => {
           setIsPlaying(false)
           setLocalSpeechActive(false)
+          if (localPulseTimer) {
+            clearInterval(localPulseTimer)
+            localPulseTimer = null
+          }
         }
         utterance.onerror = () => {
           setIsPlaying(false)
           setLocalSpeechActive(false)
+          if (localPulseTimer) {
+            clearInterval(localPulseTimer)
+            localPulseTimer = null
+          }
         }
         utterance.onpause = () => {
           setIsPlaying(false)
           setLocalSpeechActive(false)
+          if (localPulseTimer) {
+            clearInterval(localPulseTimer)
+            localPulseTimer = null
+          }
         }
+        utterance.onboundary = () => emitKick(0.75)
 
         window.speechSynthesis.cancel()
         window.speechSynthesis.speak(utterance)
@@ -603,5 +622,6 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     </div>
   )
 }
+
 
 

@@ -309,6 +309,12 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     }))
   }
 
+  const emitVisualizerKick = (level = 0.5) => {
+    window.dispatchEvent(new CustomEvent('voltvoice:visualizer-kick', {
+      detail: { level: Math.max(0, Math.min(1, Number(level) || 0.5)) }
+    }))
+  }
+
   const bindRealtimeAudioToVisualizer = () => {
     if (localAudioRef.current) {
       setAssistantAudioElement(localAudioRef.current)
@@ -368,6 +374,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     console.log('[Bot] beginAssistantResponseWindow: CALLED - resetting state for new response')
     setAssistantVisualActive(true)
     emitAssistantVisualizerState(true)
+    emitVisualizerKick(0.65)
     assistantResponseActiveRef.current = true
     assistantResponseHadAudioRef.current = false
     heardSpeechThisTurnRef.current = false
@@ -1808,6 +1815,7 @@ Extras obligatorios:
       setHasVoiceResponse(true)
       hasVoiceResponseRef.current = true
       setIsPlayingResponse(true)
+      emitVisualizerKick(Math.min(1, Math.max(0.35, Number(data?.rms || 0) * 28)))
       // Audio energy detected = playback is happening, set flag (works for all responses including persistent connection)
       responsePlaybackStartedRef.current = true
       console.log('[Bot] handleAudioEnergySpeaking: Set responsePlaybackStartedRef=true, timer reset')
@@ -1960,6 +1968,7 @@ Extras obligatorios:
 
     const handleAudioStarted = () => {
       bindRealtimeAudioToVisualizer()
+      emitVisualizerKick(0.8)
       heardSpeechThisTurnRef.current = true
       botIsAudiblySpeakingRef.current = true
       suppressChatAudio()
