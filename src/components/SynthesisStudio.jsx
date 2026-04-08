@@ -137,24 +137,40 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     }
   }
 
+  // Voces premium permitidas por plan
+  const PREMIUM_BY_PLAN = {
+    free: [], start: [],
+    creator: ['Diego', 'Lupita'],
+    pro: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    premium: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    elite: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    admin: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    on_demand: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+  }
+  const ALL_PREMIUM_VOICES = [
+    { id: "Diego", name: "Voz natural de Luis - Premium", category: "premium", engine: "inworld" },
+    { id: "Lupita", name: "Voz natural de Sofia - Premium", category: "premium", engine: "inworld" },
+    { id: "Miguel", name: "Voz natural de Gustavo - Premium", category: "premium", engine: "inworld" },
+    { id: "Rafael", name: "Voz natural de Leonel - Premium", category: "premium", engine: "inworld" },
+  ]
+
   // Cargar voces disponibles de Inworld AI + Google TTS + Voces del usuario
   useEffect(() => {
+    const userPlan = user?.plan || 'free'
+    const allowedPremium = PREMIUM_BY_PLAN[userPlan] ?? []
     const allVoices = [
-      // === VOCES LOCALES (Sin tokens, sin backend) ===
+      // === VOCES LOCALES — incluidas en todos los planes, sin tokens ===
       { id: "es-ES", name: "Voz Local Espanol (ilimitada)", category: "webspeech", engine: "webspeech" },
       { id: "en-US", name: "Voz Local Ingles (ilimitada)", category: "webspeech", engine: "webspeech" },
 
-      // === Voces Premium - Naturales ===
-      { id: "Diego", name: "Voz natural de Luis - Premium", category: "premium", engine: "inworld" },
-      { id: "Lupita", name: "Voz natural de Sofia - Premium", category: "premium", engine: "inworld" },
-      { id: "Miguel", name: "Voz natural de Gustavo - Premium", category: "premium", engine: "inworld" },
-      { id: "Rafael", name: "Voz natural de Leonel - Premium", category: "premium", engine: "inworld" },
+      // === Voces Premium — filtradas por plan ===
+      ...ALL_PREMIUM_VOICES.filter(v => allowedPremium.includes(v.id)),
 
       // === Voces Clonadas/Generadas del usuario ===
       ...userVoices,
     ]
     setVoices(allVoices)
-  }, [userVoices])
+  }, [userVoices, user?.plan])
 
   // Cargar voces al montar y escuchar evento de voz nueva
   useEffect(() => {

@@ -285,13 +285,27 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     return () => window.removeEventListener('voice-added', handleVoiceAdded)
   }, [user?.email])
 
-  const premiumVoiceOptions = [
-    { id: 'es-ES', name: 'Voz Básica Español (ilimitada)' },
-    { id: 'en-US', name: 'Voz Básica Inglés (ilimitada)' },
+  const userPlan = user?.plan || 'free'
+  const PREMIUM_BY_PLAN = {
+    free: [], start: [],
+    creator: ['Diego', 'Lupita'],
+    pro: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    premium: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    elite: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    admin: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    on_demand: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+  }
+  const allowedPremium = PREMIUM_BY_PLAN[userPlan] ?? []
+  const ALL_PREMIUM = [
     { id: 'Diego', name: 'Voz natural de Luis - Premium' },
     { id: 'Lupita', name: 'Voz natural de Sofia - Premium' },
     { id: 'Miguel', name: 'Voz natural de Gustavo - Premium' },
     { id: 'Rafael', name: 'Voz natural de Leonel - Premium' },
+  ]
+  const premiumVoiceOptions = [
+    { id: 'es-ES', name: 'Voz Básica Español (ilimitada)' },
+    { id: 'en-US', name: 'Voz Básica Inglés (ilimitada)' },
+    ...ALL_PREMIUM.filter(v => allowedPremium.includes(v.id)),
     ...userVoices,
   ]
 
