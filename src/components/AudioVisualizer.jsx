@@ -12,54 +12,63 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
     const target = audioElement
     if (!target) return
 
-    let graph = target[AUDIO_GRAPH_SYMBOL]
-    if (!graph || graph.audioCtx?.state === 'closed') {
+    const createGraph = () => {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
       const analyser = audioCtx.createAnalyser()
       analyser.fftSize = 2048
       analyser.smoothingTimeConstant = 0.5
+      const g = { audioCtx, analyser, source: null, usedCaptureStream: false }
+      target[AUDIO_GRAPH_SYMBOL] = g
+      return g
+    }
 
+    const wireSource = (graph) => {
+      if (!graph || graph.source) return
       try {
         let source = null
         let usedCaptureStream = false
-        // Primary path: direct media element analyser.
         try {
-          source = audioCtx.createMediaElementSource(target)
+          source = graph.audioCtx.createMediaElementSource(target)
         } catch (_) {
-          // Fallback 1: remote stream attached directly to the element (WebRTC).
           const srcObject = target.srcObject
-          if (srcObject && typeof audioCtx.createMediaStreamSource === 'function') {
-            source = audioCtx.createMediaStreamSource(srcObject)
+          if (srcObject && typeof graph.audioCtx.createMediaStreamSource === 'function') {
+            source = graph.audioCtx.createMediaStreamSource(srcObject)
             usedCaptureStream = true
           }
-          // Fallback 2: captureStream.
           const stream = source ? null : (typeof target.captureStream === 'function' ? target.captureStream() : null)
           if (stream) {
-            source = audioCtx.createMediaStreamSource(stream)
+            source = graph.audioCtx.createMediaStreamSource(stream)
             usedCaptureStream = true
           }
         }
 
-        if (source) {
-          source.connect(analyser)
-          // For MediaElementSource we must route analyser to destination to keep audible playback.
-          if (!usedCaptureStream) {
-            analyser.connect(audioCtx.destination)
-          }
+        if (!source) return
+        source.connect(graph.analyser)
+        if (!usedCaptureStream) {
+          graph.analyser.connect(graph.audioCtx.destination)
         }
-        graph = { audioCtx, analyser, source }
-      } catch (_err) {
-        graph = { audioCtx, analyser, source: null }
+        graph.source = source
+        graph.usedCaptureStream = usedCaptureStream
+      } catch (_) {
+        // Keep silent and retry on next playback event.
       }
-
-      target[AUDIO_GRAPH_SYMBOL] = graph
     }
+
+    let graph = target[AUDIO_GRAPH_SYMBOL]
+    if (!graph || graph.audioCtx?.state === 'closed') {
+      graph = createGraph()
+    }
+    wireSource(graph)
 
     analyserRef.current = graph.analyser
 
     const resume = () => {
       if (graph.audioCtx.state === 'suspended') {
         graph.audioCtx.resume().catch(() => {})
+      }
+      // Retry wiring source when playback starts; fixes bot audio elements that get stream late.
+      if (!graph.source) {
+        wireSource(graph)
       }
     }
 
