@@ -79,15 +79,15 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
       ctx.fillStyle = '#000'
       ctx.fillRect(0, 0, W, H)
 
-      phaseRef.current += 0.012
+      phaseRef.current += 0.03
 
       ctx.save()
-      ctx.shadowBlur = 10
+      ctx.shadowBlur = 14
       ctx.shadowColor = '#00d5ff'
 
       const layers = [
-        { amp: 2.2, freq: 0.012, alpha: 0.16, width: 1.2 },
-        { amp: 1.4, freq: 0.019, alpha: 0.1, width: 1 }
+        { amp: 4.2, freq: 0.013, alpha: 0.42, width: 1.4 },
+        { amp: 2.6, freq: 0.02, alpha: 0.26, width: 1.1 }
       ]
 
       for (const layer of layers) {
@@ -121,16 +121,16 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
         analyser.getFloatTimeDomainData(timeData)
         analyser.getByteFrequencyData(freqData)
       } else {
-        phaseRef.current += 0.018
+        phaseRef.current += 0.04
         for (let i = 0; i < bufferLength; i++) {
           const t = i / bufferLength
           timeData[i] =
-            Math.sin((t * 12) + phaseRef.current) * 0.22 +
-            Math.sin((t * 4.8) + phaseRef.current * 0.9) * 0.1
+            Math.sin((t * 12) + phaseRef.current) * 0.3 +
+            Math.sin((t * 5.2) + phaseRef.current * 0.9) * 0.14
         }
         for (let i = 0; i < freqData.length; i++) {
           const wave = Math.abs(Math.sin(phaseRef.current * 0.8 + i * 0.09))
-          freqData[i] = 70 + Math.floor(wave * 90)
+          freqData[i] = 90 + Math.floor(wave * 110)
         }
       }
 
@@ -142,12 +142,12 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
       ctx.fillStyle = '#000'
       ctx.fillRect(0, 0, W, H)
 
-      const amplitude = (H * 0.28) * (0.65 + energy * 0.8)
+      const amplitude = (H * 0.34) * (0.72 + energy * 0.9)
 
       const strokes = [
-        { blur: 16, color: 'rgba(0, 205, 255, 0.22)', width: 2.2 },
-        { blur: 8, color: 'rgba(0, 220, 255, 0.38)', width: 1.5 },
-        { blur: 0, color: 'rgba(190, 245, 255, 0.88)', width: 1 }
+        { blur: 18, color: 'rgba(0, 205, 255, 0.28)', width: 2.3 },
+        { blur: 9, color: 'rgba(0, 220, 255, 0.5)', width: 1.6 },
+        { blur: 0, color: 'rgba(190, 245, 255, 0.95)', width: 1.1 }
       ]
 
       for (const s of strokes) {
