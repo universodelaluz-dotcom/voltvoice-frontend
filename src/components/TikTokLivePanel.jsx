@@ -201,6 +201,45 @@ const defaultHighlightRules = {
   topFans: { enabled: false, color: '#06b6d4' },
 }
 
+const normalizeModerationList = (value) => {
+  if (!Array.isArray(value)) return []
+  const seen = new Set()
+  const normalized = []
+  for (const item of value) {
+    const username = normalizeTikTokUsername(item?.username).toLowerCase()
+    if (!username || seen.has(username)) continue
+    seen.add(username)
+    normalized.push({
+      username,
+      reason: String(item?.reason || 'Baneado o silenciado'),
+      source: String(item?.source || 'unknown'),
+      addedAt: item?.addedAt || new Date().toISOString()
+    })
+  }
+  return normalized.slice(0, 500)
+}
+
+const upsertModerationEntry = (list, username, data = {}) => {
+  const normalizedUsername = normalizeTikTokUsername(username).toLowerCase()
+  if (!normalizedUsername) return list
+  const withoutCurrent = list.filter((item) => item.username !== normalizedUsername)
+  return normalizeModerationList([
+    {
+      username: normalizedUsername,
+      reason: data.reason || 'Baneado o silenciado',
+      source: data.source || 'unknown',
+      addedAt: data.addedAt || new Date().toISOString()
+    },
+    ...withoutCurrent
+  ])
+}
+
+const removeModerationEntry = (list, username) => {
+  const normalizedUsername = normalizeTikTokUsername(username).toLowerCase()
+  if (!normalizedUsername) return list
+  return list.filter((item) => item.username !== normalizedUsername)
+}
+
 function AnimatedCount({ value, duration = 900, decimals = 0, suffix = '' }) {
   const [displayValue, setDisplayValue] = useState(0)
 
@@ -355,6 +394,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const [highlightMode, setHighlightMode] = useState(false)
   const [selectedColor, setSelectedColor] = useState('#06b6d4')
   const [showHighlightPanel, setShowHighlightPanel] = useState(false)
+  const [sessionModerationList, setSessionModerationList] = useState(() => normalizeModerationList(config.sessionModerationList))
   const [chatFontSize, setChatFontSize] = useState(config.chatFontSize || 14)
   const [chatNickColor, setChatNickColor] = useState(() => getThemeChatNickColor(config, localStorage.getItem('voltvoice-theme') !== 'light'))
   const [chatMsgColor, setChatMsgColor] = useState(() => getThemeChatMsgColor(config, localStorage.getItem('voltvoice-theme') !== 'light'))
@@ -368,6 +408,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     ...defaultHighlightRules,
     ...(config.highlightRules || {})
   })
+  const syncSessionModerationList = (updater) => {
+    setSessionModerationList((prev) => {
+      const next = normalizeModerationList(typeof updater === 'function' ? updater(prev) : updater)
+      if (updateConfig) {
+        updateConfig('sessionModerationList', next)
+      }
+      return next
+    })
+  }
 
   // Sincronizar cambios de estilo y remarcar al config del usuario (auto-save)
   useEffect(() => {
@@ -405,6 +454,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       updateConfig('highlightRules', highlightRules)
     }
   }, [highlightRules])
+  useEffect(() => {
+    setSessionModerationList(normalizeModerationList(config.sessionModerationList))
+  }, [config.sessionModerationList])
   useEffect(() => {
     setHighlightRules(prev => ({
       ...defaultHighlightRules,
@@ -800,8 +852,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       const bannedSet = new Set(
         bans.flatMap((b) => getBanCandidateKeys(b.banned_username))
       )
+      const moderationFromDb = bans
+        .map((b) => ({
+          username: normalizeTikTokUsername(b.banned_username).toLowerCase(),
+          reason: b.reason || 'Baneado o silenciado',
+          source: b.banned_by || 'database',
+          addedAt: b.banned_at || new Date().toISOString()
+        }))
+        .filter((item) => item.username)
       setBannedUsers(bannedSet)
       setNickOverrides(nicks)
+      syncSessionModerationList(moderationFromDb)
 
       // Sync to chatStore for bot access
       chatStore.syncBannedUsers(bannedSet)
@@ -814,6 +875,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           getBanCandidateKeys(username).forEach((key) => next.add(key))
           return next
         })
+        syncSessionModerationList((prev) => upsertModerationEntry(prev, username, {
+          reason: 'Baneado o silenciado por bot',
+          source: 'bot'
+        }))
       })
       chatStore.registerAction('onUnban', (username) => {
         setBannedUsers((prev) => {
@@ -821,6 +886,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           getBanCandidateKeys(username).forEach((key) => next.delete(key))
           return next
         })
+        syncSessionModerationList((prev) => removeModerationEntry(prev, username))
       })
       chatStore.registerAction('onHighlight', (username, color) => {
         setHighlightedUsers(prev => ({ ...prev, [username]: color }))
@@ -2248,6 +2314,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                                 bannedRef.current = next
                                 return next
                               })
+                              syncSessionModerationList((prev) => removeModerationEntry(prev, msg.user))
                             } else {
                               // Banear
                               await apiBans.add(msg.user)
@@ -2257,6 +2324,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                                 bannedRef.current = next
                                 return next
                               })
+                              syncSessionModerationList((prev) => upsertModerationEntry(prev, msg.user, {
+                                reason: 'Baneado o silenciado manualmente',
+                                source: 'manual'
+                              }))
                             }
                           }}
                           className={`font-semibold cursor-pointer select-none px-1 rounded transition-colors ${
@@ -2701,8 +2772,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   </div>
                 )}
               </div>
+
             </div>
           )}
+
         </div>
       )}
 

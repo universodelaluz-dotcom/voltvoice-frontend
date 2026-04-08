@@ -17,28 +17,44 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       const analyser = audioCtx.createAnalyser()
       analyser.fftSize = 2048
       analyser.smoothingTimeConstant = 0.5
-      const g = { audioCtx, analyser, source: null, usedCaptureStream: false }
+      const g = { audioCtx, analyser, source: null, usedCaptureStream: false, lastWiredSrcObject: null }
       target[AUDIO_GRAPH_SYMBOL] = g
       return g
     }
 
     const wireSource = (graph) => {
-      if (!graph || graph.source) return
+      if (!graph) return
+
+      // If stream changed (e.g. new WebRTC session), detach old source so we rewire below.
+      const currentSrcObject = target.srcObject || null
+      if (graph.source && graph.usedCaptureStream && currentSrcObject && currentSrcObject !== graph.lastWiredSrcObject) {
+        try { graph.source.disconnect() } catch (_) {}
+        graph.source = null
+        graph.lastWiredSrcObject = null
+      }
+
+      if (graph.source) return
+
       try {
         let source = null
         let usedCaptureStream = false
-        try {
-          source = graph.audioCtx.createMediaElementSource(target)
-        } catch (_) {
-          const srcObject = target.srcObject
-          if (srcObject && typeof graph.audioCtx.createMediaStreamSource === 'function') {
-            source = graph.audioCtx.createMediaStreamSource(srcObject)
-            usedCaptureStream = true
-          }
-          const stream = source ? null : (typeof target.captureStream === 'function' ? target.captureStream() : null)
-          if (stream) {
-            source = graph.audioCtx.createMediaStreamSource(stream)
-            usedCaptureStream = true
+
+        if (currentSrcObject) {
+          // WebRTC / MediaStream element: always read from the stream directly.
+          // createMediaElementSource on srcObject elements may return a silent node in
+          // Chrome because WebRTC audio can bypass the Web Audio graph.
+          source = graph.audioCtx.createMediaStreamSource(currentSrcObject)
+          usedCaptureStream = true
+        } else {
+          // Regular <audio src="url"> element.
+          try {
+            source = graph.audioCtx.createMediaElementSource(target)
+          } catch (_) {
+            const stream = typeof target.captureStream === 'function' ? target.captureStream() : null
+            if (stream) {
+              source = graph.audioCtx.createMediaStreamSource(stream)
+              usedCaptureStream = true
+            }
           }
         }
 
@@ -49,6 +65,7 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
         }
         graph.source = source
         graph.usedCaptureStream = usedCaptureStream
+        graph.lastWiredSrcObject = currentSrcObject
       } catch (_) {
         // Keep silent and retry on next playback event.
       }
@@ -62,8 +79,12 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
 
     analyserRef.current = graph.analyser
 
+    // Resume immediately — the element may already be playing (e.g. Inworld WebRTC audio
+    // starts before the visualizer is connected), so the 'play' event won't fire again.
+    graph.audioCtx.resume().catch(() => {})
+
     const resume = () => {
-      if (graph.audioCtx.state === 'suspended') {
+      if (graph.audioCtx.state !== 'running') {
         graph.audioCtx.resume().catch(() => {})
       }
       // Retry wiring source when playback starts; fixes bot audio elements that get stream late.
