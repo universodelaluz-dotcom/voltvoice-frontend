@@ -457,23 +457,30 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
             if (isFreeUser) {
               return (
-                <button
-                  onClick={onGoPricingPage}
-                  className={`relative flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all opacity-60 hover:opacity-80 ${
-                    darkMode
-                      ? 'bg-gradient-to-r from-purple-500/40 to-pink-500/40 text-gray-400'
-                      : 'bg-gradient-to-r from-slate-400 to-slate-500 text-gray-600'
-                  }`}
-                  title="Desbloqueado desde plan START - Click para ver planes"
-                >
-                  <Mic2 className="w-5 h-5" />
-                  <span>Taller de Voces</span>
-                  <div className={`absolute top-1 right-1 p-1 rounded-full ${
-                    darkMode ? 'bg-purple-500/30' : 'bg-purple-300/40'
-                  }`}>
-                    <Lock className={`w-3 h-3 ${darkMode ? 'text-purple-300' : 'text-purple-600'}`} />
+                <div className="relative">
+                  <div
+                    className={`relative flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold opacity-50 cursor-not-allowed ${
+                      darkMode
+                        ? 'bg-gradient-to-r from-purple-500/40 to-pink-500/40 text-gray-400'
+                        : 'bg-gradient-to-r from-slate-400 to-slate-500 text-gray-600'
+                    }`}
+                    title="Desbloqueado desde plan START"
+                  >
+                    <Mic2 className="w-5 h-5" />
+                    <span>Taller de Voces</span>
                   </div>
-                </button>
+                  <button
+                    onClick={onGoPricingPage}
+                    className={`absolute top-1 right-1 p-1.5 rounded-full transition-all ${
+                      darkMode
+                        ? 'bg-purple-500/40 hover:bg-purple-500/70 text-purple-300'
+                        : 'bg-purple-300/50 hover:bg-purple-400 text-purple-600'
+                    }`}
+                    title="Ver planes - Desbloqueado desde START"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               )
             }
 
