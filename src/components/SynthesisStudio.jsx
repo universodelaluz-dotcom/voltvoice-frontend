@@ -523,9 +523,10 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
           {/* Right Column - Stats & Audio */}
           <div className="lg:col-span-1 space-y-6">
             {/* Audio Player - with Visualizer */}
-            <div className="space-y-2">
-              <AudioVisualizer audioElement={audioRef.current} isPlaying={isPlaying} darkMode={darkMode} />
-              {audioUrl && (
+            {(audioUrl || isPlaying) && (
+              <div className="space-y-2">
+                <AudioVisualizer audioElement={audioRef.current} isPlaying={isPlaying} darkMode={darkMode} />
+                {audioUrl && (
                 <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30 rounded-lg">
                   <button
                     onClick={() => {
@@ -541,8 +542,9 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
                     <span className="text-cyan-400 font-bold">{tokensUsed}</span> tokens usados
                   </div>
                 </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             {/* Bot Invoker - Push to Talk */}
             <BotInvoker

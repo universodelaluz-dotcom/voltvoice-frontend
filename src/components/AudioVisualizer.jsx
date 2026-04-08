@@ -6,9 +6,8 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
   const canvasRef = useRef(null)
   const analyserRef = useRef(null)
   const animationIdRef = useRef(null)
-  const [detectedPlaying, setDetectedPlaying] = useState(false)
   const phaseRef = useRef(0)
-  const barsRef = useRef([])
+  const [detectedPlaying, setDetectedPlaying] = useState(false)
 
   useEffect(() => {
     const targetAudio = audioElement
@@ -19,7 +18,7 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
       const analyser = audioCtx.createAnalyser()
       analyser.fftSize = 2048
-      analyser.smoothingTimeConstant = 0.85
+      analyser.smoothingTimeConstant = 0.88
 
       try {
         const source = audioCtx.createMediaElementSource(targetAudio)
@@ -53,11 +52,7 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
 
   useEffect(() => {
     const checkPlayback = () => {
-      const elementPlaying = Boolean(
-        audioElement &&
-        !audioElement.paused &&
-        !audioElement.ended
-      )
+      const elementPlaying = Boolean(audioElement && !audioElement.paused && !audioElement.ended)
       const speechPlaying = Boolean(
         typeof window !== 'undefined' &&
         window.speechSynthesis &&
@@ -67,7 +62,7 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
     }
 
     checkPlayback()
-    const interval = setInterval(checkPlayback, 120)
+    const interval = setInterval(checkPlayback, 140)
     return () => clearInterval(interval)
   }, [audioElement])
 
@@ -84,23 +79,38 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
       ctx.fillStyle = '#000'
       ctx.fillRect(0, 0, W, H)
 
-      phaseRef.current += 0.02
-      const barCount = 36
-      const gap = W / barCount
+      phaseRef.current += 0.012
 
-      for (let i = 0; i < barCount; i++) {
-        const wave = Math.abs(Math.sin(phaseRef.current + i * 0.22))
-        const barH = 8 + wave * 12
-        const x = i * gap + 2
-        const y = (H - barH) / 2
-        ctx.fillStyle = `rgba(0, 210, 255, ${0.16 + wave * 0.18})`
-        ctx.fillRect(x, y, Math.max(3, gap - 4), barH)
+      ctx.save()
+      ctx.shadowBlur = 10
+      ctx.shadowColor = '#00d5ff'
+
+      const layers = [
+        { amp: 2.2, freq: 0.012, alpha: 0.16, width: 1.2 },
+        { amp: 1.4, freq: 0.019, alpha: 0.1, width: 1 }
+      ]
+
+      for (const layer of layers) {
+        ctx.beginPath()
+        ctx.strokeStyle = `rgba(0, 210, 255, ${layer.alpha})`
+        ctx.lineWidth = layer.width
+        for (let x = 0; x <= W; x++) {
+          const y = H / 2 + Math.sin(x * layer.freq + phaseRef.current) * layer.amp
+          if (x === 0) ctx.moveTo(x, y)
+          else ctx.lineTo(x, y)
+        }
+        ctx.stroke()
       }
+      ctx.restore()
 
       animationIdRef.current = requestAnimationFrame(drawIdle)
     }
 
     const drawActive = () => {
+      const W = canvas.width
+      const H = canvas.height
+      const centerY = H / 2
+
       const analyser = analyserRef.current
       const hasAnalyser = Boolean(analyser)
       const bufferLength = hasAnalyser ? analyser.fftSize : 1024
@@ -111,16 +121,16 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
         analyser.getFloatTimeDomainData(timeData)
         analyser.getByteFrequencyData(freqData)
       } else {
-        phaseRef.current += 0.04
-        for (let i = 0; i < timeData.length; i++) {
-          const t = i / timeData.length
+        phaseRef.current += 0.018
+        for (let i = 0; i < bufferLength; i++) {
+          const t = i / bufferLength
           timeData[i] =
-            Math.sin((t * 12) + phaseRef.current) * 0.2 +
-            Math.sin((t * 4) + phaseRef.current * 1.1) * 0.12
+            Math.sin((t * 12) + phaseRef.current) * 0.22 +
+            Math.sin((t * 4.8) + phaseRef.current * 0.9) * 0.1
         }
         for (let i = 0; i < freqData.length; i++) {
-          const soft = Math.abs(Math.sin(phaseRef.current * 0.9 + i * 0.08))
-          freqData[i] = 88 + Math.floor(soft * 88)
+          const wave = Math.abs(Math.sin(phaseRef.current * 0.8 + i * 0.09))
+          freqData[i] = 70 + Math.floor(wave * 90)
         }
       }
 
@@ -128,39 +138,37 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
       for (let i = 0; i < freqData.length; i++) energy += freqData[i]
       energy = energy / freqData.length / 255
 
-      const W = canvas.width
-      const H = canvas.height
-      const centerY = H / 2
-
       ctx.clearRect(0, 0, W, H)
       ctx.fillStyle = '#000'
       ctx.fillRect(0, 0, W, H)
 
-      phaseRef.current += 0.018
+      const amplitude = (H * 0.28) * (0.65 + energy * 0.8)
 
-      const bars = 42
-      const barW = W / bars
-      for (let i = 0; i < bars; i++) {
-        const idx = Math.min(freqData.length - 1, Math.floor((i / bars) * freqData.length))
-        const v = freqData[idx] / 255
-        const pulse = Math.abs(Math.sin(phaseRef.current * 0.7 + i * 0.12))
-        const magnitude = Math.max(v * 0.85, pulse * 0.35) * (0.48 + energy * 0.82)
-        const targetH = Math.max(8, magnitude * (H * 0.72))
-        const prevH = barsRef.current[i] || 8
-        const h = prevH + (targetH - prevH) * 0.22
-        barsRef.current[i] = h
-        const x = i * barW + 1
-        const y = centerY - h / 2
-        ctx.fillStyle = `rgba(0, 225, 255, ${0.2 + magnitude * 0.35})`
-        ctx.fillRect(x, y, Math.max(2, barW - 2), h)
+      const strokes = [
+        { blur: 16, color: 'rgba(0, 205, 255, 0.22)', width: 2.2 },
+        { blur: 8, color: 'rgba(0, 220, 255, 0.38)', width: 1.5 },
+        { blur: 0, color: 'rgba(190, 245, 255, 0.88)', width: 1 }
+      ]
+
+      for (const s of strokes) {
+        ctx.save()
+        ctx.shadowBlur = s.blur
+        ctx.shadowColor = '#00d5ff'
+        ctx.strokeStyle = s.color
+        ctx.lineWidth = s.width
+        ctx.beginPath()
+
+        const step = W / bufferLength
+        let x = 0
+        for (let i = 0; i < bufferLength; i++) {
+          const y = centerY + (timeData[i] * amplitude)
+          if (i === 0) ctx.moveTo(x, y)
+          else ctx.lineTo(x, y)
+          x += step
+        }
+        ctx.stroke()
+        ctx.restore()
       }
-
-      ctx.strokeStyle = 'rgba(180, 245, 255, 0.45)'
-      ctx.lineWidth = 1
-      ctx.beginPath()
-      ctx.moveTo(0, centerY)
-      ctx.lineTo(W, centerY)
-      ctx.stroke()
 
       animationIdRef.current = requestAnimationFrame(drawActive)
     }
@@ -168,11 +176,8 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
     if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current)
 
     const effectivePlaying = Boolean(isPlaying || detectedPlaying)
-    if (effectivePlaying) {
-      drawActive()
-    } else {
-      drawIdle()
-    }
+    if (effectivePlaying) drawActive()
+    else drawIdle()
 
     return () => {
       if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current)
