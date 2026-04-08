@@ -249,7 +249,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
           setIsPlaying(true)
           setLocalSpeechActive(true)
           emitKick(0.85)
-          localPulseTimer = setInterval(() => emitKick(0.48), 120)
+          localPulseTimer = setInterval(() => emitKick(0.24 + Math.random() * 0.22), 180)
         }
         utterance.onend = () => {
           setIsPlaying(false)
@@ -275,7 +275,10 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             localPulseTimer = null
           }
         }
-        utterance.onboundary = () => emitKick(0.75)
+        utterance.onboundary = (event) => {
+          const base = 0.62 + ((Number(event?.charIndex || 0) % 7) / 18)
+          emitKick(Math.min(0.95, base))
+        }
 
         window.speechSynthesis.cancel()
         window.speechSynthesis.speak(utterance)

@@ -9,7 +9,10 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
 
   const detectedPlayingRef = useRef(false)
   const externalEnergyRef = useRef(0)
+  const kickPulseRef = useRef(0)
+  const kickJitterRef = useRef(0)
   const recentKickTsRef = useRef(0)
+  const lowRmsFramesRef = useRef(0)
   const valuesRef = useRef([])
 
   useEffect(() => {
@@ -57,6 +60,8 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       const level = Number(event?.detail?.level)
       const normalized = Number.isFinite(level) ? Math.max(0, Math.min(1, level)) : 0.45
       externalEnergyRef.current = Math.max(externalEnergyRef.current, normalized)
+      kickPulseRef.current = Math.max(kickPulseRef.current, normalized)
+      kickJitterRef.current = Math.random() * Math.PI * 2
       recentKickTsRef.current = Date.now()
     }
 
@@ -111,38 +116,44 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
         rms = Math.sqrt(rms / time.length)
         const spectral = (fsum / freq.length) / 255
 
-        const gain = Math.max(1.8, Math.min(9.5, 0.2 / Math.max(rms, 0.0009)))
+        const gain = Math.max(2.1, Math.min(10.5, 0.24 / Math.max(rms, 0.0009)))
         energy = Math.max(energy, Math.min(1, spectral * 1.4))
 
         for (let i = 0; i < points; i++) {
           const idx = Math.min(time.length - 1, Math.floor((i / points) * time.length))
-          signal[i] = time[idx] * gain
+          signal[i] = time[idx] * gain + Math.sin(i * 0.11 + kickJitterRef.current) * kickPulseRef.current * 0.18
         }
 
-        // Si el analizador viene en silencio (típico en voces locales),
-        // forzar retumbe sintético usando energía externa/kicks.
-        if (rms < 0.0025) {
-          const kick = Math.max(energy, externalEnergyRef.current, 0.35)
-          const now = performance.now()
+        if (rms < 0.0032) {
+          lowRmsFramesRef.current += 1
+        } else {
+          lowRmsFramesRef.current = 0
+        }
+
+        // Local/basic voices often have a flat analyser feed. Force rhythmic rumble from kick pulses.
+        if (lowRmsFramesRef.current > 2) {
+          const kick = Math.max(energy, externalEnergyRef.current, kickPulseRef.current, 0.38)
           for (let i = 0; i < points; i++) {
             const wave =
-              Math.sin(i * 0.18 + now * 0.013) * 0.7 +
-              Math.sin(i * 0.07 + now * 0.009) * 0.3
-            signal[i] = wave * 0.9 * kick
+              Math.sin(i * 0.19 + kickJitterRef.current) * 0.68 +
+              Math.sin(i * 0.065 + kickJitterRef.current * 0.7) * 0.32
+            signal[i] = wave * (0.24 + kick * 1.25)
           }
           energy = Math.max(energy, kick)
         }
       } else {
         for (let i = 0; i < points; i++) {
-          signal[i] = (Math.random() * 2 - 1) * 0.15
+          signal[i] = Math.sin(i * 0.11 + kickJitterRef.current * 0.4) * 0.08
         }
         energy = Math.max(energy, 0.08)
+        lowRmsFramesRef.current = 0
       }
 
-      externalEnergyRef.current = Math.max(0, externalEnergyRef.current * 0.93)
+      externalEnergyRef.current = Math.max(0, externalEnergyRef.current * 0.91)
+      kickPulseRef.current = Math.max(0, kickPulseRef.current * 0.86)
 
-      const amp = active ? (16 + energy * 46) : 3.8
-      const smooth = active ? 0.28 : 0.16
+      const amp = active ? (20 + energy * 54 + kickPulseRef.current * 18) : 4
+      const smooth = active ? 0.31 : 0.18
 
       ctx.clearRect(0, 0, W, H)
       ctx.fillStyle = '#000'
@@ -154,8 +165,8 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
 
       // Glow line
       ctx.beginPath()
-      ctx.strokeStyle = `rgba(0,220,255,${0.34 + energy * 0.32})`
-      ctx.lineWidth = 2.4 + energy * 1.8
+      ctx.strokeStyle = `rgba(0,220,255,${0.36 + energy * 0.34})`
+      ctx.lineWidth = 2.8 + energy * 2.1 + kickPulseRef.current * 0.9
       for (let i = 0; i < points; i++) {
         const prev = valuesRef.current[i] || 0
         const next = prev + (signal[i] - prev) * smooth
@@ -170,7 +181,7 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       // Main static baseline that rumbles
       ctx.beginPath()
       ctx.strokeStyle = 'rgba(190,245,255,0.98)'
-      ctx.lineWidth = 1.5 + energy * 0.7
+      ctx.lineWidth = 1.7 + energy * 0.9 + kickPulseRef.current * 0.4
       for (let i = 0; i < points; i++) {
         const x = (i / (points - 1)) * W
         const y = midY + valuesRef.current[i] * amp
