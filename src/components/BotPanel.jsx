@@ -342,7 +342,7 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
       {audioUrl && (
         <div className="space-y-3">
           <AudioVisualizer
-            audioUrl={audioUrl}
+            audioElement={audioPlayerRef.current}
             isPlaying={isPlaying}
             darkMode={darkMode}
           />

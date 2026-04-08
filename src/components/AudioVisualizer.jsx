@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function AudioVisualizer({ audioUrl, isPlaying, darkMode }) {
+export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
   const canvasRef = useRef(null)
   const analyserRef = useRef(null)
   const animationIdRef = useRef(null)
@@ -10,7 +10,8 @@ export default function AudioVisualizer({ audioUrl, isPlaying, darkMode }) {
   const phaseRef = useRef(0)
 
   useEffect(() => {
-    if (!audioUrl) return
+    const targetAudio = audioElement
+    if (!targetAudio) return
 
     // Si ya hay un contexto, desconectar antes
     if (sourceRef.current) {
@@ -25,29 +26,38 @@ export default function AudioVisualizer({ audioUrl, isPlaying, darkMode }) {
     analyser.fftSize = 2048
     analyser.smoothingTimeConstant = 0.85
 
-    // Buscar el elemento <audio> existente en el DOM que tenga este src
-    const existingAudio = document.querySelector(`audio[src="${audioUrl}"]`)
-
-    if (existingAudio) {
-      try {
-        const source = audioCtx.createMediaElementSource(existingAudio)
-        source.connect(analyser)
-        analyser.connect(audioCtx.destination)
-        sourceRef.current = source
-      } catch (_) {
-        // Si ya tiene fuente conectada, solo usamos el analyser sin fuente
-      }
+    try {
+      const source = audioCtx.createMediaElementSource(targetAudio)
+      source.connect(analyser)
+      analyser.connect(audioCtx.destination)
+      sourceRef.current = source
+      setIsReady(true)
+    } catch (_) {
+      // Si el elemento ya fue conectado por otra instancia, degradar con animación idle
+      setIsReady(false)
     }
 
     audioCtxRef.current = audioCtx
     analyserRef.current = analyser
-    setIsReady(true)
+
+    const resumeCtx = () => {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {})
+      }
+    }
+    targetAudio.addEventListener('play', resumeCtx)
+    targetAudio.addEventListener('canplay', resumeCtx)
 
     return () => {
+      targetAudio.removeEventListener('play', resumeCtx)
+      targetAudio.removeEventListener('canplay', resumeCtx)
       if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current)
+      if (sourceRef.current) {
+        try { sourceRef.current.disconnect() } catch (_) {}
+      }
       try { audioCtx.close() } catch (_) {}
     }
-  }, [audioUrl])
+  }, [audioElement])
 
   useEffect(() => {
     if (!canvasRef.current) return
@@ -179,7 +189,7 @@ export default function AudioVisualizer({ audioUrl, isPlaying, darkMode }) {
     return () => {
       if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current)
     }
-  }, [isPlaying, isReady])
+  }, [isPlaying, isReady, darkMode])
 
   return (
     <div className="w-full rounded-lg overflow-hidden" style={{ background: '#000', height: 100 }}>

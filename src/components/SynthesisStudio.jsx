@@ -6,6 +6,7 @@ import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Cloc
 
 export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAdmin, darkMode, setDarkMode, config, updateConfig, user }) {
   const audioSpeed = config.audioSpeed || 1.0
+  const PREMIUM_TEST_CHAR_LIMIT = 500
   const [showBotInvoker, setShowBotInvoker] = useState(false)
 
   const toggleTheme = () => {
@@ -172,6 +173,11 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
     if (!selectedVoice) {
       setError('Por favor selecciona una voz')
+      return
+    }
+
+    if (text.length > PREMIUM_TEST_CHAR_LIMIT) {
+      setError(`El texto de prueba supera el límite de ${PREMIUM_TEST_CHAR_LIMIT} caracteres.`)
       return
     }
 
@@ -430,11 +436,12 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
+                maxLength={PREMIUM_TEST_CHAR_LIMIT}
                 placeholder="Escribe el texto que deseas convertir en voz..."
                 className={`${darkMode ? "w-full h-32 bg-[#0f0f23] border border-purple-400/30 rounded p-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400 resize-none font-mono text-sm" : "w-full h-32 bg-gray-50 border border-indigo-300 rounded p-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 resize-none font-mono text-sm"}`}
               />
               <div className={`${darkMode ? "flex justify-between text-xs text-gray-400" : "flex justify-between text-xs text-gray-500"}`}>
-                <span>{charCount} caracteres</span>
+                <span>{charCount}/{PREMIUM_TEST_CHAR_LIMIT} caracteres</span>
                 <span>1 token = 1 caracter</span>
               </div>
             </div>
@@ -477,7 +484,6 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
                   </>
                 )}
               </button>
-              <audio ref={audioRef} src={audioUrl || ''} className="hidden" />
             </div>
 
             {hasInsufficientTokens && (
@@ -492,9 +498,8 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             {/* Audio Player - with Visualizer */}
             {audioUrl && (
               <div className="space-y-2">
-                <AudioVisualizer audioUrl={audioUrl} isPlaying={isPlaying} darkMode={darkMode} />
+                <AudioVisualizer audioElement={audioRef.current} isPlaying={isPlaying} darkMode={darkMode} />
                 <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30 rounded-lg">
-                  <audio ref={(el) => el && audioUrl && (audioRef.current = el)} src={audioUrl} className="hidden" />
                   <button
                     onClick={() => {
                       if (audioRef.current) {
@@ -542,7 +547,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
           </div>
         </div>
       </div>
-
+      <audio ref={audioRef} src={audioUrl || ''} className="hidden" />
     </div>
   )
 }

@@ -87,6 +87,7 @@ const DEFAULT_CONFIG = {
   configPreset1: null,
   configPreset2: null,
   configPreset3: null,
+  sessionModerationList: [],
   highlightRules: {
     moderators: { enabled: false, color: '#a855f7' },
     donors: { enabled: false, color: '#f59e0b' },
@@ -95,6 +96,27 @@ const DEFAULT_CONFIG = {
     communityMembers: { enabled: false, color: '#22c55e' },
     topFans: { enabled: false, color: '#06b6d4' },
   },
+}
+
+const normalizeSessionModerationList = (value) => {
+  if (!Array.isArray(value)) return []
+  const seen = new Set()
+  const normalized = []
+  for (const item of value) {
+    const username = String(item?.username || '')
+      .trim()
+      .replace(/^@+/, '')
+      .toLowerCase()
+    if (!username || seen.has(username)) continue
+    seen.add(username)
+    normalized.push({
+      username,
+      reason: String(item?.reason || 'Baneado o silenciado').slice(0, 120),
+      source: String(item?.source || 'unknown').slice(0, 24),
+      addedAt: item?.addedAt || new Date().toISOString()
+    })
+  }
+  return normalized.slice(0, 500)
 }
 
 const normalizeUserConfig = (rawConfig = {}) => {
@@ -118,6 +140,7 @@ const normalizeUserConfig = (rawConfig = {}) => {
     themeMode: config.themeMode || DEFAULT_CONFIG.themeMode,
     botAssistantVoiceSpeed: normalizedVoiceSpeed,
     botAssistantMaxResponseChars: normalizedMaxChars,
+    sessionModerationList: normalizeSessionModerationList(config.sessionModerationList),
     highlightRules: {
       ...DEFAULT_CONFIG.highlightRules,
       ...(config.highlightRules || {}),
@@ -126,6 +149,7 @@ const normalizeUserConfig = (rawConfig = {}) => {
 }
 
 const getConfigCacheKey = (userIdentifier = 'guest') => `${LOCAL_CONFIG_CACHE_KEY_PREFIX}:${String(userIdentifier || 'guest')}`
+const buildDefaultConfig = () => normalizeUserConfig(DEFAULT_CONFIG)
 
 const loadCachedConfig = (userIdentifier = 'guest') => {
   try {
@@ -165,7 +189,7 @@ export function App() {
   const [userCountry, setUserCountry] = useState(null)
 
   // Config centralizado para todas las opciones
-  const [config, setConfig] = useState(() => normalizeUserConfig(loadCachedConfig('guest') || DEFAULT_CONFIG))
+  const [config, setConfig] = useState(() => normalizeUserConfig(loadCachedConfig('guest') || buildDefaultConfig()))
   const [configReady, setConfigReady] = useState(false)
 
   const updateConfig = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
@@ -364,6 +388,10 @@ export function App() {
     setUser(userData)
     setAuthToken(token)
     setTokens(userData.tokens || 100)
+    // Evita mostrar configuraciones heredadas mientras carga el perfil remoto
+    const cleanConfig = buildDefaultConfig()
+    setConfig(cleanConfig)
+    setDarkMode(cleanConfig.themeMode !== 'light')
     setConfigReady(false)
     loadAndApplyUserConfig(token, userData)
     setCurrentPage('studio')
@@ -376,8 +404,9 @@ export function App() {
     localStorage.removeItem('sv-user')
     setConfigReady(true)
     // Reset config a defaults
-    setConfig(DEFAULT_CONFIG)
-    setDarkMode(DEFAULT_CONFIG.themeMode !== 'light')
+    const cleanConfig = buildDefaultConfig()
+    setConfig(cleanConfig)
+    setDarkMode(cleanConfig.themeMode !== 'light')
     setCurrentPage('landing')
   }
 
