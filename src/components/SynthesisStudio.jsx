@@ -457,34 +457,19 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
             if (isFreeUser) {
               return (
-                <div className="relative">
-                  <button
-                    onClick={onGoVoiceCloning}
-                    className={`relative flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
-                      darkMode
-                        ? 'bg-gradient-to-r from-purple-600/70 to-pink-600/70 text-gray-200 hover:from-purple-600/90 hover:to-pink-600/90 hover:text-white'
-                        : 'bg-gradient-to-r from-slate-600 to-slate-700 text-gray-200 hover:from-slate-700 hover:to-slate-800 hover:text-white'
-                    }`}
-                    title="Clic para explorar - Bloqueado para plan FREE"
-                  >
-                    <Mic2 className="w-5 h-5" />
-                    <span>Taller de Voces</span>
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onGoPricingPage()
-                    }}
-                    className={`absolute -top-2 -right-2 p-2 rounded-full transition-all z-10 ${
-                      darkMode
-                        ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg'
-                        : 'bg-purple-500 hover:bg-purple-600 text-white shadow-lg'
-                    }`}
-                    title="Ver planes - Desbloqueado desde START"
-                  >
-                    <Lock className="w-4 h-4" />
-                  </button>
-                </div>
+                <button
+                  onClick={onGoVoiceCloning}
+                  className={`relative flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+                    darkMode
+                      ? 'bg-gradient-to-r from-purple-600/70 to-pink-600/70 text-gray-200 hover:from-purple-600/90 hover:to-pink-600/90 hover:text-white'
+                      : 'bg-gradient-to-r from-slate-600 to-slate-700 text-gray-200 hover:from-slate-700 hover:to-slate-800 hover:text-white'
+                  }`}
+                  title="Clic para explorar - Bloqueado para plan FREE"
+                >
+                  <Mic2 className="w-5 h-5" />
+                  <span>Taller de Voces</span>
+                  <Lock className="w-4 h-4 ml-auto" />
+                </button>
               )
             }
 

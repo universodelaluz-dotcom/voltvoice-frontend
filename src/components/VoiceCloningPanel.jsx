@@ -1004,25 +1004,25 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         </div>
       )}
 
-      {/* Overlay para usuarios FREE */}
+      {/* Overlay para usuarios FREE - TRANSPARENTE */}
       {isFreeUser && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-lg">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl max-w-md text-center">
-            <div className="mb-6 flex justify-center">
-              <div className={`p-4 rounded-full ${darkMode ? 'bg-purple-600/30' : 'bg-purple-200/50'}`}>
-                <Lock className={`w-16 h-16 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />
-              </div>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="flex flex-col items-center gap-6 pointer-events-auto">
+            <div className={`p-6 rounded-2xl ${darkMode ? 'bg-white/10' : 'bg-black/5'} backdrop-blur-sm`}>
+              <Lock className={`w-20 h-20 ${darkMode ? 'text-purple-300' : 'text-purple-600'}`} />
             </div>
-            <h2 className={`text-2xl font-bold mb-3 ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>
-              Actualiza tu plan
-            </h2>
-            <p className={`text-sm mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Acceso al Taller de Voces disponible<br/>
-              <span className="font-semibold">desde el plan START</span>
-            </p>
+            <div className="text-center">
+              <h2 className={`text-2xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Actualiza tu plan
+              </h2>
+              <p className={`text-sm mb-6 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Acceso al Taller de Voces disponible<br/>
+                <span className="font-semibold">desde el plan START</span>
+              </p>
+            </div>
             <button
               onClick={() => {}}
-              className={`w-full px-6 py-3 rounded-lg font-semibold transition-all ${
+              className={`px-8 py-3 rounded-lg font-semibold transition-all ${
                 darkMode
                   ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 shadow-lg'
                   : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-lg'
