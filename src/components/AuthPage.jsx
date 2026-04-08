@@ -88,6 +88,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
     try {
       const res = await fetch(`${API_URL}/api/auth/google`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential: response.credential })
       })
@@ -143,6 +144,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
 
       const response = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: email.trim(),
@@ -188,6 +190,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
     try {
       const response = await fetch(`${API_URL}/api/auth/verify-email`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: email.trim(),
@@ -220,6 +223,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
     try {
       const response = await fetch(`${API_URL}/api/auth/resend-code`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() })
       })
@@ -253,6 +257,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
     try {
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password })
       })

@@ -2682,57 +2682,31 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
   const isPROUser = userPlan === 'pro' || userPlan === 'premium' || userPlan === 'elite' || userPlan === 'admin' || userPlan === 'on_demand'
   const isFeatureLockedForUser = !isPROUser
 
-  // Render locked state for non-PRO users
-  if (isFeatureLockedForUser) {
-    return (
-      <div className={`relative overflow-hidden rounded-lg border-2 ${
-        darkMode
-          ? 'bg-gradient-to-br from-purple-900/30 to-pink-900/20 border-purple-500/50'
-          : 'bg-gradient-to-br from-purple-100/50 to-pink-100/30 border-purple-400/50'
-      } pointer-events-none p-4`}>
-        <div className="opacity-40">
-          <h3 className={`text-sm font-bold ${darkMode ? 'text-cyan-300' : 'text-indigo-600'}`}>
-            Llamar a Asistente
-          </h3>
-        </div>
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-600/10 to-pink-600/10 backdrop-blur-sm rounded-lg">
-          <div className="flex flex-col items-center gap-4">
-            <div className={`p-3 rounded-full ${darkMode ? 'bg-purple-500/20' : 'bg-purple-300/30'}`}>
-              <Lock className={`w-8 h-8 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />
-            </div>
-            <div className="text-center">
-              <p className={`text-sm font-bold ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>
-                Actualiza tu plan
-              </p>
-              <p className={`text-xs ${darkMode ? 'text-purple-200/70' : 'text-purple-600/70'}`}>
-                Solo disponible en plan<br/>PRO o superior
-              </p>
-            </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onGoPricingPage?.()
-              }}
-              className={`mt-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all pointer-events-auto ${
-                darkMode
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/30'
-                  : 'bg-gradient-to-r from-purple-400 to-pink-400 text-white hover:from-purple-500 hover:to-pink-500 shadow-md'
-              }`}
-            >
-              Ver planes
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className={`rounded-lg border p-4 space-y-3 ${
+    <div className={`relative rounded-lg border p-4 space-y-3 ${
+      isFeatureLockedForUser ? 'opacity-50 pointer-events-none' : ''
+    } ${
       darkMode
         ? 'bg-[#1a1a2e] border-cyan-400/30'
         : 'bg-white border-indigo-200 shadow-sm'
     }`}>
+      {isFeatureLockedForUser && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onGoPricingPage?.()
+          }}
+          className={`absolute top-2 right-2 p-2 rounded-full transition-all pointer-events-auto ${
+            darkMode
+              ? 'bg-purple-500/30 hover:bg-purple-500/50 text-purple-300'
+              : 'bg-purple-300/40 hover:bg-purple-300/60 text-purple-600'
+          }`}
+          title="Solo disponible en plan PRO"
+        >
+          <Lock className="w-4 h-4" />
+        </button>
+      )}
+
       <div className="flex items-center justify-between">
         <h3 className={`text-sm font-bold ${darkMode ? 'text-cyan-300' : 'text-indigo-600'}`}>
           Llamar a Asistente

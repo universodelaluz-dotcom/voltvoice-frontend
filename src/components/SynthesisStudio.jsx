@@ -457,44 +457,24 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
             if (isFreeUser) {
               return (
-                <div className={`relative overflow-hidden rounded-lg border-2 ${
-                  darkMode
-                    ? 'bg-gradient-to-br from-purple-900/30 to-pink-900/20 border-purple-500/50'
-                    : 'bg-gradient-to-br from-purple-100/50 to-pink-100/30 border-purple-400/50'
-                } pointer-events-none`}>
-                  <div className="flex items-center justify-center gap-3 px-6 py-3 opacity-40">
-                    <Mic2 className="w-5 h-5" />
-                    <span>Taller de Voces</span>
+                <button
+                  onClick={onGoPricingPage}
+                  disabled
+                  className={`relative flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all opacity-50 cursor-not-allowed ${
+                    darkMode
+                      ? 'bg-gradient-to-r from-purple-500/40 to-pink-500/40 text-gray-400'
+                      : 'bg-gradient-to-r from-slate-400 to-slate-500 text-gray-600'
+                  }`}
+                  title="Desbloqueado desde plan START"
+                >
+                  <Mic2 className="w-5 h-5" />
+                  <span>Taller de Voces</span>
+                  <div className={`absolute top-1 right-1 p-1 rounded-full ${
+                    darkMode ? 'bg-purple-500/30' : 'bg-purple-300/40'
+                  }`}>
+                    <Lock className={`w-3 h-3 ${darkMode ? 'text-purple-300' : 'text-purple-600'}`} />
                   </div>
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-600/10 to-pink-600/10 backdrop-blur-sm rounded-lg">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className={`p-2 rounded-full ${darkMode ? 'bg-purple-500/20' : 'bg-purple-300/30'}`}>
-                        <Lock className={`w-6 h-6 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />
-                      </div>
-                      <div className="text-center">
-                        <p className={`text-xs font-bold ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>
-                          Actualiza tu plan
-                        </p>
-                        <p className={`text-[10px] ${darkMode ? 'text-purple-200/70' : 'text-purple-600/70'}`}>
-                          Desde plan START
-                        </p>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onGoPricingPage?.()
-                        }}
-                        className={`mt-1 px-3 py-1 rounded-lg font-semibold text-xs transition-all pointer-events-auto ${
-                          darkMode
-                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/30'
-                            : 'bg-gradient-to-r from-purple-400 to-pink-400 text-white hover:from-purple-500 hover:to-pink-500 shadow-md'
-                        }`}
-                      >
-                        Ver planes
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                </button>
               )
             }
 
