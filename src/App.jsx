@@ -580,6 +580,7 @@ export function App() {
             onGoControlPanel={() => setCurrentPage('control-panel')}
             onGoStatistics={() => setCurrentPage('statistics')}
             onGoAdmin={user?.role === 'admin' ? () => setCurrentPage('admin') : undefined}
+            onGoPricingPage={() => setCurrentPage('pricing')}
             darkMode={darkMode}
             setDarkMode={setDarkMode}
             config={config}
