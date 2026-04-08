@@ -458,8 +458,9 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             if (isFreeUser) {
               return (
                 <div className="relative">
-                  <div
-                    className={`relative flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold opacity-50 cursor-not-allowed ${
+                  <button
+                    onClick={onGoVoiceCloning}
+                    className={`relative flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold opacity-60 hover:opacity-75 transition-all ${
                       darkMode
                         ? 'bg-gradient-to-r from-purple-500/40 to-pink-500/40 text-gray-400'
                         : 'bg-gradient-to-r from-slate-400 to-slate-500 text-gray-600'
@@ -468,9 +469,12 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
                   >
                     <Mic2 className="w-5 h-5" />
                     <span>Taller de Voces</span>
-                  </div>
+                  </button>
                   <button
-                    onClick={onGoPricingPage}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onGoPricingPage()
+                    }}
                     className={`absolute top-1 right-1 p-1.5 rounded-full transition-all ${
                       darkMode
                         ? 'bg-purple-500/40 hover:bg-purple-500/70 text-purple-300'
