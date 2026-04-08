@@ -8,6 +8,8 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
   const animationRef = useRef(null)
 
   const externalEnergyRef = useRef(0)
+  const rmsTargetRef = useRef(0)
+  const rmsSmoothRef = useRef(0)
   const kickPulseRef = useRef(0)
   const recentKickTsRef = useRef(0)
   const lowRmsFramesRef = useRef(0)
@@ -69,6 +71,17 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
   }, [])
 
   useEffect(() => {
+    const handleRms = (event) => {
+      const rms = Math.max(0, Number(event?.detail?.rms || 0))
+      // Normalize RMS envelope from realtime service into [0,1]
+      rmsTargetRef.current = Math.max(0, Math.min(1, rms * 36))
+    }
+
+    window.addEventListener('voltvoice:visualizer-rms', handleRms)
+    return () => window.removeEventListener('voltvoice:visualizer-rms', handleRms)
+  }, [])
+
+  useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
@@ -90,8 +103,11 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       const kickedRecently = Date.now() - recentKickTsRef.current < 260
       const active = Boolean(isPlaying)
 
+      const rmsTarget = rmsTargetRef.current
+      rmsSmoothRef.current += (rmsTarget - rmsSmoothRef.current) * (active ? 0.34 : 0.18)
+
       let signal = new Array(points).fill(0)
-      let energy = externalEnergyRef.current
+      let energy = Math.max(externalEnergyRef.current, rmsSmoothRef.current)
 
       if (active && analyser) {
         const time = new Float32Array(analyser.fftSize)
@@ -125,7 +141,7 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
 
         // Local/basic voices may come flat from analyser: use fixed kick profile.
         if (lowRmsFramesRef.current > 1) {
-          const kick = Math.max(energy, externalEnergyRef.current, kickPulseRef.current, 0.08)
+          const kick = Math.max(energy, externalEnergyRef.current, rmsSmoothRef.current, kickPulseRef.current, 0.08)
           for (let i = 0; i < points; i++) {
             signal[i] = profileRef.current[i] * (0.1 + kick * 2.35)
           }
@@ -138,6 +154,8 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
         energy = 0.03
         lowRmsFramesRef.current = 0
         externalEnergyRef.current = 0
+        rmsTargetRef.current = 0
+        rmsSmoothRef.current = 0
         kickPulseRef.current = 0
       }
 

@@ -322,6 +322,13 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     }))
   }
 
+  const emitVisualizerRms = (rms = 0) => {
+    const value = Math.max(0, Number(rms) || 0)
+    window.dispatchEvent(new CustomEvent('voltvoice:visualizer-rms', {
+      detail: { rms: value }
+    }))
+  }
+
   const bindRealtimeAudioToVisualizer = () => {
     if (localAudioRef.current) {
       setAssistantAudioElement(localAudioRef.current)
@@ -1884,6 +1891,27 @@ Extras obligatorios:
       }, INACTIVITY_TIMEOUT_MS)
     }
 
+    const handleAudioEnergyLevel = (data) => {
+      if (isRecordingRef.current) {
+        return
+      }
+      if (!assistantResponseActiveRef.current) {
+        return
+      }
+
+      const rms = Math.max(0, Number(data?.rms || 0))
+      emitVisualizerRms(rms)
+
+      if (rms > 0.0035) {
+        setAssistantVisualActive(true)
+        emitAssistantVisualizerState(true)
+        bindRealtimeAudioToVisualizer()
+        setHasVoiceResponse(true)
+        hasVoiceResponseRef.current = true
+        setIsPlayingResponse(true)
+      }
+    }
+
     const handleInputTranscriptDelta = (data) => {
       if (!acceptTranscriptRef.current || !data?.text) {
         return
@@ -2061,6 +2089,7 @@ Extras obligatorios:
     inworldRealtimeService.on('audio-playback-ended', handleAudioPlaybackEnded)
     inworldRealtimeService.on('audio-energy-speaking', handleAudioEnergySpeaking)
     inworldRealtimeService.on('audio-energy-silent', handleAudioEnergySilent)
+    inworldRealtimeService.on('audio-energy-level', handleAudioEnergyLevel)
     inworldRealtimeService.on('response-complete', handleResponseComplete)
     inworldRealtimeService.on('audio-started', handleAudioStarted)
     inworldRealtimeService.on('audio-complete', handleAudioComplete)
@@ -2078,6 +2107,7 @@ Extras obligatorios:
     inworldRealtimeService.off('audio-playback-ended', handleAudioPlaybackEnded)
     inworldRealtimeService.off('audio-energy-speaking', handleAudioEnergySpeaking)
     inworldRealtimeService.off('audio-energy-silent', handleAudioEnergySilent)
+    inworldRealtimeService.off('audio-energy-level', handleAudioEnergyLevel)
     inworldRealtimeService.off('response-complete', handleResponseComplete)
       inworldRealtimeService.off('audio-started', handleAudioStarted)
       inworldRealtimeService.off('audio-complete', handleAudioComplete)

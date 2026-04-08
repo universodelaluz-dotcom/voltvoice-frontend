@@ -35,6 +35,7 @@ export class InworldRealtimeService {
     this.remoteSpeaking = false
     this.remoteSilenceFrames = 0
     this.remoteSpeakingFrames = 0
+    this.remoteLastLevelEmitTs = 0
     this.remoteStartThreshold = 0.02
     this.remoteStopThreshold = 0.008
     this.remotePostTxStartThreshold = 0.055
@@ -315,6 +316,7 @@ export class InworldRealtimeService {
 
     this.remoteSilenceFrames = 0
     this.remoteSpeakingFrames = 0
+    this.remoteLastLevelEmitTs = 0
     this._setRemoteSpeaking(false, 0)
   }
 
@@ -352,6 +354,15 @@ export class InworldRealtimeService {
           sum += samples[i] * samples[i]
         }
         const rms = Math.sqrt(sum / samples.length)
+        const now = performance.now()
+        if (now - this.remoteLastLevelEmitTs >= 33) {
+          this.remoteLastLevelEmitTs = now
+          this._emit('audio-energy-level', {
+            rms,
+            speaking: this.remoteSpeaking,
+            transmissionComplete: this.transmissionComplete
+          })
+        }
         const speakingThreshold = this.transmissionComplete
           ? this.remotePostTxStartThreshold
           : this.remoteStartThreshold
