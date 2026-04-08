@@ -29,6 +29,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const [text, setText] = useState('Asi suena tu voz elegida')
   const [loading, setLoading] = useState(false)
   const [audioUrl, setAudioUrl] = useState(null)
+  const [audioPlaybackNonce, setAudioPlaybackNonce] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef(null)
   const [tokensUsed, setTokensUsed] = useState(0)
@@ -53,10 +54,30 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
   // Reproducir automáticamente cuando haya audio
   useEffect(() => {
-    if (audioUrl && audioRef.current) {
-      setTimeout(() => audioRef.current?.play(), 100)
+    if (!audioUrl || !audioRef.current) return
+
+    const audio = audioRef.current
+    let cancelled = false
+
+    const startPlayback = async () => {
+      try {
+        audio.pause()
+        audio.currentTime = 0
+        audio.load()
+        const maybePromise = audio.play()
+        if (maybePromise && typeof maybePromise.catch === 'function') {
+          await maybePromise
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.warn('[Studio] Autoplay blocked or failed:', err?.message || err)
+        }
+      }
     }
-  }, [audioUrl])
+
+    startPlayback()
+    return () => { cancelled = true }
+  }, [audioUrl, audioPlaybackNonce])
 
   // Rastrear estado de reproducción para el visualizador
   useEffect(() => {
@@ -247,6 +268,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
         if (response.ok && (data.audio || data.success)) {
           setAudioUrl(data.audio || data.audioUrl)
+          setAudioPlaybackNonce((prev) => prev + 1)
           const estTokens = text.length
           const usedTokens = Number(data.tokensUsed || estTokens)
           const remainingTokens = Number(data.remainingTokens)
@@ -496,9 +518,9 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
           {/* Right Column - Stats & Audio */}
           <div className="lg:col-span-1 space-y-6">
             {/* Audio Player - with Visualizer */}
-            {audioUrl && (
-              <div className="space-y-2">
-                <AudioVisualizer audioElement={audioRef.current} isPlaying={isPlaying} darkMode={darkMode} />
+            <div className="space-y-2">
+              <AudioVisualizer audioElement={audioRef.current} isPlaying={isPlaying} darkMode={darkMode} />
+              {audioUrl && (
                 <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30 rounded-lg">
                   <button
                     onClick={() => {
@@ -514,8 +536,8 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
                     <span className="text-cyan-400 font-bold">{tokensUsed}</span> tokens usados
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Bot Invoker - Push to Talk */}
             <BotInvoker

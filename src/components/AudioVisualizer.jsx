@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
+const AUDIO_GRAPH_SYMBOL = Symbol.for('voltvoice.audioGraph')
+
 export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
   const canvasRef = useRef(null)
   const analyserRef = useRef(null)
@@ -13,36 +15,33 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
     const targetAudio = audioElement
     if (!targetAudio) return
 
-    // Si ya hay un contexto, desconectar antes
-    if (sourceRef.current) {
-      try { sourceRef.current.disconnect() } catch (_) {}
-    }
-    if (audioCtxRef.current) {
-      try { audioCtxRef.current.close() } catch (_) {}
-    }
+    let graph = targetAudio[AUDIO_GRAPH_SYMBOL]
+    if (!graph || graph.audioCtx?.state === 'closed') {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+      const analyser = audioCtx.createAnalyser()
+      analyser.fftSize = 2048
+      analyser.smoothingTimeConstant = 0.85
 
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-    const analyser = audioCtx.createAnalyser()
-    analyser.fftSize = 2048
-    analyser.smoothingTimeConstant = 0.85
+      try {
+        const source = audioCtx.createMediaElementSource(targetAudio)
+        source.connect(analyser)
+        analyser.connect(audioCtx.destination)
+        graph = { audioCtx, analyser, source, isReady: true }
+      } catch (_) {
+        graph = { audioCtx, analyser, source: null, isReady: false }
+      }
 
-    try {
-      const source = audioCtx.createMediaElementSource(targetAudio)
-      source.connect(analyser)
-      analyser.connect(audioCtx.destination)
-      sourceRef.current = source
-      setIsReady(true)
-    } catch (_) {
-      // Si el elemento ya fue conectado por otra instancia, degradar con animación idle
-      setIsReady(false)
+      targetAudio[AUDIO_GRAPH_SYMBOL] = graph
     }
 
-    audioCtxRef.current = audioCtx
-    analyserRef.current = analyser
+    audioCtxRef.current = graph.audioCtx
+    analyserRef.current = graph.analyser
+    sourceRef.current = graph.source
+    setIsReady(Boolean(graph.isReady))
 
     const resumeCtx = () => {
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume().catch(() => {})
+      if (graph.audioCtx.state === 'suspended') {
+        graph.audioCtx.resume().catch(() => {})
       }
     }
     targetAudio.addEventListener('play', resumeCtx)
@@ -52,10 +51,6 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
       targetAudio.removeEventListener('play', resumeCtx)
       targetAudio.removeEventListener('canplay', resumeCtx)
       if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current)
-      if (sourceRef.current) {
-        try { sourceRef.current.disconnect() } catch (_) {}
-      }
-      try { audioCtx.close() } catch (_) {}
     }
   }, [audioElement])
 

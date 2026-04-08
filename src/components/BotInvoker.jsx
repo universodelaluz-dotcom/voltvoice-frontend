@@ -1,5 +1,6 @@
 ﻿import { useState, useRef, useEffect } from 'react'
 import { Mic2, Send, Volume2 } from 'lucide-react'
+import AudioVisualizer from './AudioVisualizer'
 import inworldRealtimeService from '../services/inworldRealtimeService'
 import chatStore from '../services/chatStore.js'
 
@@ -256,6 +257,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const [isLoading, setIsLoading] = useState(false)
   const [hasVoiceResponse, setHasVoiceResponse] = useState(false)
   const [isPlayingResponse, setIsPlayingResponse] = useState(false)
+  const [assistantAudioElement, setAssistantAudioElement] = useState(null)
   const [voiceLabel, setVoiceLabel] = useState('Clive')
   const [hasActiveResponse, setHasActiveResponse] = useState(false)
 
@@ -300,6 +302,16 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const messagesCountSinceLastResponseRef = useRef(0)  // How many messages since last response
 
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+
+  const bindRealtimeAudioToVisualizer = () => {
+    const realtimeAudio =
+      (typeof inworldRealtimeService.getOutputAudioElement === 'function'
+        ? inworldRealtimeService.getOutputAudioElement()
+        : null) || inworldRealtimeService.outputAudioElement || null
+    if (realtimeAudio) {
+      setAssistantAudioElement(realtimeAudio)
+    }
+  }
 
   const getAssistantMaxResponseChars = () => {
     const configured = Number(config?.botAssistantMaxResponseChars)
@@ -1009,6 +1021,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
     const audio = new Audio(data.audio || data.audioUrl)
     localAudioRef.current = audio
+    setAssistantAudioElement(audio)
     audio.playbackRate = getAssistantVoiceSpeed()
 
     audio.onplay = () => {
@@ -1926,6 +1939,7 @@ Extras obligatorios:
     }
 
     const handleAudioStarted = () => {
+      bindRealtimeAudioToVisualizer()
       heardSpeechThisTurnRef.current = true
       botIsAudiblySpeakingRef.current = true
       suppressChatAudio()
@@ -2372,6 +2386,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
   const handleRetryAudio = async () => {
     try {
       await inworldRealtimeService.resumeOutputAudio()
+      bindRealtimeAudioToVisualizer()
     } catch (err) {
       console.error('Error resuming audio:', err)
     }
@@ -2562,6 +2577,11 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
     }
   }
 
+  useEffect(() => {
+    if (!hasVoiceResponse || assistantAudioElement) return
+    bindRealtimeAudioToVisualizer()
+  }, [hasVoiceResponse, assistantAudioElement])
+
   // Autopilot deshabilitado: el interactuador solo se invoca manualmente (F8).
   const missingAssistantSetup = !selectedCharacterId || !selectedRealtimeVoiceId
 
@@ -2732,17 +2752,24 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
             <p className="mt-2 text-xs text-gray-400">Voz realtime: {voiceLabel}</p>
 
             {hasVoiceResponse && (
-              <div className="mt-3 flex items-center gap-2">
-                <button
-                  onClick={handleRetryAudio}
-                  className="p-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full hover:shadow-lg text-white transition-all"
-                  title="Reintentar audio"
-                >
-                  <Volume2 className="w-4 h-4" />
-                </button>
-                <span className="text-xs text-gray-400">
-                  {isPlayingResponse ? 'La respuesta de voz se esta reproduciendo' : 'Si no se oyo, toca este boton para reactivar el audio'}
-                </span>
+              <div className="mt-3 space-y-2">
+                <AudioVisualizer
+                  audioElement={assistantAudioElement}
+                  isPlaying={isPlayingResponse}
+                  darkMode={darkMode}
+                />
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleRetryAudio}
+                    className="p-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full hover:shadow-lg text-white transition-all"
+                    title="Reintentar audio"
+                  >
+                    <Volume2 className="w-4 h-4" />
+                  </button>
+                  <span className="text-xs text-gray-400">
+                    {isPlayingResponse ? 'La respuesta de voz se esta reproduciendo' : 'Si no se oyo, toca este boton para reactivar el audio'}
+                  </span>
+                </div>
               </div>
             )}
           </>

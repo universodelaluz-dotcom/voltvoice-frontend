@@ -1692,6 +1692,10 @@ export class InworldRealtimeService {
     await audioElement.play()
   }
 
+  getOutputAudioElement() {
+    return this.outputAudioElement || null
+  }
+
   /**
    * Emit event to listeners
    */
