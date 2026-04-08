@@ -1789,6 +1789,10 @@ Extras obligatorios:
       heardSpeechThisTurnRef.current = true
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = true
+      bindRealtimeAudioToVisualizer()
+      setHasVoiceResponse(true)
+      hasVoiceResponseRef.current = true
+      setIsPlayingResponse(true)
       // Audio energy detected = playback is happening, set flag (works for all responses including persistent connection)
       responsePlaybackStartedRef.current = true
       console.log('[Bot] handleAudioEnergySpeaking: Set responsePlaybackStartedRef=true, timer reset')

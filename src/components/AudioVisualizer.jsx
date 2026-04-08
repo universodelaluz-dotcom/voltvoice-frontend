@@ -95,17 +95,29 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
     }
 
     const drawActive = () => {
-      if (!analyserRef.current) {
-        animationIdRef.current = requestAnimationFrame(drawActive)
-        return
-      }
-
       const analyser = analyserRef.current
-      const bufferLength = analyser.fftSize
+      const hasAnalyser = Boolean(analyser)
+      const bufferLength = hasAnalyser ? analyser.fftSize : 1024
       const timeData = new Float32Array(bufferLength)
-      const freqData = new Uint8Array(analyser.frequencyBinCount)
-      analyser.getFloatTimeDomainData(timeData)
-      analyser.getByteFrequencyData(freqData)
+      const freqData = new Uint8Array(Math.max(1, Math.floor(bufferLength / 2)))
+      if (hasAnalyser) {
+        analyser.getFloatTimeDomainData(timeData)
+        analyser.getByteFrequencyData(freqData)
+      } else {
+        // Fallback para fuentes sin stream analizable (ej. SpeechSynthesis/WebSpeech).
+        phaseRef.current += 0.16
+        for (let i = 0; i < timeData.length; i++) {
+          const t = i / timeData.length
+          const noise = (Math.random() - 0.5) * 0.08
+          timeData[i] =
+            Math.sin((t * 26) + phaseRef.current) * 0.28 +
+            Math.sin((t * 9) + phaseRef.current * 1.8) * 0.16 +
+            noise
+        }
+        for (let i = 0; i < freqData.length; i++) {
+          freqData[i] = 120 + Math.floor(Math.random() * 110)
+        }
+      }
 
       // Calcular energía para escalar la amplitud
       let energy = 0
@@ -175,7 +187,7 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
 
     if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current)
 
-    if (isPlaying && isReady) {
+    if (isPlaying) {
       drawActive()
     } else {
       drawIdle()

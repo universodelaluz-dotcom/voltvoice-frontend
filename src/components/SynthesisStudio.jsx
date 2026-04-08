@@ -227,6 +227,9 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
           availableVoices.find(v => v.lang.startsWith(lang.split('-')[0])) ||
           availableVoices[0]
         if (matchVoice) utterance.voice = matchVoice
+        utterance.onstart = () => setIsPlaying(true)
+        utterance.onend = () => setIsPlaying(false)
+        utterance.onerror = () => setIsPlaying(false)
 
         window.speechSynthesis.cancel()
         window.speechSynthesis.speak(utterance)
