@@ -139,7 +139,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
   // Voces premium permitidas por plan
   const PREMIUM_BY_PLAN = {
-    free: [], start: [],
+    free: [], start: ['Diego'],
     creator: ['Diego', 'Lupita'],
     pro: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
     premium: ['Diego', 'Lupita', 'Miguel', 'Rafael'],

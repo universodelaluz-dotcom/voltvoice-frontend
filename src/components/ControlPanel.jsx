@@ -287,7 +287,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
 
   const userPlan = user?.plan || 'free'
   const PREMIUM_BY_PLAN = {
-    free: [], start: [],
+    free: [], start: ['Diego'],
     creator: ['Diego', 'Lupita'],
     pro: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
     premium: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
