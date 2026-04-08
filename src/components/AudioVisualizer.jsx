@@ -8,11 +8,8 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
   const animationRef = useRef(null)
 
   const externalEnergyRef = useRef(0)
-  const rmsTargetRef = useRef(0)
-  const rmsSmoothRef = useRef(0)
   const kickPulseRef = useRef(0)
   const recentKickTsRef = useRef(0)
-  const lowRmsFramesRef = useRef(0)
   const valuesRef = useRef([])
   const profileRef = useRef([])
 
@@ -25,14 +22,26 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
       const analyser = audioCtx.createAnalyser()
       analyser.fftSize = 2048
-      analyser.smoothingTimeConstant = 0.88
+      analyser.smoothingTimeConstant = 0.65
 
       try {
-        const source = audioCtx.createMediaElementSource(target)
-        source.connect(analyser)
-        analyser.connect(audioCtx.destination)
+        let source = null
+        // Primary path: direct media element analyser.
+        try {
+          source = audioCtx.createMediaElementSource(target)
+        } catch (_) {
+          // Fallback path: capture stream analyser (works better in some playback paths).
+          const stream = typeof target.captureStream === 'function' ? target.captureStream() : null
+          if (stream) {
+            source = audioCtx.createMediaStreamSource(stream)
+          }
+        }
+
+        if (source) {
+          source.connect(analyser)
+        }
         graph = { audioCtx, analyser, source }
-      } catch (_) {
+      } catch (_err) {
         graph = { audioCtx, analyser, source: null }
       }
 
@@ -71,17 +80,6 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
   }, [])
 
   useEffect(() => {
-    const handleRms = (event) => {
-      const rms = Math.max(0, Number(event?.detail?.rms || 0))
-      // Normalize RMS envelope from realtime service into [0,1]
-      rmsTargetRef.current = Math.max(0, Math.min(1, rms * 36))
-    }
-
-    window.addEventListener('voltvoice:visualizer-rms', handleRms)
-    return () => window.removeEventListener('voltvoice:visualizer-rms', handleRms)
-  }, [])
-
-  useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
@@ -103,11 +101,8 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       const kickedRecently = Date.now() - recentKickTsRef.current < 260
       const active = Boolean(isPlaying)
 
-      const rmsTarget = rmsTargetRef.current
-      rmsSmoothRef.current += (rmsTarget - rmsSmoothRef.current) * (active ? 0.34 : 0.18)
-
       let signal = new Array(points).fill(0)
-      let energy = Math.max(externalEnergyRef.current, rmsSmoothRef.current)
+      let energy = Math.max(externalEnergyRef.current, kickPulseRef.current * 0.7)
 
       if (active && analyser) {
         const time = new Float32Array(analyser.fftSize)
@@ -121,8 +116,8 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
         for (let i = 0; i < freq.length; i++) fsum += freq[i]
         rms = Math.sqrt(rms / time.length)
         const spectral = (fsum / freq.length) / 255
-
-        energy = Math.max(energy, Math.min(1, spectral * 1.35))
+        const rmsEnergy = Math.max(0, Math.min(1, (rms - 0.002) * 55))
+        energy = Math.max(energy, rmsEnergy, Math.min(1, spectral * 1.15))
 
         // Use frequency energy mapped to a fixed spatial profile.
         // This keeps the line static in place and only "rumbles" vertically.
@@ -130,42 +125,24 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
           const bin = Math.min(freq.length - 1, Math.floor((i / points) * freq.length))
           const mag = (freq[bin] || 0) / 255
           const shape = profileRef.current[i] || 0
-          signal[i] = shape * (0.18 + mag * 1.8)
-        }
-
-        if (rms < 0.0028) {
-          lowRmsFramesRef.current += 1
-        } else {
-          lowRmsFramesRef.current = 0
-        }
-
-        // Local/basic voices may come flat from analyser: use fixed kick profile.
-        if (lowRmsFramesRef.current > 1) {
-          const kick = Math.max(energy, externalEnergyRef.current, rmsSmoothRef.current, kickPulseRef.current, 0.08)
-          for (let i = 0; i < points; i++) {
-            signal[i] = profileRef.current[i] * (0.1 + kick * 2.35)
-          }
-          energy = Math.max(energy, kick)
+          signal[i] = shape * (0.08 + mag * 1.1 + energy * 0.95)
         }
       } else {
         for (let i = 0; i < points; i++) {
-          signal[i] = profileRef.current[i] * 0.025
+          signal[i] = profileRef.current[i] * 0.02
         }
         energy = 0.03
-        lowRmsFramesRef.current = 0
         externalEnergyRef.current = 0
-        rmsTargetRef.current = 0
-        rmsSmoothRef.current = 0
         kickPulseRef.current = 0
       }
 
       if (active || kickedRecently) {
-        externalEnergyRef.current = Math.max(0, externalEnergyRef.current * 0.82)
-        kickPulseRef.current = Math.max(0, kickPulseRef.current * 0.8)
+        externalEnergyRef.current = Math.max(0, externalEnergyRef.current * 0.9)
+        kickPulseRef.current = Math.max(0, kickPulseRef.current * 0.86)
       }
 
-      const amp = active ? (14 + energy * 88 + kickPulseRef.current * 16) : 2.6
-      const smooth = active ? 0.34 : 0.16
+      const amp = active ? (12 + energy * 68 + kickPulseRef.current * 10) : 2.2
+      const smooth = active ? 0.24 : 0.14
 
       ctx.clearRect(0, 0, W, H)
       ctx.fillStyle = '#000'
