@@ -459,13 +459,12 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               return (
                 <button
                   onClick={onGoPricingPage}
-                  disabled
-                  className={`relative flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all opacity-50 cursor-not-allowed ${
+                  className={`relative flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all opacity-60 hover:opacity-80 ${
                     darkMode
                       ? 'bg-gradient-to-r from-purple-500/40 to-pink-500/40 text-gray-400'
                       : 'bg-gradient-to-r from-slate-400 to-slate-500 text-gray-600'
                   }`}
-                  title="Desbloqueado desde plan START"
+                  title="Desbloqueado desde plan START - Click para ver planes"
                 >
                   <Mic2 className="w-5 h-5" />
                   <span>Taller de Voces</span>
