@@ -118,6 +118,20 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
           const idx = Math.min(time.length - 1, Math.floor((i / points) * time.length))
           signal[i] = time[idx] * gain
         }
+
+        // Si el analizador viene en silencio (típico en voces locales),
+        // forzar retumbe sintético usando energía externa/kicks.
+        if (rms < 0.0025) {
+          const kick = Math.max(energy, externalEnergyRef.current, 0.35)
+          const now = performance.now()
+          for (let i = 0; i < points; i++) {
+            const wave =
+              Math.sin(i * 0.18 + now * 0.013) * 0.7 +
+              Math.sin(i * 0.07 + now * 0.009) * 0.3
+            signal[i] = wave * 0.9 * kick
+          }
+          energy = Math.max(energy, kick)
+        }
       } else {
         for (let i = 0; i < points; i++) {
           signal[i] = (Math.random() * 2 - 1) * 0.15
@@ -127,7 +141,7 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
 
       externalEnergyRef.current = Math.max(0, externalEnergyRef.current * 0.93)
 
-      const amp = active ? (10 + energy * 34) : 3.2
+      const amp = active ? (16 + energy * 46) : 3.8
       const smooth = active ? 0.28 : 0.16
 
       ctx.clearRect(0, 0, W, H)
@@ -140,8 +154,8 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
 
       // Glow line
       ctx.beginPath()
-      ctx.strokeStyle = 'rgba(0,220,255,0.32)'
-      ctx.lineWidth = 2
+      ctx.strokeStyle = `rgba(0,220,255,${0.34 + energy * 0.32})`
+      ctx.lineWidth = 2.4 + energy * 1.8
       for (let i = 0; i < points; i++) {
         const prev = valuesRef.current[i] || 0
         const next = prev + (signal[i] - prev) * smooth
@@ -155,8 +169,8 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
 
       // Main static baseline that rumbles
       ctx.beginPath()
-      ctx.strokeStyle = 'rgba(190,245,255,0.96)'
-      ctx.lineWidth = 1.25
+      ctx.strokeStyle = 'rgba(190,245,255,0.98)'
+      ctx.lineWidth = 1.5 + energy * 0.7
       for (let i = 0; i < points; i++) {
         const x = (i / (points - 1)) * W
         const y = midY + valuesRef.current[i] * amp
