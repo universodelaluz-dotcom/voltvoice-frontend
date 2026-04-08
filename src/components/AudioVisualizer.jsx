@@ -133,17 +133,22 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
         // Local/basic voices often have a flat analyser feed. Force rhythmic rumble from kick pulses.
         if (lowRmsFramesRef.current > 2) {
           const kick = Math.max(energy, externalEnergyRef.current, kickPulseRef.current, 0.38)
+          const t = performance.now() * 0.012
           for (let i = 0; i < points; i++) {
             const wave =
-              Math.sin(i * 0.19 + kickJitterRef.current) * 0.68 +
-              Math.sin(i * 0.065 + kickJitterRef.current * 0.7) * 0.32
+              Math.sin(i * 0.19 + t + kickJitterRef.current) * 0.68 +
+              Math.sin(i * 0.065 + t * 0.7 + kickJitterRef.current * 0.7) * 0.32
             signal[i] = wave * (0.24 + kick * 1.25)
           }
           energy = Math.max(energy, kick)
         }
       } else {
+        const t = performance.now() * 0.008
         for (let i = 0; i < points; i++) {
-          signal[i] = Math.sin(i * 0.11 + kickJitterRef.current * 0.4) * 0.08
+          signal[i] = (
+            Math.sin(i * 0.11 + t + kickJitterRef.current * 0.4) * 0.08 +
+            Math.sin(i * 0.04 + t * 0.6) * 0.04
+          )
         }
         energy = Math.max(energy, 0.08)
         lowRmsFramesRef.current = 0
@@ -153,7 +158,7 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       kickPulseRef.current = Math.max(0, kickPulseRef.current * 0.86)
 
       const amp = active ? (20 + energy * 54 + kickPulseRef.current * 18) : 4
-      const smooth = active ? 0.31 : 0.18
+      const smooth = active ? 0.42 : 0.24
 
       ctx.clearRect(0, 0, W, H)
       ctx.fillStyle = '#000'
