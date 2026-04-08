@@ -380,9 +380,10 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
   const beginAssistantResponseWindow = () => {
     console.log('[Bot] beginAssistantResponseWindow: CALLED - resetting state for new response')
-    setAssistantVisualActive(true)
-    emitAssistantVisualizerState(true)
-    emitVisualizerKick(0.65)
+    // Importante: no activar visualizador durante push-to-talk/espera.
+    // Se activa únicamente cuando empieza audio real de respuesta.
+    setAssistantVisualActive(false)
+    emitAssistantVisualizerState(false)
     assistantResponseActiveRef.current = true
     assistantResponseHadAudioRef.current = false
     heardSpeechThisTurnRef.current = false
@@ -1056,6 +1057,9 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     audio.playbackRate = getAssistantVoiceSpeed()
 
     audio.onplay = () => {
+      setAssistantVisualActive(true)
+      emitAssistantVisualizerState(true)
+      emitVisualizerKick(0.85)
       lockChatSuppression()
       hasVoiceResponseRef.current = true
       responsePlaybackStartedRef.current = true
@@ -1066,6 +1070,8 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     }
 
     audio.onended = () => {
+      setAssistantVisualActive(false)
+      emitAssistantVisualizerState(false)
       responsePlaybackStartedRef.current = false
       setIsPlayingResponse(false)
       unlockChatSuppression()
@@ -1080,6 +1086,8 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     }
 
     audio.onerror = () => {
+      setAssistantVisualActive(false)
+      emitAssistantVisualizerState(false)
       responsePlaybackStartedRef.current = false
       setIsPlayingResponse(false)
       unlockChatSuppression()
@@ -1820,6 +1828,8 @@ Extras obligatorios:
       heardSpeechThisTurnRef.current = true
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = true
+      setAssistantVisualActive(true)
+      emitAssistantVisualizerState(true)
       bindRealtimeAudioToVisualizer()
       setHasVoiceResponse(true)
       hasVoiceResponseRef.current = true
@@ -1976,6 +1986,8 @@ Extras obligatorios:
     }
 
     const handleAudioStarted = () => {
+      setAssistantVisualActive(true)
+      emitAssistantVisualizerState(true)
       bindRealtimeAudioToVisualizer()
       emitVisualizerKick(0.8)
       heardSpeechThisTurnRef.current = true
