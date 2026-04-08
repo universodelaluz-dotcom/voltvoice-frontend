@@ -10,10 +10,10 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
   const detectedPlayingRef = useRef(false)
   const externalEnergyRef = useRef(0)
   const kickPulseRef = useRef(0)
-  const kickJitterRef = useRef(0)
   const recentKickTsRef = useRef(0)
   const lowRmsFramesRef = useRef(0)
   const valuesRef = useRef([])
+  const profileRef = useRef([])
 
   useEffect(() => {
     const target = audioElement
@@ -61,8 +61,15 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       const normalized = Number.isFinite(level) ? Math.max(0, Math.min(1, level)) : 0.45
       externalEnergyRef.current = Math.max(externalEnergyRef.current, normalized)
       kickPulseRef.current = Math.max(kickPulseRef.current, normalized)
-      kickJitterRef.current = Math.random() * Math.PI * 2
       recentKickTsRef.current = Date.now()
+
+      // Re-generate a fixed vertical profile at each pulse (no lateral drift)
+      if (profileRef.current.length) {
+        for (let i = 0; i < profileRef.current.length; i++) {
+          const spread = 0.22 + Math.random() * 0.78
+          profileRef.current[i] = (Math.random() * 2 - 1) * spread
+        }
+      }
     }
 
     window.addEventListener('voltvoice:visualizer-kick', handleKick)
@@ -89,6 +96,9 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
     const points = 150
     if (!valuesRef.current.length) {
       valuesRef.current = new Array(points).fill(0)
+    }
+    if (!profileRef.current.length) {
+      profileRef.current = Array.from({ length: points }, () => (Math.random() * 2 - 1) * (0.2 + Math.random() * 0.7))
     }
 
     const draw = () => {
@@ -121,7 +131,7 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
 
         for (let i = 0; i < points; i++) {
           const idx = Math.min(time.length - 1, Math.floor((i / points) * time.length))
-          signal[i] = time[idx] * gain + Math.sin(i * 0.11 + kickJitterRef.current) * kickPulseRef.current * 0.18
+          signal[i] = time[idx] * gain
         }
 
         if (rms < 0.0032) {
@@ -130,25 +140,17 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
           lowRmsFramesRef.current = 0
         }
 
-        // Local/basic voices often have a flat analyser feed. Force rhythmic rumble from kick pulses.
+        // Local/basic voices may come flat from analyser: use fixed kick profile.
         if (lowRmsFramesRef.current > 2) {
           const kick = Math.max(energy, externalEnergyRef.current, kickPulseRef.current, 0.38)
-          const t = performance.now() * 0.012
           for (let i = 0; i < points; i++) {
-            const wave =
-              Math.sin(i * 0.19 + t + kickJitterRef.current) * 0.68 +
-              Math.sin(i * 0.065 + t * 0.7 + kickJitterRef.current * 0.7) * 0.32
-            signal[i] = wave * (0.24 + kick * 1.25)
+            signal[i] = profileRef.current[i] * (0.2 + kick * 1.35)
           }
           energy = Math.max(energy, kick)
         }
       } else {
-        const t = performance.now() * 0.008
         for (let i = 0; i < points; i++) {
-          signal[i] = (
-            Math.sin(i * 0.11 + t + kickJitterRef.current * 0.4) * 0.08 +
-            Math.sin(i * 0.04 + t * 0.6) * 0.04
-          )
+          signal[i] = profileRef.current[i] * 0.05
         }
         energy = Math.max(energy, 0.08)
         lowRmsFramesRef.current = 0
@@ -158,7 +160,7 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       kickPulseRef.current = Math.max(0, kickPulseRef.current * 0.86)
 
       const amp = active ? (20 + energy * 54 + kickPulseRef.current * 18) : 4
-      const smooth = active ? 0.42 : 0.24
+      const smooth = active ? 0.42 : 0.22
 
       ctx.clearRect(0, 0, W, H)
       ctx.fillStyle = '#000'
@@ -183,7 +185,7 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       }
       ctx.stroke()
 
-      // Main static baseline that rumbles
+      // Main baseline that rumbles vertically only
       ctx.beginPath()
       ctx.strokeStyle = 'rgba(190,245,255,0.98)'
       ctx.lineWidth = 1.7 + energy * 0.9 + kickPulseRef.current * 0.4
