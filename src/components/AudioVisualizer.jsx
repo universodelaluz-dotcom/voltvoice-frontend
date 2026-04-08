@@ -7,7 +7,6 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
   const analyserRef = useRef(null)
   const animationRef = useRef(null)
 
-  const detectedPlayingRef = useRef(false)
   const externalEnergyRef = useRef(0)
   const kickPulseRef = useRef(0)
   const recentKickTsRef = useRef(0)
@@ -69,18 +68,6 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
   }, [])
 
   useEffect(() => {
-    const check = () => {
-      const htmlAudioPlaying = Boolean(audioElement && !audioElement.paused && !audioElement.ended)
-      const speechPlaying = Boolean(typeof window !== 'undefined' && window.speechSynthesis?.speaking)
-      detectedPlayingRef.current = htmlAudioPlaying || speechPlaying
-    }
-
-    check()
-    const id = setInterval(check, 110)
-    return () => clearInterval(id)
-  }, [audioElement])
-
-  useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
@@ -100,7 +87,7 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
 
       const analyser = analyserRef.current
       const kickedRecently = Date.now() - recentKickTsRef.current < 260
-      const active = Boolean(isPlaying || detectedPlayingRef.current || kickedRecently || externalEnergyRef.current > 0.06)
+      const active = Boolean(isPlaying)
 
       let signal = new Array(points).fill(0)
       let energy = externalEnergyRef.current
@@ -147,12 +134,16 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
         for (let i = 0; i < points; i++) {
           signal[i] = profileRef.current[i] * 0.025
         }
-        energy = Math.max(energy, 0.06)
+        energy = 0.03
         lowRmsFramesRef.current = 0
+        externalEnergyRef.current = 0
+        kickPulseRef.current = 0
       }
 
-      externalEnergyRef.current = Math.max(0, externalEnergyRef.current * 0.94)
-      kickPulseRef.current = Math.max(0, kickPulseRef.current * 0.9)
+      if (active || kickedRecently) {
+        externalEnergyRef.current = Math.max(0, externalEnergyRef.current * 0.94)
+        kickPulseRef.current = Math.max(0, kickPulseRef.current * 0.9)
+      }
 
       const amp = active ? (15 + energy * 72 + kickPulseRef.current * 22) : 2.6
       const smooth = active ? 0.28 : 0.16

@@ -280,6 +280,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const selectedRealtimeVoiceIdRef = useRef(config?.botAssistantVoiceId || '')
   const voiceLabelRef = useRef('Clive')
   const sessionBrokenRef = useRef(false)
+  const isRecordingRef = useRef(false)
   const autopilotBusyRef = useRef(false)
   const lastAutopilotSignatureRef = useRef('')
   const lastAutopilotTextRef = useRef('')
@@ -1694,6 +1695,10 @@ Extras obligatorios:
   }, [voiceLabel])
 
   useEffect(() => {
+    isRecordingRef.current = isRecording
+  }, [isRecording])
+
+  useEffect(() => {
     const handleTextResponse = (data) => {
       console.log('[Bot] handleTextResponse FIRED with data:', data?.text ? `"${String(data.text).substring(0, 50)}..."` : 'NO TEXT')
       console.log('[Bot] handleTextResponse: Current response state before update:', response?.substring?.(0, 30) || 'null')
@@ -1787,6 +1792,9 @@ Extras obligatorios:
     }
 
     const handleAudioTrackUnmuted = () => {
+      if (isRecordingRef.current) {
+        return
+      }
       console.log('[Bot] handleAudioTrackUnmuted: FIRED', {
         assistantResponseActive: assistantResponseActiveRef.current,
         responsePlaybackStartedBefore: responsePlaybackStartedRef.current
@@ -1813,14 +1821,10 @@ Extras obligatorios:
     }
 
     const handleAudioEnergySpeaking = (data) => {
-      console.log('[Bot] handleAudioEnergySpeaking: CALLED', {
-        assistantResponseActive: assistantResponseActiveRef.current,
-        rms: data?.rms,
-        responsePlaybackStartedBefore: responsePlaybackStartedRef.current,
-        hasInactivityTimer: !!inactivityTimerRef.current
-      })
+      if (isRecordingRef.current) {
+        return
+      }
       if (!assistantResponseActiveRef.current) {
-        console.log('[Bot] handleAudioEnergySpeaking: Response not active, returning')
         return
       }
       assistantResponseHadAudioRef.current = true
@@ -1836,11 +1840,9 @@ Extras obligatorios:
       emitVisualizerKick(Math.min(1, Math.max(0.35, Number(data?.rms || 0) * 28)))
       // Audio energy detected = playback is happening, set flag (works for all responses including persistent connection)
       responsePlaybackStartedRef.current = true
-      console.log('[Bot] handleAudioEnergySpeaking: Set responsePlaybackStartedRef=true, timer reset')
 
       // Reset inactivity timer - bot is speaking again
       if (inactivityTimerRef.current) {
-        console.log('[Bot] handleAudioEnergySpeaking: Clearing inactivity timer (bot speaking again)')
         clearTimeout(inactivityTimerRef.current)
         inactivityTimerRef.current = null
       }
@@ -1849,13 +1851,14 @@ Extras obligatorios:
     }
 
     const handleAudioEnergySilent = (data) => {
+      if (isRecordingRef.current) {
+        return
+      }
       if (!assistantResponseActiveRef.current) {
         return
       }
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = false
-
-      console.log('[Bot] handleAudioEnergySilent: Bot went silent, starting inactivity timer')
 
       // Start inactivity timer: if bot doesn't speak for INACTIVITY_TIMEOUT_MS, unlock chat
       if (inactivityTimerRef.current) {
@@ -1985,6 +1988,9 @@ Extras obligatorios:
     }
 
     const handleAudioStarted = () => {
+      if (isRecordingRef.current) {
+        return
+      }
       setAssistantVisualActive(true)
       emitAssistantVisualizerState(true)
       bindRealtimeAudioToVisualizer()
@@ -2272,6 +2278,9 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
       setIsLoading(true)
       setAssistantVisualActive(false)
       emitAssistantVisualizerState(false)
+      assistantResponseActiveRef.current = false
+      assistantResponseHadAudioRef.current = false
+      botIsAudiblySpeakingRef.current = false
       clearResponseTimeout()
       setResponse(null)
       setHasVoiceResponse(false)
