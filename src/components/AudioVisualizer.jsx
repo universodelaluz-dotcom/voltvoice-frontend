@@ -8,6 +8,7 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
   const animationIdRef = useRef(null)
   const [detectedPlaying, setDetectedPlaying] = useState(false)
   const phaseRef = useRef(0)
+  const barsRef = useRef([])
 
   useEffect(() => {
     const targetAudio = audioElement
@@ -83,16 +84,16 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
       ctx.fillStyle = '#000'
       ctx.fillRect(0, 0, W, H)
 
-      phaseRef.current += 0.06
+      phaseRef.current += 0.02
       const barCount = 36
       const gap = W / barCount
 
       for (let i = 0; i < barCount; i++) {
-        const wave = Math.abs(Math.sin(phaseRef.current + i * 0.45))
-        const barH = 8 + wave * 24
+        const wave = Math.abs(Math.sin(phaseRef.current + i * 0.22))
+        const barH = 8 + wave * 12
         const x = i * gap + 2
         const y = (H - barH) / 2
-        ctx.fillStyle = `rgba(0, 210, 255, ${0.2 + wave * 0.35})`
+        ctx.fillStyle = `rgba(0, 210, 255, ${0.16 + wave * 0.18})`
         ctx.fillRect(x, y, Math.max(3, gap - 4), barH)
       }
 
@@ -110,17 +111,16 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
         analyser.getFloatTimeDomainData(timeData)
         analyser.getByteFrequencyData(freqData)
       } else {
-        phaseRef.current += 0.16
+        phaseRef.current += 0.04
         for (let i = 0; i < timeData.length; i++) {
           const t = i / timeData.length
-          const noise = (Math.random() - 0.5) * 0.08
           timeData[i] =
-            Math.sin((t * 26) + phaseRef.current) * 0.28 +
-            Math.sin((t * 9) + phaseRef.current * 1.8) * 0.16 +
-            noise
+            Math.sin((t * 12) + phaseRef.current) * 0.2 +
+            Math.sin((t * 4) + phaseRef.current * 1.1) * 0.12
         }
         for (let i = 0; i < freqData.length; i++) {
-          freqData[i] = 120 + Math.floor(Math.random() * 110)
+          const soft = Math.abs(Math.sin(phaseRef.current * 0.9 + i * 0.08))
+          freqData[i] = 88 + Math.floor(soft * 88)
         }
       }
 
@@ -136,24 +136,27 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
       ctx.fillStyle = '#000'
       ctx.fillRect(0, 0, W, H)
 
-      phaseRef.current += 0.08
+      phaseRef.current += 0.018
 
       const bars = 42
       const barW = W / bars
       for (let i = 0; i < bars; i++) {
         const idx = Math.min(freqData.length - 1, Math.floor((i / bars) * freqData.length))
         const v = freqData[idx] / 255
-        const pulse = Math.abs(Math.sin(phaseRef.current * 1.6 + i * 0.3))
-        const magnitude = Math.max(v, pulse * 0.55) * (0.65 + energy * 1.2)
-        const h = Math.max(10, magnitude * (H * 0.9))
+        const pulse = Math.abs(Math.sin(phaseRef.current * 0.7 + i * 0.12))
+        const magnitude = Math.max(v * 0.85, pulse * 0.35) * (0.48 + energy * 0.82)
+        const targetH = Math.max(8, magnitude * (H * 0.72))
+        const prevH = barsRef.current[i] || 8
+        const h = prevH + (targetH - prevH) * 0.22
+        barsRef.current[i] = h
         const x = i * barW + 1
         const y = centerY - h / 2
-        ctx.fillStyle = `rgba(0, 225, 255, ${0.35 + magnitude * 0.55})`
+        ctx.fillStyle = `rgba(0, 225, 255, ${0.2 + magnitude * 0.35})`
         ctx.fillRect(x, y, Math.max(2, barW - 2), h)
       }
 
-      ctx.strokeStyle = 'rgba(180, 245, 255, 0.85)'
-      ctx.lineWidth = 1.2
+      ctx.strokeStyle = 'rgba(180, 245, 255, 0.45)'
+      ctx.lineWidth = 1
       ctx.beginPath()
       ctx.moveTo(0, centerY)
       ctx.lineTo(W, centerY)
