@@ -460,12 +460,12 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
                 <div className="relative">
                   <button
                     onClick={onGoVoiceCloning}
-                    className={`relative flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold opacity-60 hover:opacity-75 transition-all ${
+                    className={`relative flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
                       darkMode
-                        ? 'bg-gradient-to-r from-purple-500/40 to-pink-500/40 text-gray-400'
-                        : 'bg-gradient-to-r from-slate-400 to-slate-500 text-gray-600'
+                        ? 'bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-gray-300 hover:from-purple-500/70 hover:to-pink-500/70 hover:text-gray-200'
+                        : 'bg-gradient-to-r from-slate-500 to-slate-600 text-gray-700 hover:from-slate-600 hover:to-slate-700 hover:text-gray-900'
                     }`}
-                    title="Desbloqueado desde plan START"
+                    title="Clic para explorar - Bloqueado para plan FREE"
                   >
                     <Mic2 className="w-5 h-5" />
                     <span>Taller de Voces</span>
