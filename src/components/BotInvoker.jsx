@@ -304,6 +304,11 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   const bindRealtimeAudioToVisualizer = () => {
+    if (localAudioRef.current) {
+      setAssistantAudioElement(localAudioRef.current)
+      return
+    }
+
     const realtimeAudio =
       (typeof inworldRealtimeService.getOutputAudioElement === 'function'
         ? inworldRealtimeService.getOutputAudioElement()
@@ -2586,6 +2591,32 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
     bindRealtimeAudioToVisualizer()
   }, [hasVoiceResponse, assistantAudioElement])
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      bindRealtimeAudioToVisualizer()
+    }, 700)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    const audio = assistantAudioElement
+    if (!audio) return
+
+    const syncPlaying = () => setIsPlayingResponse(!audio.paused)
+    audio.addEventListener('play', syncPlaying)
+    audio.addEventListener('playing', syncPlaying)
+    audio.addEventListener('pause', syncPlaying)
+    audio.addEventListener('ended', syncPlaying)
+    syncPlaying()
+
+    return () => {
+      audio.removeEventListener('play', syncPlaying)
+      audio.removeEventListener('playing', syncPlaying)
+      audio.removeEventListener('pause', syncPlaying)
+      audio.removeEventListener('ended', syncPlaying)
+    }
+  }, [assistantAudioElement])
+
   // Autopilot deshabilitado: el interactuador solo se invoca manualmente (F8).
   const missingAssistantSetup = !selectedCharacterId || !selectedRealtimeVoiceId
 
@@ -2739,6 +2770,12 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
         </div>
       )}
 
+      <AudioVisualizer
+        audioElement={assistantAudioElement}
+        isPlaying={isPlayingResponse}
+        darkMode={darkMode}
+      />
+
       {/* Response container with fixed min-height to prevent scroll glitch */}
       <div className={`rounded p-3 text-sm min-h-[60px] transition-opacity duration-300 ${
         response
@@ -2757,11 +2794,6 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
 
             {hasVoiceResponse && (
               <div className="mt-3 space-y-2">
-                <AudioVisualizer
-                  audioElement={assistantAudioElement}
-                  isPlaying={isPlayingResponse}
-                  darkMode={darkMode}
-                />
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleRetryAudio}
