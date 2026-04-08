@@ -224,69 +224,29 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       const isWebSpeech = selectedVoiceObj && selectedVoiceObj.engine === "webspeech"
 
       if (isWebSpeech) {
-        // Usar Web Speech API â€” voces locales del navegador/OS, gratis, sin backend
-        const lang = selectedVoice === "en-US" ? "en-US" : "es-ES"
-        const utterance = new SpeechSynthesisUtterance(text)
-        let localPulseTimer = null
-        const emitKick = (level = 0.55) => {
-          window.dispatchEvent(new CustomEvent('voltvoice:visualizer-kick', { detail: { level } }))
-        }
-        utterance.rate = audioSpeed
-        utterance.pitch = 1.0
-        utterance.volume = 1.0
-        utterance.lang = lang
+        // Voces básicas por backend TTS para obtener audio real y espectro real.
+        const response = await fetch(`${API_URL}/api/tts/say`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text,
+            voice: selectedVoice
+          })
+        })
 
-        // Buscar voz del idioma correcto instalada en el sistema
-        const availableVoices = window.speechSynthesis.getVoices()
-        const matchVoice =
-          availableVoices.find(v => v.lang === lang) ||
-          availableVoices.find(v => v.lang.startsWith(lang.split('-')[0])) ||
-          availableVoices[0]
-        if (matchVoice) utterance.voice = matchVoice
-        setIsPlaying(true)
-        setLocalSpeechActive(true)
-        utterance.onstart = () => {
+        const data = await response.json()
+        if (!response.ok || !data.audio) {
+          setError(data.error || "Error al sintetizar la voz básica")
+        } else {
+          setAudioUrl(data.audio)
+          setAudioPlaybackNonce((prev) => prev + 1)
           setIsPlaying(true)
-          setLocalSpeechActive(true)
-          emitKick(0.85)
-          localPulseTimer = setInterval(() => emitKick(0.24 + Math.random() * 0.22), 180)
-        }
-        utterance.onend = () => {
-          setIsPlaying(false)
           setLocalSpeechActive(false)
-          if (localPulseTimer) {
-            clearInterval(localPulseTimer)
-            localPulseTimer = null
-          }
+          setTokensUsed(0)
+          setSynthesisCount(prev => prev + 1)
+          setSuccess(true)
+          setTimeout(() => setSuccess(false), 3000)
         }
-        utterance.onerror = () => {
-          setIsPlaying(false)
-          setLocalSpeechActive(false)
-          if (localPulseTimer) {
-            clearInterval(localPulseTimer)
-            localPulseTimer = null
-          }
-        }
-        utterance.onpause = () => {
-          setIsPlaying(false)
-          setLocalSpeechActive(false)
-          if (localPulseTimer) {
-            clearInterval(localPulseTimer)
-            localPulseTimer = null
-          }
-        }
-        utterance.onboundary = (event) => {
-          const base = 0.62 + ((Number(event?.charIndex || 0) % 7) / 18)
-          emitKick(Math.min(0.95, base))
-        }
-
-        window.speechSynthesis.cancel()
-        window.speechSynthesis.speak(utterance)
-
-        setTokensUsed(0)
-        setSynthesisCount(prev => prev + 1)
-        setSuccess(true)
-        setTimeout(() => setSuccess(false), 3000)
       } else {
         const token = getAuthToken()
         let response = await fetch(`${API_URL}/api/inworld/tts`, {
@@ -625,6 +585,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     </div>
   )
 }
+
 
 
 
