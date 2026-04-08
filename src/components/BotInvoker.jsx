@@ -2684,7 +2684,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
 
   return (
     <div className={`relative rounded-lg border p-4 space-y-3 ${
-      isFeatureLockedForUser ? 'opacity-50' : ''
+      isFeatureLockedForUser ? 'opacity-50 pointer-events-none' : ''
     } ${
       darkMode
         ? 'bg-[#1a1a2e] border-cyan-400/30'
@@ -2696,12 +2696,12 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
             e.stopPropagation()
             onGoPricingPage?.()
           }}
-          className={`absolute top-2 right-2 p-2 rounded-full transition-all ${
+          className={`absolute top-2 right-2 p-2 rounded-full transition-all pointer-events-auto ${
             darkMode
-              ? 'bg-purple-500/30 hover:bg-purple-500/50 text-purple-300'
-              : 'bg-purple-300/40 hover:bg-purple-300/60 text-purple-600'
+              ? 'bg-purple-500/40 hover:bg-purple-500/70 text-purple-300'
+              : 'bg-purple-300/50 hover:bg-purple-400 text-purple-600'
           }`}
-          title="Solo disponible en plan PRO - Click para ver planes"
+          title="Ver planes - Solo disponible en plan PRO"
         >
           <Lock className="w-4 h-4" />
         </button>
