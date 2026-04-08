@@ -462,8 +462,8 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
                     onClick={onGoVoiceCloning}
                     className={`relative flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
                       darkMode
-                        ? 'bg-gradient-to-r from-purple-500/50 to-pink-500/50 text-gray-300 hover:from-purple-500/70 hover:to-pink-500/70 hover:text-gray-200'
-                        : 'bg-gradient-to-r from-slate-500 to-slate-600 text-gray-700 hover:from-slate-600 hover:to-slate-700 hover:text-gray-900'
+                        ? 'bg-gradient-to-r from-purple-600/70 to-pink-600/70 text-gray-200 hover:from-purple-600/90 hover:to-pink-600/90 hover:text-white'
+                        : 'bg-gradient-to-r from-slate-600 to-slate-700 text-gray-200 hover:from-slate-700 hover:to-slate-800 hover:text-white'
                     }`}
                     title="Clic para explorar - Bloqueado para plan FREE"
                   >
@@ -475,14 +475,14 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
                       e.stopPropagation()
                       onGoPricingPage()
                     }}
-                    className={`absolute top-1 right-1 p-1.5 rounded-full transition-all ${
+                    className={`absolute -top-2 -right-2 p-2 rounded-full transition-all z-10 ${
                       darkMode
-                        ? 'bg-purple-500/40 hover:bg-purple-500/70 text-purple-300'
-                        : 'bg-purple-300/50 hover:bg-purple-400 text-purple-600'
+                        ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg'
+                        : 'bg-purple-500 hover:bg-purple-600 text-white shadow-lg'
                     }`}
                     title="Ver planes - Desbloqueado desde START"
                   >
-                    <Lock className="w-3.5 h-3.5" />
+                    <Lock className="w-4 h-4" />
                   </button>
                 </div>
               )

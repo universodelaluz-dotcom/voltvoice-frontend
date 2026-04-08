@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Sparkles, Edit2, Bot } from 'lucide-react'
+import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Sparkles, Edit2, Bot, Lock } from 'lucide-react'
 import AIRoleplayWorkshop from './AIRoleplayWorkshop'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
@@ -553,8 +553,12 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     )
   )
 
+  // Feature access control
+  const userPlan = user?.plan || 'free'
+  const isFreeUser = userPlan === 'free'
+
   return (
-    <div className="space-y-6">
+    <div className={`relative space-y-6 ${isFreeUser ? 'opacity-50 pointer-events-none' : ''}`}>
       {/* Tabs */}
       <div className={`flex gap-3 p-1 rounded-lg mb-2 ${darkMode ? 'bg-gray-800/60' : 'bg-gray-100'}`}>
         <button
@@ -997,6 +1001,36 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           <AIRoleplayWorkshop darkMode={darkMode} config={config || {}} updateConfig={updateConfig || (() => {})} user={user} />
           {/* 2. Probar Voz */}
           {renderTestVoice(userVoices)}
+        </div>
+      )}
+
+      {/* Overlay para usuarios FREE */}
+      {isFreeUser && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-lg">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl max-w-md text-center">
+            <div className="mb-6 flex justify-center">
+              <div className={`p-4 rounded-full ${darkMode ? 'bg-purple-600/30' : 'bg-purple-200/50'}`}>
+                <Lock className={`w-16 h-16 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`} />
+              </div>
+            </div>
+            <h2 className={`text-2xl font-bold mb-3 ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>
+              Actualiza tu plan
+            </h2>
+            <p className={`text-sm mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Acceso al Taller de Voces disponible<br/>
+              <span className="font-semibold">desde el plan START</span>
+            </p>
+            <button
+              onClick={() => {}}
+              className={`w-full px-6 py-3 rounded-lg font-semibold transition-all ${
+                darkMode
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 shadow-lg'
+                  : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-lg'
+              }`}
+            >
+              Ver Planes
+            </button>
+          </div>
         </div>
       )}
     </div>
