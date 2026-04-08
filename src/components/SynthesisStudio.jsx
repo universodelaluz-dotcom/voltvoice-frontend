@@ -192,7 +192,12 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
   useEffect(() => {
     const handleAssistantVisualizer = (event) => {
-      setAssistantSpeechActive(Boolean(event?.detail?.active))
+      const active = Boolean(event?.detail?.active)
+      setAssistantSpeechActive(active)
+      if (active) {
+        // Ensure response visualization can start even if PTT flag lags.
+        setPttRecordingActive(false)
+      }
     }
 
     window.addEventListener('voltvoice:assistant-visualizer', handleAssistantVisualizer)
