@@ -6,9 +6,7 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
   const canvasRef = useRef(null)
   const analyserRef = useRef(null)
   const animationIdRef = useRef(null)
-  const audioCtxRef = useRef(null)
-  const sourceRef = useRef(null)
-  const [isReady, setIsReady] = useState(false)
+  const [detectedPlaying, setDetectedPlaying] = useState(false)
   const phaseRef = useRef(0)
 
   useEffect(() => {
@@ -34,16 +32,14 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
       targetAudio[AUDIO_GRAPH_SYMBOL] = graph
     }
 
-    audioCtxRef.current = graph.audioCtx
     analyserRef.current = graph.analyser
-    sourceRef.current = graph.source
-    setIsReady(Boolean(graph.isReady))
 
     const resumeCtx = () => {
       if (graph.audioCtx.state === 'suspended') {
         graph.audioCtx.resume().catch(() => {})
       }
     }
+
     targetAudio.addEventListener('play', resumeCtx)
     targetAudio.addEventListener('canplay', resumeCtx)
 
@@ -55,41 +51,50 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
   }, [audioElement])
 
   useEffect(() => {
+    const checkPlayback = () => {
+      const elementPlaying = Boolean(
+        audioElement &&
+        !audioElement.paused &&
+        !audioElement.ended
+      )
+      const speechPlaying = Boolean(
+        typeof window !== 'undefined' &&
+        window.speechSynthesis &&
+        window.speechSynthesis.speaking
+      )
+      setDetectedPlaying(elementPlaying || speechPlaying)
+    }
+
+    checkPlayback()
+    const interval = setInterval(checkPlayback, 120)
+    return () => clearInterval(interval)
+  }, [audioElement])
+
+  useEffect(() => {
     if (!canvasRef.current) return
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
 
     const drawIdle = () => {
-      // Onda suave en reposo
       const W = canvas.width
       const H = canvas.height
       ctx.clearRect(0, 0, W, H)
       ctx.fillStyle = '#000'
       ctx.fillRect(0, 0, W, H)
 
-      phaseRef.current += 0.03
+      phaseRef.current += 0.06
+      const barCount = 36
+      const gap = W / barCount
 
-      ctx.save()
-      ctx.shadowBlur = 18
-      ctx.shadowColor = '#00e5ff'
-
-      for (let layer = 0; layer < 3; layer++) {
-        const amplitude = [4, 6, 3][layer]
-        const freq = [0.012, 0.018, 0.009][layer]
-        const alpha = [0.25, 0.15, 0.1][layer]
-
-        ctx.beginPath()
-        ctx.strokeStyle = `rgba(0, 200, 255, ${alpha})`
-        ctx.lineWidth = 1.5
-
-        for (let x = 0; x < W; x++) {
-          const y = H / 2 + Math.sin(x * freq + phaseRef.current + layer * 1.5) * amplitude
-          x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
-        }
-        ctx.stroke()
+      for (let i = 0; i < barCount; i++) {
+        const wave = Math.abs(Math.sin(phaseRef.current + i * 0.45))
+        const barH = 8 + wave * 24
+        const x = i * gap + 2
+        const y = (H - barH) / 2
+        ctx.fillStyle = `rgba(0, 210, 255, ${0.2 + wave * 0.35})`
+        ctx.fillRect(x, y, Math.max(3, gap - 4), barH)
       }
-      ctx.restore()
 
       animationIdRef.current = requestAnimationFrame(drawIdle)
     }
@@ -100,11 +105,11 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
       const bufferLength = hasAnalyser ? analyser.fftSize : 1024
       const timeData = new Float32Array(bufferLength)
       const freqData = new Uint8Array(Math.max(1, Math.floor(bufferLength / 2)))
+
       if (hasAnalyser) {
         analyser.getFloatTimeDomainData(timeData)
         analyser.getByteFrequencyData(freqData)
       } else {
-        // Fallback para fuentes sin stream analizable (ej. SpeechSynthesis/WebSpeech).
         phaseRef.current += 0.16
         for (let i = 0; i < timeData.length; i++) {
           const t = i / timeData.length
@@ -119,75 +124,48 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
         }
       }
 
-      // Calcular energía para escalar la amplitud
       let energy = 0
       for (let i = 0; i < freqData.length; i++) energy += freqData[i]
       energy = energy / freqData.length / 255
 
       const W = canvas.width
       const H = canvas.height
+      const centerY = H / 2
 
       ctx.clearRect(0, 0, W, H)
       ctx.fillStyle = '#000'
       ctx.fillRect(0, 0, W, H)
 
-      phaseRef.current += 0.04
+      phaseRef.current += 0.08
 
-      const centerY = H / 2
-      const maxAmp = (H / 2) * 0.85
-
-      // ── Glow layers (outer → inner) ──
-      const layers = [
-        { blur: 40, color: 'rgba(0,180,255,0.08)', width: 8 },
-        { blur: 22, color: 'rgba(0,220,255,0.18)', width: 5 },
-        { blur: 10, color: 'rgba(0,240,255,0.45)', width: 2.5 },
-        { blur: 0,  color: 'rgba(200,240,255,0.9)', width: 1.2 },
-      ]
-
-      layers.forEach(({ blur, color, width }) => {
-        ctx.save()
-        ctx.shadowBlur = blur
-        ctx.shadowColor = '#00e5ff'
-        ctx.strokeStyle = color
-        ctx.lineWidth = width
-        ctx.lineJoin = 'round'
-        ctx.beginPath()
-
-        const sliceWidth = W / bufferLength
-        let x = 0
-        for (let i = 0; i < bufferLength; i++) {
-          const v = timeData[i]
-          const y = centerY + v * maxAmp * (0.6 + energy * 1.4)
-          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
-          x += sliceWidth
-        }
-        ctx.stroke()
-        ctx.restore()
-      })
-
-      // Mirror waveform (symmetric reflection with lower opacity)
-      ctx.save()
-      ctx.shadowBlur = 12
-      ctx.shadowColor = '#00b4ff'
-      ctx.strokeStyle = 'rgba(0,180,255,0.12)'
-      ctx.lineWidth = 2
-      ctx.beginPath()
-      let x2 = 0
-      for (let i = 0; i < bufferLength; i++) {
-        const v = timeData[i]
-        const y = centerY - v * maxAmp * (0.4 + energy)
-        i === 0 ? ctx.moveTo(x2, y) : ctx.lineTo(x2, y)
-        x2 += W / bufferLength
+      const bars = 42
+      const barW = W / bars
+      for (let i = 0; i < bars; i++) {
+        const idx = Math.min(freqData.length - 1, Math.floor((i / bars) * freqData.length))
+        const v = freqData[idx] / 255
+        const pulse = Math.abs(Math.sin(phaseRef.current * 1.6 + i * 0.3))
+        const magnitude = Math.max(v, pulse * 0.55) * (0.65 + energy * 1.2)
+        const h = Math.max(10, magnitude * (H * 0.9))
+        const x = i * barW + 1
+        const y = centerY - h / 2
+        ctx.fillStyle = `rgba(0, 225, 255, ${0.35 + magnitude * 0.55})`
+        ctx.fillRect(x, y, Math.max(2, barW - 2), h)
       }
+
+      ctx.strokeStyle = 'rgba(180, 245, 255, 0.85)'
+      ctx.lineWidth = 1.2
+      ctx.beginPath()
+      ctx.moveTo(0, centerY)
+      ctx.lineTo(W, centerY)
       ctx.stroke()
-      ctx.restore()
 
       animationIdRef.current = requestAnimationFrame(drawActive)
     }
 
     if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current)
 
-    if (isPlaying) {
+    const effectivePlaying = Boolean(isPlaying || detectedPlaying)
+    if (effectivePlaying) {
       drawActive()
     } else {
       drawIdle()
@@ -196,7 +174,7 @@ export default function AudioVisualizer({ audioElement, isPlaying, darkMode }) {
     return () => {
       if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current)
     }
-  }, [isPlaying, isReady, darkMode])
+  }, [isPlaying, detectedPlaying, darkMode])
 
   return (
     <div className="w-full rounded-lg overflow-hidden" style={{ background: '#000', height: 100 }}>
