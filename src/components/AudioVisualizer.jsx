@@ -3,18 +3,17 @@ import { useEffect, useRef, useState } from 'react'
 const AUDIO_GRAPH_SYMBOL = Symbol.for('voltvoice.audioGraph')
 
 export default function AudioVisualizer({ audioElement, isPlaying }) {
+  const canvasRef = useRef(null)
   const analyserRef = useRef(null)
+  const animationRef = useRef(null)
   const phaseRef = useRef(0)
-  const rafRef = useRef(0)
   const [detectedPlaying, setDetectedPlaying] = useState(false)
-  const [pathMain, setPathMain] = useState('M 0 50 L 600 50')
-  const [pathGlow, setPathGlow] = useState('M 0 50 L 600 50')
 
   useEffect(() => {
-    const targetAudio = audioElement
-    if (!targetAudio) return
+    const target = audioElement
+    if (!target) return
 
-    let graph = targetAudio[AUDIO_GRAPH_SYMBOL]
+    let graph = target[AUDIO_GRAPH_SYMBOL]
     if (!graph || graph.audioCtx?.state === 'closed') {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
       const analyser = audioCtx.createAnalyser()
@@ -22,7 +21,7 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       analyser.smoothingTimeConstant = 0.9
 
       try {
-        const source = audioCtx.createMediaElementSource(targetAudio)
+        const source = audioCtx.createMediaElementSource(target)
         source.connect(analyser)
         analyser.connect(audioCtx.destination)
         graph = { audioCtx, analyser, source }
@@ -30,130 +29,127 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
         graph = { audioCtx, analyser, source: null }
       }
 
-      targetAudio[AUDIO_GRAPH_SYMBOL] = graph
+      target[AUDIO_GRAPH_SYMBOL] = graph
     }
 
     analyserRef.current = graph.analyser
 
-    const resumeCtx = () => {
-      if (graph.audioCtx.state === 'suspended') {
-        graph.audioCtx.resume().catch(() => {})
-      }
+    const resume = () => {
+      if (graph.audioCtx.state === 'suspended') graph.audioCtx.resume().catch(() => {})
     }
 
-    targetAudio.addEventListener('play', resumeCtx)
-    targetAudio.addEventListener('canplay', resumeCtx)
+    target.addEventListener('play', resume)
+    target.addEventListener('canplay', resume)
 
     return () => {
-      targetAudio.removeEventListener('play', resumeCtx)
-      targetAudio.removeEventListener('canplay', resumeCtx)
+      target.removeEventListener('play', resume)
+      target.removeEventListener('canplay', resume)
     }
   }, [audioElement])
 
   useEffect(() => {
-    const checkPlayback = () => {
-      const elementPlaying = Boolean(audioElement && !audioElement.paused && !audioElement.ended)
-      const speechPlaying = Boolean(
-        typeof window !== 'undefined' &&
-        window.speechSynthesis &&
-        window.speechSynthesis.speaking
-      )
-      setDetectedPlaying(elementPlaying || speechPlaying)
+    const check = () => {
+      const htmlAudioPlaying = Boolean(audioElement && !audioElement.paused && !audioElement.ended)
+      const speechPlaying = Boolean(typeof window !== 'undefined' && window.speechSynthesis?.speaking)
+      setDetectedPlaying(htmlAudioPlaying || speechPlaying)
     }
 
-    checkPlayback()
-    const interval = setInterval(checkPlayback, 120)
-    return () => clearInterval(interval)
+    check()
+    const id = setInterval(check, 100)
+    return () => clearInterval(id)
   }, [audioElement])
 
   useEffect(() => {
-    const points = 96
-    const width = 600
-    const mid = 50
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
 
-    const tick = () => {
-      const analyser = analyserRef.current
+    const draw = () => {
+      const W = canvas.width
+      const H = canvas.height
+      const midY = H / 2
       const active = Boolean(isPlaying || detectedPlaying)
 
-      let values = new Array(points).fill(0)
-      let energy = 0
+      ctx.clearRect(0, 0, W, H)
+      ctx.fillStyle = '#000'
+      ctx.fillRect(0, 0, W, H)
+
+      const analyser = analyserRef.current
+      const points = 140
+      const values = new Array(points).fill(0)
 
       if (active && analyser) {
-        const timeData = new Float32Array(analyser.fftSize)
-        const freqData = new Uint8Array(analyser.frequencyBinCount)
-        analyser.getFloatTimeDomainData(timeData)
-        analyser.getByteFrequencyData(freqData)
+        const time = new Float32Array(analyser.fftSize)
+        const freq = new Uint8Array(analyser.frequencyBinCount)
+        analyser.getFloatTimeDomainData(time)
+        analyser.getByteFrequencyData(freq)
 
-        for (let i = 0; i < freqData.length; i++) energy += freqData[i]
-        energy = (energy / freqData.length) / 255
-
-        // RMS + ganancia dinámica para evitar espectro "plano"
         let rms = 0
-        for (let i = 0; i < timeData.length; i++) rms += timeData[i] * timeData[i]
-        rms = Math.sqrt(rms / timeData.length)
-        const autoGain = Math.max(1.8, Math.min(9, 0.2 / Math.max(rms, 0.0008)))
-        const minEnergyFloor = 0.28
+        let energy = 0
+        for (let i = 0; i < time.length; i++) rms += time[i] * time[i]
+        for (let i = 0; i < freq.length; i++) energy += freq[i]
+        rms = Math.sqrt(rms / time.length)
+        energy = (energy / freq.length) / 255
+
+        const gain = Math.max(2.2, Math.min(10, 0.22 / Math.max(rms, 0.001)))
+        const amp = 10 + energy * 26
 
         for (let i = 0; i < points; i++) {
-          const idx = Math.min(timeData.length - 1, Math.floor((i / points) * timeData.length))
-          const pulse = Math.sin((i * 0.16) + phaseRef.current * 1.2) * 0.12
-          values[i] = (timeData[idx] * autoGain) + pulse
+          const idx = Math.min(time.length - 1, Math.floor((i / points) * time.length))
+          const pulse = Math.sin(i * 0.14 + phaseRef.current * 1.1) * 0.08
+          values[i] = (time[idx] * gain + pulse) * amp
         }
-        energy = Math.max(minEnergyFloor, energy)
       } else {
-        phaseRef.current += 0.035
+        phaseRef.current += 0.02
+        const amp = 6.5
         for (let i = 0; i < points; i++) {
           const t = i / points
           values[i] =
-            Math.sin(t * 11 + phaseRef.current) * 0.28 +
-            Math.sin(t * 4.4 + phaseRef.current * 0.82) * 0.14 +
-            Math.sin(t * 1.8 + phaseRef.current * 0.45) * 0.08
+            (Math.sin((t * 11) + phaseRef.current) * 0.8 +
+             Math.sin((t * 4.2) + phaseRef.current * 0.7) * 0.4) * amp
         }
-        energy = 0.32
       }
 
-      const amp = active ? (24 + energy * 34) : 9
-      const ampGlow = active ? (16 + energy * 24) : 6
+      ctx.save()
+      ctx.shadowBlur = 16
+      ctx.shadowColor = '#00dcff'
 
-      let main = ''
-      let glow = ''
-
+      ctx.beginPath()
+      ctx.strokeStyle = 'rgba(0,220,255,0.42)'
+      ctx.lineWidth = 2.2
       for (let i = 0; i < points; i++) {
-        const x = (i / (points - 1)) * width
-        const yMain = mid + values[i] * amp
-        const yGlow = mid + values[i] * ampGlow + Math.sin((i * 0.2) + phaseRef.current) * (active ? 1.6 : 0.6)
-
-        main += `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${yMain.toFixed(2)} `
-        glow += `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${yGlow.toFixed(2)} `
+        const x = (i / (points - 1)) * W
+        const y = midY + values[i] * 0.65
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
       }
+      ctx.stroke()
 
-      setPathGlow(glow.trim())
-      setPathMain(main.trim())
+      ctx.beginPath()
+      ctx.strokeStyle = 'rgba(190,245,255,0.95)'
+      ctx.lineWidth = 1.25
+      for (let i = 0; i < points; i++) {
+        const x = (i / (points - 1)) * W
+        const y = midY + values[i]
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      ctx.stroke()
+      ctx.restore()
 
-      phaseRef.current += active ? 0.065 : 0.028
-      rafRef.current = requestAnimationFrame(tick)
+      phaseRef.current += active ? 0.055 : 0.025
+      animationRef.current = requestAnimationFrame(draw)
     }
 
-    rafRef.current = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(rafRef.current)
+    animationRef.current = requestAnimationFrame(draw)
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current)
+    }
   }, [isPlaying, detectedPlaying])
 
   return (
-    <div className="w-full rounded-lg overflow-hidden bg-black h-[100px] border border-cyan-400/20 flex items-center px-2">
-      <svg viewBox="0 0 600 100" className="w-full h-full" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <filter id="vv-glow" x="-20%" y="-50%" width="140%" height="200%">
-            <feGaussianBlur stdDeviation="2.8" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        <path d={pathGlow} fill="none" stroke="rgba(0,220,255,0.45)" strokeWidth="2" filter="url(#vv-glow)" />
-        <path d={pathMain} fill="none" stroke="rgba(180,245,255,0.96)" strokeWidth="1.2" strokeLinecap="round" />
-      </svg>
+    <div className="w-full rounded-lg overflow-hidden" style={{ background: '#000', height: 100, border: '1px solid rgba(34,211,238,0.2)' }}>
+      <canvas ref={canvasRef} width={1200} height={200} className="w-full h-full" style={{ display: 'block' }} />
     </div>
   )
 }

@@ -2776,13 +2776,11 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
         </div>
       )}
 
-      {(hasVoiceResponse || isPlayingResponse || assistantVisualActive) && (
-        <AudioVisualizer
-          audioElement={assistantAudioElement}
-          isPlaying={isPlayingResponse || assistantVisualActive}
-          darkMode={darkMode}
-        />
-      )}
+      <AudioVisualizer
+        audioElement={assistantAudioElement}
+        isPlaying={isPlayingResponse || assistantVisualActive}
+        darkMode={darkMode}
+      />
 
       {/* Response container with fixed min-height to prevent scroll glitch */}
       <div className={`rounded p-3 text-sm min-h-[60px] transition-opacity duration-300 ${
