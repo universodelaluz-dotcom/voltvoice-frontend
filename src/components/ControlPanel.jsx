@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { ArrowLeft, Check, HelpCircle, Keyboard, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Check, HelpCircle, Keyboard, ChevronRight, Ban } from 'lucide-react'
 
 function Hint({ text, darkMode }) {
   return (
@@ -127,6 +127,53 @@ function SectionHeader({ title, tone, darkMode }) {
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
+const normalizeModerationList = (value) => {
+  if (!Array.isArray(value)) return []
+  const seen = new Set()
+  const normalized = []
+  for (const item of value) {
+    const username = String(item?.username || '').trim().replace(/^@+/, '').toLowerCase()
+    if (!username || seen.has(username)) continue
+    seen.add(username)
+    normalized.push({
+      username,
+      reason: String(item?.reason || 'Baneado o silenciado'),
+      source: String(item?.source || 'unknown')
+    })
+  }
+  return normalized.slice(0, 500)
+}
+
+const formatModerationReason = (reason) => {
+  const raw = String(reason || '').trim()
+  if (!raw) return 'Baneado o silenciado'
+  const normalized = raw.toLowerCase()
+  if (normalized.includes('banned by ai assistant')) return 'Silenciado por asistente IA'
+  if (normalized.includes('silenced by ai assistant')) return 'Silenciado por asistente IA'
+  if (normalized.includes('banned from chat')) return 'Silenciado desde chat'
+  if (normalized.includes('silenced from chat')) return 'Silenciado desde chat'
+  if (normalized.includes('muted from chat')) return 'Silenciado desde chat'
+  if (normalized.includes('banned')) return 'Baneado o silenciado'
+  if (normalized.includes('muted')) return 'Baneado o silenciado'
+  if (normalized.includes('silenced')) return 'Baneado o silenciado'
+  return raw
+}
+
+const formatModerationSource = (source) => {
+  const normalized = String(source || '').trim().toLowerCase()
+  if (!normalized) return 'sistema'
+  if (normalized === 'system') return 'sistema'
+  if (normalized === 'unknown') return 'desconocido'
+  if (normalized === 'user') return 'usuario'
+  if (normalized === 'bot') return 'asistente IA'
+  if (normalized === 'ai assistant') return 'asistente IA'
+  if (normalized === 'assistant') return 'asistente IA'
+  if (normalized === 'chat') return 'chat'
+  if (normalized === 'manual') return 'manual'
+  if (normalized === 'database') return 'base de datos'
+  return 'sistema'
+}
+
 function BotShortcutCapture({ darkMode, onCapture }) {
   const [capturing, setCapturing] = useState(false)
   const captureRef = useRef(null)
@@ -189,6 +236,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   const [botCharacters, setBotCharacters] = useState([])
   const [presetStatus, setPresetStatus] = useState('')
   const [showProfanityEditor, setShowProfanityEditor] = useState(false)
+  const [showModerationList, setShowModerationList] = useState(false)
+  const moderationList = normalizeModerationList(config?.sessionModerationList)
   const quickBasicChecks = {
     skipRepeated: true,
     ignoreLinks: true,
@@ -330,6 +379,24 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     clearAllChecks()
     Object.entries(quickBasicChecks).forEach(([key, value]) => updateConfig(key, value))
     setPresetStatus('Configuración básica aplicada')
+  }
+
+  const removeFromModerationList = async (username) => {
+    const target = String(username || '').trim().replace(/^@+/, '').toLowerCase()
+    if (!target) return
+    try {
+      const token = localStorage.getItem('sv-token')
+      if (token) {
+        await fetch(`${API_URL}/api/bans/${target}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      }
+    } catch (err) {
+      console.error('[ControlPanel] Error quitando ban:', err)
+    } finally {
+      updateConfig('sessionModerationList', moderationList.filter((item) => item.username !== target))
+    }
   }
 
   return (
@@ -784,6 +851,68 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 darkMode={darkMode}
                 hint="Evita acumulación excesiva de mensajes por leer"
               />
+
+              <div className={`mb-2 rounded-xl px-4 py-3 border ${
+                darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
+              }`}>
+                <button
+                  onClick={() => setShowModerationList((prev) => !prev)}
+                  className={`w-full flex items-center justify-between text-left ${
+                    darkMode ? 'text-white' : 'text-slate-800'
+                  }`}
+                >
+                  <span className="text-[15px] font-semibold">
+                    <Ban className="inline-block w-4 h-4 mr-1 align-[-2px]" />
+                    Lista de baneados/silenciados
+                  </span>
+                  <span className={`inline-flex items-center gap-2 text-xs ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>
+                    {moderationList.length}
+                    <ChevronRight className={`w-4 h-4 transition-transform ${showModerationList ? 'rotate-90' : ''}`} />
+                  </span>
+                </button>
+
+                {showModerationList && (
+                  <>
+                    <div className={`mt-2 pt-2 border-t ${darkMode ? 'border-gray-700/50' : 'border-slate-200'}`} />
+                    {moderationList.length === 0 ? (
+                      <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-600'}`}>
+                        Sin usuarios baneados/silenciados.
+                      </p>
+                    ) : (
+                      <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                        {moderationList.map((entry) => (
+                          <div
+                            key={entry.username}
+                            className={`rounded-lg border px-2.5 py-2 flex items-center justify-between gap-2 ${
+                              darkMode ? 'border-red-500/25 bg-red-950/20' : 'border-red-200 bg-red-50/50'
+                            }`}
+                          >
+                            <div className="min-w-0">
+                              <p className={`text-sm font-semibold truncate ${darkMode ? 'text-red-200' : 'text-red-700'}`}>
+                                @{entry.username}
+                              </p>
+                              <p className={`text-[11px] truncate ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>
+                                {formatModerationReason(entry.reason)} • {formatModerationSource(entry.source)}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => removeFromModerationList(entry.username)}
+                              className={`px-2 py-1 rounded text-[11px] font-semibold border transition-colors ${
+                                darkMode
+                                  ? 'border-red-300/40 text-red-200 hover:bg-red-500/20'
+                                  : 'border-red-300 text-red-700 hover:bg-red-100'
+                              }`}
+                              title={`Quitar bloqueo de @${entry.username}`}
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
 
               <SectionHeader title="Notificaciones en Vivo" tone="notificaciones" darkMode={darkMode} />
 
