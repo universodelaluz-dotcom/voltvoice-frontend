@@ -58,8 +58,9 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
     const handleKick = (event) => {
       const level = Number(event?.detail?.level)
       const normalized = Number.isFinite(level) ? Math.max(0, Math.min(1, level)) : 0.45
-      externalEnergyRef.current = Math.max(externalEnergyRef.current, normalized)
-      kickPulseRef.current = Math.max(kickPulseRef.current, normalized)
+      // Follow incoming energy in real time so movement matches speech rhythm.
+      externalEnergyRef.current = normalized
+      kickPulseRef.current = normalized
       recentKickTsRef.current = Date.now()
     }
 
@@ -124,9 +125,9 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
 
         // Local/basic voices may come flat from analyser: use fixed kick profile.
         if (lowRmsFramesRef.current > 1) {
-          const kick = Math.max(energy, externalEnergyRef.current, kickPulseRef.current, 0.44)
+          const kick = Math.max(energy, externalEnergyRef.current, kickPulseRef.current, 0.08)
           for (let i = 0; i < points; i++) {
-            signal[i] = profileRef.current[i] * (0.25 + kick * 1.55)
+            signal[i] = profileRef.current[i] * (0.1 + kick * 2.35)
           }
           energy = Math.max(energy, kick)
         }
@@ -141,12 +142,12 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       }
 
       if (active || kickedRecently) {
-        externalEnergyRef.current = Math.max(0, externalEnergyRef.current * 0.94)
-        kickPulseRef.current = Math.max(0, kickPulseRef.current * 0.9)
+        externalEnergyRef.current = Math.max(0, externalEnergyRef.current * 0.82)
+        kickPulseRef.current = Math.max(0, kickPulseRef.current * 0.8)
       }
 
-      const amp = active ? (15 + energy * 72 + kickPulseRef.current * 22) : 2.6
-      const smooth = active ? 0.28 : 0.16
+      const amp = active ? (14 + energy * 88 + kickPulseRef.current * 16) : 2.6
+      const smooth = active ? 0.34 : 0.16
 
       ctx.clearRect(0, 0, W, H)
       ctx.fillStyle = '#000'
