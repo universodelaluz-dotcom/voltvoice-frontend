@@ -3,7 +3,7 @@
 ## ✅ PASO 1: Preparar GitHub (5 min)
 
 - [ ] Abre tu repositorio GitHub (o crea uno nuevo)
-- [ ] Copia la carpeta `backend/` al repo
+- [ ] Usa la carpeta `backend-main-deploy/` (rama `main` estable) para publicar
 - [ ] Haz `git push`
 
 **O usa Railway CLI (sin GitHub):**
@@ -48,8 +48,8 @@ NODE_ENV = production
 FRONTEND_URL = https://landing-page-zeta-two-23.vercel.app
 BACKEND_URL = https://voltvoice-backend.railway.app
 
-MERCADO_PAGO_ACCESS_TOKEN = APP_USR-321299952980044-100609-a87787449103b2cec28b568309afc698-174576838
-MERCADO_PAGO_PUBLIC_KEY = APP_USR-df93f1dd-8db5-4269-bf98-87c37c13bf06
+MERCADO_PAGO_ACCESS_TOKEN = APP_USR-TU_ACCESS_TOKEN_AQUI
+MERCADO_PAGO_PUBLIC_KEY = APP_USR-TU_PUBLIC_KEY_AQUI
 
 ELEVENLABS_API_KEY = (obtener de https://elevenlabs.io)
 ```
