@@ -26,6 +26,7 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
 
       try {
         let source = null
+        let usedCaptureStream = false
         // Primary path: direct media element analyser.
         try {
           source = audioCtx.createMediaElementSource(target)
@@ -34,11 +35,16 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
           const stream = typeof target.captureStream === 'function' ? target.captureStream() : null
           if (stream) {
             source = audioCtx.createMediaStreamSource(stream)
+            usedCaptureStream = true
           }
         }
 
         if (source) {
           source.connect(analyser)
+          // For MediaElementSource we must route analyser to destination to keep audible playback.
+          if (!usedCaptureStream) {
+            analyser.connect(audioCtx.destination)
+          }
         }
         graph = { audioCtx, analyser, source }
       } catch (_err) {
