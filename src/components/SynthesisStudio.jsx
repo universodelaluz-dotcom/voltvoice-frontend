@@ -34,6 +34,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const [localSpeechActive, setLocalSpeechActive] = useState(false)
   const [assistantSpeechActive, setAssistantSpeechActive] = useState(false)
   const [assistantAudioElement, setAssistantAudioElement] = useState(null)
+  const [pttRecordingActive, setPttRecordingActive] = useState(false)
   const audioRef = useRef(null)
   const [tokensUsed, setTokensUsed] = useState(0)
   const [error, setError] = useState(null)
@@ -48,14 +49,14 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
   // Chat simulation
   const [chatMessages, setChatMessages] = useState([
-    { id: 1, user: 'maria_streams', message: 'Â¡Hola! Â¿CÃ³mo estÃ¡s?', timestamp: new Date(Date.now() - 30000) },
-    { id: 2, user: 'juan_gamer', message: 'Este stream es increÃ­ble ðŸ”¥', timestamp: new Date(Date.now() - 20000) },
-    { id: 3, user: 'sofia_rocks', message: 'Â¡LÃ©eme este mensaje!', timestamp: new Date(Date.now() - 10000) },
+    { id: 1, user: 'maria_streams', message: 'Hola! Como estas?', timestamp: new Date(Date.now() - 30000) },
+    { id: 2, user: 'juan_gamer', message: 'Este stream es increible', timestamp: new Date(Date.now() - 20000) },
+    { id: 3, user: 'sofia_rocks', message: 'Leeme este mensaje!', timestamp: new Date(Date.now() - 10000) },
   ])
   const [newChatMessage, setNewChatMessage] = useState('')
   const [currentChatUser, setCurrentChatUser] = useState('viewer123')
 
-  // Reproducir automÃ¡ticamente cuando haya audio
+  // Reproducir automaticamente cuando haya audio
   useEffect(() => {
     if (!audioUrl || !audioRef.current) return
 
@@ -82,7 +83,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     return () => { cancelled = true }
   }, [audioUrl, audioPlaybackNonce])
 
-  // Rastrear estado de reproducciÃ³n para el visualizador
+  // Rastrear estado de reproduccion para el visualizador
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
@@ -140,14 +141,14 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   useEffect(() => {
     const allVoices = [
       // === VOCES LOCALES (Sin tokens, sin backend) ===
-      { id: "es-ES", name: "ðŸ”Š Voz Local EspaÃ±ol (ilimitada)", category: "webspeech", engine: "webspeech" },
-      { id: "en-US", name: "ðŸ”Š Voz Local InglÃ©s (ilimitada)", category: "webspeech", engine: "webspeech" },
+      { id: "es-ES", name: "Voz Local Espanol (ilimitada)", category: "webspeech", engine: "webspeech" },
+      { id: "en-US", name: "Voz Local Ingles (ilimitada)", category: "webspeech", engine: "webspeech" },
 
       // === Voces Premium - Naturales ===
-      { id: "Diego", name: "ðŸŽ™ï¸ Voz natural de Luis - Premium", category: "premium", engine: "inworld" },
-      { id: "Lupita", name: "ðŸŽ™ï¸ Voz natural de Sofia - Premium", category: "premium", engine: "inworld" },
-      { id: "Miguel", name: "ðŸŽ™ï¸ Voz natural de Gustavo - Premium", category: "premium", engine: "inworld" },
-      { id: "Rafael", name: "ðŸŽ™ï¸ Voz natural de Leonel - Premium", category: "premium", engine: "inworld" },
+      { id: "Diego", name: "Voz natural de Luis - Premium", category: "premium", engine: "inworld" },
+      { id: "Lupita", name: "Voz natural de Sofia - Premium", category: "premium", engine: "inworld" },
+      { id: "Miguel", name: "Voz natural de Gustavo - Premium", category: "premium", engine: "inworld" },
+      { id: "Rafael", name: "Voz natural de Leonel - Premium", category: "premium", engine: "inworld" },
 
       // === Voces Clonadas/Generadas del usuario ===
       ...userVoices,
@@ -208,6 +209,15 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     return () => window.removeEventListener('voltvoice:assistant-visualizer-audio', handleAssistantVisualizerAudio)
   }, [])
 
+  useEffect(() => {
+    const handlePttAudioState = (event) => {
+      setPttRecordingActive(Boolean(event?.detail?.active))
+    }
+
+    window.addEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
+    return () => window.removeEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
+  }, [])
+
   const handleSynthesize = async () => {
     if (!text.trim()) {
       setError('Por favor escribe algo para sintetizar')
@@ -220,7 +230,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     }
 
     if (text.length > PREMIUM_TEST_CHAR_LIMIT) {
-      setError(`El texto de prueba supera el lÃ­mite de ${PREMIUM_TEST_CHAR_LIMIT} caracteres.`)
+      setError(`El texto de prueba supera el limite de ${PREMIUM_TEST_CHAR_LIMIT} caracteres.`)
       return
     }
 
@@ -310,7 +320,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
         }
       }
     } catch (err) {
-      setError("Error de conexiÃ³n. Verifica tu conexiÃ³n a internet.")
+      setError("Error de conexion. Verifica tu conexion a internet.")
       console.error(err)
     } finally {
       setLoading(false)
@@ -407,7 +417,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
         {/* TikTok Live Section */}
         <TikTokLivePanel config={config} updateConfig={updateConfig} />
 
-        {/* Botones principales: ConfiguraciÃ³n, Taller de Voces, EstadÃ­sticas */}
+        {/* Botones principales: Configuracion, Taller de Voces, Estadisticas */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <button
             onClick={onGoControlPanel}
@@ -418,7 +428,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             }`}
           >
             <Settings className="w-5 h-5" />
-            <span>ConfiguraciÃ³n</span>
+            <span>Configuracion</span>
           </button>
           {onGoVoiceCloning && (
             <button
@@ -443,7 +453,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               }`}
             >
               <BarChart3 className="w-5 h-5" />
-              <span>EstadÃ­sticas</span>
+              <span>Estadisticas</span>
             </button>
           )}
         </div>
@@ -502,7 +512,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             {success && (
               <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
                 <Volume2 className="w-5 h-5 text-green-400 flex-shrink-0" />
-                <p className="text-sm text-green-400">Â¡SÃ­ntesis completada!</p>
+                <p className="text-sm text-green-400">Sintesis completada!</p>
               </div>
             )}
 
@@ -542,7 +552,11 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
           <div className="lg:col-span-1 space-y-6">
             {/* Audio Player - with Visualizer */}
             <div className="space-y-2">
-              <AudioVisualizer audioElement={assistantAudioElement || audioRef.current} isPlaying={isPlaying || localSpeechActive || assistantSpeechActive} darkMode={darkMode} />
+              <AudioVisualizer
+                audioElement={assistantAudioElement || audioRef.current}
+                isPlaying={!pttRecordingActive && (isPlaying || localSpeechActive || assistantSpeechActive)}
+                darkMode={darkMode}
+              />
               {audioUrl && (
                 <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30 rounded-lg">
                   <button
@@ -571,7 +585,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               updateConfig={updateConfig}
             />
 
-            {/* Tokens â€” minimalista */}
+            {/* Tokens - minimalista */}
             <div className={`${darkMode ? "bg-[#1a1a2e] border border-cyan-400/20 rounded-xl p-4" : "bg-white border border-indigo-200 rounded-xl p-4 shadow-sm"}`}>
               <div className="flex items-baseline justify-between mb-3">
                 <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/70' : 'text-indigo-400'}`}>Tokens</span>

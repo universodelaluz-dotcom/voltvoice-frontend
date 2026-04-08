@@ -97,10 +97,10 @@ const CONFIG_COMMANDS = [
     aliases: [
       'filtro de palabrotas',
       'filtro anti groserias',
-      'filtro anti groserÃ­as',
+      'filtro anti groserias',
       'bloquear malas palabras',
       'bloquear groserias',
-      'bloquear groserÃ­as'
+      'bloquear groserias'
     ]
   },
   {
@@ -354,7 +354,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     const raw = String(text || '').trim()
     const maxChars = getAssistantMaxResponseChars()
     if (!raw || raw.length <= maxChars) return raw
-    return `${raw.slice(0, maxChars).trimEnd()}â€¦`
+    return `${raw.slice(0, maxChars).trimEnd()}...`
   }
 
   const getAssistantSetupError = () => {
@@ -414,7 +414,6 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
     chatSuppressedRef.current = active
     console.log(`[Bot] setChatSuppressed(${active}) - dispatching voltvoice:assistant-speech-state`)
-    console.trace('[Bot] setChatSuppressed stack trace')
     window.dispatchEvent(new CustomEvent('voltvoice:assistant-speech-state', {
       detail: { active }
     }))
@@ -436,7 +435,6 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
   const suppressChatAudio = () => {
     console.log('[Bot] suppressChatAudio() called')
-    console.trace('[Bot] suppressChatAudio stack trace')
     lockChatSuppression()
     dispatchChatPlaybackControl('pause')
   }
@@ -445,7 +443,6 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     // Don't end response window here - let RMS detection do it
     // endAssistantResponseWindow() should only be called when RMS confirms audio has truly ended
     console.log('[Bot] restoreChatAudioImmediate() called')
-    console.trace('[Bot] restoreChatAudioImmediate stack trace')
     unlockChatSuppression()
     dispatchChatPlaybackControl('resume')
   }
@@ -586,7 +583,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       responseCompletedRef.current = true
       botIsAudiblySpeakingRef.current = false
       restoreChatAudioImmediate()
-      setResponse((current) => current || 'La IA tardÃ³ demasiado en responder. Intenta de nuevo.')
+      setResponse((current) => current || 'La IA tardo demasiado en responder. Intenta de nuevo.')
     }, 35000)
   }
 
@@ -1016,7 +1013,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     const token = localStorage.getItem('sv-token')
     const selectedVoice = voiceId || selectedRealtimeVoiceId || 'Clive'
 
-    // Detectar si es una voz bÃ¡sica de Google (no Inworld)
+    // Detectar si es una voz basica de Google (no Inworld)
     const isBasicVoice = selectedVoice === 'es-ES' || selectedVoice === 'en-US'
     const endpoint = isBasicVoice ? '/api/tts/say' : '/api/inworld/tts'
 
@@ -1274,18 +1271,18 @@ Reglas de salida:
 - CRITICO: NUNCA leas en voz alta ni cites textualmente el contenido de mensajes del chat. JAMAS repitas palabra por palabra lo que dijo alguien. Siempre reacciona con TUS PROPIAS PALABRAS originales.
 
 Directiva de comportamiento continuo:
-MantÃ©n al personaje creado siempre fresco, variado y natural.
+Manten al personaje creado siempre fresco, variado y natural.
 Evita repetir siempre el mismo tipo de frases, bromas o temas.
-Lee el chat reciente y mÃ©tete en los temas activos reaccionando como si estuvieras presente en tiempo real.
-Detecta patrones, conversaciones activas, tensiones, momentos graciosos y oportunidades para intervenir con humor, observaciÃ³n, preguntas o comentarios inteligentes.
-Alterna tipos de intervenciÃ³n para no volverte predecible.
-Si detectas spam, flood, provocaciÃ³n barata o negatividad insistente, indica brevemente que se aplicÃ³ silencio y no te enganches con trolls.
+Lee el chat reciente y metete en los temas activos reaccionando como si estuvieras presente en tiempo real.
+Detecta patrones, conversaciones activas, tensiones, momentos graciosos y oportunidades para intervenir con humor, observacion, preguntas o comentarios inteligentes.
+Alterna tipos de intervencion para no volverte predecible.
+Si detectas spam, flood, provocacion barata o negatividad insistente, indica brevemente que se aplico silencio y no te enganches con trolls.
 Objetivo: mantener el chat vivo, entretenido, en movimiento y bajo control.
 
 Extras obligatorios:
-1) Evitar repeticiÃ³n: si recientemente hiciste un tipo de comentario, varÃ­a el siguiente.
-2) Prioridad a lo interesante: prioriza mensajes que generen conversaciÃ³n, risa, reacciÃ³n o movimiento del chat.
-3) __SKIP__ SOLO si el mensaje es una repeticiÃ³n exacta (mismo usuario, exactamente el mismo texto, en los Ãºltimos 10 segundos). En TODOS los otros casos, SIEMPRE responde con algo contextual y natural.
+1) Evitar repeticion: si recientemente hiciste un tipo de comentario, varia el siguiente.
+2) Prioridad a lo interesante: prioriza mensajes que generen conversacion, risa, reaccion o movimiento del chat.
+3) __SKIP__ SOLO si el mensaje es una repeticion exacta (mismo usuario, exactamente el mismo texto, en los ultimos 10 segundos). En TODOS los otros casos, SIEMPRE responde con algo contextual y natural.
 `.trim()
 
     armResponseTimeout()
@@ -1590,7 +1587,7 @@ Extras obligatorios:
         return
       }
 
-      console.log('[F8] Â¡LLAMAR AL INTERACTUADOR AHORA!')
+      console.log('[F8] LLAMAR AL INTERACTUADOR AHORA!')
       try {
         // Pick an intent like autopilot does, but skip threshold checks
         console.log('[F8] Step 1: Calling pickAutopilotIntent()')
@@ -1599,6 +1596,8 @@ Extras obligatorios:
 
         console.log('[F8] Step 3: Setting state (isLoading, etc)')
         setIsLoading(true)
+        setAssistantVisualActive(false)
+        emitAssistantVisualizerState(false)
         clearResponseTimeout()
         setHasVoiceResponse(false)
         hasVoiceResponseRef.current = false
@@ -1619,7 +1618,7 @@ Extras obligatorios:
         let localResponse = String(localResult || '').trim()
         console.log('[F8] Step 6: localResponse:', localResponse?.substring?.(0, 50))
         if (localResponse === '__SKIP__' || !localResponse) {
-          console.log('[F8] Primary intent vacÃ­o/skip, fallback directo')
+          console.log('[F8] Primary intent vacio/skip, fallback directo')
           const fallbackResult = await fn.executeLocalIntent({ type: 'epic_chat_line' }, 'f8-manual-fallback')
           localResponse = String(fallbackResult || '').trim()
         }
@@ -1631,7 +1630,7 @@ Extras obligatorios:
           setHasActiveResponse(true)
           hasActiveResponseRef.current = true
           await speakLocalResponse(localResponse, selectedRealtimeVoiceIdRef.current || voiceLabelRef.current)
-          console.log('[F8] âœ“ Completado')
+          console.log('[F8] OK Completado')
         } else {
           console.log('[F8] Step 7: No localResponse, cleanup')
           setIsLoading(false)
@@ -2007,7 +2006,7 @@ Extras obligatorios:
         console.log('[Bot] handleAudioStarted: setResponse callback - current:', current?.substring?.(0, 30) || 'null')
         // Clear timeout message, but preserve valid response text
         // Only preserve if it matches the latest response we received
-        if (current === 'La IA tardÃ³ demasiado en responder. Intenta de nuevo.') {
+        if (current === 'La IA tardo demasiado en responder. Intenta de nuevo.') {
           console.log('[Bot] handleAudioStarted: Clearing timeout message')
           return null
         }
@@ -2028,7 +2027,7 @@ Extras obligatorios:
       console.log('[Bot] handleAudioComplete: Waiting for RMS silence to confirm audio is truly done')
       // CRITICAL: Do NOT reset responsePlaybackStartedRef here!
       // Do NOT call restore functions here!
-      // Audio transmission complete â‰  audio playback complete
+      // Audio transmission complete != audio playback complete
       // Wait for handleAudioEnergySilent to confirm via RMS detection
     }
 
@@ -2271,6 +2270,8 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
     try {
       if (!ensureAssistantReady()) return
       setIsLoading(true)
+      setAssistantVisualActive(false)
+      emitAssistantVisualizerState(false)
       clearResponseTimeout()
       setResponse(null)
       setHasVoiceResponse(false)
@@ -2312,6 +2313,8 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
 
       setIsRecording(false)
       setIsLoading(true)
+      setAssistantVisualActive(false)
+      emitAssistantVisualizerState(false)
       setPttSuppressed(false)
       stream.getAudioTracks().forEach(track => track.stop())
       setTimeout(() => {
@@ -2495,7 +2498,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
       .filter((user) => user.negativeScore >= 3 && user.messageCount >= 3)
       .sort((a, b) => (b.negativeScore - a.negativeScore) || (b.messageCount - a.messageCount))[0]
     const questions = chatStore.getQuestions(15)
-    const hasJokes = recent.some((item) => /(jaja|jeje|xd|lol|ðŸ¤£|ðŸ˜‚)/i.test(String(item.text || '')))
+    const hasJokes = recent.some((item) => /(jaja|jeje|xd|lol)/i.test(String(item.text || '')))
     const hasIntenseFlow = recent.length >= 30
     const celebrationLevel = Number(stats?.giftsToday || 0) + Number(stats?.followsToday || 0) + Number(stats?.sharesToday || 0)
     const lowSignalMessages = recent.filter((item) => {
@@ -2505,7 +2508,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
     }).length
     const questionRate = recent.length > 0 ? (questions.length / recent.length) : 0
     const interestingRate = recent.length > 0
-      ? (recent.filter((item) => /[?Â¿!]|(jaja|jeje|xd|lol|wow|no manches|contexto|por que|como|cuando|donde|opinan|debate|drama|troll)/i.test(String(item.text || ''))).length / recent.length)
+      ? (recent.filter((item) => /[?!]|(jaja|jeje|xd|lol|wow|no manches|contexto|por que|como|cuando|donde|opinan|debate|drama|troll)/i.test(String(item.text || ''))).length / recent.length)
       : 0
     const lowSignalRatio = recent.length > 0 ? (lowSignalMessages / recent.length) : 1
 

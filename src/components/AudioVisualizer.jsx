@@ -62,14 +62,6 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       externalEnergyRef.current = Math.max(externalEnergyRef.current, normalized)
       kickPulseRef.current = Math.max(kickPulseRef.current, normalized)
       recentKickTsRef.current = Date.now()
-
-      // Re-generate a fixed vertical profile at each pulse (no lateral drift)
-      if (profileRef.current.length) {
-        for (let i = 0; i < profileRef.current.length; i++) {
-          const spread = 0.22 + Math.random() * 0.78
-          profileRef.current[i] = (Math.random() * 2 - 1) * spread
-        }
-      }
     }
 
     window.addEventListener('voltvoice:visualizer-kick', handleKick)
@@ -108,7 +100,7 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
 
       const analyser = analyserRef.current
       const kickedRecently = Date.now() - recentKickTsRef.current < 260
-      const active = Boolean(isPlaying || detectedPlayingRef.current || kickedRecently || externalEnergyRef.current > 0.08)
+      const active = Boolean(isPlaying || detectedPlayingRef.current || kickedRecently || externalEnergyRef.current > 0.06)
 
       let signal = new Array(points).fill(0)
       let energy = externalEnergyRef.current
@@ -126,41 +118,44 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
         rms = Math.sqrt(rms / time.length)
         const spectral = (fsum / freq.length) / 255
 
-        const gain = Math.max(2.1, Math.min(10.5, 0.24 / Math.max(rms, 0.0009)))
-        energy = Math.max(energy, Math.min(1, spectral * 1.4))
+        energy = Math.max(energy, Math.min(1, spectral * 1.35))
 
+        // Use frequency energy mapped to a fixed spatial profile.
+        // This keeps the line static in place and only "rumbles" vertically.
         for (let i = 0; i < points; i++) {
-          const idx = Math.min(time.length - 1, Math.floor((i / points) * time.length))
-          signal[i] = time[idx] * gain
+          const bin = Math.min(freq.length - 1, Math.floor((i / points) * freq.length))
+          const mag = (freq[bin] || 0) / 255
+          const shape = profileRef.current[i] || 0
+          signal[i] = shape * (0.18 + mag * 1.8)
         }
 
-        if (rms < 0.0032) {
+        if (rms < 0.0028) {
           lowRmsFramesRef.current += 1
         } else {
           lowRmsFramesRef.current = 0
         }
 
         // Local/basic voices may come flat from analyser: use fixed kick profile.
-        if (lowRmsFramesRef.current > 2) {
-          const kick = Math.max(energy, externalEnergyRef.current, kickPulseRef.current, 0.38)
+        if (lowRmsFramesRef.current > 1) {
+          const kick = Math.max(energy, externalEnergyRef.current, kickPulseRef.current, 0.44)
           for (let i = 0; i < points; i++) {
-            signal[i] = profileRef.current[i] * (0.2 + kick * 1.35)
+            signal[i] = profileRef.current[i] * (0.25 + kick * 1.55)
           }
           energy = Math.max(energy, kick)
         }
       } else {
         for (let i = 0; i < points; i++) {
-          signal[i] = profileRef.current[i] * 0.05
+          signal[i] = profileRef.current[i] * 0.025
         }
-        energy = Math.max(energy, 0.08)
+        energy = Math.max(energy, 0.06)
         lowRmsFramesRef.current = 0
       }
 
-      externalEnergyRef.current = Math.max(0, externalEnergyRef.current * 0.91)
-      kickPulseRef.current = Math.max(0, kickPulseRef.current * 0.86)
+      externalEnergyRef.current = Math.max(0, externalEnergyRef.current * 0.94)
+      kickPulseRef.current = Math.max(0, kickPulseRef.current * 0.9)
 
-      const amp = active ? (20 + energy * 54 + kickPulseRef.current * 18) : 4
-      const smooth = active ? 0.42 : 0.22
+      const amp = active ? (15 + energy * 72 + kickPulseRef.current * 22) : 2.6
+      const smooth = active ? 0.28 : 0.16
 
       ctx.clearRect(0, 0, W, H)
       ctx.fillStyle = '#000'
@@ -172,14 +167,14 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
 
       // Glow line
       ctx.beginPath()
-      ctx.strokeStyle = `rgba(0,220,255,${0.36 + energy * 0.34})`
-      ctx.lineWidth = 2.8 + energy * 2.1 + kickPulseRef.current * 0.9
+      ctx.strokeStyle = `rgba(0,220,255,${0.32 + energy * 0.42})`
+      ctx.lineWidth = 2.2 + energy * 2.4 + kickPulseRef.current * 1.15
       for (let i = 0; i < points; i++) {
         const prev = valuesRef.current[i] || 0
         const next = prev + (signal[i] - prev) * smooth
         valuesRef.current[i] = next
         const x = (i / (points - 1)) * W
-        const y = midY + next * amp * 0.62
+        const y = midY + next * amp * 0.56
         if (i === 0) ctx.moveTo(x, y)
         else ctx.lineTo(x, y)
       }
@@ -188,7 +183,7 @@ export default function AudioVisualizer({ audioElement, isPlaying }) {
       // Main baseline that rumbles vertically only
       ctx.beginPath()
       ctx.strokeStyle = 'rgba(190,245,255,0.98)'
-      ctx.lineWidth = 1.7 + energy * 0.9 + kickPulseRef.current * 0.4
+      ctx.lineWidth = 1.5 + energy * 1.15 + kickPulseRef.current * 0.55
       for (let i = 0; i < points; i++) {
         const x = (i / (points - 1)) * W
         const y = midY + valuesRef.current[i] * amp
