@@ -31,6 +31,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const [audioUrl, setAudioUrl] = useState(null)
   const [audioPlaybackNonce, setAudioPlaybackNonce] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [localSpeechActive, setLocalSpeechActive] = useState(false)
   const audioRef = useRef(null)
   const [tokensUsed, setTokensUsed] = useState(0)
   const [error, setError] = useState(null)
@@ -206,6 +207,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     setError(null)
     setSuccess(false)
     setAudioUrl(null)
+    setLocalSpeechActive(false)
 
     try {
       const selectedVoiceObj = voices.find(v => v.id === selectedVoice)
@@ -228,10 +230,23 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
           availableVoices[0]
         if (matchVoice) utterance.voice = matchVoice
         setIsPlaying(true)
-        utterance.onstart = () => setIsPlaying(true)
-        utterance.onend = () => setIsPlaying(false)
-        utterance.onerror = () => setIsPlaying(false)
-        utterance.onpause = () => setIsPlaying(false)
+        setLocalSpeechActive(true)
+        utterance.onstart = () => {
+          setIsPlaying(true)
+          setLocalSpeechActive(true)
+        }
+        utterance.onend = () => {
+          setIsPlaying(false)
+          setLocalSpeechActive(false)
+        }
+        utterance.onerror = () => {
+          setIsPlaying(false)
+          setLocalSpeechActive(false)
+        }
+        utterance.onpause = () => {
+          setIsPlaying(false)
+          setLocalSpeechActive(false)
+        }
 
         window.speechSynthesis.cancel()
         window.speechSynthesis.speak(utterance)
@@ -523,9 +538,9 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
           {/* Right Column - Stats & Audio */}
           <div className="lg:col-span-1 space-y-6">
             {/* Audio Player - with Visualizer */}
-            {(audioUrl || isPlaying) && (
+            {(audioUrl || isPlaying || localSpeechActive) && (
               <div className="space-y-2">
-                <AudioVisualizer audioElement={audioRef.current} isPlaying={isPlaying} darkMode={darkMode} />
+                <AudioVisualizer audioElement={audioRef.current} isPlaying={isPlaying || localSpeechActive} darkMode={darkMode} />
                 {audioUrl && (
                 <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30 rounded-lg">
                   <button

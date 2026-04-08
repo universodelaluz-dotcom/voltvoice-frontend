@@ -257,6 +257,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const [isLoading, setIsLoading] = useState(false)
   const [hasVoiceResponse, setHasVoiceResponse] = useState(false)
   const [isPlayingResponse, setIsPlayingResponse] = useState(false)
+  const [assistantVisualActive, setAssistantVisualActive] = useState(false)
   const [assistantAudioElement, setAssistantAudioElement] = useState(null)
   const [voiceLabel, setVoiceLabel] = useState('Clive')
   const [hasActiveResponse, setHasActiveResponse] = useState(false)
@@ -360,6 +361,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
   const beginAssistantResponseWindow = () => {
     console.log('[Bot] beginAssistantResponseWindow: CALLED - resetting state for new response')
+    setAssistantVisualActive(true)
     assistantResponseActiveRef.current = true
     assistantResponseHadAudioRef.current = false
     heardSpeechThisTurnRef.current = false
@@ -375,6 +377,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   }
 
   const endAssistantResponseWindow = () => {
+    setAssistantVisualActive(false)
     assistantResponseActiveRef.current = false
     assistantResponseHadAudioRef.current = false
     heardSpeechThisTurnRef.current = false
@@ -1902,6 +1905,7 @@ Extras obligatorios:
         }
 
         restoreChatAudioImmediate()
+        setAssistantVisualActive(false)
         return
       }
 
@@ -1998,6 +2002,7 @@ Extras obligatorios:
       setResponse(`Error: ${error?.message || 'Unknown error'}`)
       setIsLoading(false)
       setIsRecording(false)
+      setAssistantVisualActive(false)
       responseCompletedRef.current = true
       botIsAudiblySpeakingRef.current = false
       restoreChatAudioImmediate()
@@ -2059,6 +2064,7 @@ Extras obligatorios:
     hasVoiceResponseRef.current = false
     responsePlaybackStartedRef.current = false
     setIsPlayingResponse(false)
+    setAssistantVisualActive(false)
     setHasActiveResponse(false)
     hasActiveResponseRef.current = false
     hasChargedCurrentResponseRef.current = false
@@ -2770,10 +2776,10 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
         </div>
       )}
 
-      {(hasVoiceResponse || isPlayingResponse) && (
+      {(hasVoiceResponse || isPlayingResponse || assistantVisualActive) && (
         <AudioVisualizer
           audioElement={assistantAudioElement}
-          isPlaying={isPlayingResponse}
+          isPlaying={isPlayingResponse || assistantVisualActive}
           darkMode={darkMode}
         />
       )}
