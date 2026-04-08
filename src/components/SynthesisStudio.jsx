@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import TikTokLivePanel from './TikTokLivePanel'
 import AudioVisualizer from './AudioVisualizer'
 import BotInvoker from './BotInvoker'
@@ -33,6 +33,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const [isPlaying, setIsPlaying] = useState(false)
   const [localSpeechActive, setLocalSpeechActive] = useState(false)
   const [assistantSpeechActive, setAssistantSpeechActive] = useState(false)
+  const [assistantAudioElement, setAssistantAudioElement] = useState(null)
   const audioRef = useRef(null)
   const [tokensUsed, setTokensUsed] = useState(0)
   const [error, setError] = useState(null)
@@ -47,14 +48,14 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
   // Chat simulation
   const [chatMessages, setChatMessages] = useState([
-    { id: 1, user: 'maria_streams', message: '¡Hola! ¿Cómo estás?', timestamp: new Date(Date.now() - 30000) },
-    { id: 2, user: 'juan_gamer', message: 'Este stream es increíble 🔥', timestamp: new Date(Date.now() - 20000) },
-    { id: 3, user: 'sofia_rocks', message: '¡Léeme este mensaje!', timestamp: new Date(Date.now() - 10000) },
+    { id: 1, user: 'maria_streams', message: 'Â¡Hola! Â¿CÃ³mo estÃ¡s?', timestamp: new Date(Date.now() - 30000) },
+    { id: 2, user: 'juan_gamer', message: 'Este stream es increÃ­ble ðŸ”¥', timestamp: new Date(Date.now() - 20000) },
+    { id: 3, user: 'sofia_rocks', message: 'Â¡LÃ©eme este mensaje!', timestamp: new Date(Date.now() - 10000) },
   ])
   const [newChatMessage, setNewChatMessage] = useState('')
   const [currentChatUser, setCurrentChatUser] = useState('viewer123')
 
-  // Reproducir automáticamente cuando haya audio
+  // Reproducir automÃ¡ticamente cuando haya audio
   useEffect(() => {
     if (!audioUrl || !audioRef.current) return
 
@@ -81,7 +82,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     return () => { cancelled = true }
   }, [audioUrl, audioPlaybackNonce])
 
-  // Rastrear estado de reproducción para el visualizador
+  // Rastrear estado de reproducciÃ³n para el visualizador
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
@@ -139,14 +140,14 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   useEffect(() => {
     const allVoices = [
       // === VOCES LOCALES (Sin tokens, sin backend) ===
-      { id: "es-ES", name: "🔊 Voz Local Español (ilimitada)", category: "webspeech", engine: "webspeech" },
-      { id: "en-US", name: "🔊 Voz Local Inglés (ilimitada)", category: "webspeech", engine: "webspeech" },
+      { id: "es-ES", name: "ðŸ”Š Voz Local EspaÃ±ol (ilimitada)", category: "webspeech", engine: "webspeech" },
+      { id: "en-US", name: "ðŸ”Š Voz Local InglÃ©s (ilimitada)", category: "webspeech", engine: "webspeech" },
 
       // === Voces Premium - Naturales ===
-      { id: "Diego", name: "🎙️ Voz natural de Luis - Premium", category: "premium", engine: "inworld" },
-      { id: "Lupita", name: "🎙️ Voz natural de Sofia - Premium", category: "premium", engine: "inworld" },
-      { id: "Miguel", name: "🎙️ Voz natural de Gustavo - Premium", category: "premium", engine: "inworld" },
-      { id: "Rafael", name: "🎙️ Voz natural de Leonel - Premium", category: "premium", engine: "inworld" },
+      { id: "Diego", name: "ðŸŽ™ï¸ Voz natural de Luis - Premium", category: "premium", engine: "inworld" },
+      { id: "Lupita", name: "ðŸŽ™ï¸ Voz natural de Sofia - Premium", category: "premium", engine: "inworld" },
+      { id: "Miguel", name: "ðŸŽ™ï¸ Voz natural de Gustavo - Premium", category: "premium", engine: "inworld" },
+      { id: "Rafael", name: "ðŸŽ™ï¸ Voz natural de Leonel - Premium", category: "premium", engine: "inworld" },
 
       // === Voces Clonadas/Generadas del usuario ===
       ...userVoices,
@@ -197,6 +198,16 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     return () => window.removeEventListener('voltvoice:assistant-visualizer', handleAssistantVisualizer)
   }, [])
 
+  useEffect(() => {
+    const handleAssistantVisualizerAudio = (event) => {
+      const el = event?.detail?.audioElement || null
+      setAssistantAudioElement(el)
+    }
+
+    window.addEventListener('voltvoice:assistant-visualizer-audio', handleAssistantVisualizerAudio)
+    return () => window.removeEventListener('voltvoice:assistant-visualizer-audio', handleAssistantVisualizerAudio)
+  }, [])
+
   const handleSynthesize = async () => {
     if (!text.trim()) {
       setError('Por favor escribe algo para sintetizar')
@@ -209,7 +220,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     }
 
     if (text.length > PREMIUM_TEST_CHAR_LIMIT) {
-      setError(`El texto de prueba supera el límite de ${PREMIUM_TEST_CHAR_LIMIT} caracteres.`)
+      setError(`El texto de prueba supera el lÃ­mite de ${PREMIUM_TEST_CHAR_LIMIT} caracteres.`)
       return
     }
 
@@ -224,7 +235,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       const isWebSpeech = selectedVoiceObj && selectedVoiceObj.engine === "webspeech"
 
       if (isWebSpeech) {
-        // Voces b�sicas por backend TTS para obtener audio real y espectro real.
+        // Voces básicas por backend TTS para obtener audio real y espectro real.
         const response = await fetch(`${API_URL}/api/tts/say`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -236,7 +247,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
         const data = await response.json()
         if (!response.ok || !data.audio) {
-          setError(data.error || "Error al sintetizar la voz b�sica")
+          setError(data.error || "Error al sintetizar la voz básica")
         } else {
           setAudioUrl(data.audio)
           setAudioPlaybackNonce((prev) => prev + 1)
@@ -299,7 +310,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
         }
       }
     } catch (err) {
-      setError("Error de conexión. Verifica tu conexión a internet.")
+      setError("Error de conexiÃ³n. Verifica tu conexiÃ³n a internet.")
       console.error(err)
     } finally {
       setLoading(false)
@@ -396,7 +407,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
         {/* TikTok Live Section */}
         <TikTokLivePanel config={config} updateConfig={updateConfig} />
 
-        {/* Botones principales: Configuración, Taller de Voces, Estadísticas */}
+        {/* Botones principales: ConfiguraciÃ³n, Taller de Voces, EstadÃ­sticas */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <button
             onClick={onGoControlPanel}
@@ -407,7 +418,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             }`}
           >
             <Settings className="w-5 h-5" />
-            <span>Configuración</span>
+            <span>ConfiguraciÃ³n</span>
           </button>
           {onGoVoiceCloning && (
             <button
@@ -432,7 +443,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               }`}
             >
               <BarChart3 className="w-5 h-5" />
-              <span>Estadísticas</span>
+              <span>EstadÃ­sticas</span>
             </button>
           )}
         </div>
@@ -491,7 +502,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             {success && (
               <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
                 <Volume2 className="w-5 h-5 text-green-400 flex-shrink-0" />
-                <p className="text-sm text-green-400">¡Síntesis completada!</p>
+                <p className="text-sm text-green-400">Â¡SÃ­ntesis completada!</p>
               </div>
             )}
 
@@ -531,7 +542,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
           <div className="lg:col-span-1 space-y-6">
             {/* Audio Player - with Visualizer */}
             <div className="space-y-2">
-              <AudioVisualizer audioElement={audioRef.current} isPlaying={isPlaying || localSpeechActive || assistantSpeechActive} darkMode={darkMode} />
+              <AudioVisualizer audioElement={assistantAudioElement || audioRef.current} isPlaying={isPlaying || localSpeechActive || assistantSpeechActive} darkMode={darkMode} />
               {audioUrl && (
                 <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30 rounded-lg">
                   <button
@@ -560,7 +571,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               updateConfig={updateConfig}
             />
 
-            {/* Tokens — minimalista */}
+            {/* Tokens â€” minimalista */}
             <div className={`${darkMode ? "bg-[#1a1a2e] border border-cyan-400/20 rounded-xl p-4" : "bg-white border border-indigo-200 rounded-xl p-4 shadow-sm"}`}>
               <div className="flex items-baseline justify-between mb-3">
                 <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/70' : 'text-indigo-400'}`}>Tokens</span>
@@ -585,6 +596,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     </div>
   )
 }
+
 
 
 

@@ -309,6 +309,12 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     }))
   }
 
+  const emitAssistantVisualizerAudio = (audioElement) => {
+    window.dispatchEvent(new CustomEvent('voltvoice:assistant-visualizer-audio', {
+      detail: { audioElement: audioElement || null }
+    }))
+  }
+
   const emitVisualizerKick = (level = 0.5) => {
     window.dispatchEvent(new CustomEvent('voltvoice:visualizer-kick', {
       detail: { level: Math.max(0, Math.min(1, Number(level) || 0.5)) }
@@ -318,6 +324,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const bindRealtimeAudioToVisualizer = () => {
     if (localAudioRef.current) {
       setAssistantAudioElement(localAudioRef.current)
+      emitAssistantVisualizerAudio(localAudioRef.current)
       return
     }
 
@@ -327,6 +334,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
         : null) || inworldRealtimeService.outputAudioElement || null
     if (realtimeAudio) {
       setAssistantAudioElement(realtimeAudio)
+      emitAssistantVisualizerAudio(realtimeAudio)
     }
   }
 
@@ -1044,6 +1052,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     const audio = new Audio(data.audio || data.audioUrl)
     localAudioRef.current = audio
     setAssistantAudioElement(audio)
+    emitAssistantVisualizerAudio(audio)
     audio.playbackRate = getAssistantVoiceSpeed()
 
     audio.onplay = () => {
