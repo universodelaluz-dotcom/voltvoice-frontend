@@ -1,4 +1,7 @@
-# 🚀 VoltVoice - Railway Deployment Checklist
+# 🚀 VoltVoice - Railway Deployment Checklist (Legacy)
+
+> Nota: despliegue actual recomendado del proyecto: **Vercel + Render**.
+> Ver `VERCEL_RENDER_CHECKLIST.md`.
 
 ## ✅ PASO 1: Preparar GitHub (5 min)
 
