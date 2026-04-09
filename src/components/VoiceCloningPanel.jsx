@@ -1011,11 +1011,15 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
             <div className={`p-6 rounded-2xl ${darkMode ? 'bg-white/10' : 'bg-black/5'} backdrop-blur-sm`}>
               <Lock className={`w-20 h-20 ${darkMode ? 'text-purple-300' : 'text-purple-600'}`} />
             </div>
-            <div className="text-center">
+            <div className={`text-center px-6 py-4 rounded-xl ${
+              darkMode
+                ? 'bg-gradient-to-br from-purple-900/60 to-purple-800/40 border border-purple-500/50'
+                : 'bg-gradient-to-br from-purple-200/60 to-purple-100/50 border border-purple-400/60'
+            }`}>
               <h2 className={`text-2xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 Actualiza tu plan
               </h2>
-              <p className={`text-sm mb-6 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              <p className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
                 Acceso al Taller de Voces disponible<br/>
                 <span className="font-semibold">desde el plan START</span>
               </p>

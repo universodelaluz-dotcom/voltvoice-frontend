@@ -1,5 +1,147 @@
 import { useState, useEffect, useRef } from 'react'
-import { ArrowLeft, Check, HelpCircle, Keyboard, ChevronRight, Ban } from 'lucide-react'
+import { ArrowLeft, Check, HelpCircle, Keyboard, ChevronRight, Ban, Lock } from 'lucide-react'
+
+// Determina si una feature está bloqueada según el plan del usuario
+const isFeatureBlocked = (feature, userPlan) => {
+  const plan = userPlan?.toLowerCase() || 'free'
+
+  const blockedByPlan = {
+    free: {
+      // PRESETS Y BOTONES INICIO RÁPIDO - BLOQUEADOS
+      presets: true,
+      quickStart: true,
+      // TODA AREA DE VOCES - BLOQUEADA
+      voicesGeneral: true,
+      voicesDonor: true,
+      voicesSubscriber: true,
+      voicesCommunity: true,
+      voicesQuestion: true,
+      voicesNotif: true,
+      voicesModerator: true, // TAMBIÉN BLOQUEADA (cambio importante)
+      // FILTROS - BLOQUEADOS
+      excessiveEmojis: true,
+      minMessageLength: true,
+      charLimit: true,
+      maxQueue: true,
+      // NOTIFICACIONES Y IA - BLOQUEADAS
+      notifications: true,
+      aiAssistant: true,
+      // LECTURA - SOLO ALGUNOS LIBRES
+      readOnlyMessage: false, // BLOQUEADO
+      onlyQuestions: false, // BLOQUEADO
+      onlyDonors: false, // BLOQUEADO
+      onlyModerators: false, // BLOQUEADO
+      onlySubscribers: false, // BLOQUEADO
+      onlyCommunityMembers: false, // BLOQUEADO
+      ignoreLinks: false, // BLOQUEADO
+      profanityFilterEnabled: false, // BLOQUEADO
+      // LIBRES EN FREE
+      skipRepeated: false, // LIBRE
+      onlyPlainNicks: false, // LIBRE
+      stripChatEmojis: false, // LIBRE
+    },
+    start: {
+      // PRESETS Y BOTONES INICIO RÁPIDO - LIBRES
+      presets: false,
+      quickStart: false,
+      // TODAS LAS VOCES - BLOQUEADAS
+      voicesGeneral: true,
+      voicesDonor: true,
+      voicesSubscriber: true,
+      voicesCommunity: true,
+      voicesQuestion: true,
+      voicesNotif: true,
+      voicesModerator: true, // BLOQUEADA
+      // FILTROS AVANZADOS - BLOQUEADOS
+      excessiveEmojis: true,
+      minMessageLength: true,
+      charLimit: true,
+      maxQueue: true,
+      // NOTIFICACIONES Y IA - BLOQUEADAS
+      notifications: true,
+      aiAssistant: true,
+      // LECTURA Y FILTROS BÁSICOS - LIBRES
+      readOnlyMessage: false, // LIBRE
+      onlyQuestions: false, // LIBRE
+      onlyDonors: false, // LIBRE
+      onlyModerators: false, // LIBRE
+      onlySubscribers: false, // LIBRE
+      onlyCommunityMembers: false, // LIBRE
+      ignoreLinks: false, // LIBRE
+      profanityFilterEnabled: false, // LIBRE
+      skipRepeated: false, // LIBRE
+      onlyPlainNicks: false, // LIBRE
+      stripChatEmojis: false, // LIBRE
+    },
+    creator: {
+      presets: false,
+      quickStart: false,
+      voicesGeneral: false,
+      voicesDonor: false,
+      voicesSubscriber: false,
+      voicesCommunity: false,
+      voicesQuestion: false,
+      voicesNotif: false,
+      voicesModerator: false,
+      excessiveEmojis: false,
+      minMessageLength: false,
+      charLimit: false,
+      maxQueue: false,
+      notifications: false,
+      aiAssistant: true, // SOLO ESTO BLOQUEADO
+      readOnlyMessage: false,
+      onlyQuestions: false,
+      onlyDonors: false,
+      onlyModerators: false,
+      onlySubscribers: false,
+      onlyCommunityMembers: false,
+      ignoreLinks: false,
+      profanityFilterEnabled: false,
+      skipRepeated: false,
+      onlyPlainNicks: false,
+      stripChatEmojis: false,
+    },
+    pro: { all: false }, // TODO LIBRE
+    premium: { all: false },
+    elite: { all: false },
+    admin: { all: false },
+  }
+
+  const planBlocks = blockedByPlan[plan] || blockedByPlan.free
+  return planBlocks.all === false ? false : (planBlocks[feature] ?? false)
+}
+
+// Componente wrapper para mostrar secciones bloqueadas
+function FeatureLockedOverlay({ darkMode, message = 'Función no disponible en tu plan' }) {
+  return (
+    <div className={`absolute inset-0 rounded-xl flex items-center justify-center pointer-events-none ${
+      darkMode
+        ? 'bg-gradient-to-br from-gray-900/80 to-gray-800/70'
+        : 'bg-gradient-to-br from-gray-200/70 to-gray-100/60'
+    }`}>
+      <div className="flex flex-col items-center gap-2 pointer-events-auto">
+        <Lock className={`w-5 h-5 ${darkMode ? 'text-gray-500' : 'text-gray-600'}`} />
+        <span className={`text-xs font-semibold text-center ${darkMode ? 'text-gray-400' : 'text-gray-700'}`}>
+          {message}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// Wrapper para contenido bloqueado
+function BlockedSection({ blocked, children, darkMode, message = 'Disponible en otros planes' }) {
+  if (!blocked) return children
+
+  return (
+    <div className="relative">
+      <div className={`${blocked ? 'opacity-40 pointer-events-none' : ''}`}>
+        {children}
+      </div>
+      {blocked && <FeatureLockedOverlay darkMode={darkMode} message={message} />}
+    </div>
+  )
+}
 
 function Hint({ text, darkMode }) {
   return (
@@ -432,17 +574,20 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
       {/* Content */}
       <div className="pt-28 pb-20 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
-          <div className={`mb-4 rounded-2xl border p-4 ${
+          {/* PRESETS - BLOQUEADO EN PLAN FREE */}
+          <div className={`relative mb-4 rounded-2xl border p-4 ${
             darkMode ? 'border-cyan-500/20 bg-[#12122a]/70' : 'border-indigo-200 bg-white/80'
           }`}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className={`text-sm font-black uppercase tracking-widest ${darkMode ? 'text-cyan-300' : 'text-indigo-700'}`}>
-                Presets Rápidos
-              </h3>
-              <span className={`text-xs ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                Guarda y aplica tu configuración al instante
-              </span>
-            </div>
+            {isFeatureBlocked('presets', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Presets disponibles en plan START+" />}
+            <div className={`${isFeatureBlocked('presets', userPlan) ? 'opacity-40 pointer-events-none' : ''}`}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className={`text-sm font-black uppercase tracking-widest ${darkMode ? 'text-cyan-300' : 'text-indigo-700'}`}>
+                  Presets Rápidos
+                </h3>
+                <span className={`text-xs ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                  Guarda y aplica tu configuración al instante
+                </span>
+              </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {[0, 1, 2].map((idx) => {
                 const preset = config?.[presetKeys[idx]]
@@ -486,14 +631,18 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 )
               })}
             </div>
-            {presetStatus && (
-              <p className={`mt-3 text-xs font-semibold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{presetStatus}</p>
-            )}
+              {presetStatus && (
+                <p className={`mt-3 text-xs font-semibold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{presetStatus}</p>
+              )}
+            </div>
           </div>
 
-          <div className={`mb-4 rounded-2xl border p-4 ${
+          {/* BOTONES INICIO RÁPIDO - BLOQUEADO EN PLAN FREE */}
+          <div className={`relative mb-4 rounded-2xl border p-4 ${
             darkMode ? 'border-fuchsia-500/20 bg-[#12122a]/70' : 'border-fuchsia-200 bg-white/80'
           }`}>
+            {isFeatureBlocked('quickStart', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Inicio rápido disponible en plan START+" />}
+            <div className={`${isFeatureBlocked('quickStart', userPlan) ? 'opacity-40 pointer-events-none' : ''}`}>
             <div className="flex items-center justify-between mb-3">
               <h3 className={`text-sm font-black uppercase tracking-widest ${darkMode ? 'text-fuchsia-300' : 'text-fuchsia-700'}`}>
                 Inicio Rápido
@@ -524,6 +673,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 Limpiar opciones
               </button>
             </div>
+            </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
@@ -531,38 +681,61 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
             <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-cyan-500/20' : 'bg-white border-slate-200'}`}>
               <SectionHeader title="Lectura" tone="lectura" darkMode={darkMode} />
 
-              <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => updateConfig('readOnlyMessage', !config.readOnlyMessage)} darkMode={darkMode} hint="Lee el mensaje sin mencionar quién lo escribió" />
+              {/* AREA LECTURA - PARCIALMENTE BLOQUEADA EN FREE */}
+              <div className={`relative ${isFeatureBlocked('readOnlyMessage', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isFeatureBlocked('readOnlyMessage', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
+                <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => updateConfig('readOnlyMessage', !config.readOnlyMessage)} darkMode={darkMode} hint="Lee el mensaje sin mencionar quién lo escribió" />
+              </div>
               <CheckOption label="Saltar mensajes repetidos" checked={config.skipRepeated} onChange={() => updateConfig('skipRepeated', !config.skipRepeated)} darkMode={darkMode} hint="Ignora mensajes idénticos consecutivos para evitar spam" />
-              <CheckOption label="Leer solo preguntas" checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} hint="Solo lee mensajes que contengan signos de interrogación" />
-              <CheckOption label="Leer solo donadores" checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron regalos" />
-              <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} hint="Solo lee mensajes de moderadores del live" />
-              <CheckOption label="Leer solo suscriptores" checked={config.onlySubscribers} onChange={() => updateConfig('onlySubscribers', !config.onlySubscribers)} darkMode={darkMode} hint="Solo lee usuarios suscritos al creador del live" />
-              <CheckOption label="Filtro de miembros de comunidad" checked={config.onlyCommunityMembers} onChange={() => updateConfig('onlyCommunityMembers', !config.onlyCommunityMembers)} darkMode={darkMode} hint="Solo lee usuarios Fan o SuperFan del LIVE bajo el mismo filtro de comunidad" />
+              <div className={`relative ${isFeatureBlocked('onlyQuestions', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isFeatureBlocked('onlyQuestions', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
+                <CheckOption label="Leer solo preguntas" checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} hint="Solo lee mensajes que contengan signos de interrogación" />
+              </div>
+              <div className={`relative ${isFeatureBlocked('onlyDonors', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isFeatureBlocked('onlyDonors', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
+                <CheckOption label="Leer solo donadores" checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron regalos" />
+              </div>
+              <div className={`relative ${isFeatureBlocked('onlyModerators', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isFeatureBlocked('onlyModerators', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
+                <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} hint="Solo lee mensajes de moderadores del live" />
+              </div>
+              <div className={`relative ${isFeatureBlocked('onlySubscribers', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isFeatureBlocked('onlySubscribers', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
+                <CheckOption label="Leer solo suscriptores" checked={config.onlySubscribers} onChange={() => updateConfig('onlySubscribers', !config.onlySubscribers)} darkMode={darkMode} hint="Solo lee usuarios suscritos al creador del live" />
+              </div>
+              <div className={`relative ${isFeatureBlocked('onlyCommunityMembers', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isFeatureBlocked('onlyCommunityMembers', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
+                <CheckOption label="Filtro de miembros de comunidad" checked={config.onlyCommunityMembers} onChange={() => updateConfig('onlyCommunityMembers', !config.onlyCommunityMembers)} darkMode={darkMode} hint="Solo lee usuarios Fan o SuperFan del LIVE bajo el mismo filtro de comunidad" />
+              </div>
 
               <SectionHeader title="Voces" tone="voces" darkMode={darkMode} />
 
+              {/* SECCIÓN VOCES - BLOQUEADA EN FREE Y START (EXCEPTO MODERADORES) */}
               {/* Voz general */}
-              <div className={`mb-2 rounded-xl px-4 py-3 border ${
+              <div className={`relative mb-2 rounded-xl px-4 py-3 border ${
                 darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
               }`}>
+                {isFeatureBlocked('voicesGeneral', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en otros planes" />}
+                <div className={`${isFeatureBlocked('voicesGeneral', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-[15px] font-medium ${darkMode ? 'text-white' : 'text-slate-800'}`}>Voz general</span>
                 </div>
-                <select
-                  value={config.generalVoiceId || 'es-ES'}
-                  onChange={(e) => updateConfig('generalVoiceId', e.target.value)}
-                  className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                    darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
-                  }`}
-                >
-                  {premiumVoiceOptions.map(v => (
-                    <option key={v.id} value={v.id}>{v.name}</option>
-                  ))}
-                </select>
+                  <select
+                    value={config.generalVoiceId || 'es-ES'}
+                    onChange={(e) => updateConfig('generalVoiceId', e.target.value)}
+                    className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                      darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                    }`}
+                  >
+                    {premiumVoiceOptions.map(v => (
+                      <option key={v.id} value={v.id}>{v.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              {/* Voz donadores */}
-              <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
+              {/* Voz donadores - BLOQUEADA */}
+              <div className={`relative mb-2 rounded-xl px-4 py-3 border transition-colors ${
                 darkMode
                   ? config.donorVoiceEnabled
                     ? 'bg-cyan-500/10 border-cyan-400/40'
@@ -571,29 +744,32 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                     : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                <button onClick={() => updateConfig('donorVoiceEnabled', !config.donorVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
-                  <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                    config.donorVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
-                  }`}>
-                    {config.donorVoiceEnabled && <Check className="w-4 h-4 text-white" />}
-                  </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.donorVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz donadores<Hint text="Usa una voz diferente para quienes envían regalos" darkMode={darkMode} /></span>
-                </button>
-                {config.donorVoiceEnabled && (
-                  <div className="mt-2 ml-8">
-                    <select
-                      value={config.donorVoiceId}
-                      onChange={(e) => updateConfig('donorVoiceId', e.target.value)}
-                      className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
-                      }`}
-                    >
-                      {premiumVoiceOptions.map(v => (
-                        <option key={v.id} value={v.id}>{v.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                {isFeatureBlocked('voicesDonor', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en otros planes" />}
+                <div className={`${isFeatureBlocked('voicesDonor', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <button onClick={() => updateConfig('donorVoiceEnabled', !config.donorVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+                    <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                      config.donorVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
+                    }`}>
+                      {config.donorVoiceEnabled && <Check className="w-4 h-4 text-white" />}
+                    </div>
+                    <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.donorVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz donadores<Hint text="Usa una voz diferente para quienes envían regalos" darkMode={darkMode} /></span>
+                  </button>
+                  {config.donorVoiceEnabled && (
+                    <div className="mt-2 ml-8">
+                      <select
+                        value={config.donorVoiceId}
+                        onChange={(e) => updateConfig('donorVoiceId', e.target.value)}
+                        className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                          darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                        }`}
+                      >
+                        {premiumVoiceOptions.map(v => (
+                          <option key={v.id} value={v.id}>{v.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Voz moderadores */}
@@ -631,8 +807,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 )}
               </div>
 
-              {/* Voz suscriptores */}
-              <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
+              {/* Voz suscriptores - BLOQUEADA */}
+              <div className={`relative mb-2 rounded-xl px-4 py-3 border transition-colors ${
                 darkMode
                   ? config.subscriberVoiceEnabled
                     ? 'bg-cyan-500/10 border-cyan-400/40'
@@ -641,7 +817,9 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                     : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                <button onClick={() => updateConfig('subscriberVoiceEnabled', !config.subscriberVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+                {isFeatureBlocked('voicesSubscriber', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en otros planes" />}
+                <div className={`${isFeatureBlocked('voicesSubscriber', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <button onClick={() => updateConfig('subscriberVoiceEnabled', !config.subscriberVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                     config.subscriberVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
                   }`}>
@@ -649,25 +827,26 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   </div>
                   <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.subscriberVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz suscriptores<Hint text="Usa una voz diferente para usuarios suscritos" darkMode={darkMode} /></span>
                 </button>
-                {config.subscriberVoiceEnabled && (
-                  <div className="mt-2 ml-8">
-                    <select
-                      value={config.subscriberVoiceId || 'Lupita'}
-                      onChange={(e) => updateConfig('subscriberVoiceId', e.target.value)}
-                      className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
-                      }`}
-                    >
-                      {premiumVoiceOptions.map(v => (
-                        <option key={v.id} value={v.id}>{v.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                  {config.subscriberVoiceEnabled && (
+                    <div className="mt-2 ml-8">
+                      <select
+                        value={config.subscriberVoiceId || 'Lupita'}
+                        onChange={(e) => updateConfig('subscriberVoiceId', e.target.value)}
+                        className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                          darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                        }`}
+                      >
+                        {premiumVoiceOptions.map(v => (
+                          <option key={v.id} value={v.id}>{v.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Voz miembros de comunidad */}
-              <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
+              {/* Voz miembros de comunidad - BLOQUEADA */}
+              <div className={`relative mb-2 rounded-xl px-4 py-3 border transition-colors ${
                 darkMode
                   ? config.communityMemberVoiceEnabled
                     ? 'bg-cyan-500/10 border-cyan-400/40'
@@ -676,7 +855,9 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                     : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                <button onClick={() => updateConfig('communityMemberVoiceEnabled', !config.communityMemberVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+                {isFeatureBlocked('voicesCommunity', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en otros planes" />}
+                <div className={`${isFeatureBlocked('voicesCommunity', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <button onClick={() => updateConfig('communityMemberVoiceEnabled', !config.communityMemberVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                     config.communityMemberVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
                   }`}>
@@ -684,25 +865,26 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   </div>
                   <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.communityMemberVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz miembros de comunidad<Hint text="Usa una voz diferente para Fan/SuperFan del live" darkMode={darkMode} /></span>
                 </button>
-                {config.communityMemberVoiceEnabled && (
-                  <div className="mt-2 ml-8">
-                    <select
-                      value={config.communityMemberVoiceId || 'Lupita'}
-                      onChange={(e) => updateConfig('communityMemberVoiceId', e.target.value)}
-                      className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
-                      }`}
-                    >
-                      {premiumVoiceOptions.map(v => (
-                        <option key={v.id} value={v.id}>{v.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                  {config.communityMemberVoiceEnabled && (
+                    <div className="mt-2 ml-8">
+                      <select
+                        value={config.communityMemberVoiceId || 'Lupita'}
+                        onChange={(e) => updateConfig('communityMemberVoiceId', e.target.value)}
+                        className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                          darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                        }`}
+                      >
+                        {premiumVoiceOptions.map(v => (
+                          <option key={v.id} value={v.id}>{v.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Voz preguntas */}
-              <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
+              {/* Voz preguntas - BLOQUEADA */}
+              <div className={`relative mb-2 rounded-xl px-4 py-3 border transition-colors ${
                 darkMode
                   ? config.questionVoiceEnabled
                     ? 'bg-cyan-500/10 border-cyan-400/40'
@@ -711,7 +893,9 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                     : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                <button onClick={() => updateConfig('questionVoiceEnabled', !config.questionVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+                {isFeatureBlocked('voicesQuestion', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en otros planes" />}
+                <div className={`${isFeatureBlocked('voicesQuestion', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <button onClick={() => updateConfig('questionVoiceEnabled', !config.questionVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                     config.questionVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
                   }`}>
@@ -719,25 +903,26 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   </div>
                   <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.questionVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz preguntas<Hint text="Usa una voz diferente cuando el mensaje sea una pregunta" darkMode={darkMode} /></span>
                 </button>
-                {config.questionVoiceEnabled && (
-                  <div className="mt-2 ml-8">
-                    <select
-                      value={config.questionVoiceId || 'Lupita'}
-                      onChange={(e) => updateConfig('questionVoiceId', e.target.value)}
-                      className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
-                      }`}
-                    >
-                      {premiumVoiceOptions.map(v => (
-                        <option key={v.id} value={v.id}>{v.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                  {config.questionVoiceEnabled && (
+                    <div className="mt-2 ml-8">
+                      <select
+                        value={config.questionVoiceId || 'Lupita'}
+                        onChange={(e) => updateConfig('questionVoiceId', e.target.value)}
+                        className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                          darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                        }`}
+                      >
+                        {premiumVoiceOptions.map(v => (
+                          <option key={v.id} value={v.id}>{v.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Voz notificaciones */}
-              <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
+              {/* Voz notificaciones - BLOQUEADA */}
+              <div className={`relative mb-2 rounded-xl px-4 py-3 border transition-colors ${
                 darkMode
                   ? config.notifVoiceEnabled
                     ? 'bg-cyan-500/10 border-cyan-400/40'
@@ -746,7 +931,9 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                     : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                <button onClick={() => updateConfig('notifVoiceEnabled', !config.notifVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+                {isFeatureBlocked('voicesNotif', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en otros planes" />}
+                <div className={`${isFeatureBlocked('voicesNotif', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <button onClick={() => updateConfig('notifVoiceEnabled', !config.notifVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                     config.notifVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
                   }`}>
@@ -754,21 +941,22 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   </div>
                   <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.notifVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz notificaciones<Hint text="Usa una voz diferente para las notificaciones del live" darkMode={darkMode} /></span>
                 </button>
-                {config.notifVoiceEnabled && (
-                  <div className="mt-2 ml-8">
-                    <select
-                      value={config.notifVoiceId || 'Lupita'}
-                      onChange={(e) => updateConfig('notifVoiceId', e.target.value)}
-                      className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
-                      }`}
-                    >
-                      {premiumVoiceOptions.map(v => (
-                        <option key={v.id} value={v.id}>{v.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                  {config.notifVoiceEnabled && (
+                    <div className="mt-2 ml-8">
+                      <select
+                        value={config.notifVoiceId || 'Lupita'}
+                        onChange={(e) => updateConfig('notifVoiceId', e.target.value)}
+                        className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                          darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                        }`}
+                      >
+                        {premiumVoiceOptions.map(v => (
+                          <option key={v.id} value={v.id}>{v.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -776,19 +964,27 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
             <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/60 border-violet-400/25' : 'bg-slate-50 border-slate-300'}`}>
               <SectionHeader title="Filtros" tone="filtros" darkMode={darkMode} />
 
-              <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} hint="No lee links ni URLs en los mensajes" />
-              <CheckOption
-                label="Filtro de palabrotas"
-                checked={config.profanityFilterEnabled}
-                onChange={() => {
-                  const next = !config.profanityFilterEnabled
-                  updateConfig('profanityFilterEnabled', next)
-                  if (!next) setShowProfanityEditor(false)
-                }}
-                darkMode={darkMode}
-                hint="Bloquea mensajes que contengan palabras prohibidas"
-              />
-              {config.profanityFilterEnabled && (
+              {/* IGNORAR ENLACES - BLOQUEADO EN FREE */}
+              <div className={`relative ${isFeatureBlocked('ignoreLinks', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isFeatureBlocked('ignoreLinks', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
+                <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} hint="No lee links ni URLs en los mensajes" />
+              </div>
+              {/* FILTRO DE PALABROTAS - BLOQUEADO EN FREE */}
+              <div className={`relative ${isFeatureBlocked('profanityFilterEnabled', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isFeatureBlocked('profanityFilterEnabled', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
+                <CheckOption
+                  label="Filtro de palabrotas"
+                  checked={config.profanityFilterEnabled}
+                  onChange={() => {
+                    const next = !config.profanityFilterEnabled
+                    updateConfig('profanityFilterEnabled', next)
+                    if (!next) setShowProfanityEditor(false)
+                  }}
+                  darkMode={darkMode}
+                  hint="Bloquea mensajes que contengan palabras prohibidas"
+                />
+              </div>
+              {config.profanityFilterEnabled && !isFeatureBlocked('profanityFilterEnabled', userPlan) && (
                 <div className={`mb-2 rounded-xl px-4 py-3 border ${
                   darkMode ? 'bg-cyan-500/10 border-cyan-400/40' : 'bg-slate-100 border-slate-400 shadow-sm'
                 }`}>
@@ -820,51 +1016,68 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   )}
                 </div>
               )}
+              {/* ESTOS TRES FILTROS SIEMPRE LIBRES */}
               <CheckOption label="Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint="Limpia el nombre del usuario dejando solo letras" />
               <CheckOption label="No leer emojis en chat" checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} hint="Elimina emojis del mensaje antes de leerlo en voz" />
-              <CheckWithInput
-                label="Ignorar emojis excesivos del chat — cantidad máxima permitida:"
-                checked={config.ignoreExcessiveEmojis}
-                onToggle={() => updateConfig('ignoreExcessiveEmojis', !config.ignoreExcessiveEmojis)}
-                value={config.maxEmojisAllowed}
-                onValueChange={(v) => updateConfig('maxEmojisAllowed', v)}
-                placeholder="3"
-                darkMode={darkMode}
-                hint="Lee el mensaje pero quita emojis si pasan del límite"
-              />
+              {/* IGNORAR EMOJIS EXCESIVOS - BLOQUEADO EN FREE Y START */}
+              <div className={`relative ${isFeatureBlocked('excessiveEmojis', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isFeatureBlocked('excessiveEmojis', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
+                <CheckWithInput
+                  label="Ignorar emojis excesivos del chat — cantidad máxima permitida:"
+                  checked={config.ignoreExcessiveEmojis}
+                  onToggle={() => updateConfig('ignoreExcessiveEmojis', !config.ignoreExcessiveEmojis)}
+                  value={config.maxEmojisAllowed}
+                  onValueChange={(v) => updateConfig('maxEmojisAllowed', v)}
+                  placeholder="3"
+                  darkMode={darkMode}
+                  hint="Lee el mensaje pero quita emojis si pasan del límite"
+                />
+              </div>
 
-              <CheckWithInput
-                label="Ignorar mensajes muy cortos (mínimo de caracteres)"
-                checked={config.minMessageLengthEnabled}
-                onToggle={() => updateConfig('minMessageLengthEnabled', !config.minMessageLengthEnabled)}
-                value={config.minMessageLength}
-                onValueChange={(v) => updateConfig('minMessageLength', v)}
-                placeholder="3"
-                darkMode={darkMode}
-                hint="Ignora mensajes con menos caracteres del mínimo"
-              />
+              {/* IGNORAR MENSAJES MUY CORTOS - BLOQUEADO EN FREE Y START */}
+              <div className={`relative ${isFeatureBlocked('minMessageLength', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isFeatureBlocked('minMessageLength', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
+                <CheckWithInput
+                  label="Ignorar mensajes muy cortos (mínimo de caracteres)"
+                  checked={config.minMessageLengthEnabled}
+                  onToggle={() => updateConfig('minMessageLengthEnabled', !config.minMessageLengthEnabled)}
+                  value={config.minMessageLength}
+                  onValueChange={(v) => updateConfig('minMessageLength', v)}
+                  placeholder="3"
+                  darkMode={darkMode}
+                  hint="Ignora mensajes con menos caracteres del mínimo"
+                />
+              </div>
 
-              <CheckWithInput
-                label="Límite de caracteres en todos los mensajes (máximo)"
-                checked={config.donorCharLimitEnabled}
-                onToggle={() => updateConfig('donorCharLimitEnabled', !config.donorCharLimitEnabled)}
-                value={config.donorCharLimit}
-                onValueChange={(v) => updateConfig('donorCharLimit', v)}
-                placeholder="200"
-                darkMode={darkMode}
-                hint="Corta mensajes largos al máximo de caracteres indicado"
-              />
+              {/* LÍMITE DE CARACTERES - BLOQUEADO EN FREE Y START */}
+              <div className={`relative ${isFeatureBlocked('charLimit', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isFeatureBlocked('charLimit', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
+                <CheckWithInput
+                  label="Límite de caracteres en todos los mensajes (máximo)"
+                  checked={config.donorCharLimitEnabled}
+                  onToggle={() => updateConfig('donorCharLimitEnabled', !config.donorCharLimitEnabled)}
+                  value={config.donorCharLimit}
+                  onValueChange={(v) => updateConfig('donorCharLimit', v)}
+                  placeholder="200"
+                  darkMode={darkMode}
+                  hint="Corta mensajes largos al máximo de caracteres indicado"
+                />
+              </div>
 
-              <CheckWithInput
-                label="Límite de mensajes en espera (descarta nuevos si se llena)"
-                checked={config.maxQueueEnabled}
-                onToggle={() => updateConfig('maxQueueEnabled', !config.maxQueueEnabled)}
-                value={config.maxQueueSize}
-                onValueChange={(v) => updateConfig('maxQueueSize', v)}
-                placeholder="20"
-                darkMode={darkMode}
-                hint="Evita acumulación excesiva de mensajes por leer"
-              />
+              {/* LÍMITE DE MENSAJES EN ESPERA - BLOQUEADO EN FREE Y START */}
+              <div className={`relative ${isFeatureBlocked('maxQueue', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isFeatureBlocked('maxQueue', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
+                <CheckWithInput
+                  label="Límite de mensajes en espera (descarta nuevos si se llena)"
+                  checked={config.maxQueueEnabled}
+                  onToggle={() => updateConfig('maxQueueEnabled', !config.maxQueueEnabled)}
+                  value={config.maxQueueSize}
+                  onValueChange={(v) => updateConfig('maxQueueSize', v)}
+                  placeholder="20"
+                  darkMode={darkMode}
+                  hint="Evita acumulación excesiva de mensajes por leer"
+                />
+              </div>
 
               <div className={`mb-2 rounded-xl px-4 py-3 border ${
                 darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
@@ -928,9 +1141,12 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 )}
               </div>
 
-              <SectionHeader title="Notificaciones en Vivo" tone="notificaciones" darkMode={darkMode} />
+              {/* NOTIFICACIONES EN VIVO - BLOQUEADAS EN FREE Y START */}
+              <div className={`relative ${isFeatureBlocked('notifications', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isFeatureBlocked('notifications', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Notificaciones disponibles en CREATOR+" />}
+                <SectionHeader title="Notificaciones en Vivo" tone="notificaciones" darkMode={darkMode} />
 
-              <CheckWithInput label="Anunciar nuevos seguidores — cada (seg)" checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} hint="Anuncia en voz cuando alguien te sigue" />
+                <CheckWithInput label="Anunciar nuevos seguidores — cada (seg)" checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} hint="Anuncia en voz cuando alguien te sigue" />
               <CheckWithInput label="Anunciar regalos — cada (seg)" checked={config.announceGifts} onToggle={() => updateConfig('announceGifts', !config.announceGifts)} value={config.giftCooldown} onValueChange={(v) => updateConfig('giftCooldown', v)} placeholder="5" darkMode={darkMode} hint="Anuncia en voz cuando recibes un regalo" />
               <CheckWithInput label="Anunciar conteo de viewers — cada (seg)" checked={config.announceViewers} onToggle={() => updateConfig('announceViewers', !config.announceViewers)} value={config.viewerCooldown} onValueChange={(v) => updateConfig('viewerCooldown', v)} placeholder="120" darkMode={darkMode} hint="Dice cuántos viewers hay en el live periódicamente" />
               <CheckWithInput label="Anunciar likes — cada (seg)" checked={config.announceLikes} onToggle={() => updateConfig('announceLikes', !config.announceLikes)} value={config.likeCooldown} onValueChange={(v) => updateConfig('likeCooldown', v)} placeholder="60" darkMode={darkMode} hint="Anuncia la cantidad de likes acumulados" />
@@ -938,206 +1154,213 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               <CheckOption label="Anunciar batallas" checked={config.announceBattles} onChange={() => updateConfig('announceBattles', !config.announceBattles)} darkMode={darkMode} hint="Anuncia inicio y resultado de batallas en vivo" />
               <CheckOption label="Anunciar encuestas" checked={config.announcePolls} onChange={() => updateConfig('announcePolls', !config.announcePolls)} darkMode={darkMode} hint="Anuncia cuando se crea una encuesta en el live" />
               <CheckOption label="Anunciar metas/goals" checked={config.announceGoals} onChange={() => updateConfig('announceGoals', !config.announceGoals)} darkMode={darkMode} hint="Anuncia progreso de metas del live" />
-
-              <SectionHeader title="Asistente de IA" tone="asistente" darkMode={darkMode} />
-
-              <div className={`mb-2 rounded-xl px-4 py-3 border ${
-                darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
-              }`}>
-                <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
-                  Personalidad a elegir
-                </label>
-                <select
-                  value={config.botAssistantCharacterId || ''}
-                  onChange={(e) => updateConfig('botAssistantCharacterId', e.target.value)}
-                  className={`w-full px-3 py-2 text-sm rounded-lg border ${
-                    darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
-                  }`}
-                >
-                  <option value="">Seleccionar uno</option>
-                  {botCharacters.map((character) => (
-                    <option key={character.id} value={character.id}>
-                      {character.name}
-                    </option>
-                  ))}
-                </select>
               </div>
 
-              <div className={`mb-2 rounded-xl px-4 py-3 border ${
-                darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
-              }`}>
-                <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
-                  Voz a utilizar
-                </label>
-                <select
-                  value={config.botAssistantVoiceId || ''}
-                  onChange={(e) => updateConfig('botAssistantVoiceId', e.target.value)}
-                  className={`w-full px-3 py-2 text-sm rounded-lg border ${
-                    darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
-                  }`}
-                >
-                  <option value="">Seleccionar uno</option>
-                  {premiumVoiceOptions.map((voice) => (
-                    <option key={`bot-voice-${voice.id}`} value={voice.id}>
-                      {voice.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* ASISTENTE DE IA - BLOQUEADO EN FREE, START Y CREATOR */}
+              <div className={`relative ${isFeatureBlocked('aiAssistant', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isFeatureBlocked('aiAssistant', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Asistente disponible en plan PRO" />}
+                <div>
+                  <SectionHeader title="Asistente de IA" tone="asistente" darkMode={darkMode} />
 
-              <div className={`mb-2 rounded-xl px-4 py-3 border ${
-                darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
-              }`}>
-                <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
-                  Velocidad de la voz
-                </label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="range"
-                    min="0.5"
-                    max="2"
-                    step="0.05"
-                    value={botAssistantVoiceSpeed}
-                    onChange={(e) => updateConfig('botAssistantVoiceSpeed', Number(e.target.value))}
-                    className="flex-1"
-                  />
-                  <input
-                    type="number"
-                    min="0.5"
-                    max="2"
-                    step="0.05"
-                    value={botAssistantVoiceSpeed}
-                    onChange={(e) => updateConfig('botAssistantVoiceSpeed', Math.min(2, Math.max(0.5, Number(e.target.value) || 1)))}
-                    className={`w-20 px-2 py-1.5 text-sm rounded-lg border ${
-                      darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
-                    }`}
-                  />
-                </div>
-              </div>
-
-              <div className={`mb-2 rounded-xl px-4 py-3 border ${
-                darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
-              }`}>
-                <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
-                  Tamaño aproximado de caracteres por mensajes de respuesta
-                </label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="number"
-                    min="50"
-                    max="500"
-                    step="10"
-                    value={botAssistantMaxResponseChars}
-                    onChange={(e) => updateConfig('botAssistantMaxResponseChars', Math.min(500, Math.max(50, Number(e.target.value) || 250)))}
-                    className={`w-28 px-2 py-1.5 text-sm rounded-lg border ${
-                      darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
-                    }`}
-                  />
-                  <span className={`text-xs ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>máximo 500</span>
-                </div>
-                <p className={`mt-2 text-xs ${darkMode ? 'text-cyan-200/80' : 'text-slate-600'}`}>
-                  Recomendado: 250 caracteres (valor por defecto). Este límite se aplica internamente al prompt del asistente.
-                </p>
-              </div>
-
-              {/* === SHORTCUT PUSH-TO-TALK === */}
-              <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
-                darkMode
-                  ? config.botShortcutEnabled
-                    ? 'bg-cyan-500/10 border-cyan-400/40'
-                    : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
-                  : config.botShortcutEnabled
-                    ? 'bg-slate-100 border-slate-400 shadow-sm'
-                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
-              }`}>
-                <button
-                  onClick={() => updateConfig('botShortcutEnabled', !config.botShortcutEnabled)}
-                  className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity"
-                >
-                  <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                    config.botShortcutEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
+                  <div className={`mb-2 rounded-xl px-4 py-3 border ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
                   }`}>
-                    {config.botShortcutEnabled && <Check className="w-4 h-4 text-white" />}
+                    <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
+                      Personalidad a elegir
+                    </label>
+                    <select
+                      value={config.botAssistantCharacterId || ''}
+                      onChange={(e) => updateConfig('botAssistantCharacterId', e.target.value)}
+                      className={`w-full px-3 py-2 text-sm rounded-lg border ${
+                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                      }`}
+                    >
+                      <option value="">Seleccionar uno</option>
+                      {botCharacters.map((character) => (
+                        <option key={character.id} value={character.id}>
+                          {character.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.botShortcutEnabled ? 'font-semibold' : 'font-medium'}`}>
-                    Activar shortcut de teclado (Push-to-Talk)
-                    <Hint text="Mantén presionada la tecla para hablar con el bot sin usar el mouse" darkMode={darkMode} />
-                  </span>
-                </button>
 
-                {config.botShortcutEnabled && (
-                  <div className="mt-3 ml-8 space-y-2">
-                    <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      Tecla actual:
-                    </span>
+                  <div className={`mb-2 rounded-xl px-4 py-3 border ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
+                  }`}>
+                    <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
+                      Voz a utilizar
+                    </label>
+                    <select
+                      value={config.botAssistantVoiceId || ''}
+                      onChange={(e) => updateConfig('botAssistantVoiceId', e.target.value)}
+                      className={`w-full px-3 py-2 text-sm rounded-lg border ${
+                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                      }`}
+                    >
+                      <option value="">Seleccionar uno</option>
+                      {premiumVoiceOptions.map((voice) => (
+                        <option key={`bot-voice-${voice.id}`} value={voice.id}>
+                          {voice.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className={`mb-2 rounded-xl px-4 py-3 border ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
+                  }`}>
+                    <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
+                      Velocidad de la voz
+                    </label>
                     <div className="flex items-center gap-3">
-                      <kbd className={`px-3 py-1.5 text-sm font-bold rounded-lg border-2 ${
-                        darkMode
-                          ? 'bg-gray-900 border-cyan-400/50 text-cyan-300'
-                          : 'bg-gray-100 border-gray-400 text-gray-800'
-                      }`}>
-                        {config.botShortcutKey || 'F9'}
-                      </kbd>
-                      <BotShortcutCapture
-                        darkMode={darkMode}
-                        onCapture={(key) => updateConfig('botShortcutKey', key)}
+                      <input
+                        type="range"
+                        min="0.5"
+                        max="2"
+                        step="0.05"
+                        value={botAssistantVoiceSpeed}
+                        onChange={(e) => updateConfig('botAssistantVoiceSpeed', Number(e.target.value))}
+                        className="flex-1"
+                      />
+                      <input
+                        type="number"
+                        min="0.5"
+                        max="2"
+                        step="0.05"
+                        value={botAssistantVoiceSpeed}
+                        onChange={(e) => updateConfig('botAssistantVoiceSpeed', Math.min(2, Math.max(0.5, Number(e.target.value) || 1)))}
+                        className={`w-20 px-2 py-1.5 text-sm rounded-lg border ${
+                          darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                        }`}
                       />
                     </div>
-                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      💡 Sugerida: <code className="text-cyan-400">F9</code> — no interfiere con OBS ni TikTok, fácil de alcanzar
-                    </p>
                   </div>
-                )}
-              </div>
 
-              {/* === SHORTCUT INTERACTUADOR (MANUAL) === */}
-              <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
-                darkMode
-                  ? config.interactorShortcutEnabled
-                    ? 'bg-cyan-500/10 border-cyan-400/40'
-                    : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
-                  : config.interactorShortcutEnabled
-                    ? 'bg-slate-100 border-slate-400 shadow-sm'
-                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
-              }`}>
-                <button
-                  onClick={() => updateConfig('interactorShortcutEnabled', !config.interactorShortcutEnabled)}
-                  className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity"
-                >
-                  <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                    config.interactorShortcutEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
+                  <div className={`mb-2 rounded-xl px-4 py-3 border ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
                   }`}>
-                    {config.interactorShortcutEnabled && <Check className="w-4 h-4 text-white" />}
-                  </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.interactorShortcutEnabled ? 'font-semibold' : 'font-medium'}`}>
-                    Activar shortcut de teclado (Interactuador)
-                    <Hint text="Dispara una intervención del animador para opinar sobre el chat al instante" darkMode={darkMode} />
-                  </span>
-                </button>
-
-                {config.interactorShortcutEnabled && (
-                  <div className="mt-3 ml-8 space-y-2">
-                    <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      Tecla actual:
-                    </span>
+                    <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
+                      Tamaño aproximado de caracteres por mensajes de respuesta
+                    </label>
                     <div className="flex items-center gap-3">
-                      <kbd className={`px-3 py-1.5 text-sm font-bold rounded-lg border-2 ${
-                        darkMode
-                          ? 'bg-gray-900 border-cyan-400/50 text-cyan-300'
-                          : 'bg-gray-100 border-gray-400 text-gray-800'
-                      }`}>
-                        {config.interactorShortcutKey || 'F8'}
-                      </kbd>
-                      <BotShortcutCapture
-                        darkMode={darkMode}
-                        onCapture={(key) => updateConfig('interactorShortcutKey', key)}
+                      <input
+                        type="number"
+                        min="50"
+                        max="500"
+                        step="10"
+                        value={botAssistantMaxResponseChars}
+                        onChange={(e) => updateConfig('botAssistantMaxResponseChars', Math.min(500, Math.max(50, Number(e.target.value) || 250)))}
+                        className={`w-28 px-2 py-1.5 text-sm rounded-lg border ${
+                          darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                        }`}
                       />
+                      <span className={`text-xs ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>máximo 500</span>
                     </div>
-                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      💡 Sugerida: <code className="text-cyan-400">F8</code> — rápida para invocar al interactuador manualmente
+                    <p className={`mt-2 text-xs ${darkMode ? 'text-cyan-200/80' : 'text-slate-600'}`}>
+                      Recomendado: 250 caracteres (valor por defecto). Este límite se aplica internamente al prompt del asistente.
                     </p>
                   </div>
-                )}
+
+                  {/* === SHORTCUT PUSH-TO-TALK === */}
+                  <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
+                    darkMode
+                      ? config.botShortcutEnabled
+                        ? 'bg-cyan-500/10 border-cyan-400/40'
+                        : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
+                      : config.botShortcutEnabled
+                        ? 'bg-slate-100 border-slate-400 shadow-sm'
+                        : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
+                  }`}>
+                    <button
+                      onClick={() => updateConfig('botShortcutEnabled', !config.botShortcutEnabled)}
+                      className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity"
+                    >
+                      <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                        config.botShortcutEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
+                      }`}>
+                        {config.botShortcutEnabled && <Check className="w-4 h-4 text-white" />}
+                      </div>
+                      <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.botShortcutEnabled ? 'font-semibold' : 'font-medium'}`}>
+                        Activar shortcut de teclado (Push-to-Talk)
+                        <Hint text="Mantén presionada la tecla para hablar con el bot sin usar el mouse" darkMode={darkMode} />
+                      </span>
+                    </button>
+
+                    {config.botShortcutEnabled && (
+                      <div className="mt-3 ml-8 space-y-2">
+                        <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          Tecla actual:
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <kbd className={`px-3 py-1.5 text-sm font-bold rounded-lg border-2 ${
+                            darkMode
+                              ? 'bg-gray-900 border-cyan-400/50 text-cyan-300'
+                              : 'bg-gray-100 border-gray-400 text-gray-800'
+                          }`}>
+                            {config.botShortcutKey || 'F9'}
+                          </kbd>
+                          <BotShortcutCapture
+                            darkMode={darkMode}
+                            onCapture={(key) => updateConfig('botShortcutKey', key)}
+                          />
+                        </div>
+                        <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          💡 Sugerida: <code className="text-cyan-400">F9</code> — no interfiere con OBS ni TikTok, fácil de alcanzar
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* === SHORTCUT INTERACTUADOR (MANUAL) === */}
+                  <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
+                    darkMode
+                      ? config.interactorShortcutEnabled
+                        ? 'bg-cyan-500/10 border-cyan-400/40'
+                        : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
+                      : config.interactorShortcutEnabled
+                        ? 'bg-slate-100 border-slate-400 shadow-sm'
+                        : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
+                  }`}>
+                    <button
+                      onClick={() => updateConfig('interactorShortcutEnabled', !config.interactorShortcutEnabled)}
+                      className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity"
+                    >
+                      <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                        config.interactorShortcutEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
+                      }`}>
+                        {config.interactorShortcutEnabled && <Check className="w-4 h-4 text-white" />}
+                      </div>
+                      <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.interactorShortcutEnabled ? 'font-semibold' : 'font-medium'}`}>
+                        Activar shortcut de teclado (Interactuador)
+                        <Hint text="Dispara una intervención del animador para opinar sobre el chat al instante" darkMode={darkMode} />
+                      </span>
+                    </button>
+
+                    {config.interactorShortcutEnabled && (
+                      <div className="mt-3 ml-8 space-y-2">
+                        <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          Tecla actual:
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <kbd className={`px-3 py-1.5 text-sm font-bold rounded-lg border-2 ${
+                            darkMode
+                              ? 'bg-gray-900 border-cyan-400/50 text-cyan-300'
+                              : 'bg-gray-100 border-gray-400 text-gray-800'
+                          }`}>
+                            {config.interactorShortcutKey || 'F8'}
+                          </kbd>
+                          <BotShortcutCapture
+                            darkMode={darkMode}
+                            onCapture={(key) => updateConfig('interactorShortcutKey', key)}
+                          />
+                        </div>
+                        <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          💡 Sugerida: <code className="text-cyan-400">F8</code> — rápida para invocar al interactuador manualmente
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
