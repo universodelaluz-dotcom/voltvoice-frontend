@@ -501,6 +501,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const lastMessageRef = useRef({}) // { username: lastText }
   const currentAudioRef = useRef(null)
   const disconnectedRef = useRef(false)
+  const isWaitingForLiveRef = useRef(false)
   const chatContainerRef = useRef(null)
   const bannedRef = useRef(new Set())
   const nickOverridesRef = useRef({})
@@ -679,7 +680,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
     liveRetryTimerRef.current = setTimeout(async () => {
       liveRetryTimerRef.current = null
-      if (disconnectedRef.current || !isWaitingForLive) return
+      // CRITICAL: Use ref instead of closure to check current waiting state
+      if (disconnectedRef.current || !isWaitingForLiveRef.current) {
+        console.log('[TikTok] Retry cancelled - disconnected:', disconnectedRef.current, 'waiting:', isWaitingForLiveRef.current)
+        return
+      }
+      console.log('[TikTok] Retry firing - checking if still waiting...')
       setWaitingStatus('Reintentando conexion al live...')
       const result = await connectToTikTok(username, { fromAutoRetry: true })
       if (result.notLive && !result.cancelled) {
@@ -688,6 +694,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       }
     }, 10000)
   }
+
+  // CRITICAL: Keep isWaitingForLiveRef in sync with state for scheduleLiveRetry callback
+  useEffect(() => {
+    isWaitingForLiveRef.current = isWaitingForLive
+    console.log('[TikTok] isWaitingForLive updated:', isWaitingForLive)
+  }, [isWaitingForLive])
 
   useEffect(() => {
     const handlePttAudioState = (event) => {
