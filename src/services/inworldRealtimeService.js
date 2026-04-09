@@ -58,6 +58,18 @@ export class InworldRealtimeService {
     this.gainNode = null       // Master gain control
     this.streamStartTime = null
     this.streamTotalDuration = 0
+
+    // Session expiration detection and recovery
+    this.lastValidSessionVoice = 'Clive'
+    this.sessionExpired = false
+    this.sessionExpirationPatterns = [
+      /invalid session/i,
+      /session expired/i,
+      /session.*invalid/i,
+      /unauthorized/i,
+      /authentication.*failed/i,
+      /not.*authorized/i
+    ]
   }
 
   _clearAudioQueue() {
@@ -427,6 +439,9 @@ export class InworldRealtimeService {
       const voiceOrModelChanged = this.sessionVoice !== nextVoice || this.sessionOutputModel !== nextModel
       this.sessionVoice = nextVoice
       this.sessionOutputModel = nextModel
+      // CRITICAL: Track last valid voice for session recovery after expiration
+      this.lastValidSessionVoice = nextVoice
+      this.sessionExpired = false
 
       if (this.peerConnection && this.dataChannelReady && this.sessionId) {
         if (voiceOrModelChanged) {
@@ -968,6 +983,18 @@ export class InworldRealtimeService {
           }
 
           console.warn('[Inworld] Server error:', errorMsg)
+
+          // Detect session expiration patterns
+          const isSessionExpired = this.sessionExpirationPatterns.some(pattern =>
+            pattern.test(errorMsg)
+          )
+
+          if (isSessionExpired) {
+            console.error('[Inworld] SESSION EXPIRED DETECTED:', errorMsg)
+            this.sessionExpired = true
+            this._emit('session-expired', { errorMsg, voice: this.lastValidSessionVoice })
+          }
+
           // Don't emit as fatal error - continue processing
         } catch (parseErr) {
           console.warn('[Inworld] Could not parse error event (non-fatal)')
@@ -1624,8 +1651,9 @@ export class InworldRealtimeService {
 
   /**
    * Close WebRTC session
+   * @param {Object} options - { preserveVoice: true } to keep lastValidSessionVoice across recovery
    */
-  closeSession() {
+  closeSession(options = {}) {
     if (this.dataChannel) {
       this.dataChannel.close()
     }
@@ -1651,8 +1679,13 @@ export class InworldRealtimeService {
     this.pendingAudioResponse = false
     clearTimeout(this.pendingAudioResponseTimer)
     this.pendingAudioResponseTimer = null
-    this.sessionVoice = 'Clive'
-    this.sessionOutputModel = 'inworld-tts-1.5-mini'
+
+    // Preserve voice during recovery if requested
+    if (!options.preserveVoice) {
+      this.sessionVoice = 'Clive'
+      this.sessionOutputModel = 'inworld-tts-1.5-mini'
+    }
+
     this.pendingAudioComplete = false
     this._stopRemoteAudioEnergyMonitor()
 
@@ -1660,6 +1693,21 @@ export class InworldRealtimeService {
       this.outputAudioElement.pause()
       this.outputAudioElement.srcObject = null
     }
+  }
+
+  /**
+   * Restore session voice after expiration recovery
+   * Called by BotInvoker when session expires and we need to restart with same voice
+   */
+  restoreSessionVoice(voiceId) {
+    if (voiceId && this._isSupportedRealtimeVoice(voiceId)) {
+      this.sessionVoice = voiceId.trim()
+      this.sessionOutputModel = this._getOutputTtsModelForVoice(voiceId)
+      this.lastValidSessionVoice = voiceId.trim()
+      console.log('[Inworld] Session voice restored to:', voiceId)
+      return true
+    }
+    return false
   }
 
   /**

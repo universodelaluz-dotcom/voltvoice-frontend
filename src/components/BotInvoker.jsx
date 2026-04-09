@@ -260,8 +260,10 @@ export default function BotInvoker({ user, onGoPricingPage, darkMode = true, onC
   const [assistantAudioElement, setAssistantAudioElement] = useState(null)
   const [voiceLabel, setVoiceLabel] = useState('Clive')
   const [hasActiveResponse, setHasActiveResponse] = useState(false)
+  const [lastUsedClonedVoice, setLastUsedClonedVoice] = useState(null)
 
   const mediaStreamRef = useRef(null)
+  const sessionRecoveryRef = useRef({ isRecovering: false, recoveryStartTime: null })
   const chatSuppressedRef = useRef(false)
   const responseTimeoutRef = useRef(null)
   const hasActiveResponseRef = useRef(false)
@@ -1660,6 +1662,14 @@ Extras obligatorios:
   useEffect(() => {
     selectedRealtimeVoiceIdRef.current = selectedRealtimeVoiceId
     console.log(`[Voice] selectedRealtimeVoiceId updated: ${selectedRealtimeVoiceId}`)
+
+    // CRITICAL: Track cloned voices for session recovery after expiration
+    // If voice is NOT a builtin voice, it's a cloned/custom voice - save it
+    const isBuiltinVoice = BUILTIN_VOICE_OPTIONS.some(v => v.id === selectedRealtimeVoiceId)
+    if (selectedRealtimeVoiceId && !isBuiltinVoice) {
+      setLastUsedClonedVoice(selectedRealtimeVoiceId)
+      console.log(`[Voice] Tracked cloned voice for recovery: ${selectedRealtimeVoiceId}`)
+    }
   }, [selectedRealtimeVoiceId])
 
   useEffect(() => {
@@ -2037,6 +2047,63 @@ Extras obligatorios:
       // Wait for handleAudioEnergySilent to confirm via RMS detection
     }
 
+    const handleSessionExpired = async ({ errorMsg, voice: recoveryVoice }) => {
+      console.error('[SessionRecovery] Session expired detected:', errorMsg)
+      console.error('[SessionRecovery] Will recover with voice:', lastUsedClonedVoice || recoveryVoice || 'Clive')
+
+      // Prevent multiple recovery attempts
+      if (sessionRecoveryRef.current.isRecovering) {
+        console.warn('[SessionRecovery] Recovery already in progress, ignoring duplicate event')
+        return
+      }
+
+      sessionRecoveryRef.current.isRecovering = true
+      sessionRecoveryRef.current.recoveryStartTime = Date.now()
+
+      try {
+        // Step 1: Close broken session without resetting voice
+        console.log('[SessionRecovery] Closing broken session...')
+        inworldRealtimeService.closeSession({ preserveVoice: true })
+
+        // Step 2: Wait brief moment for cleanup
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        // Step 3: Restore voice to saved cloned voice
+        const voiceToRestore = lastUsedClonedVoice || recoveryVoice || 'Clive'
+        console.log('[SessionRecovery] Restoring voice:', voiceToRestore)
+        inworldRealtimeService.restoreSessionVoice(voiceToRestore)
+
+        // Step 4: Restart session with restored voice
+        console.log('[SessionRecovery] Restarting session with recovered voice...')
+        const characterId = selectedCharacterIdRef.current
+        const systemPrompt = 'You are a helpful voice assistant. Respond in Spanish. Keep responses concise.'
+
+        if (characterId) {
+          await inworldRealtimeService.startSession(
+            characterId,
+            systemPrompt,
+            null,
+            API_URL,
+            voiceToRestore
+          )
+          console.log('[SessionRecovery] Session restarted successfully with voice:', voiceToRestore)
+
+          // Emit recovery complete
+          setResponse('Sesión restaurada. Listo para continuar.')
+          setIsLoading(false)
+        } else {
+          console.error('[SessionRecovery] No character selected, cannot restart session')
+        }
+      } catch (error) {
+        console.error('[SessionRecovery] Recovery failed:', error)
+        setResponse('Error al restaurar la sesión. Intenta de nuevo.')
+        setIsLoading(false)
+        markSessionBroken()
+      } finally {
+        sessionRecoveryRef.current.isRecovering = false
+      }
+    }
+
     const handleError = (error) => {
       console.error('Session error:', error)
       markSessionBroken()
@@ -2066,6 +2133,7 @@ Extras obligatorios:
     inworldRealtimeService.on('audio-complete', handleAudioComplete)
     inworldRealtimeService.on('input-transcript-delta', handleInputTranscriptDelta)
     inworldRealtimeService.on('input-transcript-complete', handleInputTranscriptComplete)
+    inworldRealtimeService.on('session-expired', handleSessionExpired)
     inworldRealtimeService.on('error', handleError)
 
     return () => {
@@ -2083,6 +2151,7 @@ Extras obligatorios:
       inworldRealtimeService.off('audio-complete', handleAudioComplete)
       inworldRealtimeService.off('input-transcript-delta', handleInputTranscriptDelta)
       inworldRealtimeService.off('input-transcript-complete', handleInputTranscriptComplete)
+      inworldRealtimeService.off('session-expired', handleSessionExpired)
       inworldRealtimeService.off('error', handleError)
       if (localAudioRef.current) {
         localAudioRef.current.pause()
