@@ -681,36 +681,81 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
             <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-cyan-500/20' : 'bg-white border-slate-200'}`}>
               <SectionHeader title="Lectura" tone="lectura" darkMode={darkMode} />
 
-              {/* AREA LECTURA - PARCIALMENTE BLOQUEADA EN FREE */}
-              <div className={`relative ${isFeatureBlocked('readOnlyMessage', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                {isFeatureBlocked('readOnlyMessage', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
+              {/* AREA LECTURA - BLOQUEADA EN FREE (solo 3 elementos libres) */}
+              {userPlan === 'free' ? (
+                <>
+                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
+                  }`}>
+                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
+                    <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => {}} darkMode={darkMode} hint="Bloqueado en plan FREE" />
+                  </div>
+                </>
+              ) : (
                 <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => updateConfig('readOnlyMessage', !config.readOnlyMessage)} darkMode={darkMode} hint="Lee el mensaje sin mencionar quién lo escribió" />
-              </div>
+              )}
+
+              {/* SIEMPRE LIBRE EN TODOS LOS PLANES */}
               <CheckOption label="Saltar mensajes repetidos" checked={config.skipRepeated} onChange={() => updateConfig('skipRepeated', !config.skipRepeated)} darkMode={darkMode} hint="Ignora mensajes idénticos consecutivos para evitar spam" />
-              <div className={`relative ${isFeatureBlocked('onlyQuestions', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                {isFeatureBlocked('onlyQuestions', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
-                <CheckOption label="Leer solo preguntas" checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} hint="Solo lee mensajes que contengan signos de interrogación" />
-              </div>
-              <div className={`relative ${isFeatureBlocked('onlyDonors', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                {isFeatureBlocked('onlyDonors', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
-                <CheckOption label="Leer solo donadores" checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron regalos" />
-              </div>
-              <div className={`relative ${isFeatureBlocked('onlyModerators', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                {isFeatureBlocked('onlyModerators', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
-                <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} hint="Solo lee mensajes de moderadores del live" />
-              </div>
-              <div className={`relative ${isFeatureBlocked('onlySubscribers', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                {isFeatureBlocked('onlySubscribers', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
-                <CheckOption label="Leer solo suscriptores" checked={config.onlySubscribers} onChange={() => updateConfig('onlySubscribers', !config.onlySubscribers)} darkMode={darkMode} hint="Solo lee usuarios suscritos al creador del live" />
-              </div>
-              <div className={`relative ${isFeatureBlocked('onlyCommunityMembers', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                {isFeatureBlocked('onlyCommunityMembers', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
-                <CheckOption label="Filtro de miembros de comunidad" checked={config.onlyCommunityMembers} onChange={() => updateConfig('onlyCommunityMembers', !config.onlyCommunityMembers)} darkMode={darkMode} hint="Solo lee usuarios Fan o SuperFan del LIVE bajo el mismo filtro de comunidad" />
-              </div>
 
-              <SectionHeader title="Voces" tone="voces" darkMode={darkMode} />
+              {/* BLOQUEADO EN FREE */}
+              {userPlan === 'free' ? (
+                <>
+                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
+                  }`}>
+                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
+                    <CheckOption label="Leer solo preguntas" checked={config.onlyQuestions} onChange={() => {}} darkMode={darkMode} hint="Bloqueado en plan FREE" />
+                  </div>
+                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
+                  }`}>
+                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
+                    <CheckOption label="Leer solo donadores" checked={config.onlyDonors} onChange={() => {}} darkMode={darkMode} hint="Bloqueado en plan FREE" />
+                  </div>
+                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
+                  }`}>
+                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
+                    <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => {}} darkMode={darkMode} hint="Bloqueado en plan FREE" />
+                  </div>
+                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
+                  }`}>
+                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
+                    <CheckOption label="Leer solo suscriptores" checked={config.onlySubscribers} onChange={() => {}} darkMode={darkMode} hint="Bloqueado en plan FREE" />
+                  </div>
+                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
+                  }`}>
+                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
+                    <CheckOption label="Filtro de miembros de comunidad" checked={config.onlyCommunityMembers} onChange={() => {}} darkMode={darkMode} hint="Bloqueado en plan FREE" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <CheckOption label="Leer solo preguntas" checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} hint="Solo lee mensajes que contengan signos de interrogación" />
+                  <CheckOption label="Leer solo donadores" checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron regalos" />
+                  <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} hint="Solo lee mensajes de moderadores del live" />
+                  <CheckOption label="Leer solo suscriptores" checked={config.onlySubscribers} onChange={() => updateConfig('onlySubscribers', !config.onlySubscribers)} darkMode={darkMode} hint="Solo lee usuarios suscritos al creador del live" />
+                  <CheckOption label="Filtro de miembros de comunidad" checked={config.onlyCommunityMembers} onChange={() => updateConfig('onlyCommunityMembers', !config.onlyCommunityMembers)} darkMode={darkMode} hint="Solo lee usuarios Fan o SuperFan del LIVE bajo el mismo filtro de comunidad" />
+                </>
+              )}
 
-              {/* SECCIÓN VOCES - BLOQUEADA EN FREE Y START (EXCEPTO MODERADORES) */}
+              {/* SECCIÓN VOCES - COMPLETAMENTE BLOQUEADA EN FREE */}
+              {userPlan === 'free' ? (
+                <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-40 pointer-events-none ${
+                  darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
+                }`}>
+                  <FeatureLockedOverlay darkMode={darkMode} message="Área de Voces completamente bloqueada en plan FREE" />
+                  <SectionHeader title="Voces" tone="voces" darkMode={darkMode} />
+                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Todas las opciones de voces están bloqueadas en tu plan actual.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <SectionHeader title="Voces" tone="voces" darkMode={darkMode} />
               {/* Voz general */}
               <div className={`relative mb-2 rounded-xl px-4 py-3 border ${
                 darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
@@ -958,127 +1003,181 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   )}
                 </div>
               </div>
+                </>
+              )}
             </div>
 
             {/* RIGHT COLUMN */}
             <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/60 border-violet-400/25' : 'bg-slate-50 border-slate-300'}`}>
               <SectionHeader title="Filtros" tone="filtros" darkMode={darkMode} />
 
-              {/* IGNORAR ENLACES - BLOQUEADO EN FREE */}
-              <div className={`relative ${isFeatureBlocked('ignoreLinks', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                {isFeatureBlocked('ignoreLinks', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
-                <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} hint="No lee links ni URLs en los mensajes" />
-              </div>
-              {/* FILTRO DE PALABROTAS - BLOQUEADO EN FREE */}
-              <div className={`relative ${isFeatureBlocked('profanityFilterEnabled', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                {isFeatureBlocked('profanityFilterEnabled', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />}
-                <CheckOption
-                  label="Filtro de palabrotas"
-                  checked={config.profanityFilterEnabled}
-                  onChange={() => {
-                    const next = !config.profanityFilterEnabled
-                    updateConfig('profanityFilterEnabled', next)
-                    if (!next) setShowProfanityEditor(false)
-                  }}
-                  darkMode={darkMode}
-                  hint="Bloquea mensajes que contengan palabras prohibidas"
-                />
-              </div>
-              {config.profanityFilterEnabled && !isFeatureBlocked('profanityFilterEnabled', userPlan) && (
-                <div className={`mb-2 rounded-xl px-4 py-3 border ${
-                  darkMode ? 'bg-cyan-500/10 border-cyan-400/40' : 'bg-slate-100 border-slate-400 shadow-sm'
-                }`}>
-                  <button
-                    onClick={() => setShowProfanityEditor((prev) => !prev)}
-                    className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
-                      darkMode
-                        ? 'text-cyan-200 border-cyan-400/40 hover:bg-cyan-500/10'
-                        : 'text-slate-700 border-slate-300 hover:bg-white'
-                    }`}
-                  >
-                    {showProfanityEditor ? 'Ocultar lista' : 'Mostrar lista de palabras'}
-                  </button>
-                  {showProfanityEditor && (
-                    <div className="mt-2">
-                      <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-200' : 'text-slate-700'}`}>
-                        Palabras prohibidas (separadas por coma o salto de línea)
-                      </label>
-                      <textarea
-                        value={config.profanityWords || ''}
-                        onChange={(e) => updateConfig('profanityWords', e.target.value)}
-                        rows={3}
-                        placeholder="Escribe tus palabras aquí"
-                        className={`w-full px-3 py-2 text-sm rounded-lg border resize-y ${
-                          darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+              {userPlan === 'free' ? (
+                <>
+                  {/* FILTROS BLOQUEADOS EN FREE - SOLO MOSTRAR LOS 3 LIBRES */}
+                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
+                  }`}>
+                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
+                    <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => {}} darkMode={darkMode} hint="Bloqueado en plan FREE" />
+                  </div>
+                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
+                  }`}>
+                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
+                    <CheckOption
+                      label="Filtro de palabrotas"
+                      checked={config.profanityFilterEnabled}
+                      onChange={() => {}}
+                      darkMode={darkMode}
+                      hint="Bloqueado en plan FREE"
+                    />
+                  </div>
+                  {/* ESTOS TRES FILTROS SIEMPRE LIBRES EN FREE */}
+                  <CheckOption label="Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint="Limpia el nombre del usuario dejando solo letras" />
+                  <CheckOption label="No leer emojis en chat" checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} hint="Elimina emojis del mensaje antes de leerlo en voz" />
+                  {/* FILTROS AVANZADOS BLOQUEADOS EN FREE */}
+                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
+                  }`}>
+                    <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />
+                    <div className="mb-2 font-semibold text-sm">Ignorar emojis excesivos del chat</div>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Bloqueado en plan FREE</p>
+                  </div>
+                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
+                  }`}>
+                    <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />
+                    <div className="mb-2 font-semibold text-sm">Ignorar mensajes muy cortos</div>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Bloqueado en plan FREE</p>
+                  </div>
+                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
+                  }`}>
+                    <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />
+                    <div className="mb-2 font-semibold text-sm">Límite de caracteres en todos los mensajes</div>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Bloqueado en plan FREE</p>
+                  </div>
+                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
+                  }`}>
+                    <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />
+                    <div className="mb-2 font-semibold text-sm">Límite de mensajes en espera</div>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Bloqueado en plan FREE</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* FILTROS EN START+ */}
+                  <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} hint="No lee links ni URLs en los mensajes" />
+                  <CheckOption
+                    label="Filtro de palabrotas"
+                    checked={config.profanityFilterEnabled}
+                    onChange={() => {
+                      const next = !config.profanityFilterEnabled
+                      updateConfig('profanityFilterEnabled', next)
+                      if (!next) setShowProfanityEditor(false)
+                    }}
+                    darkMode={darkMode}
+                    hint="Bloquea mensajes que contengan palabras prohibidas"
+                  />
+                  {config.profanityFilterEnabled && (
+                    <div className={`mb-2 rounded-xl px-4 py-3 border ${
+                      darkMode ? 'bg-cyan-500/10 border-cyan-400/40' : 'bg-slate-100 border-slate-400 shadow-sm'
+                    }`}>
+                      <button
+                        onClick={() => setShowProfanityEditor((prev) => !prev)}
+                        className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
+                          darkMode
+                            ? 'text-cyan-200 border-cyan-400/40 hover:bg-cyan-500/10'
+                            : 'text-slate-700 border-slate-300 hover:bg-white'
                         }`}
-                      />
+                      >
+                        {showProfanityEditor ? 'Ocultar lista' : 'Mostrar lista de palabras'}
+                      </button>
+                      {showProfanityEditor && (
+                        <div className="mt-2">
+                          <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-200' : 'text-slate-700'}`}>
+                            Palabras prohibidas (separadas por coma o salto de línea)
+                          </label>
+                          <textarea
+                            value={config.profanityWords || ''}
+                            onChange={(e) => updateConfig('profanityWords', e.target.value)}
+                            rows={3}
+                            placeholder="Escribe tus palabras aquí"
+                            className={`w-full px-3 py-2 text-sm rounded-lg border resize-y ${
+                              darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                            }`}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
+                  {/* ESTOS TRES FILTROS SIEMPRE LIBRES */}
+                  <CheckOption label="Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint="Limpia el nombre del usuario dejando solo letras" />
+                  <CheckOption label="No leer emojis en chat" checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} hint="Elimina emojis del mensaje antes de leerlo en voz" />
+                  {/* IGNORAR EMOJIS EXCESIVOS - BLOQUEADO EN FREE Y START */}
+                  <div className={`relative ${isFeatureBlocked('excessiveEmojis', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {isFeatureBlocked('excessiveEmojis', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
+                    <CheckWithInput
+                      label="Ignorar emojis excesivos del chat — cantidad máxima permitida:"
+                      checked={config.ignoreExcessiveEmojis}
+                      onToggle={() => updateConfig('ignoreExcessiveEmojis', !config.ignoreExcessiveEmojis)}
+                      value={config.maxEmojisAllowed}
+                      onValueChange={(v) => updateConfig('maxEmojisAllowed', v)}
+                      placeholder="3"
+                      darkMode={darkMode}
+                      hint="Lee el mensaje pero quita emojis si pasan del límite"
+                    />
+                  </div>
+
+                  {/* IGNORAR MENSAJES MUY CORTOS - BLOQUEADO EN FREE Y START */}
+                  <div className={`relative ${isFeatureBlocked('minMessageLength', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {isFeatureBlocked('minMessageLength', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
+                    <CheckWithInput
+                      label="Ignorar mensajes muy cortos (mínimo de caracteres)"
+                      checked={config.minMessageLengthEnabled}
+                      onToggle={() => updateConfig('minMessageLengthEnabled', !config.minMessageLengthEnabled)}
+                      value={config.minMessageLength}
+                      onValueChange={(v) => updateConfig('minMessageLength', v)}
+                      placeholder="3"
+                      darkMode={darkMode}
+                      hint="Ignora mensajes con menos caracteres del mínimo"
+                    />
+                  </div>
+
+                  {/* LÍMITE DE CARACTERES - BLOQUEADO EN FREE Y START */}
+                  <div className={`relative ${isFeatureBlocked('charLimit', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {isFeatureBlocked('charLimit', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
+                    <CheckWithInput
+                      label="Límite de caracteres en todos los mensajes (máximo)"
+                      checked={config.donorCharLimitEnabled}
+                      onToggle={() => updateConfig('donorCharLimitEnabled', !config.donorCharLimitEnabled)}
+                      value={config.donorCharLimit}
+                      onValueChange={(v) => updateConfig('donorCharLimit', v)}
+                      placeholder="200"
+                      darkMode={darkMode}
+                      hint="Corta mensajes largos al máximo de caracteres indicado"
+                    />
+                  </div>
+
+                  {/* LÍMITE DE MENSAJES EN ESPERA - BLOQUEADO EN FREE Y START */}
+                  <div className={`relative ${isFeatureBlocked('maxQueue', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {isFeatureBlocked('maxQueue', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
+                    <CheckWithInput
+                      label="Límite de mensajes en espera (descarta nuevos si se llena)"
+                      checked={config.maxQueueEnabled}
+                      onToggle={() => updateConfig('maxQueueEnabled', !config.maxQueueEnabled)}
+                      value={config.maxQueueSize}
+                      onValueChange={(v) => updateConfig('maxQueueSize', v)}
+                      placeholder="20"
+                      darkMode={darkMode}
+                      hint="Evita acumulación excesiva de mensajes por leer"
+                    />
+                  </div>
+                </>
               )}
-              {/* ESTOS TRES FILTROS SIEMPRE LIBRES */}
-              <CheckOption label="Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint="Limpia el nombre del usuario dejando solo letras" />
-              <CheckOption label="No leer emojis en chat" checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} hint="Elimina emojis del mensaje antes de leerlo en voz" />
-              {/* IGNORAR EMOJIS EXCESIVOS - BLOQUEADO EN FREE Y START */}
-              <div className={`relative ${isFeatureBlocked('excessiveEmojis', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                {isFeatureBlocked('excessiveEmojis', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
-                <CheckWithInput
-                  label="Ignorar emojis excesivos del chat — cantidad máxima permitida:"
-                  checked={config.ignoreExcessiveEmojis}
-                  onToggle={() => updateConfig('ignoreExcessiveEmojis', !config.ignoreExcessiveEmojis)}
-                  value={config.maxEmojisAllowed}
-                  onValueChange={(v) => updateConfig('maxEmojisAllowed', v)}
-                  placeholder="3"
-                  darkMode={darkMode}
-                  hint="Lee el mensaje pero quita emojis si pasan del límite"
-                />
-              </div>
 
-              {/* IGNORAR MENSAJES MUY CORTOS - BLOQUEADO EN FREE Y START */}
-              <div className={`relative ${isFeatureBlocked('minMessageLength', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                {isFeatureBlocked('minMessageLength', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
-                <CheckWithInput
-                  label="Ignorar mensajes muy cortos (mínimo de caracteres)"
-                  checked={config.minMessageLengthEnabled}
-                  onToggle={() => updateConfig('minMessageLengthEnabled', !config.minMessageLengthEnabled)}
-                  value={config.minMessageLength}
-                  onValueChange={(v) => updateConfig('minMessageLength', v)}
-                  placeholder="3"
-                  darkMode={darkMode}
-                  hint="Ignora mensajes con menos caracteres del mínimo"
-                />
-              </div>
-
-              {/* LÍMITE DE CARACTERES - BLOQUEADO EN FREE Y START */}
-              <div className={`relative ${isFeatureBlocked('charLimit', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                {isFeatureBlocked('charLimit', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
-                <CheckWithInput
-                  label="Límite de caracteres en todos los mensajes (máximo)"
-                  checked={config.donorCharLimitEnabled}
-                  onToggle={() => updateConfig('donorCharLimitEnabled', !config.donorCharLimitEnabled)}
-                  value={config.donorCharLimit}
-                  onValueChange={(v) => updateConfig('donorCharLimit', v)}
-                  placeholder="200"
-                  darkMode={darkMode}
-                  hint="Corta mensajes largos al máximo de caracteres indicado"
-                />
-              </div>
-
-              {/* LÍMITE DE MENSAJES EN ESPERA - BLOQUEADO EN FREE Y START */}
-              <div className={`relative ${isFeatureBlocked('maxQueue', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                {isFeatureBlocked('maxQueue', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
-                <CheckWithInput
-                  label="Límite de mensajes en espera (descarta nuevos si se llena)"
-                  checked={config.maxQueueEnabled}
-                  onToggle={() => updateConfig('maxQueueEnabled', !config.maxQueueEnabled)}
-                  value={config.maxQueueSize}
-                  onValueChange={(v) => updateConfig('maxQueueSize', v)}
-                  placeholder="20"
-                  darkMode={darkMode}
-                  hint="Evita acumulación excesiva de mensajes por leer"
-                />
-              </div>
-
+              {/* LISTA DE BANEADOS - SIEMPRE VISIBLE */}
               <div className={`mb-2 rounded-xl px-4 py-3 border ${
                 darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
               }`}>
