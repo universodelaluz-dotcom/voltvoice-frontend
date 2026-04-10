@@ -1,0 +1,663 @@
+﻿import { useState, useEffect, useRef } from 'react'
+import TikTokLivePanel from './TikTokLivePanel'
+import AudioVisualizer from './AudioVisualizer'
+import BotInvoker from './BotInvoker'
+import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Shield, Lock } from 'lucide-react'
+
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAdmin, onGoPricingPage, darkMode, setDarkMode, config, updateConfig, user }) {
+  const audioSpeed = config.audioSpeed || 1.0
+  const PREMIUM_TEST_CHAR_LIMIT = 500
+  const [showBotInvoker, setShowBotInvoker] = useState(false)
+
+  const toggleTheme = () => {
+    const newMode = darkMode ? 'light' : 'dark'
+    localStorage.setItem('voltvoice-theme', newMode)
+    document.documentElement.classList.toggle('dark', newMode === 'dark')
+    setDarkMode(newMode === 'dark')
+  }
+
+  const [streamChannel, setStreamChannel] = useState('mi_canal')
+  const [isStreamActive, setIsStreamActive] = useState(false)
+
+  // Voices
+  const [voices, setVoices] = useState([])
+  const [userVoices, setUserVoices] = useState([])
+  const selectedVoice = config.generalVoiceId || 'es-ES'
+  const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+
+  // Synthesis
+  const [text, setText] = useState('Asi suena tu voz elegida')
+  const [loading, setLoading] = useState(false)
+  const [audioUrl, setAudioUrl] = useState(null)
+  const [audioPlaybackNonce, setAudioPlaybackNonce] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [localSpeechActive, setLocalSpeechActive] = useState(false)
+  const [assistantSpeechActive, setAssistantSpeechActive] = useState(false)
+  const [assistantAudioElement, setAssistantAudioElement] = useState(null)
+  const [pttRecordingActive, setPttRecordingActive] = useState(false)
+  const audioRef = useRef(null)
+  const [tokensUsed, setTokensUsed] = useState(0)
+  const [error, setError] = useState(null)
+  const [success, setSuccess] = useState(false)
+
+  // Tokens & Stats
+  const [tokens, setTokens] = useState(user?.tokens || 1000)
+  const [totalTokensUsed, setTotalTokensUsed] = useState(0)
+  const [synthesisCount, setSynthesisCount] = useState(0)
+
+  const getAuthToken = () => localStorage.getItem('sv-token') || ''
+
+  // Chat simulation
+  const [chatMessages, setChatMessages] = useState([
+    { id: 1, user: 'maria_streams', message: 'Hola! Como estas?', timestamp: new Date(Date.now() - 30000) },
+    { id: 2, user: 'juan_gamer', message: 'Este stream es increible', timestamp: new Date(Date.now() - 20000) },
+    { id: 3, user: 'sofia_rocks', message: 'Leeme este mensaje!', timestamp: new Date(Date.now() - 10000) },
+  ])
+  const [newChatMessage, setNewChatMessage] = useState('')
+  const [currentChatUser, setCurrentChatUser] = useState('viewer123')
+
+  // Reproducir automaticamente cuando haya audio
+  useEffect(() => {
+    if (!audioUrl || !audioRef.current) return
+
+    const audio = audioRef.current
+    let cancelled = false
+
+    const startPlayback = async () => {
+      try {
+        audio.pause()
+        audio.currentTime = 0
+        audio.load()
+        const maybePromise = audio.play()
+        if (maybePromise && typeof maybePromise.catch === 'function') {
+          await maybePromise
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.warn('[Studio] Autoplay blocked or failed:', err?.message || err)
+        }
+      }
+    }
+
+    startPlayback()
+    return () => { cancelled = true }
+  }, [audioUrl, audioPlaybackNonce])
+
+  // Rastrear estado de reproduccion para el visualizador
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    const handlePlay = () => setIsPlaying(true)
+    const handlePause = () => setIsPlaying(false)
+    const handleEnded = () => setIsPlaying(false)
+    audio.addEventListener('play', handlePlay)
+    audio.addEventListener('pause', handlePause)
+    audio.addEventListener('ended', handleEnded)
+    return () => {
+      audio.removeEventListener('play', handlePlay)
+      audio.removeEventListener('pause', handlePause)
+      audio.removeEventListener('ended', handleEnded)
+    }
+  }, [audioUrl])
+
+  // Aplicar velocidad al audio cuando cambie
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = audioSpeed
+    }
+  }, [audioSpeed, audioUrl])
+
+  // Cargar voces del usuario desde la API
+  const loadUserVoices = async () => {
+    try {
+      const token = getAuthToken()
+      if (!token) return
+
+      await fetch(`${API_URL}/api/settings/voices/migrate`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).catch(() => {})
+
+      const res = await fetch(`${API_URL}/api/settings/voices`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+
+      if (data.success && data.voices) {
+        const formatted = data.voices.map(v => ({
+          id: v.voice_id,
+          name: v.voice_name,
+          category: v.provider === 'inworld-cloned' ? 'inworld-cloned' : 'inworld-generated',
+          engine: 'inworld'
+        }))
+        setUserVoices(formatted)
+      }
+    } catch (err) {
+      console.error('[Studio] Error loading voices:', err)
+    }
+  }
+
+  // Voces premium permitidas por plan
+  const PREMIUM_BY_PLAN = {
+    free: [], start: ['Diego'],
+    creator: ['Diego', 'Lupita'],
+    pro: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    premium: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    elite: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    admin: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    on_demand: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+  }
+  const ALL_PREMIUM_VOICES = [
+    { id: "Diego", name: "Voz natural de Luis - Premium", category: "premium", engine: "inworld" },
+    { id: "Lupita", name: "Voz natural de Sofia - Premium", category: "premium", engine: "inworld" },
+    { id: "Miguel", name: "Voz natural de Gustavo - Premium", category: "premium", engine: "inworld" },
+    { id: "Rafael", name: "Voz natural de Leonel - Premium", category: "premium", engine: "inworld" },
+  ]
+
+  // Cargar voces disponibles de Inworld AI + Google TTS + Voces del usuario
+  useEffect(() => {
+    const userPlan = user?.plan || 'free'
+    const allowedPremium = PREMIUM_BY_PLAN[userPlan] ?? []
+    const allVoices = [
+      // === VOCES LOCALES — incluidas en todos los planes, sin tokens ===
+      { id: "es-ES", name: "Voz Local Espanol (ilimitada)", category: "webspeech", engine: "webspeech" },
+      { id: "en-US", name: "Voz Local Ingles (ilimitada)", category: "webspeech", engine: "webspeech" },
+
+      // === Voces Premium — filtradas por plan ===
+      ...ALL_PREMIUM_VOICES.filter(v => allowedPremium.includes(v.id)),
+
+      // === Voces Clonadas/Generadas del usuario ===
+      ...userVoices,
+    ]
+    setVoices(allVoices)
+  }, [userVoices, user?.plan])
+
+  // Cargar voces al montar y escuchar evento de voz nueva
+  useEffect(() => {
+    loadUserVoices()
+
+    const handleVoiceAdded = () => {
+      loadUserVoices()
+    }
+
+    window.addEventListener('voice-added', handleVoiceAdded)
+    return () => window.removeEventListener('voice-added', handleVoiceAdded)
+  }, [user?.email])
+
+  useEffect(() => {
+    if (typeof user?.tokens === 'number') {
+      setTokens(user.tokens)
+    }
+  }, [user?.tokens])
+
+  useEffect(() => {
+    const handleTokenUpdate = (event) => {
+      const remaining = Number(event.detail?.remainingTokens)
+      const consumed = Number(event.detail?.tokensUsed || 0)
+      if (Number.isFinite(remaining)) {
+        setTokens(remaining)
+      }
+      if (Number.isFinite(consumed) && consumed > 0) {
+        setTotalTokensUsed((prev) => prev + consumed)
+      }
+    }
+
+    window.addEventListener('voltvoice:tokens-updated', handleTokenUpdate)
+    return () => window.removeEventListener('voltvoice:tokens-updated', handleTokenUpdate)
+  }, [])
+
+  useEffect(() => {
+    const handleAssistantVisualizer = (event) => {
+      const active = Boolean(event?.detail?.active)
+      setAssistantSpeechActive(active)
+      if (active) {
+        // Ensure response visualization can start even if PTT flag lags.
+        setPttRecordingActive(false)
+      }
+    }
+
+    window.addEventListener('voltvoice:assistant-visualizer', handleAssistantVisualizer)
+    return () => window.removeEventListener('voltvoice:assistant-visualizer', handleAssistantVisualizer)
+  }, [])
+
+  useEffect(() => {
+    const handleAssistantVisualizerAudio = (event) => {
+      const el = event?.detail?.audioElement || null
+      setAssistantAudioElement(el)
+    }
+
+    window.addEventListener('voltvoice:assistant-visualizer-audio', handleAssistantVisualizerAudio)
+    return () => window.removeEventListener('voltvoice:assistant-visualizer-audio', handleAssistantVisualizerAudio)
+  }, [])
+
+  useEffect(() => {
+    const handlePttAudioState = (event) => {
+      setPttRecordingActive(Boolean(event?.detail?.active))
+    }
+
+    window.addEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
+    return () => window.removeEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
+  }, [])
+
+  const handleSynthesize = async () => {
+    if (!text.trim()) {
+      setError('Por favor escribe algo para sintetizar')
+      return
+    }
+
+    if (!selectedVoice) {
+      setError('Por favor selecciona una voz')
+      return
+    }
+
+    if (text.length > PREMIUM_TEST_CHAR_LIMIT) {
+      setError(`El texto de prueba supera el limite de ${PREMIUM_TEST_CHAR_LIMIT} caracteres.`)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    setSuccess(false)
+    setAudioUrl(null)
+    setLocalSpeechActive(false)
+
+    try {
+      const selectedVoiceObj = voices.find(v => v.id === selectedVoice)
+      const isWebSpeech = selectedVoiceObj && selectedVoiceObj.engine === "webspeech"
+
+      if (isWebSpeech) {
+        // Voces básicas por backend TTS para obtener audio real y espectro real.
+        const response = await fetch(`${API_URL}/api/tts/say`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text,
+            voice: selectedVoice
+          })
+        })
+
+        const data = await response.json()
+        if (!response.ok || !data.audio) {
+          setError(data.error || "Error al sintetizar la voz básica")
+        } else {
+          setAudioUrl(data.audio)
+          setAudioPlaybackNonce((prev) => prev + 1)
+          setIsPlaying(true)
+          setLocalSpeechActive(false)
+          setTokensUsed(0)
+          setSynthesisCount(prev => prev + 1)
+          setSuccess(true)
+          setTimeout(() => setSuccess(false), 3000)
+        }
+      } else {
+        const token = getAuthToken()
+        let response = await fetch(`${API_URL}/api/inworld/tts`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            text,
+            voiceId: selectedVoice
+          })
+        })
+
+        if (!response.ok && response.status === 404) {
+          response = await fetch(`${API_URL}/api/tiktok/message`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              username: (config?.lastTiktokUser || "preview_studio").trim(),
+              messageUsername: "preview",
+              messageText: text,
+              voiceId: selectedVoice
+            })
+          })
+        }
+
+        const data = await response.json()
+
+        if (response.ok && (data.audio || data.success)) {
+          setAudioUrl(data.audio || data.audioUrl)
+          setAudioPlaybackNonce((prev) => prev + 1)
+          const estTokens = text.length
+          const usedTokens = Number(data.tokensUsed || estTokens)
+          const remainingTokens = Number(data.remainingTokens)
+          setTokensUsed(usedTokens)
+          if (Number.isFinite(remainingTokens)) {
+            setTokens(remainingTokens)
+          } else if (token) {
+            setTokens(prev => prev - usedTokens)
+          }
+          setTotalTokensUsed(prev => prev + (data.tokensUsed || estTokens))
+          setSynthesisCount(prev => prev + 1)
+          setSuccess(true)
+          setTimeout(() => setSuccess(false), 3000)
+        } else {
+          setError(data.error || "Error al sintetizar la voz")
+        }
+      }
+    } catch (err) {
+      setError("Error de conexion. Verifica tu conexion a internet.")
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAddChatMessage = () => {
+    if (newChatMessage.trim()) {
+      setChatMessages([
+        ...chatMessages,
+        {
+          id: chatMessages.length + 1,
+          user: currentChatUser,
+          message: newChatMessage,
+          timestamp: new Date()
+        }
+      ])
+      setNewChatMessage('')
+    }
+  }
+
+  const handleSynthesizeFromChat = (messageObj) => {
+    if (typeof messageObj === 'string') {
+      setText(messageObj)
+    } else {
+      const fullText = config.readOnlyMessage ? messageObj.message : `${messageObj.user}: ${messageObj.message}`
+      setText(fullText)
+    }
+  }
+
+  const charCount = text.length
+  const estimatedTokens = charCount
+  const selectedVoiceObj = voices.find(v => v.id === selectedVoice)
+  const requiresPaidTokens = selectedVoiceObj && selectedVoiceObj.engine !== "webspeech"
+  const hasInsufficientTokens = requiresPaidTokens && estimatedTokens > tokens
+
+  return (
+    <div className={`${darkMode ? "min-h-screen bg-gradient-to-br from-[#0a0a1a] via-[#111827] to-[#0f172a] text-white" : "min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 text-gray-900"}`}>
+      {/* Header */}
+      <div className={`${darkMode ? "border-b border-cyan-400/30 backdrop-blur-md sticky top-0 z-50 bg-[#0a0a1a]/90" : "border-b border-indigo-200 backdrop-blur-sm sticky top-0 z-50 bg-white/90 shadow-sm"}`}>
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <button
+            onClick={onGoHome}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+          >
+            <img src="/images/Sin%20t%C3%ADtulo%20(200%20x%2060%20px)%20(250%20x%2060%20px).png" alt="StreamVoicer" className="h-12 w-auto" />
+            <div>
+              {user && <p className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>{user.email}</p>}
+            </div>
+          </button>
+          <div className="flex items-center gap-4">
+            <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+              darkMode
+                ? (isStreamActive ? 'bg-red-500/20 border border-red-500/50' : 'bg-gray-700/50 border border-gray-600/50')
+                : (isStreamActive ? 'bg-slate-700 border border-slate-600 text-white' : 'bg-slate-200 border border-slate-300 text-slate-700')
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${
+                isStreamActive ? (darkMode ? 'bg-red-500 animate-pulse' : 'bg-red-300') : 'bg-gray-500'
+              }`}></div>
+              <span className="text-xs font-semibold">{isStreamActive ? 'EN VIVO' : 'INACTIVO'}</span>
+            </div>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+              darkMode
+                ? 'bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30'
+                : 'bg-slate-700 border border-slate-600 shadow-sm'
+            }`}>
+              <Zap className={`w-4 h-4 ${darkMode ? 'text-cyan-300' : 'text-slate-200'}`} />
+              <span className={`text-sm font-bold ${darkMode ? 'text-cyan-300' : 'text-slate-100'}`}>{tokens} tokens</span>
+            </div>
+            <button
+              onClick={toggleTheme}
+              className={darkMode ? "p-2 rounded-lg bg-gray-800 border border-cyan-500/30 hover:bg-gray-700 transition-colors" : "p-2 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 transition-colors shadow-sm"}
+              title={darkMode ? 'Modo claro' : 'Modo oscuro'}
+            >
+              {darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
+            </button>
+            {user?.role === 'admin' && onGoAdmin && (
+              <button
+                onClick={onGoAdmin}
+                title="Panel Admin"
+                className={darkMode
+                  ? "p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/30 transition-all"
+                  : "p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 border border-red-300 transition-all shadow-sm"}
+              >
+                <Shield className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 pt-8 pb-56 lg:pb-72">
+        {/* TikTok Live Section */}
+        <TikTokLivePanel config={config} updateConfig={updateConfig} />
+
+        {/* Botones principales: Configuracion, Taller de Voces, Estadisticas */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <button
+            onClick={onGoControlPanel}
+            className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
+              darkMode
+                ? 'bg-gradient-to-r from-[#1a1a2e] to-[#16213e] border border-cyan-400/30 hover:border-cyan-300 hover:shadow-lg hover:shadow-cyan-500/20 text-cyan-300'
+                : 'bg-gradient-to-r from-slate-700 to-slate-800 border border-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-sm'
+            }`}
+          >
+            <Settings className="w-5 h-5" />
+            <span>Configuracion</span>
+          </button>
+          {onGoVoiceCloning && (() => {
+            const userPlan = user?.plan || 'free'
+            const isFreeUser = userPlan === 'free'
+
+            if (isFreeUser) {
+              return (
+                <button
+                  onClick={onGoVoiceCloning}
+                  className={`relative flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+                    darkMode
+                      ? 'bg-gradient-to-r from-purple-600/70 to-pink-600/70 text-gray-200 hover:from-purple-600/90 hover:to-pink-600/90 hover:text-white'
+                      : 'bg-gradient-to-r from-slate-600 to-slate-700 text-gray-200 hover:from-slate-700 hover:to-slate-800 hover:text-white'
+                  }`}
+                  title="Clic para explorar - Bloqueado para plan FREE"
+                >
+                  <Mic2 className="w-5 h-5" />
+                  <span>Taller de Voces</span>
+                  <Lock className="w-4 h-4 ml-auto" />
+                </button>
+              )
+            }
+
+            return (
+              <button
+                onClick={onGoVoiceCloning}
+                className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
+                  darkMode
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white hover:shadow-lg hover:shadow-purple-500/30'
+                    : 'bg-gradient-to-r from-slate-700 to-slate-800 border border-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-sm'
+                }`}
+              >
+                <Mic2 className="w-5 h-5" />
+                <span>Taller de Voces</span>
+              </button>
+            )
+          })()}
+          {onGoStatistics && (
+            <button
+              onClick={onGoStatistics}
+              className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
+                darkMode
+                  ? 'bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-400/40 hover:border-cyan-300 hover:shadow-lg hover:shadow-cyan-500/30 text-cyan-300'
+                  : 'bg-gradient-to-r from-slate-700 to-slate-800 border border-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-sm'
+              }`}
+            >
+              <BarChart3 className="w-5 h-5" />
+              <span>Estadisticas</span>
+            </button>
+          )}
+        </div>
+
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Center Column - Synthesis */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Voice Selection */}
+            <div className={`${darkMode ? "space-y-2 bg-[#1a1a2e] border border-cyan-400/25 rounded-lg p-4" : "space-y-2 bg-white border border-indigo-200 rounded-lg p-4 shadow-sm"}`}>
+              <label className="text-sm font-semibold text-cyan-300 uppercase tracking-wide">
+                Selecciona una voz
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedVoice}
+                  onChange={(e) => updateConfig('generalVoiceId', e.target.value)}
+                  className={`${darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 appearance-none cursor-pointer pr-10" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 appearance-none cursor-pointer pr-10"}`}
+                >
+                  {voices.map((voice) => (
+                    <option key={voice.id} value={voice.id}>
+                      {voice.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-300 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Text Input */}
+            <div className={`${darkMode ? "space-y-2 bg-[#1a1a2e] border border-purple-400/25 rounded-lg p-4" : "space-y-2 bg-white border border-indigo-200 rounded-lg p-4 shadow-sm"}`}>
+              <label className="text-sm font-semibold text-purple-300 uppercase tracking-wide">
+                Texto a probar
+              </label>
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                maxLength={PREMIUM_TEST_CHAR_LIMIT}
+                placeholder="Escribe el texto que deseas convertir en voz..."
+                className={`${darkMode ? "w-full h-32 bg-[#0f0f23] border border-purple-400/30 rounded p-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400 resize-none font-mono text-sm" : "w-full h-32 bg-gray-50 border border-indigo-300 rounded p-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 resize-none font-mono text-sm"}`}
+              />
+              <div className={`${darkMode ? "flex justify-between text-xs text-gray-400" : "flex justify-between text-xs text-gray-500"}`}>
+                <span>{charCount}/{PREMIUM_TEST_CHAR_LIMIT} caracteres</span>
+                <span>1 token = 1 caracter</span>
+              </div>
+            </div>
+
+            {/* Alerts */}
+            {error && (
+              <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                <p className="text-sm text-red-400">{error}</p>
+              </div>
+            )}
+
+            {success && (
+              <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                <Volume2 className="w-5 h-5 text-green-400 flex-shrink-0" />
+                <p className="text-sm text-green-400">Sintesis completada!</p>
+              </div>
+            )}
+
+            {/* Synthesize Button */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleSynthesize}
+                disabled={loading || hasInsufficientTokens}
+                className={`flex-1 py-4 rounded-lg font-bold uppercase tracking-wide transition-all duration-300 flex items-center justify-center gap-2 ${
+                  loading || hasInsufficientTokens
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-400 hover:to-purple-500 shadow-lg shadow-cyan-500/50 hover:shadow-cyan-500/75'
+                }`}
+              >
+                {loading ? (
+                  <>
+                    <Loader className="w-5 h-5 animate-spin" />
+                    Probando...
+                  </>
+                ) : (
+                  <>
+                    <Mic2 className="w-5 h-5" />
+                    Probar voz
+                  </>
+                )}
+              </button>
+            </div>
+
+            {hasInsufficientTokens && (
+              <p className="text-sm text-yellow-400 text-center bg-yellow-500/10 p-3 rounded border border-yellow-500/30">
+                No tienes suficientes tokens. Necesitas {estimatedTokens} pero solo tienes {tokens}.
+              </p>
+            )}
+          </div>
+
+          {/* Right Column - Stats & Audio */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Audio Player - with Visualizer */}
+            <div className="space-y-2">
+              <AudioVisualizer
+                audioElement={assistantAudioElement || audioRef.current}
+                isPlaying={!pttRecordingActive && (isPlaying || localSpeechActive || assistantSpeechActive)}
+                darkMode={darkMode}
+              />
+              {audioUrl && (
+                <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30 rounded-lg">
+                  <button
+                    onClick={() => {
+                      if (audioRef.current) {
+                        isPlaying ? audioRef.current.pause() : audioRef.current.play()
+                      }
+                    }}
+                    className="p-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full hover:shadow-lg hover:shadow-cyan-500/50 transition-all flex-shrink-0"
+                  >
+                    <Volume2 className="w-5 h-5 text-white" />
+                  </button>
+                  <div className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>
+                    <span className="text-cyan-400 font-bold">{tokensUsed}</span> tokens usados
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bot Invoker - Push to Talk */}
+            <BotInvoker
+              user={user}
+              onGoPricingPage={onGoPricingPage}
+              darkMode={darkMode}
+              onClose={() => setShowBotInvoker(false)}
+              tiktokUsername="test_stream"
+              config={config}
+              updateConfig={updateConfig}
+            />
+
+            {/* Tokens - minimalista */}
+            <div className={`${darkMode ? "bg-[#1a1a2e] border border-cyan-400/20 rounded-xl p-4" : "bg-white border border-indigo-200 rounded-xl p-4 shadow-sm"}`}>
+              <div className="flex items-baseline justify-between mb-3">
+                <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/70' : 'text-indigo-400'}`}>Tokens</span>
+                <span className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{tokens.toLocaleString()}</span>
+              </div>
+              <div className={`rounded-full h-2 overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-indigo-100'}`}>
+                <div
+                  className="bg-gradient-to-r from-cyan-500 to-purple-500 h-full rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${Math.min(100, Math.round((tokens / (totalTokensUsed + tokens || 1)) * 100))}%` }}
+                />
+              </div>
+              <div className="flex justify-between mt-2">
+                <span className={`text-[11px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{totalTokensUsed.toLocaleString()} usados</span>
+                <span className="text-[11px] font-semibold text-cyan-400">{Math.min(100, Math.round((tokens / (totalTokensUsed + tokens || 1)) * 100))}% restante</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <audio ref={audioRef} src={audioUrl || ''} className="hidden" />
+    </div>
+  )
+}
+
+
+
+
+
