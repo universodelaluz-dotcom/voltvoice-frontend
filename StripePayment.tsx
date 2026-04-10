@@ -21,7 +21,7 @@ export function StripePayment({ isOpen, onClose, onSuccess: _onSuccess }: Stripe
   const handlePayment = async (pkg: typeof packages[0]) => {
     setLoading(true)
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://voltvoice-backend.onrender.com'
       const response = await fetch(`${apiUrl}/api/mercadopago/create-preference`, {
         method: 'POST',
         headers: {
