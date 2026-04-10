@@ -70,6 +70,13 @@ export class InworldRealtimeService {
       /authentication.*failed/i,
       /not.*authorized/i
     ]
+
+    // Heartbeat to keep WebRTC connection alive (prevent disconnect after 1.5-2 hours)
+    this.heartbeatInterval = null
+    this.lastMessageTime = Date.now()
+    this.inactivityTimeout = null
+    this.inactivityThreshold = 90000 // 90 seconds without data = connection dead
+    this.currentSessionData = null // Store session data for auto-reconnect
   }
 
   _clearAudioQueue() {
@@ -649,6 +656,9 @@ export class InworldRealtimeService {
       this.sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       console.log('[Inworld] Session started:', this.sessionId)
 
+      // Start heartbeat to keep connection alive
+      this._startHeartbeat()
+
       return this.sessionId
     } catch (err) {
       console.error('[Inworld] Error starting session:', err)
@@ -714,9 +724,15 @@ export class InworldRealtimeService {
 
     this.dataChannel.onmessage = (event) => {
       try {
+        // Reset inactivity timer on every message received
+        this._resetInactivityTimer()
+
         const message = JSON.parse(event.data)
         if (message && message.type) {
-          console.log('[Inworld] Received event:', message.type)
+          // Ignore heartbeat responses
+          if (message.type !== 'heartbeat') {
+            console.log('[Inworld] Received event:', message.type)
+          }
           this._handleInworldEvent(message)
         } else {
           console.warn('[Inworld] Received message without type:', message)
@@ -1654,6 +1670,13 @@ export class InworldRealtimeService {
    * @param {Object} options - { preserveVoice: true } to keep lastValidSessionVoice across recovery
    */
   closeSession(options = {}) {
+    // Stop heartbeat and inactivity monitoring
+    this._stopHeartbeat()
+    if (this.inactivityTimeout) {
+      clearTimeout(this.inactivityTimeout)
+      this.inactivityTimeout = null
+    }
+
     if (this.dataChannel) {
       this.dataChannel.close()
     }
@@ -1715,6 +1738,70 @@ export class InworldRealtimeService {
    */
   isSessionActive() {
     return this.isConnected && this.sessionId !== null
+  }
+
+  /**
+   * Start heartbeat to keep WebRTC connection alive
+   * Prevents WebRTC from closing after 1.5-2 hours of inactivity
+   */
+  _startHeartbeat() {
+    this._stopHeartbeat()
+
+    console.log('[Inworld] Starting heartbeat to keep connection alive')
+    this.lastMessageTime = Date.now()
+
+    this.heartbeatInterval = setInterval(() => {
+      if (this.isConnected && this.dataChannel && this.dataChannelReady) {
+        try {
+          // Send keepalive message every 30 seconds
+          this.dataChannel.send(JSON.stringify({
+            type: 'heartbeat',
+            timestamp: Date.now()
+          }))
+          console.log('[Inworld] Heartbeat sent')
+        } catch (err) {
+          console.warn('[Inworld] Heartbeat send failed:', err.message)
+        }
+      }
+    }, 30000) // Every 30 seconds
+
+    // Monitor for inactivity (no data received for 90 seconds)
+    this._resetInactivityTimer()
+  }
+
+  /**
+   * Stop heartbeat
+   */
+  _stopHeartbeat() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval)
+      this.heartbeatInterval = null
+      console.log('[Inworld] Heartbeat stopped')
+    }
+  }
+
+  /**
+   * Reset inactivity timer - called when data is received
+   */
+  _resetInactivityTimer() {
+    if (this.inactivityTimeout) {
+      clearTimeout(this.inactivityTimeout)
+    }
+
+    this.lastMessageTime = Date.now()
+
+    this.inactivityTimeout = setTimeout(() => {
+      console.error('[Inworld] No data received for 90 seconds - connection likely dead')
+      if (this.isConnected) {
+        this._emit('inactivity-timeout')
+        // Close and trigger recovery
+        this.closeSession({ preserveVoice: true })
+        this._emit('session-expired', {
+          errorMsg: 'Inactivity timeout - reconnecting...',
+          lastValidSessionVoice: this.lastValidSessionVoice
+        })
+      }
+    }, this.inactivityThreshold)
   }
 
   /**
