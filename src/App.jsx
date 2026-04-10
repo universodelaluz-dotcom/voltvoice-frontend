@@ -4,6 +4,7 @@ import { SynthesisStudio } from './components/SynthesisStudio'
 import VoiceWorkshopPanel from './components/VoiceCloningPanel'
 import { PricingPage } from './components/PricingPage'
 import { PricingCards } from './components/PricingCards'
+import { PricingComparison } from './components/PricingComparison'
 import { ControlPanel } from './components/ControlPanel'
 import { StatisticsDashboard } from './components/StatisticsDashboard'
 import { AuthPage } from './components/AuthPage'
@@ -170,11 +171,8 @@ export function App() {
   const [showTerms, setShowTerms] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [showContact, setShowContact] = useState(false)
-  const [showFAQ, setShowFAQ] = useState(false)
   const [showCookies, setShowCookies] = useState(false)
-  const [cookieConsent, setCookieConsent] = useState(() => {
-    return localStorage.getItem('cookieConsent') === 'true'
-  })
+  const [cookieConsent, setCookieConsent] = useState(false) // Siempre comienza en false para mostrar el banner
   const [selectedPaymentPackage, setSelectedPaymentPackage] = useState(350000)
   const [selectedCheckoutItem, setSelectedCheckoutItem] = useState(null)
 
@@ -350,6 +348,7 @@ export function App() {
 
   // Auto-guardar config al backend cuando cambia (con debounce)
   const saveTimerRef = useRef(null)
+  const testimonialsScrollRef = useRef(null)
 
   // Cache local inmediata por usuario activo (respaldo si falla red/backend)
   useEffect(() => {
@@ -471,6 +470,44 @@ export function App() {
       updateConfig('themeMode', nextThemeMode)
     }
   }, [darkMode, user, configReady, config.themeMode])
+
+  // Scroll al top cuando carga la página
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
+  // Bloquear scroll si no hay consentimiento de cookies
+  useEffect(() => {
+    if (!cookieConsent) {
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = 'unset'
+      }
+    }
+  }, [cookieConsent])
+
+  // Auto-scroll testimonials
+  useEffect(() => {
+    const container = testimonialsScrollRef.current
+    if (!container) return
+
+    let scrollAmount = 0
+    const scrollStep = 2
+    const scrollInterval = 50
+
+    const interval = setInterval(() => {
+      scrollAmount += scrollStep
+      container.scrollLeft = scrollAmount
+
+      // Reset cuando llega al final
+      if (container.scrollLeft >= container.scrollWidth - container.clientWidth) {
+        scrollAmount = 0
+        container.scrollLeft = 0
+      }
+    }, scrollInterval)
+
+    return () => clearInterval(interval)
+  }, [])
 
   // Admin Panel (solo para admins)
   if (currentPage === 'admin' && user?.role === 'admin') {
@@ -692,27 +729,6 @@ export function App() {
     }
   ]
 
-  const testimonials = [
-    {
-      name: 'María García',
-      role: 'TikToker - 500K followers',
-      text: 'StreamVoicer cambió mi stream. Mis seguidores aman que sus mensajes se lean en voz. ¡Imprescindible!',
-      avatar: '👩'
-    },
-    {
-      name: 'Juan López',
-      role: 'Streamer - Gaming',
-      text: 'La calidad de las voces es increíble. No parece robótico. Muy recomendado.',
-      avatar: '👨'
-    },
-    {
-      name: 'Sofia Rodríguez',
-      role: 'Youtuber - Lifestyle',
-      text: 'Mis viewers interactúan más ahora. StreamVoicer es un game changer para creadores.',
-      avatar: '👩‍🦱'
-    }
-  ]
-
   return (
     <div className={"min-h-screen overflow-hidden transition-colors duration-300 " + (darkMode ? "bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-gray-900") + ""}>
       {/* Botones Esquina Superior */}
@@ -770,6 +786,7 @@ export function App() {
             <div className="absolute top-1/2 right-0 w-[420px] h-[420px] bg-gradient-to-b from-orange-500/20 to-transparent rounded-full blur-3xl"></div>
           </div>
 
+          {/* Logo/Título de la app */}
           <div className="mb-10 flex justify-center">
             <img
               src="/images/streamvoicer6.png"
@@ -809,7 +826,7 @@ export function App() {
               {user ? 'Ir al Studio' : 'Comenzar Gratis'} <ChevronRight className="w-5 h-5" />
             </button>
             <button
-              onClick={() => setCurrentPage('pricing')}
+              onClick={() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' })}
               className={"px-8 py-4 border-2 rounded-lg font-bold text-lg transition-all " + (darkMode ? "border-orange-300/60 text-orange-300 hover:bg-orange-400/10" : "border-orange-400 text-orange-500 hover:bg-orange-50")}
             >
               Ver Planes
@@ -819,73 +836,146 @@ export function App() {
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="py-20 px-4">
+      {/* Success Cases Section */}
+      <section className={`py-20 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="max-w-7xl mx-auto">
-          <h3 className="text-4xl font-black text-center mb-16">
-            ¿Por qué elegir <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">StreamVoicer</span>?
-          </h3>
+          <div className="text-center mb-16">
+            <h3 className={`text-4xl font-black mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              Resultados reales de <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">nuestros creadores</span>
+            </h3>
+            <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Números que hablan por sí solos
+            </p>
+          </div>
 
+          {/* Success Cases Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {benefits.map((benefit, idx) => (
+            {[
+              { metric: '+150%', label: 'Aumento de seguidores', creator: 'Alex Gaming', category: 'Gaming Creator', description: 'En 3 meses pasó de 50k a 125k seguidores. Su comunidad creció exponencialmente gracias a Lives más dinámicos y engagement constante con StreamVoicer.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web1.png' },
+              { metric: '+2.5K', label: 'Comentarios por Live', creator: 'Sofia Music', category: 'Música Live', description: 'Sus Lives musicales ahora generan 2,500+ comentarios cada sesión. El chat está tan activo que sus viewers sienten que son parte del show.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web2.png' },
+              { metric: '+85%', label: 'Aumento en donaciones', creator: 'Carlos Comedy', category: 'Comedia', description: 'Las donaciones se multiplicaron cuando sus donadores se sintieron reconocidos automáticamente. De $500 a $925 por Live en promedio.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web3.png' },
+              { metric: '+200%', label: 'Nuevos seguidores diarios', creator: 'Javier Fitness', category: 'Fitness Coach', description: 'De 20 nuevos seguidores diarios pasó a 60. Su comunidad crece porque otros ven un chat activo, interactivo y valorado en sus transmisiones.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web4.png' },
+              { metric: '+70%', label: 'Conversión de seguidores', creator: 'Mario Arte', category: 'Artista Digital', description: 'Pasó de convertir el 5% de viewers a seguidores, a convertir el 8.5%. Un chat valorado y participativo es más propenso a seguir al creador.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web5.png' },
+              { metric: '+45%', label: 'Retención de viewers', creator: 'Diana Fashion', category: 'Moda & Estilo', description: 'Los viewers se quedan más tiempo en sus Lives. Antes perdía audiencia rápido, ahora el chat dinámico los mantiene enganchados durante toda la sesión.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web6.png' },
+            ].map((caseItem, idx) => (
               <div
                 key={idx}
-                className={"group rounded-xl p-8 transition-all " + (darkMode ? "bg-gradient-to-br from-white/5 to-white/0 border border-white/10 hover:border-cyan-400/50 hover:bg-white/10" : "bg-white border border-gray-200 shadow-md hover:shadow-lg hover:border-cyan-400")}
+                className={`rounded-xl overflow-hidden border transition-all duration-300 hover:shadow-xl hover:-translate-y-2 ${
+                  darkMode
+                    ? 'bg-gray-800 border-gray-700'
+                    : 'bg-white border-gray-200'
+                }`}
               >
-                <div className="text-4xl mb-4">{benefit.icon}</div>
-                <h4 className="text-xl font-bold mb-2">{benefit.title}</h4>
-                {benefit.subtitle && (
-                  <p className="text-sm font-medium mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">{benefit.subtitle}</p>
-                )}
-                <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{benefit.description}</p>
+                {/* Metric Header */}
+                <div className={`p-6 text-center border-b ${
+                  darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-200'
+                }`}>
+                  <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2">
+                    {caseItem.metric}
+                  </p>
+                  <p className={`text-sm font-bold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    {caseItem.label}
+                  </p>
+                </div>
+
+                {/* Image */}
+                <div className="h-48 overflow-hidden bg-gray-300">
+                  <img
+                    src={caseItem.img}
+                    alt={caseItem.creator}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+
+                {/* Content */}
+                <div className="p-6">
+                  <h4 className={`text-lg font-black mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {caseItem.creator}
+                  </h4>
+                  <p className={`text-xs font-bold mb-3 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>
+                    {caseItem.category}
+                  </p>
+                  <p className={`text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {caseItem.description}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className={`py-20 px-4 border-y ${
-        darkMode
-          ? 'bg-gradient-to-r from-cyan-500/5 to-purple-500/5 border-white/10'
-          : 'bg-white border-slate-200'
-      }`}>
+      {/* Testimonials Section - Horizontal Scroll */}
+      <section className={`py-20 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="max-w-7xl mx-auto">
-          <h3 className={`text-4xl font-black text-center mb-16 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-            Así de <span className={darkMode ? "text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500" : "text-slate-700"}>fácil</span> es empezar
-          </h3>
+          <div className="text-center mb-12">
+            <h3 className={`text-4xl font-black mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              Lo que dicen nuestros <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">creadores</span>
+            </h3>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {howItWorks.map((item, idx) => (
-              <div key={idx} className="relative">
-                <div className={`rounded-xl p-8 text-center border ${
-                  darkMode
-                    ? 'bg-gradient-to-br from-cyan-400/20 to-purple-500/20 border-cyan-400/30'
-                    : 'bg-slate-50 border-slate-300 shadow-sm'
-                }`}>
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-4 ${
+          {/* Horizontal Scroll Testimonials - Auto Scroll */}
+          <div
+            ref={testimonialsScrollRef}
+            className="overflow-x-hidden pb-4 -mx-4 px-4"
+          >
+            <div className="flex gap-6 min-w-min">
+              {[
+                { name: '@alexgamertok', type: 'TikTok Creator Gaming', benefit: '🟢 Tu stream nunca se queda muerto', text: 'Antes mis Lives en TikTok se moría si no hablaba constantemente. Con StreamVoicer, el chat siempre tiene algo que leer, comentar y participar. Los viewers ven que hay actividad incluso cuando estoy concentrado en el juego.', stars: 5 },
+                { name: '@sofiaart', type: 'TikTok Creator Art', benefit: '💬 Tu chat trabaja por ti', text: 'No tengo que estar leyendo comentarios todo el tiempo. StreamVoicer los procesa, destaca los mejores y mantiene la conversación fluida. Yo solo me concentro en crear contenido y el chat se cuida solo.', stars: 5 },
+                { name: '@carlosmusica.live', type: 'TikTok Creator Música', benefit: '⚡ Más interacción sin más esfuerzo', text: 'Mis Lives ahora tienen 3x más engagement sin que yo haga nada diferente. La gente comenta más porque sabe que sus mensajes van a ser valorados. Es increíble cuánta interacción genera sin esfuerzo extra.', stars: 5 },
+                { name: '@dianabeauty_tk', type: 'TikTok Creator Belleza', benefit: '🎯 Convierte mensajes en participación', text: 'Cada comentario que llega se convierte en una participación real. Ya no es solo "jeje" abajo, ahora los comentarios generan conversación. Mi comunidad se siente escuchada y eso atrae más personas al Live.', stars: 5 },
+                { name: '@javierstreamer22', type: 'TikTok Creator Competitivo', benefit: '⭐ Destaca a tus seguidores y donadores', text: 'El sistema automáticamente reconoce a mis followers y donadores. No tengo que perder tiempo dándoles shout-outs manuales. Ellos se sienten valorados naturalmente y eso me genera más donaciones y suscripciones.', stars: 5 },
+                { name: '@mariacomedy_tk', type: 'TikTok Creator Comedia', benefit: '🚀 Haz tu stream dinámico sin hablar más', text: 'Mi Live es mucho más dinámico y entretenido sin que tenga que estar hablando todo el tiempo para mantener atención. El chat está tan activo y valorado que la gente viene por la comunidad, no solo por mí.', stars: 5 },
+              ].map((testimonial, idx) => (
+                <div
+                  key={idx}
+                  className={`flex-shrink-0 w-80 p-6 rounded-xl border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
                     darkMode
-                      ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white'
-                      : 'bg-slate-700 text-white'
+                      ? 'bg-gray-800 border-gray-700'
+                      : 'bg-white border-gray-200'
+                  }`}
+                >
+                  {/* Stars */}
+                  <div className="flex gap-1 mb-4">
+                    {[...Array(testimonial.stars)].map((_, i) => (
+                      <span key={i} className="text-yellow-400 text-lg">⭐</span>
+                    ))}
+                  </div>
+
+                  {/* Benefit Highlight */}
+                  <p className={`text-sm font-bold mb-3 pb-3 border-b ${
+                    darkMode
+                      ? 'text-cyan-400 border-gray-700'
+                      : 'text-cyan-600 border-gray-200'
                   }`}>
-                    {item.step}
+                    {testimonial.benefit}
+                  </p>
+
+                  {/* Text */}
+                  <p className={`text-sm leading-relaxed mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {testimonial.text}
+                  </p>
+
+                  {/* Name & Type */}
+                  <div className="border-t pt-4" style={{borderColor: darkMode ? '#374151' : '#e5e7eb'}}>
+                    <p className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {testimonial.name}
+                    </p>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {testimonial.type}
+                    </p>
                   </div>
-                  <h4 className={`text-xl font-bold mb-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.title}</h4>
-                  <p className={darkMode ? "text-gray-400" : "text-slate-600"}>{item.description}</p>
                 </div>
-                {idx < howItWorks.length - 1 && (
-                  <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2">
-                    <ChevronRight className={`w-8 h-8 ${darkMode ? 'text-cyan-400/50' : 'text-slate-400'}`} />
-                  </div>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section className="py-20 px-4">
+      <section id="pricing-section" className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-black mb-4">
@@ -894,6 +984,54 @@ export function App() {
             <p className={darkMode ? "text-gray-400" : "text-gray-600"}>Elige el plan perfecto para tu stream</p>
           </div>
           <PricingCards darkMode={darkMode} showToggle={true} onPlanAction={handlePlanAction} />
+
+          {/* Divider */}
+          <div className="my-20 flex items-center gap-4">
+            <div className={`flex-1 h-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
+            <span className={`text-sm font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              📋 Comparativa detallada
+            </span>
+            <div className={`flex-1 h-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
+          </div>
+
+          {/* Pricing Comparison */}
+          <PricingComparison darkMode={darkMode} onPlanAction={handlePlanAction} />
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h3 className="text-4xl font-black mb-4">
+              ❓ <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Preguntas Frecuentes</span>
+            </h3>
+            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>Resuelve tus dudas sobre VoltVoice</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {[
+              { icon: '🔊', q: '¿Cómo funciona StreamVoicer?', a: 'StreamVoicer es una plataforma de síntesis de voz (TTS) que lee automáticamente los mensajes de tu chat en TikTok LIVE en tiempo real. Utiliza inteligencia artificial para la clonación de voces, creación de personajes y también ofrece voces naturales en español.' },
+              { icon: '🧩', q: '¿Qué es un token?', a: 'Un token equivale a un carácter de texto. Cada vez que se reproduce una voz premium o clonada, se consumen tokens de tu plan mensual.' },
+              { icon: '🔄', q: '¿Puedo cambiar de plan cuando quiera?', a: 'Sí. Puedes actualizar, cambiar o cancelar tu plan en cualquier momento. Los cambios se aplicarán en tu siguiente período de facturación.' },
+              { icon: '💳', q: '¿Qué hago si se me acaban los tokens?', a: 'Puedes adquirir tokens adicionales en cualquier momento desde la sección "Recarga de Tokens". Estos se suman a los disponibles en tu plan de ese periodo mensual.' },
+              { icon: '⏳', q: '¿Los tokens expiran?', a: 'Los tokens incluidos en tu plan mensual expiran al finalizar el ciclo de facturación. Los tokens adquiridos en paquetes se acumulan y permanecen disponibles mientras tu suscripción esté activa.' },
+              { icon: '🌍', q: '¿Funciona con otros idiomas?', a: 'Actualmente StreamVoicer está optimizado para español. Estamos trabajando en la incorporación de nuevos idiomas próximamente.' },
+              { icon: '⚡', q: '¿Cuánto tiempo tarda en procesarse un mensaje?', a: 'Los mensajes se procesan en tiempo real, generalmente entre 1 y 5 segundos, dependiendo de su longitud y la carga del servidor.' },
+              { icon: '🎙️', q: '¿Puedo personalizar las voces?', a: 'Sí, la personalización de voces está disponible dentro de la plataforma, pero su alcance depende del plan que tengas activo. En el plan Free, puedes utilizar una voz local ilimitada. En los planes superiores, tienes acceso a un número determinado de voces premium y voces clonadas por IA.' },
+              { icon: '🔐', q: '¿Es seguro dar acceso a mi TikTok?', a: 'Sí. Solo solicitamos acceso a la información pública de tu transmisión en vivo. Tus datos están protegidos y no se comparten con terceros.' },
+              { icon: '🆓', q: '¿Hay un período de prueba gratuito?', a: 'Sí. Puedes comenzar con el plan gratuito y posteriormente actualizar a Start o Creator conforme crezca tu actividad.' },
+            ].map((faq, idx) => (
+              <div key={idx} className={`p-6 rounded-lg border-l-4 ${darkMode ? 'bg-gray-800/50 border-cyan-500' : 'bg-gray-50 border-cyan-400'}`}>
+                <h4 className={`text-lg font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {faq.icon} {faq.q}
+                </h4>
+                <p className={`text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {faq.a}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -993,37 +1131,6 @@ export function App() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className={`py-20 px-4 ${
-        darkMode ? 'bg-gradient-to-r from-purple-500/5 to-cyan-500/5' : 'bg-slate-50'
-      }`}>
-        <div className="max-w-7xl mx-auto">
-          <h3 className={`text-4xl font-black text-center mb-16 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-            Lo que dicen nuestros <span className={darkMode ? "text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500" : "text-slate-700"}>creadores</span>
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, idx) => (
-              <div key={idx} className={darkMode ? "bg-white/5 border border-white/10 rounded-xl p-8" : "bg-white border border-gray-200 shadow-md rounded-xl p-8"}>
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="text-4xl">{testimonial.avatar}</div>
-                  <div>
-                    <h4 className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{testimonial.name}</h4>
-                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{testimonial.role}</p>
-                  </div>
-                </div>
-                <div className="flex gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <span key={i} className="text-yellow-400">⭐</span>
-                  ))}
-                </div>
-                <p className={`italic ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>"{testimonial.text}"</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
@@ -1046,7 +1153,7 @@ export function App() {
                 {user ? 'Ir al Studio' : 'Comenzar Gratis'} <ChevronRight className="w-5 h-5" />
               </button>
               <button
-                onClick={() => setCurrentPage('pricing')}
+                onClick={() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' })}
                 className={`px-8 py-4 border-2 rounded-lg font-bold text-lg transition-all inline-flex items-center gap-2 ${
                   darkMode
                     ? 'border-cyan-400 text-cyan-400 hover:bg-cyan-400/10'
@@ -1080,7 +1187,6 @@ export function App() {
               <h4 className="font-bold mb-4">Soporte</h4>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><button onClick={() => setShowContact(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Contacto</button></li>
-                <li><button onClick={() => setShowFAQ(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">FAQ</button></li>
               </ul>
             </div>
           </div>
@@ -1222,72 +1328,19 @@ export function App() {
         </div>
       )}
 
-      {/* FAQ Modal */}
-      {showFAQ && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
-          <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Preguntas Frecuentes</h2>
-              <button onClick={() => setShowFAQ(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
-            </div>
-            <div className={`space-y-6 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Cómo funciona StreamVoicer?</h3>
-                <p>StreamVoicer es una plataforma de síntesis de voz (TTS) que lee automáticamente los mensajes de tu chat de TikTok LIVE usando inteligencia artificial con voces naturales en español.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Qué es un token?</h3>
-                <p>Un token representa caracteres de texto. Cuando un usuario envía un mensaje, se consumen tokens según la cantidad de caracteres. Cada plan incluye una cantidad mensual de tokens renovables.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Puedo cambiar de plan cuando quiera?</h3>
-                <p>Sí, puedes cambiar o cancelar tu plan en cualquier momento. Los cambios se reflejan en tu próximo período de facturación.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Qué hago si se me acaban los tokens?</h3>
-                <p>Puedes comprar tokens adicionales en cualquier momento en la sección "Recarga de Tokens". Los tokens se acumulan con los de tu plan actual.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Los tokens expiran?</h3>
-                <p>No, los tokens no expiran. Se acumulan en tu cuenta y puedes usarlos cuando quieras mientras tengas una suscripción activa.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Funciona con otros idiomas?</h3>
-                <p>Actualmente StreamVoicer está optimizado para español. Estamos trabajando en agregar más idiomas próximamente.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Cuánto tiempo toma procesar un mensaje?</h3>
-                <p>Los mensajes se procesan en tiempo real. Típicamente entre 2-5 segundos dependiendo de la longitud y el servidor.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Puedo personalizar las voces?</h3>
-                <p>Sí, en el panel de control puedes elegir entre diferentes voces en español y configurar qué mensajes se leen según tus reglas.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Es seguro dar acceso a mi TikTok?</h3>
-                <p>Sí, solo solicitamos acceso a la información pública de tu stream LIVE. Tus datos están protegidos y no compartimos información con terceros.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Hay período de prueba gratuito?</h3>
-                <p>Si prefieres primero una prueba, puedes empezar con START y luego subir a CREATOR o PRO cuando tu chat crezca.</p>
-              </div>
-            </div>
-            <button onClick={() => setShowFAQ(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
-              Cerrar
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Cookies Modal */}
       {showCookies && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
-          <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-            <div className="flex justify-between items-center mb-6">
+          <div className={`rounded-2xl w-full max-w-4xl my-8 flex flex-col ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`} style={{maxHeight: 'calc(100vh - 64px)'}}>
+            {/* Header */}
+            <div className={`flex justify-between items-center p-8 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Política de Cookies</h2>
-              <button onClick={() => setShowCookies(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
+              <button onClick={() => setShowCookies(false)} className="text-2xl opacity-50 hover:opacity-100 font-bold">×</button>
             </div>
-            <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+
+            {/* Contenido scrolleable */}
+            <div className={`flex-1 overflow-y-auto px-8 pt-8 pb-16 space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Qué son las cookies?</h3>
                 <p>Las cookies son pequeños archivos de texto que se guardan en tu dispositivo cuando visitas nuestro sitio. Nos ayudan a mejorar tu experiencia y analizar cómo usas StreamVoicer.</p>
@@ -1325,41 +1378,74 @@ export function App() {
                 <p>Nos reservamos el derecho de actualizar esta política en cualquier momento. Te notificaremos de cambios significativos.</p>
               </section>
             </div>
-            <button onClick={() => setShowCookies(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
-              Cerrar
-            </button>
+
+            {/* Footer con botón */}
+            <div className={`p-8 border-t ${darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gray-50'}`}>
+              <button onClick={() => setShowCookies(false)} className="w-full py-3 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-cyan-400/50 transition-all">
+                ✅ Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Cookie Consent Banner */}
+
+
+      {/* Cookie Consent Banner - Agresivo */}
       {!cookieConsent && (
-        <div className={`fixed bottom-0 left-0 right-0 p-4 z-[998] ${darkMode ? 'bg-gray-900 border-t border-gray-700' : 'bg-white border-t border-gray-200 shadow-lg'}`}>
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex-1">
-              <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                Usamos cookies para mejorar tu experiencia. Al continuar, aceptas nuestra{' '}
-                <button onClick={() => setShowCookies(true)} className="underline hover:no-underline text-cyan-400 font-semibold">
-                  política de cookies
-                </button>
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setCookieConsent(true) && localStorage.setItem('cookieConsent', 'true')}
-                className="px-6 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90 whitespace-nowrap"
-              >
-                Aceptar
-              </button>
-              <button
-                onClick={() => setCookieConsent(true) && localStorage.setItem('cookieConsent', 'true')}
-                className={`px-6 py-2 rounded-lg font-bold whitespace-nowrap ${darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-              >
-                Rechazar
-              </button>
+        <>
+          {/* Overlay oscuro que bloquea clicks */}
+          <div className="fixed inset-0 bg-black/40 z-[997] pointer-events-auto" onClick={() => {}} />
+
+          {/* Banner */}
+          <div className={`fixed bottom-0 left-0 right-0 z-[999] border-t-4 ${darkMode ? 'bg-gray-900 border-cyan-500' : 'bg-white border-cyan-400'} shadow-2xl`}>
+            <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                {/* Texto */}
+                <div className="md:col-span-2">
+                  <h3 className={`text-2xl font-black mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    🍪 POLÍTICA DE COOKIES
+                  </h3>
+                  <p className={`text-base mb-3 leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    <strong>Utilizamos cookies</strong> para mejorar tu experiencia, analizar cómo usas VoltVoice y personalizar contenido. Al continuar navegando, aceptas nuestra política.
+                  </p>
+                  <button
+                    onClick={() => setShowCookies(true)}
+                    className="text-cyan-400 hover:text-cyan-300 font-bold underline text-base"
+                  >
+                    👉 Ver detalles completos
+                  </button>
+                </div>
+
+                {/* Botones */}
+                <div className="flex flex-col sm:flex-row gap-3 justify-end">
+                  <button
+                    onClick={() => {
+                      setCookieConsent(true)
+                      localStorage.setItem('cookieConsent', 'true')
+                    }}
+                    className="px-8 py-4 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-black text-lg rounded-lg hover:shadow-lg hover:shadow-cyan-400/60 transition-all whitespace-nowrap"
+                  >
+                    ✅ ACEPTAR TODAS
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCookieConsent(true)
+                      localStorage.setItem('cookieConsent', 'true')
+                    }}
+                    className={`px-8 py-4 rounded-lg font-bold text-lg whitespace-nowrap transition-all border-2 ${
+                      darkMode
+                        ? 'bg-gray-800 text-gray-200 hover:bg-gray-700 border-gray-600'
+                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-300'
+                    }`}
+                  >
+                    Rechazar
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   )

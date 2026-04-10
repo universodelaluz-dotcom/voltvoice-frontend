@@ -3,6 +3,24 @@ import { Check } from 'lucide-react'
 
 const monthlyPlans = [
   {
+    icon: '⭐',
+    name: 'FREE',
+    price: 0,
+    description: 'Excelente para probar plataforma',
+    cta: 'Comenzar Gratis',
+    popular: false,
+    voices: [
+      '1 voz básica (ilimitada)',
+    ],
+    stream: 'Perfecto para experimentar con la plataforma',
+    compatibility: [
+      'Marcador de usuarios específicos',
+      'Chat visible',
+      'Filtros básicos',
+    ],
+    extension: 'Sin límite de uso - totalmente gratuito',
+  },
+  {
     icon: '🟢',
     name: 'START',
     price: 6.99,
@@ -194,7 +212,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {monthlyPlans.map((plan) => (
               <div
                 key={plan.name}

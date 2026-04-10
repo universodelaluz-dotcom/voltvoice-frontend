@@ -290,3 +290,30 @@ body {
     font-size: 1.02rem;
   }
 }
+
+/* Orbit animations for hero section avatars */
+@keyframes orbit {
+  from {
+    transform: rotate(0deg) translateX(180px) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(180px) rotate(-360deg);
+  }
+}
+
+@keyframes orbit-slow {
+  from {
+    transform: rotate(0deg) translateX(200px) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(200px) rotate(-360deg);
+  }
+}
+
+.orbit-avatar {
+  animation: orbit 25s linear infinite;
+}
+
+.orbit-avatar-slow {
+  animation: orbit-slow 30s linear infinite;
+}
