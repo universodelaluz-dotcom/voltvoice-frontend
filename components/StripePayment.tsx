@@ -1,4 +1,4 @@
-'use client'
+ï»¿'use client'
 
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
@@ -74,7 +74,7 @@ export function StripePayment({ isOpen, onClose, onSuccess: _onSuccess }: Stripe
         // En desarrollo, usar sandbox
         window.location.href = data.sandboxUrl
       } else {
-        alert('Error al crear la sesión de pago')
+        alert('Error al crear la sesiÃ³n de pago')
       }
     } catch (error) {
       alert('Error al procesar el pago')
@@ -136,10 +136,10 @@ export function StripePayment({ isOpen, onClose, onSuccess: _onSuccess }: Stripe
             <span className="font-bold text-voltvoice-cyan">Consumo variable</span> segun actividad del chat
           </p>
           <p className="text-sm text-gray-400 mt-2">
-            Acceso inmediato después del pago
+            Acceso inmediato despuÃ©s del pago
           </p>
           <p className="text-[11px] text-gray-500 mt-2">
-            Referencia en MXN aproximada; se adapta al tipo de cambio USD/MXN del día.
+            Referencia en MXN aproximada; se adapta al tipo de cambio USD/MXN del dÃ­a.
           </p>
         </div>
 

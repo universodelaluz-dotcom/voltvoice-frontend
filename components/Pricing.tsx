@@ -1,4 +1,4 @@
-'use client'
+Ôªø'use client'
 
 import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
@@ -12,7 +12,7 @@ const plans = [
     features: [
       '1 voz clonada por IA (editable)',
       '1 voz natural premium',
-      '1 voz b·sica (ilimitada)',
+      '1 voz b√°sica (ilimitada)',
       '200,000 caracteres (~tokens)',
       'Rinde aprox 2-4 horas de stream activo',
     ],
@@ -27,7 +27,7 @@ const plans = [
     features: [
       '2 voces clonadas por IA (editables)',
       '2 voces naturales premium',
-      '1 voz b·sica (ilimitada)',
+      '1 voz b√°sica (ilimitada)',
       '500,000 caracteres (~tokens)',
       'Rinde aprox 5-8 horas de stream activo',
     ],
@@ -38,11 +38,11 @@ const plans = [
     name: 'PRO',
     usdPrice: 17.99,
     period: '/mes',
-    description: 'Ideal para interacciÛn constante',
+    description: 'Ideal para interacci√≥n constante',
     features: [
       '5 voces clonadas por IA (editables)',
       '4 voces naturales premium',
-      '1 voz b·sica (ilimitada)',
+      '1 voz b√°sica (ilimitada)',
       '800,000 caracteres (~tokens)',
       'Rinde aprox 10-15 horas de stream activo',
     ],
@@ -104,7 +104,7 @@ export function Pricing() {
             <span className="gradient-text">Mensual, Anual y Boosts</span>
           </h2>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            El consumo depende de la actividad del chat y la configuraciÛn.
+            El consumo depende de la actividad del chat y la configuraci√≥n.
           </p>
         </div>
 
@@ -157,7 +157,7 @@ export function Pricing() {
                     <p className="text-xs text-green-400">{p.saving}</p>
                     <p className="text-[11px] text-gray-400 mt-0.5">Aprox. {formatMxnApprox(p.usdPrice)} MXN</p>
                   </div>
-                  <p className="text-cyan-300 font-bold">${p.usdPrice} / aÒo</p>
+                  <p className="text-cyan-300 font-bold">${p.usdPrice} / a√±o</p>
                 </div>
               ))}
             </div>
@@ -170,7 +170,7 @@ export function Pricing() {
                 <div key={b.name} className="flex justify-between items-center border-b border-white/10 pb-2">
                   <div>
                     <p className="text-white font-semibold">{b.name}</p>
-                    <p className="text-xs text-gray-400">{b.chars} ï {b.hours}</p>
+                    <p className="text-xs text-gray-400">{b.chars} ¬ï {b.hours}</p>
                     <p className="text-[11px] text-gray-400 mt-0.5">Aprox. {formatMxnApprox(b.usdPrice)} MXN</p>
                   </div>
                   <p className="text-cyan-300 font-bold">${b.usdPrice.toFixed(2)}</p>
@@ -181,7 +181,7 @@ export function Pricing() {
         </div>
 
         <p className="text-[11px] text-gray-500 mt-4 text-center">
-          Referencia en MXN aproximada; se adapta al tipo de cambio USD/MXN del dÌa.
+          Referencia en MXN aproximada; se adapta al tipo de cambio USD/MXN del d√≠a.
         </p>
       </div>
     </section>
