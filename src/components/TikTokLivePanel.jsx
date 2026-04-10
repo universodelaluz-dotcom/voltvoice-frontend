@@ -496,6 +496,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const isInteractionSuppressedRef = useRef(false)
   const wsRef = useRef(null)
   const statusIntervalRef = useRef(null)
+  const wsHeartbeatIntervalRef = useRef(null)
+  const wsWatchdogIntervalRef = useRef(null)
+  const wsReconnectTimeoutRef = useRef(null)
+  const wsReconnectAttemptRef = useRef(0)
+  const wsLastMessageAtRef = useRef(0)
+  const manualWsCloseRef = useRef(false)
   const speakQueueRef = useRef([])
   const isProcessingRef = useRef(false)
   const lastMessageRef = useRef({}) // { username: lastText }
@@ -599,6 +605,18 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     return () => {
       if (liveRetryTimerRef.current) {
         clearTimeout(liveRetryTimerRef.current)
+      }
+      if (wsHeartbeatIntervalRef.current) {
+        clearInterval(wsHeartbeatIntervalRef.current)
+        wsHeartbeatIntervalRef.current = null
+      }
+      if (wsWatchdogIntervalRef.current) {
+        clearInterval(wsWatchdogIntervalRef.current)
+        wsWatchdogIntervalRef.current = null
+      }
+      if (wsReconnectTimeoutRef.current) {
+        clearTimeout(wsReconnectTimeoutRef.current)
+        wsReconnectTimeoutRef.current = null
       }
     }
   }, [])
@@ -846,15 +864,92 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   useEffect(() => {
     if (!isConnected || !connectedTikTokUser) return
 
+    let isCleaningUp = false
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const wsURL = `${protocol}//${API_URL.replace(/^https?:\/\//, '')}/api/tiktok/ws`
 
     console.log('[TikTok] Conectando WebSocket a:', wsURL)
 
+    const clearWsTimers = () => {
+      if (wsHeartbeatIntervalRef.current) {
+        clearInterval(wsHeartbeatIntervalRef.current)
+        wsHeartbeatIntervalRef.current = null
+      }
+      if (wsWatchdogIntervalRef.current) {
+        clearInterval(wsWatchdogIntervalRef.current)
+        wsWatchdogIntervalRef.current = null
+      }
+      if (wsReconnectTimeoutRef.current) {
+        clearTimeout(wsReconnectTimeoutRef.current)
+        wsReconnectTimeoutRef.current = null
+      }
+    }
+
+    const scheduleWsReconnect = (reason = 'unknown') => {
+      if (manualWsCloseRef.current || disconnectedRef.current || !isConnected || !connectedTikTokUser) {
+        return
+      }
+      if (wsReconnectTimeoutRef.current) return
+
+      wsReconnectAttemptRef.current += 1
+      const attempt = wsReconnectAttemptRef.current
+      const delay = Math.min(30000, 1000 * Math.pow(2, Math.max(0, attempt - 1)))
+      console.warn(`[TikTok] WebSocket caido (${reason}). Reintentando en ${delay}ms (intento ${attempt})`)
+      setError(`Se perdio conexion con el chat. Reintentando (${attempt})...`)
+
+      wsReconnectTimeoutRef.current = setTimeout(() => {
+        wsReconnectTimeoutRef.current = null
+        if (manualWsCloseRef.current || disconnectedRef.current || !isConnected || !connectedTikTokUser) {
+          return
+        }
+        console.log('[TikTok] Reintentando socket...')
+        setIsConnected(false)
+        setTimeout(() => {
+          if (!manualWsCloseRef.current && !disconnectedRef.current && connectedTikTokUser) {
+            setIsConnected(true)
+          }
+        }, 120)
+      }, delay)
+    }
+
+    const startWsHeartbeat = () => {
+      if (wsHeartbeatIntervalRef.current) clearInterval(wsHeartbeatIntervalRef.current)
+      if (wsWatchdogIntervalRef.current) clearInterval(wsWatchdogIntervalRef.current)
+
+      wsHeartbeatIntervalRef.current = setInterval(() => {
+        const currentWs = wsRef.current
+        if (!currentWs || currentWs.readyState !== WebSocket.OPEN) return
+        try {
+          currentWs.send(JSON.stringify({ type: 'ping', ts: Date.now() }))
+        } catch (err) {
+          console.warn('[TikTok] Error enviando ping:', err?.message || err)
+        }
+      }, 20000)
+
+      wsWatchdogIntervalRef.current = setInterval(() => {
+        const currentWs = wsRef.current
+        if (!currentWs || currentWs.readyState !== WebSocket.OPEN) return
+        const silenceMs = Date.now() - wsLastMessageAtRef.current
+        if (silenceMs > 70000) {
+          console.warn('[TikTok] Watchdog: socket en silencio, forzando reconexion...')
+          try {
+            currentWs.close(4000, 'watchdog-timeout')
+          } catch (err) {
+            console.warn('[TikTok] Error cerrando socket watchdog:', err?.message || err)
+          }
+        }
+      }, 10000)
+    }
+
+    manualWsCloseRef.current = false
     const ws = new WebSocket(wsURL)
 
     ws.onopen = async () => {
       console.log('[TikTok] WebSocket conectado')
+      wsReconnectAttemptRef.current = 0
+      wsLastMessageAtRef.current = Date.now()
+      setError(null)
+      startWsHeartbeat()
       ws.send(JSON.stringify({ type: 'subscribe', username: connectedTikTokUser }))
 
       // Cargar bans y nicks desde BD
@@ -913,8 +1008,22 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
     ws.onmessage = async (event) => {
       try {
+        wsLastMessageAtRef.current = Date.now()
         const data = JSON.parse(event.data)
         const c = configRef.current
+
+        if (data.type === 'pong') return
+
+        if (data.type === 'stream_disconnected' || (data.type === 'message' && data.data?.type === 'stream_disconnected')) {
+          setError('El live se desconecto. Reconectando chat...')
+          try {
+            ws.close(4001, 'stream-disconnected')
+          } catch (err) {
+            console.warn('[TikTok] Error cerrando socket por stream_disconnected:', err?.message || err)
+            scheduleWsReconnect('stream_disconnected')
+          }
+          return
+        }
 
         // Si está pausado, ignorar todo excepto el ping de subscribed/status
         if (isPausedRef.current && data.type !== 'subscribed' && data.type !== 'status') return
@@ -1241,22 +1350,27 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
     ws.onerror = (error) => {
       console.error('[TikTok] WebSocket error:', error)
-      setError('Error en conexión WebSocket')
     }
 
-    ws.onclose = () => {
-      console.log('[TikTok] WebSocket cerrado')
-      setIsConnected(false)
-      setConnectedTikTokUser('')
+    ws.onclose = (event) => {
+      console.log('[TikTok] WebSocket cerrado', event?.code, event?.reason || '')
+      clearWsTimers()
+      if (isCleaningUp || manualWsCloseRef.current || disconnectedRef.current || !isConnected || !connectedTikTokUser) {
+        return
+      }
+      scheduleWsReconnect(`close_${event?.code || 'unknown'}`)
     }
 
     wsRef.current = ws
 
     return () => {
+      isCleaningUp = true
+      clearWsTimers()
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: 'unsubscribe' }))
         wsRef.current.close()
       }
+      wsRef.current = null
     }
   }, [isConnected, connectedTikTokUser])
 
@@ -1944,8 +2058,23 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         body: JSON.stringify({ username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser) })
       })
 
+      manualWsCloseRef.current = true
+      if (wsReconnectTimeoutRef.current) {
+        clearTimeout(wsReconnectTimeoutRef.current)
+        wsReconnectTimeoutRef.current = null
+      }
+      if (wsHeartbeatIntervalRef.current) {
+        clearInterval(wsHeartbeatIntervalRef.current)
+        wsHeartbeatIntervalRef.current = null
+      }
+      if (wsWatchdogIntervalRef.current) {
+        clearInterval(wsWatchdogIntervalRef.current)
+        wsWatchdogIntervalRef.current = null
+      }
+
       if (wsRef.current) {
         wsRef.current.close()
+        wsRef.current = null
       }
 
       setSessionSummary(buildSessionSummary())
