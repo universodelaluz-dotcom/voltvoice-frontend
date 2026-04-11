@@ -400,6 +400,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
   const [chatMsgColor, setChatMsgColor] = useState(() => getThemeChatMsgColor(config, localStorage.getItem('voltvoice-theme') !== 'light'))
   const [showFontPanel, setShowFontPanel] = useState(false)
   const [smartChatEnabled, setSmartChatEnabled] = useState(config.smartChatEnabled || false)
+  const currentPlan = String(user?.plan || 'free').toLowerCase()
+  const isFreePlan = currentPlan === 'free'
   const [mobilePreviewEnabled, setMobilePreviewEnabled] = useState(config.mobilePreviewEnabled || false)
   const [mobilePreviewMuted, setMobilePreviewMuted] = useState(config.mobilePreviewMuted ?? true)
   const [showSessionSummary, setShowSessionSummary] = useState(false)
@@ -3056,7 +3058,3 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
     </div>
   )
 }
-
-
-  const currentPlan = String(user?.plan || 'free').toLowerCase()
-  const isFreePlan = currentPlan === 'free'
