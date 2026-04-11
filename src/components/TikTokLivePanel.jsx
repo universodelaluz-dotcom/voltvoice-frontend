@@ -1865,6 +1865,91 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
           continue
         }
 
+        const shouldUseBrowserLocalFallback = Boolean(
+          data?.useLocalVoice
+          || data?.fallback
+          || data?.fallbackReason === 'token_insufficient'
+          || data?.error === 'token_insufficient'
+          || response.status === 402
+        )
+
+        if (shouldUseBrowserLocalFallback) {
+          const fallbackVoiceId = (data?.fallbackVoiceId === 'en-US' || data?.fallbackVoiceId === 'es-ES')
+            ? data.fallbackVoiceId
+            : 'es-ES'
+          const fallbackLang = fallbackVoiceId === 'en-US' ? 'en-US' : 'es-ES'
+
+          const estimatedDurationMs = Math.round(
+            (item.estimatedSpeakSeconds || estimateSpeakSeconds(item.rawText || item.text, c.audioSpeed || 1.0)) * 1000
+          )
+          const budget = consumeFreeLocalVoiceBudget(estimatedDurationMs)
+          if (!budget.allowed) {
+            setMessages((prev) => prev.map((msg) => msg.id === item.id ? { ...msg, status: 'skipped' } : msg))
+            continue
+          }
+
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === item.id ? { ...msg, status: 'playing' } : msg
+            )
+          )
+
+          await new Promise((resolve) => {
+            if (disconnectedRef.current) { resolve(); return }
+            activePlaybackResolveRef.current = resolve
+            const utterance = new SpeechSynthesisUtterance(text)
+            utterance.lang = fallbackLang
+            utterance.rate = c.audioSpeed || 1.0
+            utterance.pitch = 1.0
+            utterance.volume = volumeRef.current
+
+            const availableVoices = window.speechSynthesis.getVoices()
+            const matchVoice =
+              availableVoices.find(v => v.lang === fallbackLang) ||
+              availableVoices.find(v => v.lang.startsWith(fallbackLang.split('-')[0])) ||
+              availableVoices[0]
+            if (matchVoice) utterance.voice = matchVoice
+
+            utterance.onend = () => {
+              const estimatedDuration = estimateSpeakSeconds(item.rawText || item.text, c.audioSpeed || 1.0)
+              recentPlaybackDurationsRef.current = [...recentPlaybackDurationsRef.current, estimatedDuration].slice(-20)
+              sessionReadCountRef.current += 1
+              userLastSpokenAtRef.current[item.username] = Date.now()
+              const spokenKeywords = extractKeywords(item.rawText || item.text)
+              if (spokenKeywords.length) {
+                recentTopicKeywordsRef.current = [...spokenKeywords, ...recentTopicKeywordsRef.current].slice(0, 24)
+              }
+              const normalizedSpoken = normalizeMessageForMatching(item.rawText || item.text)
+              if (normalizedSpoken) {
+                recentNormalizedMessagesRef.current = [
+                  ...recentNormalizedMessagesRef.current,
+                  { text: normalizedSpoken, timestamp: Date.now() }
+                ].filter((entry) => entry.timestamp >= Date.now() - 180000).slice(-80)
+              }
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === item.id ? { ...msg, status: 'done' } : msg
+                )
+              )
+              activePlaybackResolveRef.current = null
+              resolve()
+            }
+            utterance.onerror = () => {
+              activePlaybackResolveRef.current = null
+              resolve()
+            }
+
+            if (isAudioSuppressed()) {
+              activePlaybackResolveRef.current = null
+              resolve()
+              return
+            }
+            window.speechSynthesis.cancel()
+            window.speechSynthesis.speak(utterance)
+          })
+          continue
+        }
+
         if (data.audio) {
           setMessages((prev) =>
             prev.map((msg) =>
