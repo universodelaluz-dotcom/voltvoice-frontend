@@ -283,11 +283,11 @@ function AnimatedCount({ value, duration = 900, decimals = 0, suffix = '' }) {
       const next = initial + (target - initial) * eased
       setDisplayValue(next)
       if (progress < 1) {
-        frameId = requestánimationFrame(step)
+        frameId = requestAnimationFrame(step)
       }
     }
 
-    frameId = requestánimationFrame(step)
+    frameId = requestAnimationFrame(step)
     return () => cancelAnimationFrame(frameId)
   }, [value])
 
@@ -594,8 +594,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
         cancelAnimationFrame(pendingScrollRef.current)
       }
 
-      // Usar requestánimationFrame para evitar múltiples scrolls en el mismo frame
-      pendingScrollRef.current = requestánimationFrame(() => {
+      // Usar requestAnimationFrame para evitar múltiples scrolls en el mismo frame
+      pendingScrollRef.current = requestAnimationFrame(() => {
         if (!autoScrollPinnedRef.current) return // User scrolled away, cancel
         container.scrollTop = container.scrollHeight
         pendingScrollRef.current = null
@@ -1999,7 +1999,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
       cancelAnimationFrame(pendingScrollRef.current)
     }
 
-    pendingScrollRef.current = requestánimationFrame(() => {
+    pendingScrollRef.current = requestAnimationFrame(() => {
       const container = chatContainerRef.current
       if (!container) return
 

@@ -586,7 +586,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: 'Total Usuarios', value: stats.totalUsers.toLocaleString(), icon: Users, color: 'text-cyan-400', sub: `+${stats.usersToday} hoy` },
-                { label: 'En LAnea Ahora', value: stats.onlineUsers.toLocaleString(), icon: Wifi, color: 'text-green-400', sub: 'Aoltimos 5 min', pulse: true },
+                { label: 'En Línea Ahora', value: stats.onlineUsers.toLocaleString(), icon: Wifi, color: 'text-green-400', sub: 'Últimos 5 min', pulse: true },
                 { label: 'Tokens Usados', value: stats.totalTokensUsed >= 1000000 ? (stats.totalTokensUsed / 1000000).toFixed(1) + 'M' : (stats.totalTokensUsed / 1000).toFixed(1) + 'K', icon: Zap, color: 'text-yellow-400', sub: `${(stats.tokensUsedToday / 1000).toFixed(1)}K hoy` },
                 { label: 'Transacciones', value: stats.totalTransactions.toLocaleString(), icon: TrendingUp, color: 'text-purple-400', sub: 'completadas' },
               ].map((k, i) => (
