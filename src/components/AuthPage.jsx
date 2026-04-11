@@ -20,6 +20,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
   const [resendCooldown, setResendCooldown] = useState(0)
   const googleBtnRef = useRef(null)
   const recaptchaRef = useRef(null)
+  const googleInitDoneRef = useRef(false)
 
   // Cargar Google Identity Services
   useEffect(() => {
@@ -29,32 +30,43 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       return
     }
 
-    const script = document.createElement('script')
-    script.src = 'https://accounts.google.com/gsi/client'
-    script.async = true
-    script.defer = true
-    script.onload = () => {
-      if (window.google && googleBtnRef.current) {
+    const renderGoogleButton = () => {
+      if (!window.google || !googleBtnRef.current) return
+      if (!googleInitDoneRef.current) {
         window.google.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
           callback: handleGoogleResponse,
           auto_select: false,
         })
-        window.google.accounts.id.renderButton(googleBtnRef.current, {
-          theme: darkMode ? 'filled_black' : 'outline',
-          size: 'large',
-          width: '100%',
-          text: 'continue_with',
-          shape: 'rectangular',
-          logo_alignment: 'center',
-        })
+        googleInitDoneRef.current = true
       }
+      googleBtnRef.current.innerHTML = ''
+      const buttonWidth = Math.max(220, Math.floor(googleBtnRef.current.offsetWidth || 320))
+      window.google.accounts.id.renderButton(googleBtnRef.current, {
+        theme: darkMode ? 'filled_black' : 'outline',
+        size: 'large',
+        width: buttonWidth,
+        text: 'continue_with',
+        shape: 'rectangular',
+        logo_alignment: 'center',
+      })
     }
+
+    const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]')
+    if (existingScript) {
+      renderGoogleButton()
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.defer = true
+    script.onload = renderGoogleButton
     document.head.appendChild(script)
 
     return () => {
-      const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]')
-      if (existing) existing.remove()
+      if (googleBtnRef.current) googleBtnRef.current.innerHTML = ''
     }
   }, [darkMode])
 

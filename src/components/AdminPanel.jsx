@@ -37,20 +37,36 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [message, setMessage] = useState(null)
   const [usersError, setUsersError] = useState(null)
 
-  const headers = { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' }
+  const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' })
 
   const loadStats = useCallback(async () => {
+    if (!authToken) {
+      setUsersError('Sesion no valida. Vuelve a iniciar sesion.')
+      return
+    }
     setLoading(true)
     try {
-      const r = await fetch(`${API_URL}/api/admin/stats`, { headers })
-      const d = await r.json()
-      if (d.success) setStats(d.stats)
-      else console.error('[Admin] Stats error:', d.error || d)
-    } catch (e) { console.error('[Admin] Stats fetch error:', e) }
+      const r = await fetch(`${API_URL}/api/admin/stats`, { headers: buildHeaders() })
+      const d = await r.json().catch(() => ({}))
+      if (r.ok && d.success) {
+        setStats(d.stats)
+      } else {
+        const msg = d.error || `Error del servidor (HTTP ${r.status})`
+        setUsersError(msg)
+        console.error('[Admin] Stats error:', msg, d)
+      }
+    } catch (e) {
+      setUsersError('Error de conexion con el servidor')
+      console.error('[Admin] Stats fetch error:', e)
+    }
     setLoading(false)
   }, [authToken])
 
   const loadUsers = useCallback(async () => {
+    if (!authToken) {
+      setUsersError('Sesion no valida. Vuelve a iniciar sesion.')
+      return
+    }
     setLoading(true)
     setUsersError(null)
     try {
@@ -59,9 +75,9 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
         search,
         plan: planFilter
       })
-      const r = await fetch(`${API_URL}/api/admin/users?${params}`, { headers })
-      const d = await r.json()
-      if (d.success) {
+      const r = await fetch(`${API_URL}/api/admin/users?${params}`, { headers: buildHeaders() })
+      const d = await r.json().catch(() => ({}))
+      if (r.ok && d.success) {
         setUsers(d.users)
         setTotalUsers(d.total)
         setTotalPages(d.pages)
@@ -70,25 +86,26 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
         console.error('[Admin] Users error:', d)
       }
     } catch (e) {
-      setUsersError('Error de conexión con el servidor')
+      setUsersError('Error de conexion con el servidor')
       console.error('[Admin] Users fetch error:', e)
     }
     setLoading(false)
   }, [authToken, page, search, planFilter])
 
   useEffect(() => {
+    if (!authToken) return
     if (tab === 'dashboard') loadStats()
     if (tab === 'users') {
       loadUsers()
       loadStats()
     }
-  }, [tab, page, planFilter])
+  }, [authToken, tab, page, planFilter, loadStats, loadUsers])
 
   useEffect(() => {
-    if (tab !== 'users') return
+    if (!authToken || tab !== 'users') return
     const t = setTimeout(loadUsers, 350)
     return () => clearTimeout(t)
-  }, [search])
+  }, [authToken, tab, search, loadUsers])
 
   const showMsg = (text, type = 'success') => {
     setMessage({ text, type })
@@ -98,7 +115,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const saveUser = async (userId) => {
     try {
       const r = await fetch(`${API_URL}/api/admin/users/${userId}`, {
-        method: 'PUT', headers,
+        method: 'PUT', headers: buildHeaders(),
         body: JSON.stringify(editValues)
       })
       const d = await r.json()
@@ -113,7 +130,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const addTokens = async (userId) => {
     try {
       const r = await fetch(`${API_URL}/api/admin/users/${userId}/add-tokens`, {
-        method: 'POST', headers,
+        method: 'POST', headers: buildHeaders(),
         body: JSON.stringify({ amount: addTokensAmount })
       })
       const d = await r.json()
@@ -544,3 +561,4 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
     </div>
   )
 }
+
