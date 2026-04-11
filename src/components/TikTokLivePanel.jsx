@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X, Users, Clock3, TrendingUp, Filter, Trophy, Sparkles } from 'lucide-react'
 import chatStore from '../services/chatStore.js'
 
@@ -283,11 +283,11 @@ function AnimatedCount({ value, duration = 900, decimals = 0, suffix = '' }) {
       const next = initial + (target - initial) * eased
       setDisplayValue(next)
       if (progress < 1) {
-        frameId = requestAnimationFrame(step)
+        frameId = requestánimationFrame(step)
       }
     }
 
-    frameId = requestAnimationFrame(step)
+    frameId = requestánimationFrame(step)
     return () => cancelAnimationFrame(frameId)
   }, [value])
 
@@ -594,8 +594,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
         cancelAnimationFrame(pendingScrollRef.current)
       }
 
-      // Usar requestAnimationFrame para evitar múltiples scrolls en el mismo frame
-      pendingScrollRef.current = requestAnimationFrame(() => {
+      // Usar requestánimationFrame para evitar múltiples scrolls en el mismo frame
+      pendingScrollRef.current = requestánimationFrame(() => {
         if (!autoScrollPinnedRef.current) return // User scrolled away, cancel
         container.scrollTop = container.scrollHeight
         pendingScrollRef.current = null
@@ -1844,9 +1844,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
           })
         } else {
         // Voz Inworld/clonada — llamada al backend
+        const authToken = getAuthToken()
         const response = await fetch(`${API_URL}/api/tiktok/message`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+          },
           body: JSON.stringify({
             username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
             messageUsername: username,
@@ -1995,7 +1999,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
       cancelAnimationFrame(pendingScrollRef.current)
     }
 
-    pendingScrollRef.current = requestAnimationFrame(() => {
+    pendingScrollRef.current = requestánimationFrame(() => {
       const container = chatContainerRef.current
       if (!container) return
 
@@ -3125,3 +3129,4 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
     </div>
   )
 }
+

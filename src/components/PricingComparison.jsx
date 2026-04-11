@@ -6,7 +6,7 @@ const comparisonData = {
     {
       category: 'Voces Locales',
       items: [
-        { name: 'Voces Locales limitadas', free: true, start: true, creator: true, pro: true }
+        { name: 'Voces Locales', free: '2 horas diarias', start: 'ILIMITADO', creator: 'ILIMITADO', pro: 'ILIMITADO' }
       ]
     },
     {
@@ -184,10 +184,10 @@ export function PricingComparison({ darkMode, onPlanAction }) {
             📌 Nota importante:
           </p>
           <ul className={`text-sm space-y-2 ${darkMode ? 'text-gray-100' : 'text-gray-700'}`}>
-            <li>✅ <strong>Voces locales:</strong> Streamea sin límites con las voces del sistema.</li>
+            <li>? <strong>Voces locales:</strong> En FREE tienes 2 horas diarias; en planes de pago son ilimitadas.</li>
             <li>⭐ <strong>Voces clonadas/premium:</strong> Los tokens mensuales definen cuánto tiempo puedes usar tus voces especiales.</li>
             <li>🔄 <strong>Renovación mensual:</strong> Los tokens se resetean cada mes automáticamente.</li>
-            <li>💰 <strong>Flexibilidad:</strong> Puedes combinar voces locales (ilimitadas) con voces premium para optimizar tu consumo.</li>
+            <li>?? <strong>Flexibilidad:</strong> Puedes combinar voces locales con voces premium para optimizar tu consumo.</li>
           </ul>
         </div>
       </div>

@@ -6,8 +6,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
 const getBaseVoices = (plan = 'free') => {
   const suffix = String(plan || 'free').toLowerCase() === 'free' ? '' : ' (ilimitada)'
   return [
-    { id: 'es-ES', name: `Voz Basica Espanol${suffix}` },
-    { id: 'en-US', name: `Voz Basica Ingles${suffix}` },
+    { id: 'es-ES', name: `Voz Básica Espanol${suffix}` },
+    { id: 'en-US', name: `Voz Básica Ingles${suffix}` },
     { id: 'Diego',  name: 'Voz natural de Luis - Premium' },
     { id: 'Lupita', name: 'Voz natural de Sofia - Premium' },
     { id: 'Miguel', name: 'Voz natural de Gustavo - Premium' },
@@ -196,7 +196,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
   }
 
   const handleDeleteCharacter = async (id, charName) => {
-    if (!confirm(`Â¿Eliminar el personaje "${charName}"?`)) return
+    if (!confirm(`¿Eliminar el personaje "${charName}"?`)) return
 
     try {
       const token = localStorage.getItem('sv-token')
@@ -224,7 +224,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-          ðŸŽ­ Taller de Asistentes de IA Roleplay
+          Taller de Asistentes de IA Roleplay
         </h2>
         {!showCreateForm && (
           <button
@@ -271,14 +271,14 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="DescripciÃ³n (opcional)"
+              placeholder="Descripción (opcional)"
               className={`w-full px-4 py-2 rounded-lg resize-none h-16 ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'} border`}
             />
 
             <textarea
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
-              placeholder="System prompt (cÃ³mo debe actuar el personaje)..."
+              placeholder="System prompt (cómo debe actuar el personaje)..."
               className={`w-full px-4 py-2 rounded-lg resize-none h-24 ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'} border`}
             />
 
@@ -345,7 +345,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
       ) : characters.length === 0 ? (
         <div className={`p-8 rounded-lg text-center ${darkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-gray-100 border border-gray-300'}`}>
           <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
-            No hay personajes creados aÃºn. Â¡Crea tu primer personaje!
+            No hay personajes creados aún. ¡Crea tu primer personaje!
           </p>
         </div>
       ) : (
@@ -356,7 +356,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
               className={`p-4 rounded-lg border ${darkMode ? 'bg-gray-800/30 border-gray-700' : 'bg-white border-gray-300'}`}
             >
               {editingId === char.id ? (
-                // Modo ediciÃ³n
+                // Modo edición
                 <div className="space-y-3">
                   <input
                     type="text"
@@ -449,4 +449,5 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
     </div>
   )
 }
+
 
