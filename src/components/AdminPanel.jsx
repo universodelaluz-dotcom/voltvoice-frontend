@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Users, Zap, TrendingUp, Activity, Search, ChevronLeft,
-  RefreshCw, Shield, Edit2, Check, X, Plus, BarChart2, Wifi, Tag, Trash2, PauseCircle, PlayCircle, KeyRound, Bell, AlertTriangle, Database
+  RefreshCw, Shield, Edit2, Check, X, Plus, BarChart2, Wifi, Tag, Trash2, PauseCircle, PlayCircle, KeyRound, Bell, AlertTriangle, Database, Download, Mic
 } from 'lucide-react'
 import CouponManager from './CouponManager'
 
@@ -90,6 +90,23 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [audioCacheLoading, setAudioCacheLoading] = useState(false)
 
   const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' })
+  const secondsToHours = (seconds, fallbackHours = 1) => {
+    const sec = Number(seconds)
+    if (!Number.isFinite(sec) || sec <= 0) return fallbackHours
+    return Math.max(1, Math.round(sec / 3600))
+  }
+  const hoursToSeconds = (hours, fallbackSeconds = 3600) => {
+    const parsed = parseInt(hours, 10)
+    if (!Number.isFinite(parsed) || parsed <= 0) return fallbackSeconds
+    return parsed * 3600
+  }
+  const cacheLabel = (title, hint) => (
+    <span className={`flex items-center flex-wrap gap-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+      <span>{title}</span>
+      <span className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold ${darkMode ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'}`}>?</span>
+      <span className={`${darkMode ? 'text-gray-400' : 'text-gray-500'} text-[10px]`}>{hint}</span>
+    </span>
+  )
 
   const loadStats = useCallback(async () => {
     if (!authToken) {
@@ -388,6 +405,64 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
     setActivityLoading(false)
   }
 
+  const exportEmailsCsv = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/admin/users/export-emails?plan=${planFilter || 'all'}`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      })
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}))
+        return showMsg(d.error || 'Error exportando correos', 'error')
+      }
+      const blob = await r.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `voltvoice-users-${planFilter || 'all'}.csv`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+      showMsg('CSV de correos exportado')
+    } catch {
+      showMsg('Error exportando correos', 'error')
+    }
+  }
+
+  const loadUserVoices = async (targetUser) => {
+    setVoicesUser(targetUser)
+    setVoicesLoading(true)
+    setVoicesList([])
+    try {
+      const r = await fetch(`${API_URL}/api/admin/users/${targetUser.id}/voices`, { headers: buildHeaders() })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) {
+        showMsg(d.error || 'Error cargando voces del usuario', 'error')
+      } else {
+        setVoicesList(d.voices || [])
+      }
+    } catch {
+      showMsg('Error cargando voces del usuario', 'error')
+    }
+    setVoicesLoading(false)
+  }
+
+  const deleteUserVoice = async (voiceRecordId) => {
+    if (!voicesUser) return
+    if (!window.confirm('Eliminar esta voz del usuario?')) return
+    try {
+      const r = await fetch(`${API_URL}/api/admin/users/${voicesUser.id}/voices/${voiceRecordId}`, {
+        method: 'DELETE',
+        headers: buildHeaders()
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) return showMsg(d.error || 'Error eliminando voz', 'error')
+      setVoicesList(prev => prev.filter(v => String(v.id) !== String(voiceRecordId)))
+      showMsg('Voz eliminada')
+    } catch {
+      showMsg('Error eliminando voz', 'error')
+    }
+  }
   const createBroadcast = async () => {
     try {
       const r = await fetch(`${API_URL}/api/admin/broadcasts`, {
@@ -448,6 +523,13 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
     const row = stats.planBreakdown.find(p => p.plan === plan)
     return row ? parseInt(row.online || 0) : 0
   }
+  const fmtCompact = (n) => {
+    const value = Number(n || 0)
+    if (Math.abs(value) >= 1000000) return `${(value / 1000000).toFixed(1)}M`
+    if (Math.abs(value) >= 1000) return `${(value / 1000).toFixed(1)}K`
+    return value.toLocaleString()
+  }
+  const fmtUsd = (n) => Number(n || 0).toLocaleString('es-MX', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
 
   return (
     <div className={bg}>
@@ -517,6 +599,76 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                   <div className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{k.sub}</div>
                 </div>
               ))}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className={card}>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ingresos</p>
+                <p className="text-xl font-black text-emerald-400">{fmtUsd(stats.revenueMonthUsd)}</p>
+                <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual</p>
+                <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Año: {fmtUsd(stats.revenueYearUsd)} · Total: {fmtUsd(stats.revenueTotalUsd)}</p>
+              </div>
+              <div className={card}>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Costos estimados</p>
+                <p className="text-xl font-black text-orange-400">{fmtUsd(stats.estimatedCostMonthUsd)}</p>
+                <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual</p>
+                <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Año: {fmtUsd(stats.estimatedCostYearUsd)} · Total: {fmtUsd(stats.estimatedCostTotalUsd)}</p>
+              </div>
+              <div className={card}>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Margen estimado</p>
+                <p className={`text-xl font-black ${Number(stats.estimatedMarginMonthUsd || 0) >= 0 ? 'text-cyan-400' : 'text-red-400'}`}>{fmtUsd(stats.estimatedMarginMonthUsd)}</p>
+                <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual</p>
+                <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Año: {fmtUsd(stats.estimatedMarginYearUsd)}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className={card}>
+                <h3 className="font-bold mb-2">Usuarios registrados</h3>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Hoy: <span className="font-bold">{stats.usersToday?.toLocaleString()}</span></p>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Mes: <span className="font-bold">{stats.usersThisMonth?.toLocaleString()}</span></p>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Año: <span className="font-bold">{stats.usersThisYear?.toLocaleString()}</span></p>
+              </div>
+              <div className={card}>
+                <h3 className="font-bold mb-2">Tokens consumidos</h3>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Hoy: <span className="font-bold">{fmtCompact(stats.tokensUsedToday)}</span></p>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Mes: <span className="font-bold">{fmtCompact(stats.tokensUsedMonth)}</span></p>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Año: <span className="font-bold">{fmtCompact(stats.tokensUsedYear)}</span></p>
+              </div>
+              <div className={card}>
+                <h3 className="font-bold mb-2">Transacciones</h3>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Mes: <span className="font-bold">{stats.transactionsMonth?.toLocaleString()}</span></p>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Año: <span className="font-bold">{stats.transactionsYear?.toLocaleString()}</span></p>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total: <span className="font-bold">{stats.totalTransactions?.toLocaleString()}</span></p>
+              </div>
+            </div>
+
+            <div className={card}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold">Resumen mensual (12 meses)</h3>
+                <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Usuarios, tokens e ingresos</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
+                      <th className="text-left py-2">Mes</th>
+                      <th className="text-right py-2">Usuarios</th>
+                      <th className="text-right py-2">Tokens</th>
+                      <th className="text-right py-2">Ingresos USD</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(stats.monthlyOverview || []).map((m) => (
+                      <tr key={m.monthKey} className={`border-t ${darkMode ? 'border-white/10' : 'border-gray-100'}`}>
+                        <td className={`py-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{m.monthKey}</td>
+                        <td className="py-2 text-right">{Number(m.users || 0).toLocaleString()}</td>
+                        <td className="py-2 text-right">{fmtCompact(m.tokens || 0)}</td>
+                        <td className="py-2 text-right">{fmtUsd(m.revenueUsd || 0)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Contadores por plan */}
@@ -740,70 +892,70 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
               <h3 className="font-bold mb-4">Configuracion Cache Hibrido</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Habilitado</span>
+                  {cacheLabel('Habilitado', 'Activa o desactiva el sistema de cache.')}
                   <select className={`${inp} w-full mt-1`} value={audioCacheSettings.enabled ? '1' : '0'} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, enabled: e.target.value === '1' }))}>
                     <option value="1">Si</option>
                     <option value="0">No</option>
                   </select>
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Max caracteres cacheables</span>
+                  {cacheLabel('Max caracteres cacheables', 'Textos mas largos no se guardan en cache.')}
                   <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.maxCacheableChars} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, maxCacheableChars: parseInt(e.target.value || '0') }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Lookup timeout (ms)</span>
+                  {cacheLabel('Lookup timeout (ms)', 'Tiempo maximo de busqueda antes de render directo.')}
                   <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.lookupTimeoutMs} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, lookupTimeoutMs: parseInt(e.target.value || '0') }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>TTL personal FREE (seg)</span>
-                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.personalFreeTtlSeconds} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalFreeTtlSeconds: parseInt(e.target.value || '0') }))} />
+                  {cacheLabel('TTL personal FREE (horas)', 'Duracion del cache personal para usuarios free.')}
+                  <input type="number" min="1" className={`${inp} w-full mt-1`} value={secondsToHours(audioCacheSettings.personalFreeTtlSeconds, 48)} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalFreeTtlSeconds: hoursToSeconds(e.target.value, prev.personalFreeTtlSeconds || 172800) }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>TTL personal PAID (seg)</span>
-                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.personalPaidTtlSeconds} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalPaidTtlSeconds: parseInt(e.target.value || '0') }))} />
+                  {cacheLabel('TTL personal PAID (horas)', 'Duracion del cache personal para usuarios de pago.')}
+                  <input type="number" min="1" className={`${inp} w-full mt-1`} value={secondsToHours(audioCacheSettings.personalPaidTtlSeconds, 168)} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalPaidTtlSeconds: hoursToSeconds(e.target.value, prev.personalPaidTtlSeconds || 604800) }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Max entries personal FREE</span>
+                  {cacheLabel('Max entries personal FREE', 'Maximo de audios por usuario free.')}
                   <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.personalFreeMaxEntries} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalFreeMaxEntries: parseInt(e.target.value || '0') }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Max entries personal PAID</span>
+                  {cacheLabel('Max entries personal PAID', 'Maximo de audios por usuario de pago.')}
                   <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.personalPaidMaxEntries} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalPaidMaxEntries: parseInt(e.target.value || '0') }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>TTL personal (legacy seg)</span>
-                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.personalTtlSeconds} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalTtlSeconds: parseInt(e.target.value || '0') }))} />
+                  {cacheLabel('TTL personal legacy (horas)', 'Compatibilidad con reglas antiguas de personal.')}
+                  <input type="number" min="1" className={`${inp} w-full mt-1`} value={secondsToHours(audioCacheSettings.personalTtlSeconds, 24)} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalTtlSeconds: hoursToSeconds(e.target.value, prev.personalTtlSeconds || 86400) }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>TTL global (legacy seg)</span>
-                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.globalTtlSeconds} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, globalTtlSeconds: parseInt(e.target.value || '0') }))} />
+                  {cacheLabel('TTL global legacy (horas)', 'Compatibilidad con reglas antiguas de global.')}
+                  <input type="number" min="1" className={`${inp} w-full mt-1`} value={secondsToHours(audioCacheSettings.globalTtlSeconds, 168)} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, globalTtlSeconds: hoursToSeconds(e.target.value, prev.globalTtlSeconds || 604800) }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Hot cache max entries</span>
+                  {cacheLabel('Hot cache max entries', 'Capacidad maxima del cache rapido en memoria.')}
                   <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.hotCacheMaxEntries} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, hotCacheMaxEntries: parseInt(e.target.value || '0') }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Global max entries</span>
+                  {cacheLabel('Global max entries', 'Tope total de entradas del cache compartido.')}
                   <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.globalMaxEntries} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, globalMaxEntries: parseInt(e.target.value || '0') }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Global inactivo (dias)</span>
+                  {cacheLabel('Global inactivo (dias)', 'Si no se usa este tiempo, puede eliminarse.')}
                   <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.globalInactiveDays} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, globalInactiveDays: parseInt(e.target.value || '0') }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Global uso bajo (hits)</span>
+                  {cacheLabel('Global uso bajo (hits)', 'Minimo uso para considerar una entrada poco util.')}
                   <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.globalLowUsageThreshold} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, globalLowUsageThreshold: parseInt(e.target.value || '0') }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Umbral repeticion global</span>
+                  {cacheLabel('Umbral repeticion global', 'Cuantas repeticiones pide antes de guardar en global.')}
                   <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.globalRepeatThreshold} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, globalRepeatThreshold: parseInt(e.target.value || '0') }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Gracia suscripcion (dias)</span>
+                  {cacheLabel('Gracia suscripcion (dias)', 'Dias extra para mantener cache tras perder plan.')}
                   <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.subscriptionGraceDays} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, subscriptionGraceDays: parseInt(e.target.value || '0') }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Reset voces/config tras gracia</span>
+                  {cacheLabel('Reset voces/config tras gracia', 'Borra voces/config cuando termina la gracia.')}
                   <select className={`${inp} w-full mt-1`} value={audioCacheSettings.purgePersonalizationAfterGrace ? '1' : '0'} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, purgePersonalizationAfterGrace: e.target.value === '1' }))}>
                     <option value="0">No</option>
                     <option value="1">Si</option>
@@ -913,6 +1065,13 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                     onChange={e => { setSearch(e.target.value); setPage(1) }}
                   />
                 </div>
+                <button
+                  onClick={exportEmailsCsv}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold ${darkMode ? 'bg-white/10 text-gray-200 hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Exportar correos CSV
+                </button>
                 <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   {totalUsers} usuarios
                 </span>
@@ -1050,6 +1209,10 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                                     className={`p-1 rounded ${darkMode ? 'text-cyan-300 hover:bg-cyan-400/20' : 'text-cyan-700 hover:bg-cyan-100'}`} title="Ver historial">
                                     <Activity className="w-3.5 h-3.5" />
                                   </button>
+                                  <button onClick={() => loadUserVoices(u)}
+                                    className={`p-1 rounded ${darkMode ? 'text-indigo-300 hover:bg-indigo-400/20' : 'text-indigo-700 hover:bg-indigo-100'}`} title="Gestionar voces">
+                                    <Mic className="w-3.5 h-3.5" />
+                                  </button>
                                   <button onClick={() => { setAddTokensUser(u.id); setAddTokensAmount(100000) }}
                                     className={`p-1 rounded ${darkMode ? 'text-yellow-400 hover:bg-yellow-400/20' : 'text-yellow-500 hover:bg-yellow-50'}`} title="Agregar tokens">
                                     <Plus className="w-3.5 h-3.5" />
@@ -1105,6 +1268,39 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
         )}
       </div>
 
+      {/* Modal voces de usuario */}
+      {voicesUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className={`rounded-2xl p-6 w-full max-w-3xl max-h-[80vh] overflow-auto ${darkMode ? 'bg-[#111127] border border-white/20' : 'bg-white border border-gray-200 shadow-xl'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg">Voces de {voicesUser.email}</h3>
+              <button onClick={() => { setVoicesUser(null); setVoicesList([]) }} className={`p-1 rounded ${darkMode ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}><X className="w-4 h-4" /></button>
+            </div>
+            {voicesLoading ? (
+              <p className={darkMode ? 'text-gray-400 text-sm' : 'text-gray-600 text-sm'}>Cargando voces...</p>
+            ) : voicesList.length === 0 ? (
+              <p className={darkMode ? 'text-gray-400 text-sm' : 'text-gray-600 text-sm'}>Este usuario no tiene voces registradas.</p>
+            ) : (
+              <div className="space-y-2">
+                {voicesList.map((voice) => (
+                  <div key={voice.id} className={`rounded-lg border px-3 py-2 flex items-center justify-between gap-3 ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className="min-w-0">
+                      <p className={`text-sm font-semibold truncate ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{voice.voice_name}</p>
+                      <p className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>ID: {voice.voice_id} · Provider: {voice.provider || '-'}</p>
+                    </div>
+                    <button
+                      onClick={() => deleteUserVoice(voice.id)}
+                      className={`px-3 py-1 rounded text-xs font-semibold ${darkMode ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}
+                    >
+                      Borrar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {/* Modal agregar tokens */}
       {addTokensUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -1191,13 +1387,13 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                 <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   <span className="font-semibold">{activityData.user?.email}</span> Â· plan {activityData.user?.plan} Â· tokens {activityData.user?.tokens}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                   <div className={card}>
                     <h4 className="font-semibold mb-2">Consumo / Token Logs</h4>
                     <div className="space-y-1 max-h-64 overflow-auto">
                       {(activityData.activity?.tokenLogs || []).slice(0, 60).map((l, i) => (
                         <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          {new Date(l.timestamp).toLocaleString('es-MX')} Â· {l.action || 'sintesis'} Â· {Number(l.tokens_used || 0).toLocaleString()} tokens
+                          {new Date(l.timestamp).toLocaleString('es-MX')} · {l.action || 'sintesis'} · {Number(l.tokens_used || 0).toLocaleString()} tokens
                         </div>
                       ))}
                     </div>
@@ -1207,7 +1403,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                     <div className="space-y-1 max-h-64 overflow-auto">
                       {(activityData.activity?.transactions || []).slice(0, 60).map((t, i) => (
                         <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          {new Date(t.created_at).toLocaleString('es-MX')} Â· {t.status} Â· +{Number(t.tokens_purchased || 0).toLocaleString()} tokens
+                          {new Date(t.created_at).toLocaleString('es-MX')} · {t.status} · +{Number(t.tokens_purchased || 0).toLocaleString()} tokens
                         </div>
                       ))}
                     </div>
@@ -1217,7 +1413,17 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                     <div className="space-y-1 max-h-64 overflow-auto">
                       {(activityData.activity?.adminActions || []).slice(0, 60).map((a, i) => (
                         <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          {new Date(a.created_at).toLocaleString('es-MX')} Â· {a.action} Â· {a.admin_email || 'admin'}
+                          {new Date(a.created_at).toLocaleString('es-MX')} · {a.action} · {a.admin_email || 'admin'}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={card}>
+                    <h4 className="font-semibold mb-2">Logs Backend API</h4>
+                    <div className="space-y-1 max-h-64 overflow-auto">
+                      {(activityData.activity?.requestLogs || []).slice(0, 80).map((r, i) => (
+                        <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {new Date(r.created_at).toLocaleString('es-MX')} · {r.method} {r.path} · {r.status_code}{r.error_message ? ` · ${r.error_message}` : ''}
                         </div>
                       ))}
                     </div>
@@ -1231,4 +1437,12 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
     </div>
   )
 }
+
+
+
+
+
+
+
+
 

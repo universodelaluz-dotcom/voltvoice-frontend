@@ -304,7 +304,15 @@ export default function BotInvoker({ user, onGoPricingPage, darkMode = true, onC
   const lastBotResponseTimestampRef = useRef(null)  // When bot last responded (timestamp)
   const messagesCountSinceLastResponseRef = useRef(0)  // How many messages since last response
 
-  const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const FREE_LOCAL_LIMIT_CODE = 'FREE_LOCAL_VOICE_DAILY_LIMIT_REACHED'
+const formatResetWait = (seconds = 0) => {
+  const safe = Math.max(0, Number(seconds) || 0)
+  const hours = Math.floor(safe / 3600)
+  const minutes = Math.ceil((safe % 3600) / 60)
+  if (hours <= 0) return `${Math.max(1, minutes)} min`
+  return `${hours}h ${Math.max(0, minutes)}m`
+}
 
   const emitAssistantVisualizerState = (active) => {
     window.dispatchEvent(new CustomEvent('voltvoice:assistant-visualizer', {
@@ -1036,7 +1044,15 @@ export default function BotInvoker({ user, onGoPricingPage, darkMode = true, onC
     })
 
     const data = await response.json()
-    if (!response.ok || !(data.audio || data.audioUrl)) {
+    if (!response.ok) {
+      if (data?.code === FREE_LOCAL_LIMIT_CODE) {
+        const wait = formatResetWait(data?.details?.resetInSeconds)
+        window.alert(`Llegaste al límite diario de 2 horas de voces locales en plan FREE.\nSe restablece en aproximadamente ${wait}.`)
+      }
+      throw new Error(data?.error || 'No se pudo sintetizar audio local')
+    }
+
+    if (!(data.audio || data.audioUrl)) {
       throw new Error(data?.error || 'No se pudo sintetizar audio local')
     }
 

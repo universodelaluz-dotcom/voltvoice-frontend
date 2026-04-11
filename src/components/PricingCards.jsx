@@ -10,7 +10,7 @@ const monthlyPlans = [
     cta: 'Comenzar Gratis',
     popular: false,
     voices: [
-      '1 voz básica (ilimitada)',
+      '1 voz básica (2 horas diarias)',
     ],
     stream: 'Perfecto para experimentar con la plataforma',
     compatibility: [

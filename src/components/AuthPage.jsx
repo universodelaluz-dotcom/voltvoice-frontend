@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { Mail, Lock, Eye, EyeOff, Loader, AlertCircle, ArrowLeft, CheckCircle } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
@@ -7,15 +7,19 @@ const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
 
 export function AuthPage({ onLogin, onGoHome, darkMode }) {
   const [mode, setMode] = useState('login')
-  const [step, setStep] = useState('form') // form | verification
+  const [step, setStep] = useState('form') // form | verification | forgot-request | forgot-reset
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [verificationCode, setVerificationCode] = useState('')
+  const [resetCode, setResetCode] = useState('')
+  const [resetNewPassword, setResetNewPassword] = useState('')
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [info, setInfo] = useState(null)
   const [showEmailForm, setShowEmailForm] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
   const googleBtnRef = useRef(null)
@@ -96,6 +100,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
   const handleGoogleResponse = async (response) => {
     setGoogleLoading(true)
     setError(null)
+    setInfo(null)
 
     try {
       const res = await fetch(`${API_URL}/api/auth/google`, {
@@ -116,7 +121,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       localStorage.setItem('sv-user', JSON.stringify(data.user))
       onLogin(data.user, data.token)
     } catch (err) {
-      setError('Error de conexión. Intenta de nuevo.')
+      setError('Error de conexiÃ³n. Intenta de nuevo.')
     } finally {
       setGoogleLoading(false)
     }
@@ -125,6 +130,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
   const handleRegisterStep1 = async (e) => {
     e.preventDefault()
     setError(null)
+    setInfo(null)
 
     if (!email.trim() || !password) {
       setError('Completa todos los campos')
@@ -132,12 +138,12 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
     }
 
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden')
+      setError('Las contraseÃ±as no coinciden')
       return
     }
 
     if (password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres')
+      setError('La contraseÃ±a debe tener al menos 8 caracteres')
       return
     }
 
@@ -172,12 +178,12 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
         return
       }
 
-      // Cambiar a paso de verificación
+      // Cambiar a paso de verificaciÃ³n
       setStep('verification')
       setVerificationCode('')
       setResendCooldown(0)
     } catch (err) {
-      setError('Error de conexión. Intenta de nuevo.')
+      setError('Error de conexiÃ³n. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -186,14 +192,15 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
   const handleVerifyEmail = async (e) => {
     e.preventDefault()
     setError(null)
+    setInfo(null)
 
     if (!verificationCode.trim()) {
-      setError('Ingresa el código de verificación')
+      setError('Ingresa el cÃ³digo de verificaciÃ³n')
       return
     }
 
     if (verificationCode.length < 6) {
-      setError('El código debe tener 6 dígitos')
+      setError('El cÃ³digo debe tener 6 dÃ­gitos')
       return
     }
 
@@ -213,7 +220,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Código incorrecto')
+        setError(data.error || 'CÃ³digo incorrecto')
         return
       }
 
@@ -221,7 +228,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       localStorage.setItem('sv-user', JSON.stringify(data.user))
       onLogin(data.user, data.token)
     } catch (err) {
-      setError('Error de conexión. Intenta de nuevo.')
+      setError('Error de conexiÃ³n. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -229,6 +236,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
 
   const handleResendCode = async () => {
     setError(null)
+    setInfo(null)
     setLoading(true)
     setResendCooldown(60)
 
@@ -243,12 +251,12 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Error reenviando código')
+        setError(data.error || 'Error reenviando cÃ³digo')
         setResendCooldown(0)
         return
       }
     } catch (err) {
-      setError('Error de conexión. Intenta de nuevo.')
+      setError('Error de conexiÃ³n. Intenta de nuevo.')
       setResendCooldown(0)
     } finally {
       setLoading(false)
@@ -258,6 +266,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
   const handleLoginSubmit = async (e) => {
     e.preventDefault()
     setError(null)
+    setInfo(null)
 
     if (!email.trim() || !password) {
       setError('Completa todos los campos')
@@ -285,7 +294,93 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       localStorage.setItem('sv-user', JSON.stringify(data.user))
       onLogin(data.user, data.token)
     } catch (err) {
-      setError('Error de conexión. Intenta de nuevo.')
+      setError('Error de conexiÃ³n. Intenta de nuevo.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleForgotPasswordRequest = async (e) => {
+    e.preventDefault()
+    setError(null)
+    setInfo(null)
+
+    if (!email.trim()) {
+      setError('Ingresa tu email para recuperar la contraseÃ±a')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() })
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        setError(data.error || 'Error enviando recuperaciÃ³n')
+        return
+      }
+      setInfo(data.message || 'Si el email existe, enviamos un cÃ³digo.')
+      setStep('forgot-reset')
+    } catch (err) {
+      setError('Error de conexiÃ³n. Intenta de nuevo.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault()
+    setError(null)
+    setInfo(null)
+
+    if (!email.trim() || !resetCode.trim() || !resetNewPassword) {
+      setError('Completa email, cÃ³digo y nueva contraseÃ±a')
+      return
+    }
+    if (resetCode.trim().length < 6) {
+      setError('El cÃ³digo debe tener 6 dÃ­gitos')
+      return
+    }
+    if (resetNewPassword !== resetConfirmPassword) {
+      setError('Las contraseÃ±as no coinciden')
+      return
+    }
+    if (resetNewPassword.length < 8) {
+      setError('La contraseÃ±a debe tener al menos 8 caracteres')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim(),
+          code: resetCode.trim(),
+          newPassword: resetNewPassword
+        })
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        setError(data.error || 'No se pudo restablecer la contraseÃ±a')
+        return
+      }
+      setInfo('ContraseÃ±a actualizada. Ya puedes iniciar sesiÃ³n.')
+      setStep('form')
+      setMode('login')
+      setPassword('')
+      setConfirmPassword('')
+      setResetCode('')
+      setResetNewPassword('')
+      setResetConfirmPassword('')
+    } catch (err) {
+      setError('Error de conexiÃ³n. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -323,15 +418,23 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
           <h1 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>
             {step === 'verification'
               ? 'Verifica tu Email'
-              : showEmailForm ? (mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta') : 'Bienvenido'
+              : step === 'forgot-request'
+              ? 'Recuperar ContraseÃ±a'
+              : step === 'forgot-reset'
+              ? 'Restablecer ContraseÃ±a'
+              : showEmailForm ? (mode === 'login' ? 'Iniciar SesiÃ³n' : 'Crear Cuenta') : 'Bienvenido'
             }
           </h1>
           <p className={`text-sm mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             {step === 'verification'
-              ? `Enviamos un código a ${email}`
+              ? `Enviamos un cÃ³digo a ${email}`
+              : step === 'forgot-request'
+              ? 'Te enviaremos un cÃ³digo de recuperaciÃ³n por email'
+              : step === 'forgot-reset'
+              ? `Ingresa el cÃ³digo enviado a ${email}`
               : showEmailForm
-              ? (mode === 'login' ? 'Accede con tu email' : 'Regístrate gratis y obtén 100 tokens')
-              : 'Inicia sesión para acceder a StreamVoicer'
+              ? (mode === 'login' ? 'Accede con tu email' : 'RegÃ­strate gratis y obtÃ©n 100 tokens')
+              : 'Inicia sesiÃ³n para acceder a StreamVoicer'
             }
           </p>
         </div>
@@ -343,6 +446,15 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
           }`}>
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {error}
+          </div>
+        )}
+
+        {info && (
+          <div className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm mb-4 ${
+            darkMode ? 'bg-emerald-900/20 border border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+          }`}>
+            <CheckCircle className="w-4 h-4 flex-shrink-0" />
+            {info}
           </div>
         )}
 
@@ -375,7 +487,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                       onClick={() => setShowEmailForm(true)}
                       className={`px-4 text-sm ${darkMode ? 'bg-gray-900/80 text-gray-400 hover:text-gray-200' : 'bg-white text-gray-500 hover:text-gray-700'} transition-colors`}
                     >
-                      o continúa con email
+                      o continÃºa con email
                     </button>
                   ) : (
                     <span className={`px-4 text-xs ${darkMode ? 'bg-gray-900/80 text-gray-500' : 'bg-white text-gray-400'}`}>
@@ -415,7 +527,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                   {/* Password */}
                   <div>
                     <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      Contraseña
+                      ContraseÃ±a
                     </label>
                     <div className="relative mt-1">
                       <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
@@ -423,7 +535,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                         type={showPassword ? 'text' : 'password'}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
+                        placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                         className={`w-full pl-10 pr-12 py-3 rounded-lg border text-sm ${
                           darkMode
                             ? 'bg-gray-800 border-cyan-500/30 text-white placeholder-gray-500 focus:border-cyan-400'
@@ -445,7 +557,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                   {mode === 'register' && (
                     <div>
                       <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Confirmar Contraseña
+                        Confirmar ContraseÃ±a
                       </label>
                       <div className="relative mt-1">
                         <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
@@ -453,7 +565,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                           type={showPassword ? 'text' : 'password'}
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
-                          placeholder="••••••••"
+                          placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                           className={`w-full pl-10 pr-4 py-3 rounded-lg border text-sm ${
                             darkMode
                               ? 'bg-gray-800 border-cyan-500/30 text-white placeholder-gray-500 focus:border-cyan-400'
@@ -474,7 +586,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                     {loading ? (
                       <>
                         <Loader className="w-4 h-4 animate-spin" />
-                        {mode === 'login' ? 'Entrando...' : 'Enviando código...'}
+                        {mode === 'login' ? 'Entrando...' : 'Enviando cÃ³digo...'}
                       </>
                     ) : (
                       mode === 'login' ? 'Entrar' : 'Crear cuenta gratis'
@@ -484,13 +596,23 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
 
                 {/* Toggle mode */}
                 <div className="mt-5 text-center">
+                  {mode === 'login' && (
+                    <p className={`text-sm mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <button
+                        onClick={() => { setStep('forgot-request'); setError(null); setInfo(null); setResetCode(''); setResetNewPassword(''); setResetConfirmPassword('') }}
+                        className="font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
+                      >
+                        Olvidé mi contraseña
+                      </button>
+                    </p>
+                  )}
                   <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {mode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
+                    {mode === 'login' ? 'Â¿No tienes cuenta?' : 'Â¿Ya tienes cuenta?'}
                     <button
-                      onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null); setStep('form') }}
+                      onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null); setInfo(null); setStep('form') }}
                       className="ml-2 font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
                     >
-                      {mode === 'login' ? 'Regístrate gratis' : 'Inicia sesión'}
+                      {mode === 'login' ? 'RegÃ­strate gratis' : 'Inicia sesiÃ³n'}
                     </button>
                   </p>
                 </div>
@@ -499,14 +621,14 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
           </>
         )}
 
-        {/* PASO 2: Verificación de Email */}
+        {/* PASO 2: VerificaciÃ³n de Email */}
         {step === 'verification' && (
           <>
             <form onSubmit={handleVerifyEmail} className="space-y-4">
-              {/* Código de verificación */}
+              {/* CÃ³digo de verificaciÃ³n */}
               <div>
                 <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Código de Verificación (6 dígitos)
+                  CÃ³digo de VerificaciÃ³n (6 dÃ­gitos)
                 </label>
                 <div className="relative mt-1">
                   <input
@@ -524,7 +646,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                   />
                 </div>
                 <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                  Revisa tu email para el código
+                  Revisa tu email para el cÃ³digo
                 </p>
               </div>
 
@@ -551,7 +673,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
             {/* Resend code */}
             <div className="mt-4 text-center">
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                ¿No recibiste el código?
+                Â¿No recibiste el cÃ³digo?
                 <button
                   onClick={handleResendCode}
                   disabled={resendCooldown > 0 || loading}
@@ -581,3 +703,4 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
     </div>
   )
 }
+

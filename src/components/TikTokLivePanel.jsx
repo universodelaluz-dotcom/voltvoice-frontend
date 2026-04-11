@@ -3,6 +3,34 @@ import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban
 import chatStore from '../services/chatStore.js'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const FREE_LOCAL_VOICE_DAILY_LIMIT_MS = 2 * 60 * 60 * 1000
+const FREE_LOCAL_VOICE_USAGE_KEY = 'voltvoice_free_local_voice_usage_v1'
+
+const readFreeLocalVoiceUsage = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(FREE_LOCAL_VOICE_USAGE_KEY) || '{}')
+    const now = Date.now()
+    const windowStart = Number(parsed.windowStart) || now
+    const usedMs = Math.max(0, Number(parsed.usedMs) || 0)
+    if ((now - windowStart) >= 24 * 60 * 60 * 1000) {
+      return { windowStart: now, usedMs: 0 }
+    }
+    return { windowStart, usedMs }
+  } catch {
+    return { windowStart: Date.now(), usedMs: 0 }
+  }
+}
+
+const writeFreeLocalVoiceUsage = (usage) => {
+  try {
+    localStorage.setItem(FREE_LOCAL_VOICE_USAGE_KEY, JSON.stringify({
+      windowStart: Number(usage?.windowStart) || Date.now(),
+      usedMs: Math.max(0, Number(usage?.usedMs) || 0)
+    }))
+  } catch {
+    // ignore storage failures
+  }
+}
 
 const isQuestion = (text) => {
   const trimmed = text.trim().toLowerCase()
@@ -402,6 +430,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
   const [smartChatEnabled, setSmartChatEnabled] = useState(config.smartChatEnabled || false)
   const currentPlan = String(user?.plan || 'free').toLowerCase()
   const isFreePlan = currentPlan === 'free'
+  const freeLocalUsageRef = useRef(readFreeLocalVoiceUsage())
+  const localLimitPopupAtRef = useRef(0)
   const [mobilePreviewEnabled, setMobilePreviewEnabled] = useState(config.mobilePreviewEnabled || false)
   const [mobilePreviewMuted, setMobilePreviewMuted] = useState(config.mobilePreviewMuted ?? true)
   const [showSessionSummary, setShowSessionSummary] = useState(false)
@@ -1401,6 +1431,34 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
     return base / normalizedSpeed
   }
 
+  const consumeFreeLocalVoiceBudget = (estimatedDurationMs = 0) => {
+    if (!isFreePlan) return { allowed: true }
+
+    const now = Date.now()
+    let usage = readFreeLocalVoiceUsage()
+    const projected = usage.usedMs + Math.max(1, Math.round(Number(estimatedDurationMs) || 0))
+
+    if (projected > FREE_LOCAL_VOICE_DAILY_LIMIT_MS) {
+      const resetInMs = Math.max(1, (24 * 60 * 60 * 1000) - (now - usage.windowStart))
+      const hours = Math.floor(resetInMs / 3600000)
+      const minutes = Math.ceil((resetInMs % 3600000) / 60000)
+      const waitLabel = hours > 0 ? `${hours}h ${Math.max(0, minutes)}m` : `${Math.max(1, minutes)} min`
+      const popupMessage = `Llegaste al límite diario de 2 horas de voces locales en plan FREE. Se restablece en aproximadamente ${waitLabel}.`
+
+      setError(popupMessage)
+      if ((now - localLimitPopupAtRef.current) > 5000) {
+        localLimitPopupAtRef.current = now
+        window.alert(popupMessage)
+      }
+      return { allowed: false, resetInMs }
+    }
+
+    usage = { ...usage, usedMs: projected }
+    freeLocalUsageRef.current = usage
+    writeFreeLocalVoiceUsage(usage)
+    return { allowed: true, remainingMs: Math.max(0, FREE_LOCAL_VOICE_DAILY_LIMIT_MS - usage.usedMs) }
+  }
+
   const getSmartMetrics = () => {
     recentIncomingTimestampsRef.current = pruneRecentTimestamps(recentIncomingTimestampsRef.current)
     const incomingPerMinute = recentIncomingTimestampsRef.current.length
@@ -1727,7 +1785,16 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
         const isLocalVoice = voiceId === 'es-ES' || voiceId === 'en-US'
 
         if (isLocalVoice) {
-          // Voz local — Web Speech API, sin backend, sin costo
+          // Voz local — Web Speech API
+          const estimatedDurationMs = Math.round(
+            (item.estimatedSpeakSeconds || estimateSpeakSeconds(item.rawText || item.text, c.audioSpeed || 1.0)) * 1000
+          )
+          const budget = consumeFreeLocalVoiceBudget(estimatedDurationMs)
+          if (!budget.allowed) {
+            setMessages((prev) => prev.map((msg) => msg.id === item.id ? { ...msg, status: 'skipped' } : msg))
+            continue
+          }
+
           setMessages((prev) => prev.map((msg) => msg.id === item.id ? { ...msg, status: 'playing' } : msg))
           const lang = voiceId === 'en-US' ? 'en-US' : 'es-ES'
           await new Promise((resolve) => {

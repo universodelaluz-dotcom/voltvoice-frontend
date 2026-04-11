@@ -7,6 +7,9 @@ import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Cloc
 export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAdmin, onGoPricingPage, darkMode, setDarkMode, config, updateConfig, user }) {
   const audioSpeed = config.audioSpeed || 1.0
   const PREMIUM_TEST_CHAR_LIMIT = 500
+  const FREE_LOCAL_LIMIT_CODE = 'FREE_LOCAL_VOICE_DAILY_LIMIT_REACHED'
+  const currentPlan = String(user?.plan || 'free').toLowerCase()
+  const localVoiceLabelSuffix = currentPlan === 'free' ? '' : ' (ilimitada)'
   const [showBotInvoker, setShowBotInvoker] = useState(false)
 
   const toggleTheme = () => {
@@ -47,6 +50,13 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const [announcements, setAnnouncements] = useState([])
 
   const getAuthToken = () => localStorage.getItem('sv-token') || ''
+  const formatResetWait = (seconds = 0) => {
+    const safe = Math.max(0, Number(seconds) || 0)
+    const hours = Math.floor(safe / 3600)
+    const minutes = Math.ceil((safe % 3600) / 60)
+    if (hours <= 0) return `${Math.max(1, minutes)} min`
+    return `${hours}h ${Math.max(0, minutes)}m`
+  }
 
   // Chat simulation
   const [chatMessages, setChatMessages] = useState([
@@ -161,8 +171,8 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     const allowedPremium = PREMIUM_BY_PLAN[userPlan] ?? []
     const allVoices = [
       // === VOCES LOCALES — incluidas en todos los planes, sin tokens ===
-      { id: "es-ES", name: "Voz Local Espanol (ilimitada)", category: "webspeech", engine: "webspeech" },
-      { id: "en-US", name: "Voz Local Ingles (ilimitada)", category: "webspeech", engine: "webspeech" },
+      { id: "es-ES", name: `Voz Local Espanol${localVoiceLabelSuffix}`, category: "webspeech", engine: "webspeech" },
+      { id: "en-US", name: `Voz Local Ingles${localVoiceLabelSuffix}`, category: "webspeech", engine: "webspeech" },
 
       // === Voces Premium — filtradas por plan ===
       ...ALL_PREMIUM_VOICES.filter(v => allowedPremium.includes(v.id)),
@@ -171,7 +181,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       ...userVoices,
     ]
     setVoices(allVoices)
-  }, [userVoices, user?.plan])
+  }, [userVoices, user?.plan, localVoiceLabelSuffix])
 
   // Cargar voces al montar y escuchar evento de voz nueva
   useEffect(() => {
@@ -285,9 +295,13 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
       if (isWebSpeech) {
         // Voces básicas por backend TTS para obtener audio real y espectro real.
+        const token = getAuthToken()
         const response = await fetch(`${API_URL}/api/tts/say`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          },
           body: JSON.stringify({
             text,
             voice: selectedVoice
@@ -296,6 +310,10 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
         const data = await response.json()
         if (!response.ok || !data.audio) {
+          if (data?.code === FREE_LOCAL_LIMIT_CODE) {
+            const wait = formatResetWait(data?.details?.resetInSeconds)
+            window.alert(`Llegaste al límite diario de 2 horas de voces locales en plan FREE.\nSe restablece en aproximadamente ${wait}.`)
+          }
           setError(data.error || "Error al sintetizar la voz básica")
         } else {
           setAudioUrl(data.audio)

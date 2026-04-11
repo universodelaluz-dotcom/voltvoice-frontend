@@ -1,16 +1,19 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { Plus, Trash2, Edit2, CheckCircle, AlertCircle, Loader } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
-const BASE_VOICES = [
-  { id: 'es-ES', name: 'Voz Básica Español (ilimitada)' },
-  { id: 'en-US', name: 'Voz Básica Inglés (ilimitada)' },
-  { id: 'Diego',  name: 'Voz natural de Luis - Premium' },
-  { id: 'Lupita', name: 'Voz natural de Sofia - Premium' },
-  { id: 'Miguel', name: 'Voz natural de Gustavo - Premium' },
-  { id: 'Rafael', name: 'Voz natural de Leonel - Premium' },
-]
+const getBaseVoices = (plan = 'free') => {
+  const suffix = String(plan || 'free').toLowerCase() === 'free' ? '' : ' (ilimitada)'
+  return [
+    { id: 'es-ES', name: `Voz Basica Espanol${suffix}` },
+    { id: 'en-US', name: `Voz Basica Ingles${suffix}` },
+    { id: 'Diego',  name: 'Voz natural de Luis - Premium' },
+    { id: 'Lupita', name: 'Voz natural de Sofia - Premium' },
+    { id: 'Miguel', name: 'Voz natural de Gustavo - Premium' },
+    { id: 'Rafael', name: 'Voz natural de Leonel - Premium' },
+  ]
+}
 
 export default function AIRoleplayWorkshop({ darkMode = true }) {
   const [characters, setCharacters] = useState([])
@@ -37,6 +40,14 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
 
   // Available voices
   const [userVoices, setUserVoices] = useState([])
+  const currentPlan = (() => {
+    try {
+      return String(JSON.parse(localStorage.getItem('sv-user') || '{}')?.plan || 'free').toLowerCase()
+    } catch {
+      return 'free'
+    }
+  })()
+  const baseVoices = getBaseVoices(currentPlan)
 
   // Cargar personajes al montar
   useEffect(() => {
@@ -185,7 +196,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
   }
 
   const handleDeleteCharacter = async (id, charName) => {
-    if (!confirm(`¿Eliminar el personaje "${charName}"?`)) return
+    if (!confirm(`Â¿Eliminar el personaje "${charName}"?`)) return
 
     try {
       const token = localStorage.getItem('sv-token')
@@ -213,7 +224,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-          🎭 Taller de Asistentes de IA Roleplay
+          ðŸŽ­ Taller de Asistentes de IA Roleplay
         </h2>
         {!showCreateForm && (
           <button
@@ -260,14 +271,14 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descripción (opcional)"
+              placeholder="DescripciÃ³n (opcional)"
               className={`w-full px-4 py-2 rounded-lg resize-none h-16 ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'} border`}
             />
 
             <textarea
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
-              placeholder="System prompt (cómo debe actuar el personaje)..."
+              placeholder="System prompt (cÃ³mo debe actuar el personaje)..."
               className={`w-full px-4 py-2 rounded-lg resize-none h-24 ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'} border`}
             />
 
@@ -278,7 +289,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
             >
               <option value="">Sin voz asignada (usar default)</option>
               <optgroup label="Voces base">
-                {BASE_VOICES.map(v => (
+                {baseVoices.map(v => (
                   <option key={v.id} value={v.id}>{v.name}</option>
                 ))}
               </optgroup>
@@ -334,7 +345,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
       ) : characters.length === 0 ? (
         <div className={`p-8 rounded-lg text-center ${darkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-gray-100 border border-gray-300'}`}>
           <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
-            No hay personajes creados aún. ¡Crea tu primer personaje!
+            No hay personajes creados aÃºn. Â¡Crea tu primer personaje!
           </p>
         </div>
       ) : (
@@ -345,7 +356,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
               className={`p-4 rounded-lg border ${darkMode ? 'bg-gray-800/30 border-gray-700' : 'bg-white border-gray-300'}`}
             >
               {editingId === char.id ? (
-                // Modo edición
+                // Modo ediciÃ³n
                 <div className="space-y-3">
                   <input
                     type="text"
@@ -365,7 +376,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
                   >
                     <option value="">Sin voz asignada (usar default)</option>
                     <optgroup label="Voces base">
-                      {BASE_VOICES.map(v => (
+                      {baseVoices.map(v => (
                         <option key={v.id} value={v.id}>{v.name}</option>
                       ))}
                     </optgroup>
@@ -438,3 +449,4 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
     </div>
   )
 }
+
