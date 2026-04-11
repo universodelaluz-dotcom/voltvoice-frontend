@@ -35,6 +35,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [addTokensUser, setAddTokensUser] = useState(null)
   const [addTokensAmount, setAddTokensAmount] = useState(100000)
   const [message, setMessage] = useState(null)
+  const [usersError, setUsersError] = useState(null)
 
   const headers = { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' }
 
@@ -44,12 +45,14 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
       const r = await fetch(`${API_URL}/api/admin/stats`, { headers })
       const d = await r.json()
       if (d.success) setStats(d.stats)
-    } catch (e) { console.error(e) }
+      else console.error('[Admin] Stats error:', d.error || d)
+    } catch (e) { console.error('[Admin] Stats fetch error:', e) }
     setLoading(false)
   }, [authToken])
 
   const loadUsers = useCallback(async () => {
     setLoading(true)
+    setUsersError(null)
     try {
       const params = new URLSearchParams({
         page, limit: 25,
@@ -62,8 +65,14 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
         setUsers(d.users)
         setTotalUsers(d.total)
         setTotalPages(d.pages)
+      } else {
+        setUsersError(d.error || `Error del servidor (HTTP ${r.status})`)
+        console.error('[Admin] Users error:', d)
       }
-    } catch (e) { console.error(e) }
+    } catch (e) {
+      setUsersError('Error de conexión con el servidor')
+      console.error('[Admin] Users fetch error:', e)
+    }
     setLoading(false)
   }, [authToken, page, search, planFilter])
 
@@ -359,6 +368,16 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
               </div>
             </div>
 
+            {/* Error de carga */}
+            {usersError && (
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-red-500/20 border border-red-500/40 text-red-300 text-sm">
+                <span>Error: {usersError}</span>
+                <button onClick={loadUsers} className="px-3 py-1 bg-red-500/30 hover:bg-red-500/50 rounded-lg text-xs font-semibold">
+                  Reintentar
+                </button>
+              </div>
+            )}
+
             {/* Tabla */}
             <div className={`${card} p-0 overflow-hidden`}>
               <div className="overflow-x-auto">
@@ -375,6 +394,13 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                     </tr>
                   </thead>
                   <tbody>
+                    {!loading && !usersError && users.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className={`px-4 py-10 text-center text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          No hay usuarios registrados con este filtro
+                        </td>
+                      </tr>
+                    )}
                     {users.map(u => {
                       const online = isOnline(u.last_seen)
                       const userPlan = u.normalized_plan || u.plan || 'free'
