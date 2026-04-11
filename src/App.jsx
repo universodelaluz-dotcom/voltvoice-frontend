@@ -509,18 +509,6 @@ export function App() {
     return () => clearInterval(interval)
   }, [])
 
-  // Admin Panel (solo para admins)
-  if (currentPage === 'admin' && user?.role === 'admin') {
-    return (
-      <AdminPanel
-        onClose={() => setCurrentPage('studio')}
-        darkMode={darkMode}
-        user={user}
-        authToken={authToken}
-      />
-    )
-  }
-
   // Auth Page
   if (currentPage === 'auth') {
     return <AuthPage onLogin={handleLogin} onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} />
@@ -580,19 +568,6 @@ export function App() {
     )
   }
 
-  // Statistics Dashboard
-  if (currentPage === 'statistics') {
-    return (
-      <StatisticsDashboard
-        onGoHome={() => setCurrentPage('landing')}
-        onGoStudio={() => setCurrentPage('studio')}
-        darkMode={darkMode}
-        user={user}
-        authToken={authToken}
-      />
-    )
-  }
-
   // AI Roleplay Workshop
   if (currentPage === 'ai-roleplay') {
     return (
@@ -606,8 +581,8 @@ export function App() {
     )
   }
 
-  // Studio + ControlPanel: ambos montados, se ocultan con CSS para no perder el WebSocket
-  if (currentPage === 'studio' || currentPage === 'control-panel') {
+  // Studio + paneles secundarios: mantener Studio montado para no perder WebSocket/live al navegar.
+  if (['studio', 'control-panel', 'statistics', 'admin'].includes(currentPage)) {
     return (
       <>
         <div style={{ display: currentPage === 'studio' ? 'block' : 'none' }}>
@@ -634,6 +609,23 @@ export function App() {
             config={config}
             updateConfig={updateConfig}
             user={user}
+          />
+        </div>
+        <div style={{ display: currentPage === 'statistics' ? 'block' : 'none' }}>
+          <StatisticsDashboard
+            onGoHome={() => setCurrentPage('landing')}
+            onGoStudio={() => setCurrentPage('studio')}
+            darkMode={darkMode}
+            user={user}
+            authToken={authToken}
+          />
+        </div>
+        <div style={{ display: currentPage === 'admin' && user?.role === 'admin' ? 'block' : 'none' }}>
+          <AdminPanel
+            onClose={() => setCurrentPage('studio')}
+            darkMode={darkMode}
+            user={user}
+            authToken={authToken}
           />
         </div>
       </>

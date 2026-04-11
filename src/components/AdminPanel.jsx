@@ -71,8 +71,17 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
     maxCacheableChars: 120,
     personalTtlSeconds: 86400,
     globalTtlSeconds: 604800,
+    personalFreeTtlSeconds: 172800,
+    personalPaidTtlSeconds: 604800,
+    personalFreeMaxEntries: 200,
+    personalPaidMaxEntries: 1000,
+    globalMaxEntries: 1500,
+    globalInactiveDays: 30,
+    globalLowUsageThreshold: 8,
+    subscriptionGraceDays: 15,
+    purgePersonalizationAfterGrace: false,
     hotCacheMaxEntries: 1500,
-    globalRepeatThreshold: 3,
+    globalRepeatThreshold: 4,
     lookupTimeoutMs: 35
   })
   const [audioCacheStats, setAudioCacheStats] = useState(null)
@@ -746,11 +755,27 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                   <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.lookupTimeoutMs} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, lookupTimeoutMs: parseInt(e.target.value || '0') }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>TTL personal (seg)</span>
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>TTL personal FREE (seg)</span>
+                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.personalFreeTtlSeconds} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalFreeTtlSeconds: parseInt(e.target.value || '0') }))} />
+                </label>
+                <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>TTL personal PAID (seg)</span>
+                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.personalPaidTtlSeconds} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalPaidTtlSeconds: parseInt(e.target.value || '0') }))} />
+                </label>
+                <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Max entries personal FREE</span>
+                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.personalFreeMaxEntries} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalFreeMaxEntries: parseInt(e.target.value || '0') }))} />
+                </label>
+                <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Max entries personal PAID</span>
+                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.personalPaidMaxEntries} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalPaidMaxEntries: parseInt(e.target.value || '0') }))} />
+                </label>
+                <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>TTL personal (legacy seg)</span>
                   <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.personalTtlSeconds} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalTtlSeconds: parseInt(e.target.value || '0') }))} />
                 </label>
                 <label className="text-xs">
-                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>TTL global (seg)</span>
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>TTL global (legacy seg)</span>
                   <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.globalTtlSeconds} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, globalTtlSeconds: parseInt(e.target.value || '0') }))} />
                 </label>
                 <label className="text-xs">
@@ -758,8 +783,31 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                   <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.hotCacheMaxEntries} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, hotCacheMaxEntries: parseInt(e.target.value || '0') }))} />
                 </label>
                 <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Global max entries</span>
+                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.globalMaxEntries} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, globalMaxEntries: parseInt(e.target.value || '0') }))} />
+                </label>
+                <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Global inactivo (dias)</span>
+                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.globalInactiveDays} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, globalInactiveDays: parseInt(e.target.value || '0') }))} />
+                </label>
+                <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Global uso bajo (hits)</span>
+                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.globalLowUsageThreshold} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, globalLowUsageThreshold: parseInt(e.target.value || '0') }))} />
+                </label>
+                <label className="text-xs">
                   <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Umbral repeticion global</span>
                   <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.globalRepeatThreshold} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, globalRepeatThreshold: parseInt(e.target.value || '0') }))} />
+                </label>
+                <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Gracia suscripcion (dias)</span>
+                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.subscriptionGraceDays} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, subscriptionGraceDays: parseInt(e.target.value || '0') }))} />
+                </label>
+                <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Reset voces/config tras gracia</span>
+                  <select className={`${inp} w-full mt-1`} value={audioCacheSettings.purgePersonalizationAfterGrace ? '1' : '0'} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, purgePersonalizationAfterGrace: e.target.value === '1' }))}>
+                    <option value="0">No</option>
+                    <option value="1">Si</option>
+                  </select>
                 </label>
               </div>
               <div className="flex flex-wrap gap-2 mt-4">
