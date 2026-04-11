@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Users, Zap, TrendingUp, Activity, Search, ChevronLeft,
-  RefreshCw, Shield, Edit2, Check, X, Plus, BarChart2, Wifi, Tag, Trash2, PauseCircle, PlayCircle, KeyRound, Bell, AlertTriangle
+  RefreshCw, Shield, Edit2, Check, X, Plus, BarChart2, Wifi, Tag, Trash2, PauseCircle, PlayCircle, KeyRound, Bell, AlertTriangle, Database
 } from 'lucide-react'
 import CouponManager from './CouponManager'
 
@@ -66,6 +66,19 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
     priority: 'normal',
     status: 'active'
   })
+  const [audioCacheSettings, setAudioCacheSettings] = useState({
+    enabled: true,
+    maxCacheableChars: 120,
+    personalTtlSeconds: 86400,
+    globalTtlSeconds: 604800,
+    hotCacheMaxEntries: 1500,
+    globalRepeatThreshold: 3,
+    lookupTimeoutMs: 35
+  })
+  const [audioCacheStats, setAudioCacheStats] = useState(null)
+  const [audioCacheEntries, setAudioCacheEntries] = useState([])
+  const [audioCacheScopeFilter, setAudioCacheScopeFilter] = useState('all')
+  const [audioCacheLoading, setAudioCacheLoading] = useState(false)
 
   const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' })
 
@@ -175,6 +188,76 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
     setOpsLoading(false)
   }, [authToken])
 
+  const loadAudioCache = useCallback(async () => {
+    if (!authToken) return
+    setAudioCacheLoading(true)
+    try {
+      const [settingsR, statsR, entriesR] = await Promise.all([
+        fetch(`${API_URL}/api/admin/audio-cache/settings`, { headers: buildHeaders() }),
+        fetch(`${API_URL}/api/admin/audio-cache/stats`, { headers: buildHeaders() }),
+        fetch(`${API_URL}/api/admin/audio-cache/entries?scope=${audioCacheScopeFilter}&limit=100`, { headers: buildHeaders() })
+      ])
+      const settingsD = await settingsR.json().catch(() => ({}))
+      const statsD = await statsR.json().catch(() => ({}))
+      const entriesD = await entriesR.json().catch(() => ({}))
+
+      if (settingsR.ok && settingsD.success) setAudioCacheSettings(settingsD.settings)
+      if (statsR.ok && statsD.success) setAudioCacheStats(statsD.stats)
+      if (entriesR.ok && entriesD.success) setAudioCacheEntries(entriesD.entries || [])
+    } catch (e) {
+      console.error('[Admin] Audio cache load error:', e)
+    }
+    setAudioCacheLoading(false)
+  }, [authToken, audioCacheScopeFilter])
+
+  const saveAudioCacheSettings = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/admin/audio-cache/settings`, {
+        method: 'PUT',
+        headers: buildHeaders(),
+        body: JSON.stringify(audioCacheSettings)
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) return showMsg(d.error || 'Error guardando cache', 'error')
+      setAudioCacheSettings(d.settings || audioCacheSettings)
+      showMsg('Configuracion de cache guardada')
+      loadAudioCache()
+    } catch {
+      showMsg('Error guardando cache', 'error')
+    }
+  }
+
+  const purgeAudioCache = async (scope = 'all', expiredOnly = false) => {
+    try {
+      const r = await fetch(`${API_URL}/api/admin/audio-cache/purge`, {
+        method: 'POST',
+        headers: buildHeaders(),
+        body: JSON.stringify({ scope, expiredOnly })
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) return showMsg(d.error || 'Error purgando cache', 'error')
+      showMsg(`Cache purgada (${d.deleted})`)
+      loadAudioCache()
+    } catch {
+      showMsg('Error purgando cache', 'error')
+    }
+  }
+
+  const deleteAudioCacheEntry = async (cacheKey) => {
+    try {
+      const r = await fetch(`${API_URL}/api/admin/audio-cache/entries/${encodeURIComponent(cacheKey)}`, {
+        method: 'DELETE',
+        headers: buildHeaders()
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) return showMsg(d.error || 'Error eliminando entrada', 'error')
+      showMsg('Entrada eliminada')
+      loadAudioCache()
+    } catch {
+      showMsg('Error eliminando entrada', 'error')
+    }
+  }
+
   useEffect(() => {
     if (!authToken) return
     if (tab === 'dashboard') loadStats()
@@ -183,7 +266,8 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
       loadStats()
     }
     if (tab === 'ops') loadOps()
-  }, [authToken, tab, page, planFilter, loadStats, loadUsers, loadOps])
+    if (tab === 'cache') loadAudioCache()
+  }, [authToken, tab, page, planFilter, loadStats, loadUsers, loadOps, loadAudioCache])
 
   useEffect(() => {
     if (!authToken || tab !== 'users') return
@@ -375,14 +459,14 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
             </span>
           </div>
           <button
-            onClick={tab === 'dashboard' ? loadStats : tab === 'users' ? loadUsers : tab === 'ops' ? loadOps : null}
+            onClick={tab === 'dashboard' ? loadStats : tab === 'users' ? loadUsers : tab === 'ops' ? loadOps : tab === 'cache' ? loadAudioCache : null}
             className={`p-2 rounded-lg ${darkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
         <div className="max-w-7xl mx-auto px-4 flex gap-1">
-          {[{ id: 'dashboard', label: 'Dashboard', icon: BarChart2 }, { id: 'users', label: 'Usuarios', icon: Users }, { id: 'ops', label: 'Operaciones', icon: Bell }, { id: 'coupons', label: 'Cupones', icon: Tag }].map(t => (
+          {[{ id: 'dashboard', label: 'Dashboard', icon: BarChart2 }, { id: 'users', label: 'Usuarios', icon: Users }, { id: 'ops', label: 'Operaciones', icon: Bell }, { id: 'cache', label: 'Audio Cache', icon: Database }, { id: 'coupons', label: 'Cupones', icon: Tag }].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all ${tab === t.id ? 'border-red-400 text-red-400' : `border-transparent ${darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}`}>
               <t.icon className="w-4 h-4" />{t.label}
@@ -607,6 +691,115 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===== AUDIO CACHE ===== */}
+        {tab === 'cache' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className={card}>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Hot Cache</p>
+                <p className="text-2xl font-black text-cyan-400">{audioCacheStats?.hotCacheEntries || 0}</p>
+              </div>
+              <div className={card}>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Global Entries</p>
+                <p className="text-2xl font-black text-purple-400">{audioCacheStats?.byScope?.global?.entries || 0}</p>
+              </div>
+              <div className={card}>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Personal Entries</p>
+                <p className="text-2xl font-black text-emerald-400">{audioCacheStats?.byScope?.personal?.entries || 0}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className={card}>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Hit Rate</p>
+                <p className="text-2xl font-black text-green-400">{Number(audioCacheStats?.runtime?.hit_rate_percent || 0).toFixed(2)}%</p>
+              </div>
+              <div className={card}>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Renders Ahorrados</p>
+                <p className="text-2xl font-black text-cyan-400">{Number(audioCacheStats?.runtime?.saved_render_count || 0).toLocaleString()}</p>
+              </div>
+              <div className={card}>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tokens Ahorrados (est.)</p>
+                <p className="text-2xl font-black text-yellow-400">{Number(audioCacheStats?.runtime?.tokens_saved_estimate || 0).toLocaleString()}</p>
+              </div>
+            </div>
+
+            <div className={card}>
+              <h3 className="font-bold mb-4">Configuracion Cache Hibrido</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Habilitado</span>
+                  <select className={`${inp} w-full mt-1`} value={audioCacheSettings.enabled ? '1' : '0'} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, enabled: e.target.value === '1' }))}>
+                    <option value="1">Si</option>
+                    <option value="0">No</option>
+                  </select>
+                </label>
+                <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Max caracteres cacheables</span>
+                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.maxCacheableChars} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, maxCacheableChars: parseInt(e.target.value || '0') }))} />
+                </label>
+                <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Lookup timeout (ms)</span>
+                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.lookupTimeoutMs} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, lookupTimeoutMs: parseInt(e.target.value || '0') }))} />
+                </label>
+                <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>TTL personal (seg)</span>
+                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.personalTtlSeconds} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalTtlSeconds: parseInt(e.target.value || '0') }))} />
+                </label>
+                <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>TTL global (seg)</span>
+                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.globalTtlSeconds} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, globalTtlSeconds: parseInt(e.target.value || '0') }))} />
+                </label>
+                <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Hot cache max entries</span>
+                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.hotCacheMaxEntries} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, hotCacheMaxEntries: parseInt(e.target.value || '0') }))} />
+                </label>
+                <label className="text-xs">
+                  <span className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Umbral repeticion global</span>
+                  <input type="number" className={`${inp} w-full mt-1`} value={audioCacheSettings.globalRepeatThreshold} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, globalRepeatThreshold: parseInt(e.target.value || '0') }))} />
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-4">
+                <button onClick={saveAudioCacheSettings} className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 text-white text-sm font-bold">Guardar Configuracion</button>
+                <button onClick={() => purgeAudioCache('all', false)} className="px-4 py-2 rounded-lg bg-red-500/80 text-white text-sm font-bold">Purgar Todo</button>
+                <button onClick={() => purgeAudioCache('all', true)} className="px-4 py-2 rounded-lg bg-yellow-500/80 text-white text-sm font-bold">Purgar Expirados</button>
+              </div>
+            </div>
+
+            <div className={card}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold">Entradas de Cache Persistente</h3>
+                <select className={inp} value={audioCacheScopeFilter} onChange={(e) => setAudioCacheScopeFilter(e.target.value)}>
+                  <option value="all">Todos</option>
+                  <option value="global">Global</option>
+                  <option value="personal">Personal</option>
+                </select>
+              </div>
+              {audioCacheLoading ? (
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cargando cache...</p>
+              ) : audioCacheEntries.length === 0 ? (
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>No hay entradas de cache.</p>
+              ) : (
+                <div className="space-y-2 max-h-[420px] overflow-auto">
+                  {audioCacheEntries.map((entry) => (
+                    <div key={entry.cache_key} className={`rounded-lg border px-3 py-2 ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold truncate">{entry.voice_id} · {entry.scope}</p>
+                          <p className={`text-[11px] ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            chars: {entry.char_count} · hits: {entry.hits} · user: {entry.user_email || '-'}
+                          </p>
+                          <p className={`text-[11px] truncate ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{entry.cache_key}</p>
+                        </div>
+                        <button onClick={() => deleteAudioCacheEntry(entry.cache_key)} className="px-2 py-1 text-xs rounded bg-red-500/20 text-red-300">Eliminar</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
