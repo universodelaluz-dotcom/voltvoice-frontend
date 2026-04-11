@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Users, Zap, TrendingUp, Activity, Search, ChevronLeft,
-  RefreshCw, Shield, Edit2, Check, X, Plus, BarChart2, Wifi, Tag
+  RefreshCw, Shield, Edit2, Check, X, Plus, BarChart2, Wifi, Tag, Trash2, PauseCircle, PlayCircle, KeyRound, Bell, AlertTriangle
 } from 'lucide-react'
 import CouponManager from './CouponManager'
 
@@ -16,6 +16,15 @@ const PLAN_STYLE = {
   creator: { bg: 'bg-blue-500/20',       text: 'text-blue-300',     dot: 'bg-blue-400' },
   pro:     { bg: 'bg-purple-500/20',     text: 'text-purple-300',   dot: 'bg-purple-400' },
   admin:   { bg: 'bg-red-500/20',        text: 'text-red-300',      dot: 'bg-red-400' },
+}
+
+const PLAN_PILL_LIGHT = {
+  free: 'bg-gray-200 text-gray-700',
+  start: 'bg-emerald-100 text-emerald-700',
+  creator: 'bg-blue-100 text-blue-700',
+  pro: 'bg-violet-100 text-violet-700',
+  admin: 'bg-red-100 text-red-700',
+  all: 'bg-gray-200 text-gray-700',
 }
 
 const planStyle = (plan) => PLAN_STYLE[plan] || PLAN_STYLE.free
@@ -36,6 +45,27 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [addTokensAmount, setAddTokensAmount] = useState(100000)
   const [message, setMessage] = useState(null)
   const [usersError, setUsersError] = useState(null)
+  const [opsLoading, setOpsLoading] = useState(false)
+  const [anomalies, setAnomalies] = useState([])
+  const [broadcasts, setBroadcasts] = useState([])
+  const [activityUserId, setActivityUserId] = useState(null)
+  const [activityData, setActivityData] = useState(null)
+  const [activityLoading, setActivityLoading] = useState(false)
+  const [createUserForm, setCreateUserForm] = useState({ email: '', password: '', plan: 'start', tokens: 1000, role: 'user' })
+  const [suspendUserId, setSuspendUserId] = useState(null)
+  const [suspendMinutes, setSuspendMinutes] = useState(60)
+  const [suspendReason, setSuspendReason] = useState('Actividad anormal')
+  const [resetPasswordUserId, setResetPasswordUserId] = useState(null)
+  const [manualResetPassword, setManualResetPassword] = useState('')
+  const [generatedPassword, setGeneratedPassword] = useState(null)
+  const [broadcastForm, setBroadcastForm] = useState({
+    kind: 'global_message',
+    title: '',
+    message: '',
+    audiencePlan: 'all',
+    priority: 'normal',
+    status: 'active'
+  })
 
   const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' })
 
@@ -92,21 +122,6 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
     setLoading(false)
   }, [authToken, page, search, planFilter])
 
-  useEffect(() => {
-    if (!authToken) return
-    if (tab === 'dashboard') loadStats()
-    if (tab === 'users') {
-      loadUsers()
-      loadStats()
-    }
-  }, [authToken, tab, page, planFilter, loadStats, loadUsers])
-
-  useEffect(() => {
-    if (!authToken || tab !== 'users') return
-    const t = setTimeout(loadUsers, 350)
-    return () => clearTimeout(t)
-  }, [authToken, tab, search, loadUsers])
-
   const showMsg = (text, type = 'success') => {
     setMessage({ text, type })
     setTimeout(() => setMessage(null), 3000)
@@ -140,6 +155,177 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
         showMsg(`+${addTokensAmount.toLocaleString()} tokens`)
       }
     } catch { showMsg('Error', 'error') }
+  }
+
+  const loadOps = useCallback(async () => {
+    if (!authToken) return
+    setOpsLoading(true)
+    try {
+      const [anR, bR] = await Promise.all([
+        fetch(`${API_URL}/api/admin/anomalies`, { headers: buildHeaders() }),
+        fetch(`${API_URL}/api/admin/broadcasts?status=all&limit=100`, { headers: buildHeaders() })
+      ])
+      const anD = await anR.json().catch(() => ({}))
+      const bD = await bR.json().catch(() => ({}))
+      if (anR.ok && anD.success) setAnomalies(anD.anomalies || [])
+      if (bR.ok && bD.success) setBroadcasts(bD.broadcasts || [])
+    } catch (e) {
+      console.error('[Admin] Ops load error:', e)
+    }
+    setOpsLoading(false)
+  }, [authToken])
+
+  useEffect(() => {
+    if (!authToken) return
+    if (tab === 'dashboard') loadStats()
+    if (tab === 'users') {
+      loadUsers()
+      loadStats()
+    }
+    if (tab === 'ops') loadOps()
+  }, [authToken, tab, page, planFilter, loadStats, loadUsers, loadOps])
+
+  useEffect(() => {
+    if (!authToken || tab !== 'users') return
+    const t = setTimeout(loadUsers, 350)
+    return () => clearTimeout(t)
+  }, [authToken, tab, search, loadUsers])
+
+  const createUser = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/admin/users`, {
+        method: 'POST',
+        headers: buildHeaders(),
+        body: JSON.stringify(createUserForm)
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) return showMsg(d.error || 'Error creando usuario', 'error')
+      showMsg(`Usuario creado: ${d.user.email}`)
+      setCreateUserForm({ email: '', password: '', plan: 'start', tokens: 1000, role: 'user' })
+      loadUsers()
+      loadStats()
+    } catch {
+      showMsg('Error creando usuario', 'error')
+    }
+  }
+
+  const deleteUser = async (target) => {
+    if (!window.confirm(`Eliminar usuario ${target.email}? Esta accion es irreversible.`)) return
+    try {
+      const r = await fetch(`${API_URL}/api/admin/users/${target.id}`, {
+        method: 'DELETE',
+        headers: buildHeaders()
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) return showMsg(d.error || 'Error eliminando usuario', 'error')
+      showMsg(`Usuario eliminado: ${target.email}`)
+      loadUsers()
+      loadStats()
+    } catch {
+      showMsg('Error eliminando usuario', 'error')
+    }
+  }
+
+  const suspendUser = async () => {
+    if (!suspendUserId) return
+    try {
+      const r = await fetch(`${API_URL}/api/admin/users/${suspendUserId}/suspend`, {
+        method: 'POST',
+        headers: buildHeaders(),
+        body: JSON.stringify({ reason: suspendReason, minutes: suspendMinutes })
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) return showMsg(d.error || 'Error suspendiendo usuario', 'error')
+      showMsg('Usuario suspendido')
+      setSuspendUserId(null)
+      loadUsers()
+      loadStats()
+    } catch {
+      showMsg('Error suspendiendo usuario', 'error')
+    }
+  }
+
+  const unsuspendUser = async (userId) => {
+    try {
+      const r = await fetch(`${API_URL}/api/admin/users/${userId}/unsuspend`, {
+        method: 'POST',
+        headers: buildHeaders()
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) return showMsg(d.error || 'Error reactivando usuario', 'error')
+      showMsg('Usuario reactivado')
+      loadUsers()
+      loadStats()
+    } catch {
+      showMsg('Error reactivando usuario', 'error')
+    }
+  }
+
+  const resetUserPassword = async () => {
+    if (!resetPasswordUserId) return
+    try {
+      const r = await fetch(`${API_URL}/api/admin/users/${resetPasswordUserId}/reset-password`, {
+        method: 'POST',
+        headers: buildHeaders(),
+        body: JSON.stringify({ newPassword: manualResetPassword || undefined })
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) return showMsg(d.error || 'Error restableciendo password', 'error')
+      if (d.temporaryPassword) setGeneratedPassword(d.temporaryPassword)
+      showMsg('Password restablecida')
+      setManualResetPassword('')
+      setResetPasswordUserId(null)
+    } catch {
+      showMsg('Error restableciendo password', 'error')
+    }
+  }
+
+  const loadActivity = async (userId) => {
+    setActivityUserId(userId)
+    setActivityLoading(true)
+    setActivityData(null)
+    try {
+      const r = await fetch(`${API_URL}/api/admin/users/${userId}/activity?limit=80`, { headers: buildHeaders() })
+      const d = await r.json().catch(() => ({}))
+      if (r.ok && d.success) setActivityData(d)
+      else showMsg(d.error || 'Error cargando actividad', 'error')
+    } catch {
+      showMsg('Error cargando actividad', 'error')
+    }
+    setActivityLoading(false)
+  }
+
+  const createBroadcast = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/admin/broadcasts`, {
+        method: 'POST',
+        headers: buildHeaders(),
+        body: JSON.stringify(broadcastForm)
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) return showMsg(d.error || 'Error creando comunicado', 'error')
+      showMsg('Comunicado creado')
+      setBroadcastForm((prev) => ({ ...prev, title: '', message: '' }))
+      loadOps()
+    } catch {
+      showMsg('Error creando comunicado', 'error')
+    }
+  }
+
+  const setBroadcastStatus = async (broadcastId, status) => {
+    try {
+      const r = await fetch(`${API_URL}/api/admin/broadcasts/${broadcastId}/status`, {
+        method: 'PUT',
+        headers: buildHeaders(),
+        body: JSON.stringify({ status })
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) return showMsg(d.error || 'Error actualizando comunicado', 'error')
+      showMsg('Comunicado actualizado')
+      loadOps()
+    } catch {
+      showMsg('Error actualizando comunicado', 'error')
+    }
   }
 
   const isOnline = (last_seen) => {
@@ -189,14 +375,14 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
             </span>
           </div>
           <button
-            onClick={tab === 'dashboard' ? loadStats : tab === 'users' ? loadUsers : null}
+            onClick={tab === 'dashboard' ? loadStats : tab === 'users' ? loadUsers : tab === 'ops' ? loadOps : null}
             className={`p-2 rounded-lg ${darkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
         <div className="max-w-7xl mx-auto px-4 flex gap-1">
-          {[{ id: 'dashboard', label: 'Dashboard', icon: BarChart2 }, { id: 'users', label: 'Usuarios', icon: Users }, { id: 'coupons', label: 'Cupones', icon: Tag }].map(t => (
+          {[{ id: 'dashboard', label: 'Dashboard', icon: BarChart2 }, { id: 'users', label: 'Usuarios', icon: Users }, { id: 'ops', label: 'Operaciones', icon: Bell }, { id: 'coupons', label: 'Cupones', icon: Tag }].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all ${tab === t.id ? 'border-red-400 text-red-400' : `border-transparent ${darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}`}>
               <t.icon className="w-4 h-4" />{t.label}
@@ -318,6 +504,113 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
           </div>
         )}
 
+        {/* ===== OPERACIONES ===== */}
+        {tab === 'ops' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className={card}>
+                <h3 className="font-bold mb-3">Crear Usuario</h3>
+                <div className="space-y-2">
+                  <input className={`${inp} w-full`} placeholder="email@dominio.com" value={createUserForm.email}
+                    onChange={(e) => setCreateUserForm((prev) => ({ ...prev, email: e.target.value }))} />
+                  <input className={`${inp} w-full`} placeholder="Password inicial" value={createUserForm.password}
+                    onChange={(e) => setCreateUserForm((prev) => ({ ...prev, password: e.target.value }))} />
+                  <div className="grid grid-cols-3 gap-2">
+                    <select className={inp} value={createUserForm.plan}
+                      onChange={(e) => setCreateUserForm((prev) => ({ ...prev, plan: e.target.value }))}>
+                      {['free', 'start', 'creator', 'pro', 'admin'].map((p) => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    <input type="number" className={inp} value={createUserForm.tokens}
+                      onChange={(e) => setCreateUserForm((prev) => ({ ...prev, tokens: parseInt(e.target.value || '0') }))} />
+                    <select className={inp} value={createUserForm.role}
+                      onChange={(e) => setCreateUserForm((prev) => ({ ...prev, role: e.target.value }))}>
+                      <option value="user">user</option>
+                      <option value="admin">admin</option>
+                    </select>
+                  </div>
+                  <button onClick={createUser}
+                    className="w-full py-2 rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 text-white text-sm font-bold">
+                    Crear Usuario
+                  </button>
+                </div>
+              </div>
+
+              <div className={card}>
+                <h3 className="font-bold mb-3">Comunicados Globales</h3>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <select className={inp} value={broadcastForm.kind}
+                      onChange={(e) => setBroadcastForm((prev) => ({ ...prev, kind: e.target.value }))}>
+                      <option value="global_message">Mensaje global</option>
+                      <option value="in_app_notification">Notificacion in-app</option>
+                      <option value="maintenance_alert">Alerta mantenimiento</option>
+                    </select>
+                    <select className={inp} value={broadcastForm.status}
+                      onChange={(e) => setBroadcastForm((prev) => ({ ...prev, status: e.target.value }))}>
+                      <option value="active">active</option>
+                      <option value="draft">draft</option>
+                      <option value="paused">paused</option>
+                    </select>
+                  </div>
+                  <input className={`${inp} w-full`} placeholder="Titulo"
+                    value={broadcastForm.title}
+                    onChange={(e) => setBroadcastForm((prev) => ({ ...prev, title: e.target.value }))} />
+                  <textarea className={`${inp} w-full min-h-24`} placeholder="Mensaje"
+                    value={broadcastForm.message}
+                    onChange={(e) => setBroadcastForm((prev) => ({ ...prev, message: e.target.value }))} />
+                  <button onClick={createBroadcast}
+                    className="w-full py-2 rounded-lg bg-gradient-to-r from-fuchsia-500 to-purple-500 text-white text-sm font-bold">
+                    Publicar Comunicado
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className={card}>
+              <h3 className="font-bold mb-3 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-yellow-400" /> Deteccion de Uso Anormal</h3>
+              {opsLoading ? (
+                <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cargando...</div>
+              ) : anomalies.length === 0 ? (
+                <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Sin anomalias detectadas.</div>
+              ) : (
+                <div className="space-y-2">
+                  {anomalies.slice(0, 20).map((a, idx) => (
+                    <div key={`${a.userId}-${a.type}-${idx}`} className={`rounded-lg px-3 py-2 border ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-semibold">{a.email}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${a.severity === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{a.severity}</span>
+                      </div>
+                      <div className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{a.details}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className={card}>
+              <h3 className="font-bold mb-3">Historial de Comunicados</h3>
+              <div className="space-y-2">
+                {broadcasts.length === 0 && <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Sin comunicados registrados.</div>}
+                {broadcasts.slice(0, 20).map((b) => (
+                  <div key={b.id} className={`rounded-lg border px-3 py-2 ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold">{b.title}</p>
+                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{b.kind} · {b.status} · {new Date(b.created_at).toLocaleString('es-MX')}</p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => setBroadcastStatus(b.id, 'active')} className="px-2 py-1 text-xs rounded bg-green-500/20 text-green-300">Activar</button>
+                        <button onClick={() => setBroadcastStatus(b.id, 'paused')} className="px-2 py-1 text-xs rounded bg-yellow-500/20 text-yellow-300">Pausar</button>
+                        <button onClick={() => setBroadcastStatus(b.id, 'archived')} className="px-2 py-1 text-xs rounded bg-red-500/20 text-red-300">Archivar</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ===== CUPONES ===== */}
         {tab === 'coupons' && (
           <CouponManager darkMode={darkMode} authToken={authToken} />
@@ -404,6 +697,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                       <th className="text-left px-4 py-3">Estado</th>
                       <th className="text-left px-4 py-3">Email</th>
                       <th className="text-left px-4 py-3">Plan</th>
+                      <th className="text-left px-4 py-3">Seguridad</th>
                       <th className="text-left px-4 py-3">Comprados</th>
                       <th className="text-left px-4 py-3">Restantes</th>
                       <th className="text-left px-4 py-3">Usados</th>
@@ -413,15 +707,19 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                   <tbody>
                     {!loading && !usersError && users.length === 0 && (
                       <tr>
-                        <td colSpan={7} className={`px-4 py-10 text-center text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        <td colSpan={8} className={`px-4 py-10 text-center text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                           No hay usuarios registrados con este filtro
                         </td>
                       </tr>
                     )}
                     {users.map(u => {
                       const online = isOnline(u.last_seen)
+                      const suspended = !!u.is_suspended
                       const userPlan = u.normalized_plan || u.plan || 'free'
                       const s = planStyle(userPlan)
+                      const pillClass = darkMode
+                        ? `${s.bg} ${s.text}`
+                        : (PLAN_PILL_LIGHT[userPlan] || PLAN_PILL_LIGHT.free)
                       return (
                         <tr key={u.id} className={`border-t ${darkMode ? 'border-white/5 hover:bg-white/5' : 'border-gray-100 hover:bg-gray-50'}`}>
 
@@ -453,9 +751,20 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                                 ))}
                               </select>
                             ) : (
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${s.bg} ${s.text}`}>
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${pillClass}`}>
                                 {String(userPlan || 'free').toUpperCase()}
                               </span>
+                            )}
+                          </td>
+
+                          {/* Seguridad */}
+                          <td className="px-4 py-3">
+                            {suspended ? (
+                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-300">
+                                Suspendido
+                              </span>
+                            ) : (
+                              <span className={`text-[11px] ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>Activo</span>
                             )}
                           </td>
 
@@ -496,9 +805,32 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                                     className={`p-1 rounded ${darkMode ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`} title="Editar">
                                     <Edit2 className="w-3.5 h-3.5" />
                                   </button>
+                                  <button onClick={() => loadActivity(u.id)}
+                                    className={`p-1 rounded ${darkMode ? 'text-cyan-300 hover:bg-cyan-400/20' : 'text-cyan-700 hover:bg-cyan-100'}`} title="Ver historial">
+                                    <Activity className="w-3.5 h-3.5" />
+                                  </button>
                                   <button onClick={() => { setAddTokensUser(u.id); setAddTokensAmount(100000) }}
                                     className={`p-1 rounded ${darkMode ? 'text-yellow-400 hover:bg-yellow-400/20' : 'text-yellow-500 hover:bg-yellow-50'}`} title="Agregar tokens">
                                     <Plus className="w-3.5 h-3.5" />
+                                  </button>
+                                  {suspended ? (
+                                    <button onClick={() => unsuspendUser(u.id)}
+                                      className={`p-1 rounded ${darkMode ? 'text-green-400 hover:bg-green-400/20' : 'text-green-600 hover:bg-green-50'}`} title="Reactivar usuario">
+                                      <PlayCircle className="w-3.5 h-3.5" />
+                                    </button>
+                                  ) : (
+                                    <button onClick={() => { setSuspendUserId(u.id); setSuspendMinutes(60); setSuspendReason('Actividad anormal') }}
+                                      className={`p-1 rounded ${darkMode ? 'text-orange-300 hover:bg-orange-400/20' : 'text-orange-600 hover:bg-orange-50'}`} title="Suspender usuario">
+                                      <PauseCircle className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                  <button onClick={() => { setResetPasswordUserId(u.id); setManualResetPassword('') }}
+                                    className={`p-1 rounded ${darkMode ? 'text-purple-300 hover:bg-purple-400/20' : 'text-purple-700 hover:bg-purple-100'}`} title="Reset password">
+                                    <KeyRound className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button onClick={() => deleteUser(u)}
+                                    className={`p-1 rounded ${darkMode ? 'text-red-300 hover:bg-red-400/20' : 'text-red-700 hover:bg-red-100'}`} title="Eliminar usuario">
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </>
                               )}
@@ -555,6 +887,103 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                 Cancelar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal suspender usuario */}
+      {suspendUserId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className={`rounded-2xl p-6 w-96 ${darkMode ? 'bg-[#1a1a35] border border-white/20' : 'bg-white border border-gray-200 shadow-xl'}`}>
+            <h3 className="font-bold text-lg mb-3">Suspender Usuario</h3>
+            <input type="number" className={`${inp} w-full mb-2`} value={suspendMinutes}
+              onChange={(e) => setSuspendMinutes(parseInt(e.target.value || '0'))} placeholder="Minutos (0 = indefinido)" />
+            <textarea className={`${inp} w-full min-h-20`} value={suspendReason}
+              onChange={(e) => setSuspendReason(e.target.value)} placeholder="Motivo de suspension" />
+            <div className="flex gap-2 mt-4">
+              <button onClick={suspendUser} className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm font-bold">Suspender</button>
+              <button onClick={() => setSuspendUserId(null)} className={`flex-1 py-2 rounded-lg text-sm font-bold ${darkMode ? 'bg-white/10 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal reset password */}
+      {resetPasswordUserId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className={`rounded-2xl p-6 w-96 ${darkMode ? 'bg-[#1a1a35] border border-white/20' : 'bg-white border border-gray-200 shadow-xl'}`}>
+            <h3 className="font-bold text-lg mb-3">Restablecer Password</h3>
+            <input className={`${inp} w-full`} value={manualResetPassword}
+              onChange={(e) => setManualResetPassword(e.target.value)}
+              placeholder="Nueva password (opcional, vacio = generar temporal)" />
+            <div className="flex gap-2 mt-4">
+              <button onClick={resetUserPassword} className="flex-1 py-2 rounded-lg bg-purple-500 text-white text-sm font-bold">Restablecer</button>
+              <button onClick={() => setResetPasswordUserId(null)} className={`flex-1 py-2 rounded-lg text-sm font-bold ${darkMode ? 'bg-white/10 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal password generada */}
+      {generatedPassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className={`rounded-2xl p-6 w-96 ${darkMode ? 'bg-[#1a1a35] border border-white/20' : 'bg-white border border-gray-200 shadow-xl'}`}>
+            <h3 className="font-bold text-lg mb-2">Password Temporal Generada</h3>
+            <p className={`text-xs mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Guarda esta password y compártela al usuario.</p>
+            <div className={`rounded-lg px-3 py-2 font-mono text-sm ${darkMode ? 'bg-white/10 text-cyan-300' : 'bg-gray-100 text-gray-800'}`}>{generatedPassword}</div>
+            <button onClick={() => setGeneratedPassword(null)} className="w-full mt-3 py-2 rounded-lg bg-cyan-500 text-white text-sm font-bold">Cerrar</button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal actividad/logs */}
+      {activityUserId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className={`rounded-2xl p-6 w-full max-w-4xl max-h-[85vh] overflow-auto ${darkMode ? 'bg-[#111127] border border-white/20' : 'bg-white border border-gray-200 shadow-xl'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg">Historial de Usuario</h3>
+              <button onClick={() => { setActivityUserId(null); setActivityData(null) }} className={`p-1 rounded ${darkMode ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}><X className="w-4 h-4" /></button>
+            </div>
+            {activityLoading && <p className={darkMode ? 'text-gray-400 text-sm' : 'text-gray-600 text-sm'}>Cargando actividad...</p>}
+            {!activityLoading && activityData && (
+              <div className="space-y-4">
+                <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <span className="font-semibold">{activityData.user?.email}</span> · plan {activityData.user?.plan} · tokens {activityData.user?.tokens}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className={card}>
+                    <h4 className="font-semibold mb-2">Consumo / Token Logs</h4>
+                    <div className="space-y-1 max-h-64 overflow-auto">
+                      {(activityData.activity?.tokenLogs || []).slice(0, 60).map((l, i) => (
+                        <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {new Date(l.timestamp).toLocaleString('es-MX')} · {l.action || 'sintesis'} · {Number(l.tokens_used || 0).toLocaleString()} tokens
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={card}>
+                    <h4 className="font-semibold mb-2">Transacciones</h4>
+                    <div className="space-y-1 max-h-64 overflow-auto">
+                      {(activityData.activity?.transactions || []).slice(0, 60).map((t, i) => (
+                        <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {new Date(t.created_at).toLocaleString('es-MX')} · {t.status} · +{Number(t.tokens_purchased || 0).toLocaleString()} tokens
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={card}>
+                    <h4 className="font-semibold mb-2">Logs Tecnicos / Admin</h4>
+                    <div className="space-y-1 max-h-64 overflow-auto">
+                      {(activityData.activity?.adminActions || []).slice(0, 60).map((a, i) => (
+                        <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {new Date(a.created_at).toLocaleString('es-MX')} · {a.action} · {a.admin_email || 'admin'}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

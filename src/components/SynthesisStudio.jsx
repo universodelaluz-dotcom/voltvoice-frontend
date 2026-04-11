@@ -44,6 +44,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const [tokens, setTokens] = useState(user?.tokens || 1000)
   const [totalTokensUsed, setTotalTokensUsed] = useState(0)
   const [synthesisCount, setSynthesisCount] = useState(0)
+  const [announcements, setAnnouncements] = useState([])
 
   const getAuthToken = () => localStorage.getItem('sv-token') || ''
 
@@ -229,6 +230,23 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     window.addEventListener('voltvoice:assistant-visualizer-audio', handleAssistantVisualizerAudio)
     return () => window.removeEventListener('voltvoice:assistant-visualizer-audio', handleAssistantVisualizerAudio)
   }, [])
+
+  useEffect(() => {
+    const loadAnnouncements = async () => {
+      try {
+        const token = getAuthToken()
+        if (!token || !user?.id) return
+        const r = await fetch(`${API_URL}/api/ops/announcements`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const d = await r.json().catch(() => ({}))
+        if (r.ok && d.success) setAnnouncements(d.announcements || [])
+      } catch {
+        // silent
+      }
+    }
+    loadAnnouncements()
+  }, [user?.id])
 
   useEffect(() => {
     const handlePttAudioState = (event) => {
@@ -435,8 +453,26 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 pt-8 pb-56 lg:pb-72">
+        {announcements.length > 0 && (
+          <div className="mb-4 space-y-2">
+            {announcements.slice(0, 3).map((notice) => {
+              const isMaintenance = notice.kind === 'maintenance_alert'
+              return (
+                <div key={notice.id} className={`rounded-lg border px-4 py-3 ${
+                  isMaintenance
+                    ? (darkMode ? 'border-amber-400/40 bg-amber-500/10' : 'border-amber-300 bg-amber-50')
+                    : (darkMode ? 'border-cyan-400/30 bg-cyan-500/10' : 'border-cyan-300 bg-cyan-50')
+                }`}>
+                  <p className={`text-xs font-bold uppercase ${isMaintenance ? 'text-amber-400' : 'text-cyan-400'}`}>{notice.kind.replaceAll('_', ' ')}</p>
+                  <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{notice.title}</p>
+                  <p className={`text-xs ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{notice.message}</p>
+                </div>
+              )
+            })}
+          </div>
+        )}
         {/* TikTok Live Section */}
-        <TikTokLivePanel config={config} updateConfig={updateConfig} />
+          <TikTokLivePanel config={config} updateConfig={updateConfig} user={user} />
 
         {/* Botones principales: Configuracion, Taller de Voces, Estadisticas */}
         <div className="grid grid-cols-3 gap-4 mb-6">

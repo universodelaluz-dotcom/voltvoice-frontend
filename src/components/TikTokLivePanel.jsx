@@ -363,7 +363,7 @@ const apiNicks = {
   }
 }
 
-export default function TikTokLivePanel({ config = {}, updateConfig }) {
+export default function TikTokLivePanel({ config = {}, updateConfig, user = null }) {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
   useEffect(() => {
@@ -470,6 +470,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   useEffect(() => {
     setSmartChatEnabled(config.smartChatEnabled || false)
   }, [config.smartChatEnabled])
+  useEffect(() => {
+    if (isFreePlan && smartChatEnabled) {
+      setSmartChatEnabled(false)
+      if (updateConfig) updateConfig('smartChatEnabled', false)
+    }
+  }, [isFreePlan, smartChatEnabled, updateConfig])
   useEffect(() => {
     setMobilePreviewEnabled(config.mobilePreviewEnabled || false)
   }, [config.mobilePreviewEnabled])
@@ -2594,15 +2600,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 <RotateCcw className="w-3.5 h-3.5" /> Refrescar
               </button>
               <button
-                onClick={() => setSmartChatEnabled((prev) => !prev)}
+                onClick={() => {
+                  if (isFreePlan) return
+                  setSmartChatEnabled((prev) => !prev)
+                }}
+                disabled={isFreePlan}
                 className={`group h-10 w-[120px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
                   smartChatEnabled
                     ? 'border-slate-700 bg-gradient-to-r from-slate-700 to-slate-900 text-white hover:from-slate-600 hover:to-slate-800 shadow-sm'
                     : darkMode
                       ? 'border-fuchsia-400/25 bg-fuchsia-500/12 text-fuchsia-100 hover:bg-fuchsia-500/18'
                       : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
-                }`}
-                title="Activa el filtro inteligente para eliminar spam y basura"
+                } ${isFreePlan ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={isFreePlan ? 'Disponible en planes de pago' : 'Activa el filtro inteligente para eliminar spam y basura'}
               >
                 <span className="relative flex h-3 w-3 items-center justify-center">
                   <span className={`absolute inline-flex h-full w-full rounded-full ${
@@ -3048,3 +3058,5 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 }
 
 
+  const currentPlan = String(user?.plan || 'free').toLowerCase()
+  const isFreePlan = currentPlan === 'free'

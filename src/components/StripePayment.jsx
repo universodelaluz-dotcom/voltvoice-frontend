@@ -260,29 +260,19 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
           </div>
         )}
 
-        <div className={`rounded-xl p-3 mb-5 flex items-center gap-2 ${dm ? 'bg-white/5 border border-white/10' : 'bg-indigo-50 border border-indigo-100'}`}>
-          <Zap className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-          <p className={`text-sm ${dm ? 'text-gray-300' : 'text-gray-600'}`}>
-            {currentItem.type === 'plan' ? (
-              <>
-                <span className="font-bold text-cyan-400">{currentItem.label}</span>{' '}por{' '}
-                <span className="font-bold">${currentItem.price} USD</span>{' '}
-                <span>- facturación {currentItem.billingCycle === 'annual' ? 'anual' : 'mensual'}</span>
-                <span className={`block text-[11px] ${dm ? 'text-gray-500' : 'text-gray-500'}`}>
-                  Aprox. {formatMxnApprox(Number(currentItem.price))} MXN
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="font-bold text-cyan-400">{selectedPackage.size}</span>{' '}por{' '}
-                <span className="font-bold">${selectedPackage.price} USD</span> - consumo según actividad del chat
-                <span className={`block text-[11px] ${dm ? 'text-gray-500' : 'text-gray-500'}`}>
-                  Aprox. {formatMxnApprox(selectedPackage.price)} MXN
-                </span>
-              </>
-            )}
-          </p>
-        </div>
+        {currentItem.type === 'plan' && (
+          <div className={`rounded-xl p-3 mb-5 flex items-center gap-2 ${dm ? 'bg-white/5 border border-white/10' : 'bg-indigo-50 border border-indigo-100'}`}>
+            <Zap className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+            <p className={`text-sm ${dm ? 'text-gray-300' : 'text-gray-600'}`}>
+              <span className="font-bold text-cyan-400">{currentItem.label}</span>{' '}por{' '}
+              <span className="font-bold">${currentItem.price} USD</span>{' '}
+              <span>- facturación {currentItem.billingCycle === 'annual' ? 'anual' : 'mensual'}</span>
+              <span className={`block text-[11px] ${dm ? 'text-gray-500' : 'text-gray-500'}`}>
+                Aprox. {formatMxnApprox(Number(currentItem.price))} MXN
+              </span>
+            </p>
+          </div>
+        )}
         <p className={`text-[11px] mb-3 text-center ${dm ? 'text-gray-600' : 'text-gray-500'}`}>
           Referencia en MXN aproximada; se adapta al tipo de cambio USD/MXN del día.
         </p>
