@@ -89,7 +89,10 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [audioCacheScopeFilter, setAudioCacheScopeFilter] = useState('all')
   const [audioCacheLoading, setAudioCacheLoading] = useState(false)
 
-  const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' })
+    const [voicesUser, setVoicesUser] = useState(null)
+  const [voicesList, setVoicesList] = useState([])
+  const [voicesLoading, setVoicesLoading] = useState(false)
+const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' })
   const secondsToHours = (seconds, fallbackHours = 1) => {
     const sec = Number(seconds)
     if (!Number.isFinite(sec) || sec <= 0) return fallbackHours
@@ -583,7 +586,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: 'Total Usuarios', value: stats.totalUsers.toLocaleString(), icon: Users, color: 'text-cyan-400', sub: `+${stats.usersToday} hoy` },
-                { label: 'En Línea Ahora', value: stats.onlineUsers.toLocaleString(), icon: Wifi, color: 'text-green-400', sub: 'últimos 5 min', pulse: true },
+                { label: 'En LÃ­nea Ahora', value: stats.onlineUsers.toLocaleString(), icon: Wifi, color: 'text-green-400', sub: 'Ãºltimos 5 min', pulse: true },
                 { label: 'Tokens Usados', value: stats.totalTokensUsed >= 1000000 ? (stats.totalTokensUsed / 1000000).toFixed(1) + 'M' : (stats.totalTokensUsed / 1000).toFixed(1) + 'K', icon: Zap, color: 'text-yellow-400', sub: `${(stats.tokensUsedToday / 1000).toFixed(1)}K hoy` },
                 { label: 'Transacciones', value: stats.totalTransactions.toLocaleString(), icon: TrendingUp, color: 'text-purple-400', sub: 'completadas' },
               ].map((k, i) => (
@@ -605,19 +608,19 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                 <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ingresos</p>
                 <p className="text-xl font-black text-emerald-400">{fmtUsd(stats.revenueMonthUsd)}</p>
                 <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual</p>
-                <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>A�o: {fmtUsd(stats.revenueYearUsd)} � Total: {fmtUsd(stats.revenueTotalUsd)}</p>
+                <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Año: {fmtUsd(stats.revenueYearUsd)} · Total: {fmtUsd(stats.revenueTotalUsd)}</p>
               </div>
               <div className={card}>
                 <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Costos estimados</p>
                 <p className="text-xl font-black text-orange-400">{fmtUsd(stats.estimatedCostMonthUsd)}</p>
                 <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual</p>
-                <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>A�o: {fmtUsd(stats.estimatedCostYearUsd)} � Total: {fmtUsd(stats.estimatedCostTotalUsd)}</p>
+                <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Año: {fmtUsd(stats.estimatedCostYearUsd)} · Total: {fmtUsd(stats.estimatedCostTotalUsd)}</p>
               </div>
               <div className={card}>
                 <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Margen estimado</p>
                 <p className={`text-xl font-black ${Number(stats.estimatedMarginMonthUsd || 0) >= 0 ? 'text-cyan-400' : 'text-red-400'}`}>{fmtUsd(stats.estimatedMarginMonthUsd)}</p>
                 <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual</p>
-                <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>A�o: {fmtUsd(stats.estimatedMarginYearUsd)}</p>
+                <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Año: {fmtUsd(stats.estimatedMarginYearUsd)}</p>
               </div>
             </div>
 
@@ -626,18 +629,18 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                 <h3 className="font-bold mb-2">Usuarios registrados</h3>
                 <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Hoy: <span className="font-bold">{stats.usersToday?.toLocaleString()}</span></p>
                 <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Mes: <span className="font-bold">{stats.usersThisMonth?.toLocaleString()}</span></p>
-                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>A�o: <span className="font-bold">{stats.usersThisYear?.toLocaleString()}</span></p>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Año: <span className="font-bold">{stats.usersThisYear?.toLocaleString()}</span></p>
               </div>
               <div className={card}>
                 <h3 className="font-bold mb-2">Tokens consumidos</h3>
                 <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Hoy: <span className="font-bold">{fmtCompact(stats.tokensUsedToday)}</span></p>
                 <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Mes: <span className="font-bold">{fmtCompact(stats.tokensUsedMonth)}</span></p>
-                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>A�o: <span className="font-bold">{fmtCompact(stats.tokensUsedYear)}</span></p>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Año: <span className="font-bold">{fmtCompact(stats.tokensUsedYear)}</span></p>
               </div>
               <div className={card}>
                 <h3 className="font-bold mb-2">Transacciones</h3>
                 <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Mes: <span className="font-bold">{stats.transactionsMonth?.toLocaleString()}</span></p>
-                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>A�o: <span className="font-bold">{stats.transactionsYear?.toLocaleString()}</span></p>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Año: <span className="font-bold">{stats.transactionsYear?.toLocaleString()}</span></p>
                 <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total: <span className="font-bold">{stats.totalTransactions?.toLocaleString()}</span></p>
               </div>
             </div>
@@ -733,7 +736,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                     <div key={i} className={`flex items-center justify-between text-xs border-b last:border-0 pb-1.5 ${darkMode ? 'border-white/5' : 'border-gray-100'}`}>
                       <div className="min-w-0">
                         <span className={`truncate block max-w-[160px] ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{a.email}</span>
-                        <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>{a.action || 'síntesis'}</span>
+                        <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>{a.action || 'sÃ­ntesis'}</span>
                       </div>
                       <div className="text-right shrink-0 ml-2">
                         <span className="text-yellow-400 font-bold block">{a.tokens_used?.toLocaleString()}</span>
@@ -841,7 +844,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                     <div className="flex items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-semibold">{b.title}</p>
-                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{b.kind} · {b.status} · {new Date(b.created_at).toLocaleString('es-MX')}</p>
+                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{b.kind} Â· {b.status} Â· {new Date(b.created_at).toLocaleString('es-MX')}</p>
                       </div>
                       <div className="flex gap-1">
                         <button onClick={() => setBroadcastStatus(b.id, 'active')} className="px-2 py-1 text-xs rounded bg-green-500/20 text-green-300">Activar</button>
@@ -988,9 +991,9 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                     <div key={entry.cache_key} className={`rounded-lg border px-3 py-2 ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
                       <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold truncate">{entry.voice_id} · {entry.scope}</p>
+                          <p className="text-xs font-semibold truncate">{entry.voice_id} Â· {entry.scope}</p>
                           <p className={`text-[11px] ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                            chars: {entry.char_count} · hits: {entry.hits} · user: {entry.user_email || '-'}
+                            chars: {entry.char_count} Â· hits: {entry.hits} Â· user: {entry.user_email || '-'}
                           </p>
                           <p className={`text-[11px] truncate ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{entry.cache_key}</p>
                         </div>
@@ -1247,19 +1250,19 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                 </table>
               </div>
 
-              {/* Paginación */}
+              {/* PaginaciÃ³n */}
               {totalPages > 1 && (
                 <div className={`flex items-center justify-between px-4 py-3 border-t ${darkMode ? 'border-white/5' : 'border-gray-100'}`}>
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
                     className={`px-3 py-1 text-xs rounded ${darkMode ? 'bg-white/10 disabled:opacity-30' : 'bg-gray-100 disabled:opacity-30'}`}>
-                    ← Anterior
+                    â Anterior
                   </button>
                   <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     {page} / {totalPages}
                   </span>
                   <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
                     className={`px-3 py-1 text-xs rounded ${darkMode ? 'bg-white/10 disabled:opacity-30' : 'bg-gray-100 disabled:opacity-30'}`}>
-                    Siguiente →
+                    Siguiente â
                   </button>
                 </div>
               )}
@@ -1286,7 +1289,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                   <div key={voice.id} className={`rounded-lg border px-3 py-2 flex items-center justify-between gap-3 ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
                     <div className="min-w-0">
                       <p className={`text-sm font-semibold truncate ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{voice.voice_name}</p>
-                      <p className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>ID: {voice.voice_id} � Provider: {voice.provider || '-'}</p>
+                      <p className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>ID: {voice.voice_id} · Provider: {voice.provider || '-'}</p>
                     </div>
                     <button
                       onClick={() => deleteUserVoice(voice.id)}
@@ -1366,7 +1369,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className={`rounded-2xl p-6 w-96 ${darkMode ? 'bg-[#1a1a35] border border-white/20' : 'bg-white border border-gray-200 shadow-xl'}`}>
             <h3 className="font-bold text-lg mb-2">Password Temporal Generada</h3>
-            <p className={`text-xs mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Guarda esta password y compártela al usuario.</p>
+            <p className={`text-xs mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Guarda esta password y compÃ¡rtela al usuario.</p>
             <div className={`rounded-lg px-3 py-2 font-mono text-sm ${darkMode ? 'bg-white/10 text-cyan-300' : 'bg-gray-100 text-gray-800'}`}>{generatedPassword}</div>
             <button onClick={() => setGeneratedPassword(null)} className="w-full mt-3 py-2 rounded-lg bg-cyan-500 text-white text-sm font-bold">Cerrar</button>
           </div>
@@ -1385,7 +1388,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
             {!activityLoading && activityData && (
               <div className="space-y-4">
                 <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  <span className="font-semibold">{activityData.user?.email}</span> · plan {activityData.user?.plan} · tokens {activityData.user?.tokens}
+                  <span className="font-semibold">{activityData.user?.email}</span> Â· plan {activityData.user?.plan} Â· tokens {activityData.user?.tokens}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                   <div className={card}>
@@ -1393,7 +1396,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                     <div className="space-y-1 max-h-64 overflow-auto">
                       {(activityData.activity?.tokenLogs || []).slice(0, 60).map((l, i) => (
                         <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          {new Date(l.timestamp).toLocaleString('es-MX')} � {l.action || 'sintesis'} � {Number(l.tokens_used || 0).toLocaleString()} tokens
+                          {new Date(l.timestamp).toLocaleString('es-MX')} · {l.action || 'sintesis'} · {Number(l.tokens_used || 0).toLocaleString()} tokens
                         </div>
                       ))}
                     </div>
@@ -1403,7 +1406,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                     <div className="space-y-1 max-h-64 overflow-auto">
                       {(activityData.activity?.transactions || []).slice(0, 60).map((t, i) => (
                         <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          {new Date(t.created_at).toLocaleString('es-MX')} � {t.status} � +{Number(t.tokens_purchased || 0).toLocaleString()} tokens
+                          {new Date(t.created_at).toLocaleString('es-MX')} · {t.status} · +{Number(t.tokens_purchased || 0).toLocaleString()} tokens
                         </div>
                       ))}
                     </div>
@@ -1413,7 +1416,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                     <div className="space-y-1 max-h-64 overflow-auto">
                       {(activityData.activity?.adminActions || []).slice(0, 60).map((a, i) => (
                         <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          {new Date(a.created_at).toLocaleString('es-MX')} � {a.action} � {a.admin_email || 'admin'}
+                          {new Date(a.created_at).toLocaleString('es-MX')} · {a.action} · {a.admin_email || 'admin'}
                         </div>
                       ))}
                     </div>
@@ -1423,7 +1426,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
                     <div className="space-y-1 max-h-64 overflow-auto">
                       {(activityData.activity?.requestLogs || []).slice(0, 80).map((r, i) => (
                         <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          {new Date(r.created_at).toLocaleString('es-MX')} � {r.method} {r.path} � {r.status_code}{r.error_message ? ` � ${r.error_message}` : ''}
+                          {new Date(r.created_at).toLocaleString('es-MX')} · {r.method} {r.path} · {r.status_code}{r.error_message ? ` · ${r.error_message}` : ''}
                         </div>
                       ))}
                     </div>

@@ -18,7 +18,7 @@ const monthlyPlans = [
       'Chat visible',
       'Filtros básicos',
     ],
-    extension: 'Sin límite de uso - totalmente gratuito',
+    extension: 'Silencia usuarios en un click',
   },
   {
     icon: '🟢',
