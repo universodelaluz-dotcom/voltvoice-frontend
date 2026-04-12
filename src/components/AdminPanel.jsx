@@ -52,7 +52,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [activityData, setActivityData] = useState(null)
   const [activityLoading, setActivityLoading] = useState(false)
   const [activityHours, setActivityHours] = useState(48)
-  const [activityLimit, setActivityLimit] = useState(1200)
+  const [activityLimit, setActivityLimit] = useState(5000)
   const [createUserForm, setCreateUserForm] = useState({ email: '', password: '', plan: 'start', tokens: 1000, role: 'user' })
   const [suspendUserId, setSuspendUserId] = useState(null)
   const [suspendMinutes, setSuspendMinutes] = useState(60)
@@ -401,7 +401,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
     setActivityData(null)
     try {
       const params = new URLSearchParams({
-        limit: String(activityLimit || 1200),
+        limit: String(activityLimit || 5000),
         hours: String(activityHours || 48),
       })
       const r = await fetch(`${API_URL}/api/admin/users/${userId}/activity?${params.toString()}`, { headers: buildHeaders() })
@@ -418,7 +418,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
     if (!activityUserId) return
     try {
       const params = new URLSearchParams({
-        limit: String(activityLimit || 1200),
+        limit: String(activityLimit || 5000),
         hours: String(activityHours || 48),
         format
       })
@@ -434,7 +434,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `voltvoice-activity-${activityUserId}-${activityHours}h.${format === 'csv' ? 'csv' : 'json'}`
+      a.download = `voltvoice-activity-${activityUserId}-${activityHours}h-${activityLimit}.${format === 'csv' ? 'csv' : 'json'}`
       document.body.appendChild(a)
       a.click()
       a.remove()
@@ -1438,10 +1438,10 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 <input
                   type="number"
                   min="100"
-                  max="5000"
+                  max="20000"
                   step="100"
                   value={activityLimit}
-                  onChange={(e) => setActivityLimit(Math.max(100, Math.min(5000, Number(e.target.value) || 1200)))}
+                  onChange={(e) => setActivityLimit(Math.max(100, Math.min(20000, Number(e.target.value) || 5000)))}
                   className={`${inp} ml-2 w-24`}
                 />
               </label>
