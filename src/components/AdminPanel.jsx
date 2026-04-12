@@ -51,6 +51,8 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [activityUserId, setActivityUserId] = useState(null)
   const [activityData, setActivityData] = useState(null)
   const [activityLoading, setActivityLoading] = useState(false)
+  const [activityHours, setActivityHours] = useState(48)
+  const [activityLimit, setActivityLimit] = useState(1200)
   const [createUserForm, setCreateUserForm] = useState({ email: '', password: '', plan: 'start', tokens: 1000, role: 'user' })
   const [suspendUserId, setSuspendUserId] = useState(null)
   const [suspendMinutes, setSuspendMinutes] = useState(60)
@@ -398,7 +400,11 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
     setActivityLoading(true)
     setActivityData(null)
     try {
-      const r = await fetch(`${API_URL}/api/admin/users/${userId}/activity?limit=80`, { headers: buildHeaders() })
+      const params = new URLSearchParams({
+        limit: String(activityLimit || 1200),
+        hours: String(activityHours || 48),
+      })
+      const r = await fetch(`${API_URL}/api/admin/users/${userId}/activity?${params.toString()}`, { headers: buildHeaders() })
       const d = await r.json().catch(() => ({}))
       if (r.ok && d.success) setActivityData(d)
       else showMsg(d.error || 'Error cargando actividad', 'error')
@@ -406,6 +412,37 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
       showMsg('Error cargando actividad', 'error')
     }
     setActivityLoading(false)
+  }
+
+  const exportActivityLogs = async (format = 'json') => {
+    if (!activityUserId) return
+    try {
+      const params = new URLSearchParams({
+        limit: String(activityLimit || 1200),
+        hours: String(activityHours || 48),
+        format
+      })
+      const r = await fetch(`${API_URL}/api/admin/users/${activityUserId}/activity/export?${params.toString()}`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      })
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}))
+        return showMsg(d.error || 'Error exportando actividad', 'error')
+      }
+
+      const blob = await r.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `voltvoice-activity-${activityUserId}-${activityHours}h.${format === 'csv' ? 'csv' : 'json'}`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+      showMsg(`Actividad exportada (${format.toUpperCase()})`)
+    } catch {
+      showMsg('Error exportando actividad', 'error')
+    }
   }
 
   const exportEmailsCsv = async () => {
@@ -1384,17 +1421,66 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
               <h3 className="font-bold text-lg">Historial de Usuario</h3>
               <button onClick={() => { setActivityUserId(null); setActivityData(null) }} className={`p-1 rounded ${darkMode ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}><X className="w-4 h-4" /></button>
             </div>
+            <div className="mb-4 flex flex-wrap items-end gap-2">
+              <label className="text-xs font-semibold">
+                Ventana (horas)
+                <input
+                  type="number"
+                  min="1"
+                  max="336"
+                  value={activityHours}
+                  onChange={(e) => setActivityHours(Math.max(1, Math.min(336, Number(e.target.value) || 48)))}
+                  className={`${inp} ml-2 w-20`}
+                />
+              </label>
+              <label className="text-xs font-semibold">
+                Max logs
+                <input
+                  type="number"
+                  min="100"
+                  max="5000"
+                  step="100"
+                  value={activityLimit}
+                  onChange={(e) => setActivityLimit(Math.max(100, Math.min(5000, Number(e.target.value) || 1200)))}
+                  className={`${inp} ml-2 w-24`}
+                />
+              </label>
+              <button
+                onClick={() => loadActivity(activityUserId)}
+                className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-semibold ${darkMode ? 'bg-white/10 text-gray-200 hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Recargar
+              </button>
+              <button
+                onClick={() => exportActivityLogs('json')}
+                className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-semibold ${darkMode ? 'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30' : 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200'}`}
+              >
+                <Download className="w-3.5 h-3.5" />
+                Exportar JSON
+              </button>
+              <button
+                onClick={() => exportActivityLogs('csv')}
+                className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-semibold ${darkMode ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}
+              >
+                <Download className="w-3.5 h-3.5" />
+                Exportar CSV
+              </button>
+            </div>
             {activityLoading && <p className={darkMode ? 'text-gray-400 text-sm' : 'text-gray-600 text-sm'}>Cargando actividad...</p>}
             {!activityLoading && activityData && (
               <div className="space-y-4">
                 <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  <span className="font-semibold">{activityData.user?.email}</span> A plan {activityData.user?.plan} A tokens {activityData.user?.tokens}
+                  <span className="font-semibold">{activityData.user?.email}</span> | Plan {activityData.user?.plan} | Tokens {activityData.user?.tokens}
+                </div>
+                <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Ventana: ultimas {activityData.filters?.hours || activityHours} horas | Limite: {activityData.filters?.limit || activityLimit} por bloque
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                   <div className={card}>
-                    <h4 className="font-semibold mb-2">Consumo / Token Logs</h4>
+                    <h4 className="font-semibold mb-2">Consumo / Token Logs ({(activityData.activity?.tokenLogs || []).length})</h4>
                     <div className="space-y-1 max-h-64 overflow-auto">
-                      {(activityData.activity?.tokenLogs || []).slice(0, 60).map((l, i) => (
+                      {(activityData.activity?.tokenLogs || []).map((l, i) => (
                         <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                           {new Date(l.timestamp).toLocaleString('es-MX')}  {l.action || 'sintesis'}  {Number(l.tokens_used || 0).toLocaleString()} tokens
                         </div>
@@ -1402,9 +1488,9 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                     </div>
                   </div>
                   <div className={card}>
-                    <h4 className="font-semibold mb-2">Transacciones</h4>
+                    <h4 className="font-semibold mb-2">Transacciones ({(activityData.activity?.transactions || []).length})</h4>
                     <div className="space-y-1 max-h-64 overflow-auto">
-                      {(activityData.activity?.transactions || []).slice(0, 60).map((t, i) => (
+                      {(activityData.activity?.transactions || []).map((t, i) => (
                         <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                           {new Date(t.created_at).toLocaleString('es-MX')}  {t.status}  +{Number(t.tokens_purchased || 0).toLocaleString()} tokens
                         </div>
@@ -1412,9 +1498,9 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                     </div>
                   </div>
                   <div className={card}>
-                    <h4 className="font-semibold mb-2">Logs Tecnicos / Admin</h4>
+                    <h4 className="font-semibold mb-2">Logs Tecnicos / Admin ({(activityData.activity?.adminActions || []).length})</h4>
                     <div className="space-y-1 max-h-64 overflow-auto">
-                      {(activityData.activity?.adminActions || []).slice(0, 60).map((a, i) => (
+                      {(activityData.activity?.adminActions || []).map((a, i) => (
                         <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                           {new Date(a.created_at).toLocaleString('es-MX')}  {a.action}  {a.admin_email || 'admin'}
                         </div>
@@ -1422,9 +1508,9 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                     </div>
                   </div>
                   <div className={card}>
-                    <h4 className="font-semibold mb-2">Logs Backend API</h4>
+                    <h4 className="font-semibold mb-2">Logs Backend API ({(activityData.activity?.requestLogs || []).length})</h4>
                     <div className="space-y-1 max-h-64 overflow-auto">
-                      {(activityData.activity?.requestLogs || []).slice(0, 80).map((r, i) => (
+                      {(activityData.activity?.requestLogs || []).map((r, i) => (
                         <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                           {new Date(r.created_at).toLocaleString('es-MX')}  {r.method} {r.path}  {r.status_code}{r.error_message ? `  ${r.error_message}` : ''}
                         </div>

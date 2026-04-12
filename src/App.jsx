@@ -174,6 +174,19 @@ const normalizeUserConfig = (rawConfig = {}) => {
 const getConfigCacheKey = (userIdentifier = 'guest') => `${LOCAL_CONFIG_CACHE_KEY_PREFIX}:${String(userIdentifier || 'guest')}`
 const buildDefaultConfig = () => normalizeUserConfig(DEFAULT_CONFIG)
 
+const normalizeServerConfigPayload = (rawConfig) => {
+  if (!rawConfig) return {}
+  if (typeof rawConfig === 'string') {
+    try {
+      const parsed = JSON.parse(rawConfig)
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+    } catch {
+      return {}
+    }
+  }
+  return (typeof rawConfig === 'object' && !Array.isArray(rawConfig)) ? rawConfig : {}
+}
+
 const loadCachedConfig = (userIdentifier = 'guest') => {
   try {
     const scopedRaw = localStorage.getItem(getConfigCacheKey(userIdentifier))
@@ -213,6 +226,11 @@ export function App() {
   const [configReady, setConfigReady] = useState(false)
 
   const updateConfig = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
+  const latestConfigRef = useRef(config)
+
+  useEffect(() => {
+    latestConfigRef.current = config
+  }, [config])
 
   // Restaurar sesión al cargar
   useEffect(() => {
@@ -317,7 +335,7 @@ export function App() {
       if (data.success) {
         const userKey = userInfo?.id || userInfo?.email || 'guest'
         const cachedConfigRaw = loadCachedConfig(userKey) || {}
-        const remoteConfigRaw = (data.config && typeof data.config === 'object') ? data.config : {}
+        const remoteConfigRaw = normalizeServerConfigPayload(data.config)
         const hasRemoteConfig = Object.keys(remoteConfigRaw).length > 0
         const mergedConfig = normalizeUserConfig(
           hasRemoteConfig
@@ -372,8 +390,37 @@ export function App() {
   const saveTimerRef = useRef(null)
   const testimonialsScrollRef = useRef(null)
 
+  const persistConfigNow = async (token, configToPersist) => {
+    if (!token || !configToPersist) return false
+    try {
+      const response = await fetch(`${API_URL}/api/settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ config: configToPersist }),
+        keepalive: true
+      })
+      if (!response.ok) {
+        console.warn('[Config] Guardado inmediato falló con estado:', response.status)
+        return false
+      }
+      const payload = await response.json().catch(() => ({ success: true }))
+      if (!payload?.success) {
+        console.warn('[Config] Guardado inmediato rechazado por API')
+        return false
+      }
+      return true
+    } catch (error) {
+      console.warn('[Config] Guardado inmediato error:', error?.message || error)
+      return false
+    }
+  }
+
   // Cache local inmediata por usuario activo (respaldo si falla red/backend)
   useEffect(() => {
+    if (user && !configReady) return
     try {
       const userKey = user?.id || user?.email || 'guest'
       localStorage.setItem(getConfigCacheKey(userKey), JSON.stringify(config))
@@ -397,7 +444,16 @@ export function App() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ config })
-      }).then(() => {
+      }).then(async (response) => {
+        if (!response.ok) {
+          console.warn('[Config] Error guardando config. HTTP:', response.status)
+          return
+        }
+        const payload = await response.json().catch(() => ({ success: true }))
+        if (!payload?.success) {
+          console.warn('[Config] Guardado automático rechazado por API')
+          return
+        }
         console.log('[Config] Guardado automático')
       }).catch(() => {})
     }, 2000) // Espera 2 segundos después del último cambio
@@ -418,7 +474,13 @@ export function App() {
     setCurrentPage('studio')
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const token = localStorage.getItem('sv-token')
+    const currentUser = user
+    if (token && currentUser) {
+      await persistConfigNow(token, latestConfigRef.current)
+    }
+
     setUser(null)
     setAuthToken(null)
     localStorage.removeItem('sv-token')
@@ -430,6 +492,25 @@ export function App() {
     setDarkMode(cleanConfig.themeMode !== 'light')
     setCurrentPage('landing')
   }
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const token = localStorage.getItem('sv-token')
+      const currentUser = user
+      if (!token || !currentUser) return
+      fetch(`${API_URL}/api/settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ config: latestConfigRef.current }),
+        keepalive: true
+      }).catch(() => {})
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [user])
 
   const handlePlanAction = (plan, meta = {}) => {
     if (!plan) return

@@ -138,6 +138,11 @@ const getBanCandidateKeys = (value) => {
   return [...new Set([raw, rawLower, normalized, normalized ? `@${normalized}` : ''].filter(Boolean))]
 }
 const isUserBannedBySet = (bannedSet, username) => getBanCandidateKeys(username).some((key) => bannedSet.has(key))
+const getNickOverrideValue = (nickMap = {}, username = '') => {
+  const raw = String(username || '').trim()
+  const normalized = normalizeTikTokUsername(raw).toLowerCase()
+  return nickMap[raw] || nickMap[raw.toLowerCase()] || nickMap[normalized] || nickMap[`@${normalized}`] || ''
+}
 const getThemeChatNickColor = (config = {}, darkMode = true) => (
   darkMode
     ? (config.chatNickColorDark || config.chatNickColor || '#22d3ee')
@@ -375,13 +380,14 @@ const apiNicks = {
 
   async set(username, newNickname) {
     try {
+      const normalizedUsername = normalizeTikTokUsername(username)
       const res = await fetch(`${API_URL}/api/nicks`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, newNickname })
+        body: JSON.stringify({ username: normalizedUsername, newNickname })
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       return await res.json()
@@ -393,7 +399,8 @@ const apiNicks = {
 
   async remove(username) {
     try {
-      const res = await fetch(`${API_URL}/api/nicks/${username}`, {
+      const normalizedUsername = normalizeTikTokUsername(username)
+      const res = await fetch(`${API_URL}/api/nicks/${normalizedUsername}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${getAuthToken()}` }
       })
@@ -1413,10 +1420,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
           }
 
           // Construir texto final (usar nickname para lectura, no el username técnico)
-          let displayName = nickOverridesRef.current[msg.username] || msg.nickname || msg.username
+          const overrideName = getNickOverrideValue(nickOverridesRef.current, msg.username)
+          let displayName = overrideName || msg.nickname || msg.username
 
           // Si está activado, eliminar emojis y caracteres especiales del nickname
-          if ((c.onlyPlainNicks || smartChatActive) && !nickOverridesRef.current[msg.username]) {
+          if ((c.onlyPlainNicks || smartChatActive) && !overrideName) {
             displayName = getPlainNick(displayName)
           }
 
@@ -2428,7 +2436,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
                       className={darkMode ? "border-l border-cyan-500/30 pl-3 py-2 rounded-r" : "border-l border-indigo-300 pl-3 py-2 rounded-r"}
                     >
                       <p className="font-semibold" style={{ color: chatNickColor, fontSize: `${chatFontSize}px` }}>
-                        {nickOverrides[msg.user] || msg.nickname || msg.user}
+                              {getNickOverrideValue(nickOverrides, msg.user) || msg.nickname || msg.user}
                       </p>
                       <p style={{ color: chatMsgColor, fontSize: `${chatFontSize}px` }}>{msg.text}</p>
                     </div>
@@ -2526,7 +2534,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
                     </span>
                   </div>
                     <p className="font-semibold leading-tight shrink-0" style={{ color: chatNickColor, fontSize: `${chatFontSize}px` }}>
-                      {nickOverrides[currentReadingMessage.user] || currentReadingMessage.nickname || currentReadingMessage.user}
+                      {getNickOverrideValue(nickOverrides, currentReadingMessage.user) || currentReadingMessage.nickname || currentReadingMessage.user}
                     </p>
                     <p
                       className="font-medium overflow-y-auto pr-1 leading-snug"
@@ -2610,34 +2618,53 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
                 >
                   <div className="flex items-center justify-between">
                     {editingNick === msg.id ? (
-                      <input
-                        autoFocus
-                        value={editingValue}
-                        onChange={(e) => setEditingValue(e.target.value)}
-                        onKeyDown={async (e) => {
-                          if (e.key === 'Enter') {
-                            if (editingValue.trim()) {
-                              await apiNicks.set(msg.user, editingValue.trim())
-                              setNickOverrides(prev => ({ ...prev, [msg.user]: editingValue.trim() }))
+                      <div className="flex flex-col gap-0.5">
+                        <input
+                          autoFocus
+                          value={editingValue}
+                          onChange={(e) => setEditingValue(e.target.value)}
+                          onKeyDown={async (e) => {
+                            if (e.key === 'Enter') {
+                              const nextNick = editingValue.trim()
+                              if (nextNick) {
+                                await apiNicks.set(msg.user, nextNick)
+                                setNickOverrides(prev => ({ ...prev, [msg.user]: nextNick }))
+                              } else {
+                                await apiNicks.remove(msg.user)
+                                setNickOverrides(prev => {
+                                  const next = { ...prev }
+                                  getBanCandidateKeys(msg.user).forEach((key) => delete next[key])
+                                  return next
+                                })
+                              }
+                              setEditingNick(null)
+                            }
+                            if (e.key === 'Escape') setEditingNick(null)
+                          }}
+                          onBlur={async () => {
+                            const nextNick = editingValue.trim()
+                            if (nextNick) {
+                              await apiNicks.set(msg.user, nextNick)
+                              setNickOverrides(prev => ({ ...prev, [msg.user]: nextNick }))
+                            } else {
+                              // Si queda vacío, remover del override
+                              await apiNicks.remove(msg.user)
+                              setNickOverrides(prev => {
+                                const next = { ...prev }
+                                getBanCandidateKeys(msg.user).forEach((key) => delete next[key])
+                                return next
+                              })
                             }
                             setEditingNick(null)
-                          }
-                          if (e.key === 'Escape') setEditingNick(null)
-                        }}
-                        onBlur={async () => {
-                          if (editingValue.trim()) {
-                            await apiNicks.set(msg.user, editingValue.trim())
-                            setNickOverrides(prev => ({ ...prev, [msg.user]: editingValue.trim() }))
-                          } else {
-                            // Si queda vacío, remover del override
-                            await apiNicks.remove(msg.user)
-                          }
-                          setEditingNick(null)
-                        }}
-                        className={`text-sm font-semibold px-1 py-0 rounded outline-none w-32 ${
-                          darkMode ? 'bg-gray-700 text-cyan-300 border border-cyan-500/50' : 'bg-white text-cyan-600 border border-cyan-300'
-                        }`}
-                      />
+                          }}
+                          className={`text-sm font-semibold px-1 py-0 rounded outline-none w-32 ${
+                            darkMode ? 'bg-gray-700 text-cyan-300 border border-cyan-500/50' : 'bg-white text-cyan-600 border border-cyan-300'
+                          }`}
+                        />
+                        <span className={`text-[10px] leading-none ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          Vacio + Enter = nick original
+                        </span>
+                      </div>
                     ) : (
                       <div className="flex items-center gap-1 group/nick">
                         {/* Nick: click izquierdo = editar, click derecho = ban toggle */}
@@ -2658,7 +2685,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
                             }
                             if (!isUserBannedBySet(bannedUsers, msg.user)) {
                               setEditingNick(msg.id)
-                              setEditingValue(nickOverrides[msg.user] || msg.nickname || msg.user)
+                              setEditingValue(getNickOverrideValue(nickOverrides, msg.user) || msg.nickname || msg.user)
                             }
                           }}
                           onContextMenu={async (e) => {
@@ -2699,7 +2726,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
                           title={highlightMode ? "Click para remarcar/desmarcar este usuario" : isUserBannedBySet(bannedUsers, msg.user) ? "Click derecho para desbloquear" : "Click para editar · Click derecho para silenciar"}
                         >
                           {hlColor && <span className="inline-block w-2.5 h-2.5 rounded-full mr-1 ring-1 ring-white/30" style={{ backgroundColor: hlColor }} />}
-                          {nickOverrides[msg.user] || msg.nickname || msg.user}
+                            {getNickOverrideValue(nickOverrides, msg.user) || msg.nickname || msg.user}
                           {badgeLabel && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded" style={{ backgroundColor: hlColor || '#666', color: '#fff' }}>{badgeLabel}</span>}
                         </p>
                       </div>
@@ -2737,7 +2764,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
                               <div className={darkMode ? "rounded-md border border-cyan-500/25 bg-cyan-500/10 p-2" : "rounded-md border border-cyan-200 bg-cyan-50 p-2"}>
                                 <p className={darkMode ? "text-[9px] uppercase tracking-wide text-cyan-300/90" : "text-[9px] uppercase tracking-wide text-cyan-700/90"}>En lectura</p>
                                 <p className="text-[11px] font-semibold truncate" style={{ color: chatNickColor }}>
-                                  {nickOverrides[currentReadingMessage.user] || currentReadingMessage.nickname || currentReadingMessage.user}
+                            {getNickOverrideValue(nickOverrides, currentReadingMessage.user) || currentReadingMessage.nickname || currentReadingMessage.user}
                                 </p>
                                 <p className="text-[11px] leading-snug line-clamp-2" style={{ color: chatMsgColor }}>
                                   {currentReadingMessage.text}
@@ -2757,7 +2784,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
                                 messages.slice(-12).map((msg, idx) => (
                                   <div key={`mobile-feed-on-${msg.id || `${msg.timestamp}-${idx}`}`} className={darkMode ? "rounded-md border border-cyan-500/15 bg-cyan-500/5 p-1.5" : "rounded-md border border-cyan-100 bg-white p-1.5"}>
                                     <p className="text-[10px] font-semibold truncate" style={{ color: chatNickColor }}>
-                                      {nickOverrides[msg.user] || msg.nickname || msg.user}
+                          {getNickOverrideValue(nickOverrides, msg.user) || msg.nickname || msg.user}
                                     </p>
                                     <p className="text-[10px] leading-snug line-clamp-2" style={{ color: chatMsgColor }}>
                                       {msg.text}
