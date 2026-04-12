@@ -1098,13 +1098,13 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                       {showProfanityEditor && (
                         <div className="mt-2">
                           <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-200' : 'text-slate-700'}`}>
-                            Palabras prohibidas (separadas por coma o salto de lAnea)
+                            Palabras prohibidas (separadas por coma o salto de línea)
                           </label>
                           <textarea
                             value={config.profanityWords || ''}
                             onChange={(e) => updateConfig('profanityWords', e.target.value)}
                             rows={3}
-                            placeholder="Escribe tus palabras aquA"
+                            placeholder="Escribe tus palabras aquí"
                             className={`w-full px-3 py-2 text-sm rounded-lg border resize-y ${
                               darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
                             }`}

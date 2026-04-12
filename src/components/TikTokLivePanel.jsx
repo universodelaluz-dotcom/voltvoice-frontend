@@ -167,13 +167,28 @@ const normalizeMessageForMatching = (text = '') => String(text || '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const hiddenDefaultProfanityWords = [
+  'pendejas',
+  'pendejos',
+  'pendeja',
+  'pendejo',
+  'puto',
+  'puta',
+  'putos',
+  'putas',
+  'puñetas'
+]
+
 const parseProfanityWords = (rawWords) => {
   const raw = String(rawWords || '')
-  if (!raw.trim()) return []
-  return raw
+  const customWords = raw
     .split(/[\n,;]+/g)
     .map((word) => normalizeMessageForMatching(word))
     .filter(Boolean)
+  const merged = [...hiddenDefaultProfanityWords, ...customWords]
+    .map((word) => normalizeMessageForMatching(word))
+    .filter(Boolean)
+  return [...new Set(merged)]
 }
 
 const containsProfanity = (text = '', words = []) => {
@@ -416,11 +431,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
   const [editingNick, setEditingNick] = useState(null)
   const [editingValue, setEditingValue] = useState('')
   const [bannedUsers, setBannedUsers] = useState(new Set())
-  const [volume, setVolume] = useState(0.8)
+  const [volume, setVolume] = useState(Number(config.chatVolume ?? 0.8))
   const [isPaused, setIsPaused] = useState(config.chatPaused ?? false)
-  const [highlightedUsers, setHighlightedUsers] = useState({})
+  const [highlightedUsers, setHighlightedUsers] = useState(() => {
+    const raw = config.highlightedUsers
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+    return raw
+  })
   const [highlightMode, setHighlightMode] = useState(false)
-  const [selectedColor, setSelectedColor] = useState('#06b6d4')
+  const [selectedColor, setSelectedColor] = useState(config.highlightSelectedColor || '#06b6d4')
   const [showHighlightPanel, setShowHighlightPanel] = useState(false)
   const [sessionModerationList, setSessionModerationList] = useState(() => normalizeModerationList(config.sessionModerationList))
   const [chatFontSize, setChatFontSize] = useState(config.chatFontSize || 14)
@@ -473,6 +492,21 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
   }, [smartChatEnabled])
   useEffect(() => {
     if (updateConfig) {
+      updateConfig('chatVolume', Number.isFinite(volume) ? volume : 0.8)
+    }
+  }, [volume, updateConfig])
+  useEffect(() => {
+    if (updateConfig) {
+      updateConfig('highlightedUsers', highlightedUsers)
+    }
+  }, [highlightedUsers, updateConfig])
+  useEffect(() => {
+    if (updateConfig) {
+      updateConfig('highlightSelectedColor', selectedColor)
+    }
+  }, [selectedColor, updateConfig])
+  useEffect(() => {
+    if (updateConfig) {
       updateConfig('mobilePreviewEnabled', mobilePreviewEnabled)
     }
   }, [mobilePreviewEnabled])
@@ -503,6 +537,22 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
     setSmartChatEnabled(config.smartChatEnabled || false)
   }, [config.smartChatEnabled])
   useEffect(() => {
+    const nextVolume = Number(config.chatVolume)
+    if (!Number.isFinite(nextVolume)) return
+    setVolume(Math.max(0, Math.min(1, nextVolume)))
+  }, [config.chatVolume])
+  useEffect(() => {
+    const raw = config.highlightedUsers
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      setHighlightedUsers({})
+      return
+    }
+    setHighlightedUsers(raw)
+  }, [config.highlightedUsers])
+  useEffect(() => {
+    setSelectedColor(config.highlightSelectedColor || '#06b6d4')
+  }, [config.highlightSelectedColor])
+  useEffect(() => {
     if (isFreePlan && smartChatEnabled) {
       setSmartChatEnabled(false)
       if (updateConfig) updateConfig('smartChatEnabled', false)
@@ -529,6 +579,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
       setTiktokUser(savedLastUser)
     }
   }, [config.lastTiktokUser, isConnected])
+  useEffect(() => {
+    if (!updateConfig) return
+    const normalized = normalizeTikTokUsername(tiktokUser)
+    updateConfig('lastTiktokUser', normalized || String(tiktokUser || '').trim())
+  }, [tiktokUser, updateConfig])
   const isPausedRef = useRef(false)
   const isPttSuppressedRef = useRef(false)
   const isInteractionSuppressedRef = useRef(false)

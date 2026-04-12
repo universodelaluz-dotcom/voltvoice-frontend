@@ -19,6 +19,7 @@ const LOCAL_CONFIG_CACHE_KEY_PREFIX = 'sv-config-cache-v2'
 
 const DEFAULT_CONFIG = {
   audioSpeed: 1.0,
+  chatVolume: 0.8,
   readOnlyMessage: false,
   skipRepeated: false,
   onlyDonors: false,
@@ -82,6 +83,7 @@ const DEFAULT_CONFIG = {
   chatMsgColorDark: '#d1d5db',
   chatMsgColorLight: '#1f2937',
   themeMode: 'dark',
+  smartChatEnabled: false,
   lastTiktokUser: '',
   mobilePreviewEnabled: false,
   mobilePreviewMuted: true,
@@ -89,6 +91,8 @@ const DEFAULT_CONFIG = {
   configPreset2: null,
   configPreset3: null,
   sessionModerationList: [],
+  highlightedUsers: {},
+  highlightSelectedColor: '#06b6d4',
   highlightRules: {
     moderators: { enabled: false, color: '#a855f7' },
     donors: { enabled: false, color: '#f59e0b' },
@@ -97,6 +101,20 @@ const DEFAULT_CONFIG = {
     communityMembers: { enabled: false, color: '#22c55e' },
     topFans: { enabled: false, color: '#06b6d4' },
   },
+}
+
+const normalizeHighlightedUsers = (value) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  const out = {}
+  const entries = Object.entries(value).slice(0, 500)
+  for (const [rawUser, rawColor] of entries) {
+    const username = String(rawUser || '').trim()
+    const color = String(rawColor || '').trim()
+    if (!username) continue
+    if (!/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/.test(color)) continue
+    out[username] = color
+  }
+  return out
 }
 
 const normalizeSessionModerationList = (value) => {
@@ -142,6 +160,10 @@ const normalizeUserConfig = (rawConfig = {}) => {
     botAssistantVoiceSpeed: normalizedVoiceSpeed,
     botAssistantMaxResponseChars: normalizedMaxChars,
     sessionModerationList: normalizeSessionModerationList(config.sessionModerationList),
+    highlightedUsers: normalizeHighlightedUsers(config.highlightedUsers),
+    highlightSelectedColor: /^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/.test(String(config.highlightSelectedColor || ''))
+      ? String(config.highlightSelectedColor)
+      : DEFAULT_CONFIG.highlightSelectedColor,
     highlightRules: {
       ...DEFAULT_CONFIG.highlightRules,
       ...(config.highlightRules || {}),
