@@ -493,10 +493,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const [sessionSummary, setSessionSummary] = useState(null)
   const [highlightRules, setHighlightRules] = useState(() => normalizeHighlightRules(config.highlightRules))
   const canPersistConfig = Boolean(updateConfig) && Boolean(configReady)
+  const suppressConfigWritesUntilRef = useRef(0)
+  const canWriteConfigNow = canPersistConfig && Date.now() >= suppressConfigWritesUntilRef.current
+
+  useEffect(() => {
+    if (!configReady) return
+    // Evita bucles al aplicar config remota/local después de reconectar o hidratar sesión.
+    suppressConfigWritesUntilRef.current = Date.now() + 300
+  }, [configReady, config.configUpdatedAt])
+
   const syncSessionModerationList = (updater) => {
     setSessionModerationList((prev) => {
       const next = normalizeModerationList(typeof updater === 'function' ? updater(prev) : updater)
-      if (canPersistConfig) {
+      if (canWriteConfigNow) {
         updateConfig('sessionModerationList', next)
       }
       return next
@@ -505,32 +514,32 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
   // Sincronizar cambios de estilo y remarcar al config del usuario (auto-save)
   useEffect(() => {
-    if (canPersistConfig) {
+    if (canWriteConfigNow) {
       updateConfig('chatFontSize', chatFontSize)
     }
-  }, [chatFontSize, canPersistConfig, updateConfig])
+  }, [chatFontSize, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    if (canPersistConfig) {
+    if (canWriteConfigNow) {
       updateConfig(darkMode ? 'chatNickColorDark' : 'chatNickColorLight', chatNickColor)
     }
-  }, [chatNickColor, darkMode, canPersistConfig, updateConfig])
+  }, [chatNickColor, darkMode, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    if (canPersistConfig) {
+    if (canWriteConfigNow) {
       updateConfig(darkMode ? 'chatMsgColorDark' : 'chatMsgColorLight', chatMsgColor)
     }
-  }, [chatMsgColor, darkMode, canPersistConfig, updateConfig])
+  }, [chatMsgColor, darkMode, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    if (canPersistConfig) {
+    if (canWriteConfigNow) {
       updateConfig('smartChatEnabled', smartChatEnabled)
     }
-  }, [smartChatEnabled, canPersistConfig, updateConfig])
+  }, [smartChatEnabled, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    if (canPersistConfig) {
+    if (canWriteConfigNow) {
       updateConfig('chatVolume', Number.isFinite(volume) ? volume : 0.8)
     }
-  }, [volume, canPersistConfig, updateConfig])
+  }, [volume, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    if (canPersistConfig) {
+    if (canWriteConfigNow) {
       const current = (config.highlightedUsers && typeof config.highlightedUsers === 'object' && !Array.isArray(config.highlightedUsers))
         ? config.highlightedUsers
         : {}
@@ -538,30 +547,30 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         updateConfig('highlightedUsers', highlightedUsers)
       }
     }
-  }, [highlightedUsers, config.highlightedUsers, canPersistConfig, updateConfig])
+  }, [highlightedUsers, config.highlightedUsers, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    if (canPersistConfig) {
+    if (canWriteConfigNow) {
       updateConfig('highlightSelectedColor', selectedColor)
     }
-  }, [selectedColor, canPersistConfig, updateConfig])
+  }, [selectedColor, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    if (canPersistConfig) {
+    if (canWriteConfigNow) {
       updateConfig('mobilePreviewEnabled', mobilePreviewEnabled)
     }
-  }, [mobilePreviewEnabled, canPersistConfig, updateConfig])
+  }, [mobilePreviewEnabled, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    if (canPersistConfig) {
+    if (canWriteConfigNow) {
       updateConfig('mobilePreviewMuted', mobilePreviewMuted)
     }
-  }, [mobilePreviewMuted, canPersistConfig, updateConfig])
+  }, [mobilePreviewMuted, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    if (canPersistConfig) {
+    if (canWriteConfigNow) {
       const current = normalizeHighlightRules(config.highlightRules)
       if (!deepEqual(current, highlightRules)) {
         updateConfig('highlightRules', highlightRules)
       }
     }
-  }, [highlightRules, config.highlightRules, canPersistConfig, updateConfig])
+  }, [highlightRules, config.highlightRules, canWriteConfigNow, updateConfig])
   useEffect(() => {
     setSessionModerationList(normalizeModerationList(config.sessionModerationList))
   }, [config.sessionModerationList])
@@ -594,9 +603,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   useEffect(() => {
     if (isFreePlan && smartChatEnabled) {
       setSmartChatEnabled(false)
-      if (canPersistConfig) updateConfig('smartChatEnabled', false)
+      if (canWriteConfigNow) updateConfig('smartChatEnabled', false)
     }
-  }, [isFreePlan, smartChatEnabled, canPersistConfig, updateConfig])
+  }, [isFreePlan, smartChatEnabled, canWriteConfigNow, updateConfig])
   useEffect(() => {
     setMobilePreviewEnabled(config.mobilePreviewEnabled || false)
   }, [config.mobilePreviewEnabled])
@@ -620,10 +629,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     }
   }, [config.lastTiktokUser, isConnected, tiktokUser])
   useEffect(() => {
-    if (!canPersistConfig) return
+    if (!canWriteConfigNow) return
     const normalized = normalizeTikTokUsername(tiktokUser)
     updateConfig('lastTiktokUser', normalized || String(tiktokUser || '').trim())
-  }, [tiktokUser, canPersistConfig, updateConfig])
+  }, [tiktokUser, canWriteConfigNow, updateConfig])
   const isPausedRef = useRef(false)
   const isPttSuppressedRef = useRef(false)
   const isInteractionSuppressedRef = useRef(false)
