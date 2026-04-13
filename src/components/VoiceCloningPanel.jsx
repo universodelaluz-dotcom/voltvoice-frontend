@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Sparkles, Edit2, Bot, Lock } from 'lucide-react'
+import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Edit2, Bot, Lock } from 'lucide-react'
 import AIRoleplayWorkshop from './AIRoleplayWorkshop'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
@@ -23,20 +23,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   const [error, setError] = useState(null)
   const [userVoices, setUserVoices] = useState([])
   const [loadingVoices, setLoadingVoices] = useState(true)
-
-  // Generate section
-  const [activeTab, setActiveTab] = useState('clone') // 'clone' or 'generate'
-  const [voiceDescription, setVoiceDescription] = useState('')
-  const [voiceType, setVoiceType] = useState('Narrator')
-  const [scriptMode, setScriptMode] = useState('auto')
-  const [voiceScript, setVoiceScript] = useState('')
-  const [generatingVoice, setGeneratingVoice] = useState(false)
-
-  // Modal de preview después de generar
-  const [showPreviewModal, setShowPreviewModal] = useState(false)
-  const [previewVoice, setPreviewVoice] = useState(null)
-  const [editingName, setEditingName] = useState('')
-  const [savingName, setSavingName] = useState(false)
+  const [activeTab, setActiveTab] = useState('clone')
 
   // Modal de renombrar voz existente
   const [editingVoiceId, setEditingVoiceId] = useState(null)
@@ -163,50 +150,6 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     }
   }
 
-  const handleSaveVoiceName = async () => {
-    if (!editingName.trim()) {
-      setError('El nombre de la voz no puede estar vacío')
-      return
-    }
-
-    setSavingName(true)
-    try {
-      const token = localStorage.getItem('sv-token')
-      const res = await fetch(`${API_URL}/api/settings/voices/${previewVoice.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ voiceName: editingName.trim() })
-      })
-
-      if (res.ok) {
-        setMessage(`Voz renombrada a "${editingName}"`)
-        setShowPreviewModal(false)
-        setPreviewVoice(null)
-        loadUserVoices()
-        // Notificar a otros componentes que se guardó una voz
-        window.dispatchEvent(new CustomEvent('voice-added'))
-        setTimeout(() => setMessage(null), 3000)
-      } else {
-        const data = await res.json()
-        setError(data.error || 'Error al renombrar la voz')
-      }
-    } catch (err) {
-      setError(`Error: ${err.message}`)
-    } finally {
-      setSavingName(false)
-    }
-  }
-
-  const handleCloseModal = () => {
-    setShowPreviewModal(false)
-    setPreviewVoice(null)
-    setEditingName('')
-    loadUserVoices() // Recargar igual aunque no haya renombrado
-  }
-
   const handleTestVoice = async () => {
     if (testingVoiceRef.current) return
 
@@ -294,71 +237,6 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     }
   }
 
-  const handleGenerateVoice = async (e) => {
-    e.preventDefault()
-
-    if (!voiceDescription.trim()) {
-      setError('Describe cómo deseas que suene la voz')
-      return
-    }
-
-    if (scriptMode === 'custom' && !voiceScript.trim()) {
-      setError('Escribe el script para la voz')
-      return
-    }
-
-    const token = localStorage.getItem('sv-token')
-    if (!token) {
-      setError('Debes iniciar sesión')
-      return
-    }
-
-    setGeneratingVoice(true)
-    setMessage(null)
-    setError(null)
-
-    try {
-      const response = await fetch(`${API_URL}/api/settings/voices/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          description: voiceDescription.trim(),
-          voiceType: voiceType,
-          language: voiceLanguage,
-          scriptMode: scriptMode,
-          script: scriptMode === 'custom' ? voiceScript.trim() : undefined
-        })
-      })
-
-      const data = await response.json()
-
-      console.log('[VoiceGenerate] Response:', { ok: response.ok, data })
-
-      if (response.ok && data.success) {
-        // Mostrar modal de preview con reproductor y opción de renombrar
-        console.log('[VoiceGenerate] ✓ Voz generada, mostrando modal')
-        setPreviewVoice(data.voice)
-        setEditingName(data.voice.voice_name || data.voice.defaultName)
-        setShowPreviewModal(true)
-        setVoiceDescription('')
-        setVoiceScript('')
-        setScriptMode('auto')
-        setMessage(null)
-        setError(null)
-      } else {
-        console.error('[VoiceGenerate] ✗ Error:', data)
-        setError(data.error || data.details || 'Error al generar la voz')
-      }
-    } catch (err) {
-      setError(`Error: ${err.message}`)
-    } finally {
-      setGeneratingVoice(false)
-    }
-  }
-
   const handleCloneVoice = async (e) => {
     e.preventDefault()
 
@@ -432,7 +310,6 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
   // Filtros por tipo de voz
   const clonedVoices = userVoices.filter(v => v.provider === 'inworld' || v.provider === 'inworld-cloned')
-  const generatedVoices = userVoices.filter(v => v.provider === 'inworld-generated')
 
   // Renderiza la sección "Mis Voces Creadas" filtrada
   const renderVoiceList = (voices) => (
@@ -577,21 +454,6 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           Clonar Voz
         </button>
         <button
-          onClick={() => setActiveTab('generate')}
-          className={`flex-1 px-6 py-3 rounded-md font-semibold transition-all ${
-            activeTab === 'generate'
-              ? darkMode
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg'
-                : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
-              : darkMode
-                ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
-                : 'text-gray-700 hover:text-gray-900 hover:bg-white'
-          }`}
-        >
-          <Sparkles className="inline w-4 h-4 mr-2" />
-          Generar Voz Personalizada
-        </button>
-        <button
           onClick={() => setActiveTab('ai-assistant')}
           className={`flex-1 px-6 py-3 rounded-md font-semibold transition-all ${
             activeTab === 'ai-assistant'
@@ -733,267 +595,6 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         </>
       )}
 
-      {/* Generar Voz Personalizada */}
-      {activeTab === 'generate' && (
-        <>
-        <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
-          <div className="flex items-center gap-3 mb-4">
-            <Sparkles className="w-6 h-6 text-cyan-400" />
-            <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Generar Voz Personalizada</h2>
-          </div>
-
-          <form onSubmit={handleGenerateVoice} className="space-y-4">
-            {/* Voice Description */}
-            <div>
-              <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
-                Descripción de la voz
-              </label>
-              <textarea
-                value={voiceDescription}
-                onChange={(e) => setVoiceDescription(e.target.value)}
-                placeholder="Ej: Un hombre de mediana edad, acento español neutral, tono profesional y amigable"
-                className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 min-h-28" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 min-h-28"}
-                disabled={generatingVoice}
-              />
-              <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                Incluye edad, género, acento, tono y personalidad
-              </p>
-            </div>
-
-            {/* Voice Type */}
-            <div>
-              <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
-                Tipo de voz
-              </label>
-              <select
-                value={voiceType}
-                onChange={(e) => setVoiceType(e.target.value)}
-                className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
-                disabled={generatingVoice}
-              >
-                <option value="Narrator">Narrador</option>
-                <option value="Support Agent">Agente de Soporte</option>
-                <option value="Companion">Compañero</option>
-                <option value="Meditation Instructor">Instructor de Meditación</option>
-              </select>
-            </div>
-
-            {/* Language */}
-            <div>
-              <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
-                Idioma
-              </label>
-              <select
-                value={voiceLanguage}
-                onChange={(e) => setVoiceLanguage(e.target.value)}
-                className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
-                disabled={generatingVoice}
-              >
-                <option value="es-ES">Español (España)</option>
-                <option value="es-MX">Español (México)</option>
-                <option value="es-AR">Español (Argentina)</option>
-                <option value="en-US">English (USA)</option>
-                <option value="en-GB">English (UK)</option>
-                <option value="pt-BR">Português (Brasil)</option>
-              </select>
-            </div>
-
-            {/* Preview Audio Mode */}
-            <div>
-              <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
-                Texto para el Preview de Voz
-              </label>
-              <p className={`text-xs mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                Este es el texto que Inworld sintetizará para que escuches cómo suena la voz generada
-              </p>
-              <div className="flex gap-2 mb-2">
-                <button
-                  type="button"
-                  onClick={() => setScriptMode('auto')}
-                  className={`px-3 py-1.5 rounded text-sm font-medium transition ${
-                    scriptMode === 'auto'
-                      ? 'bg-cyan-500 text-white'
-                      : darkMode
-                        ? 'bg-gray-800 text-gray-300'
-                        : 'bg-gray-200 text-gray-700'
-                  }`}
-                  disabled={generatingVoice}
-                >
-                  Usar descripción
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setScriptMode('custom')}
-                  className={`px-3 py-1.5 rounded text-sm font-medium transition ${
-                    scriptMode === 'custom'
-                      ? 'bg-cyan-500 text-white'
-                      : darkMode
-                        ? 'bg-gray-800 text-gray-300'
-                        : 'bg-gray-200 text-gray-700'
-                  }`}
-                  disabled={generatingVoice}
-                >
-                  Personalizado
-                </button>
-              </div>
-
-              {scriptMode === 'custom' && (
-                <textarea
-                  value={voiceScript}
-                  onChange={(e) => setVoiceScript(e.target.value.substring(0, 200))}
-                  placeholder="Escribe el texto que quieres escuchar en el preview (máx 200 caracteres)"
-                  className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 min-h-24" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 min-h-24"}
-                  disabled={generatingVoice}
-                  maxLength="200"
-                />
-              )}
-              <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                {scriptMode === 'custom' ? `${voiceScript.length}/200 caracteres` : 'Se usará tu descripción de voz como texto para sintetizar'}
-              </p>
-            </div>
-
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={generatingVoice || !voiceDescription.trim()}
-              className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
-            >
-              {generatingVoice ? (
-                <>
-                  <Loader className="w-5 h-5 animate-spin" />
-                  Generando voz con Inworld...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  Generar voz personalizada
-                </>
-              )}
-            </button>
-
-            {/* Messages */}
-            {message && (
-              <div className="p-4 bg-gradient-to-r from-green-500/30 to-emerald-500/30 border-2 border-green-400 rounded-lg flex gap-3">
-                <CheckCircle className="w-5 h-5 text-green-300 flex-shrink-0 mt-0.5" />
-                <p className="text-green-50 font-semibold">{message}</p>
-              </div>
-            )}
-
-            {error && (
-              <div className="p-4 bg-gradient-to-r from-red-500/30 to-rose-500/30 border-2 border-red-400 rounded-lg flex gap-3">
-                <AlertCircle className="w-5 h-5 text-red-300 flex-shrink-0 mt-0.5" />
-                <p className="text-red-50 font-semibold">{error}</p>
-              </div>
-            )}
-          </form>
-        </div>
-
-        {/* Probar Voz — solo generadas */}
-        {renderTestVoice(generatedVoices)}
-
-        {/* Mis Voces Creadas — solo generadas */}
-        {renderVoiceList(generatedVoices)}
-        </>
-      )}
-
-      {/* Modal de Preview de Voz Generada */}
-      {showPreviewModal && previewVoice && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className={`${darkMode ? 'bg-[#1a1a2e]' : 'bg-white'} rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4`}>
-            {/* Header */}
-            <div className="flex items-center gap-3">
-              <Sparkles className="w-6 h-6 text-cyan-400" />
-              <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                Voz Generada
-              </h3>
-            </div>
-
-            {/* Reproductor */}
-            {previewVoice.previewAudio && (
-              <div className={`${darkMode ? 'bg-gray-800/60 border border-gray-700/50' : 'bg-gray-50 border border-gray-200'} rounded-lg p-4`}>
-                <p className={`text-sm mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  📢 Escucha tu voz generada:
-                </p>
-                <audio
-                  controls
-                  className="w-full"
-                  style={{
-                    accentColor: '#06b6d4'
-                  }}
-                >
-                  <source src={previewVoice.previewAudio} type="audio/mpeg" />
-                  Tu navegador no soporta el reproductor de audio
-                </audio>
-              </div>
-            )}
-
-            {/* Nombre editable */}
-            <div>
-              <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-cyan-300' : 'text-indigo-600'}`}>
-                Nombre de la voz
-              </label>
-              <input
-                type="text"
-                value={editingName}
-                onChange={(e) => setEditingName(e.target.value)}
-                className={`w-full px-3 py-2 rounded-lg transition ${
-                  darkMode
-                    ? 'bg-[#0f0f23] border border-cyan-400/30 text-white focus:outline-none focus:border-cyan-400'
-                    : 'bg-gray-50 border border-indigo-300 text-gray-900 focus:outline-none focus:border-indigo-500'
-                }`}
-                disabled={savingName}
-              />
-            </div>
-
-            {/* Detalles */}
-            <div className={`text-xs space-y-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-              <p>🎯 Proveedor: <span className="text-cyan-400">{previewVoice.provider}</span></p>
-              <p>🆔 ID: <span className="font-mono text-cyan-400">{previewVoice.voiceId.substring(0, 20)}...</span></p>
-            </div>
-
-            {/* Acciones */}
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={handleCloseModal}
-                disabled={savingName}
-                className={`flex-1 px-4 py-2 rounded-lg font-semibold transition ${
-                  darkMode
-                    ? 'bg-gray-800 hover:bg-gray-700 text-gray-300'
-                    : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
-                }`}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveVoiceName}
-                disabled={savingName || !editingName.trim()}
-                className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-2 rounded-lg transition flex items-center justify-center gap-2"
-              >
-                {savingName ? (
-                  <>
-                    <Loader className="w-4 h-4 animate-spin" />
-                    Guardando...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4" />
-                    Guardar
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Error en modal */}
-            {error && (
-              <div className="p-3 bg-red-500/20 border border-red-400/50 rounded-lg flex gap-2">
-                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                <p className="text-red-100 text-sm">{error}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Asistente IA — Primero Taller, luego Probar Voz */}
       {activeTab === 'ai-assistant' && (
         <div className="space-y-6">
@@ -1040,3 +641,5 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     </div>
   )
 }
+
+
