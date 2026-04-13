@@ -490,7 +490,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
           </div>
         )}
         {/* TikTok Live Section */}
-          <TikTokLivePanel config={config} updateConfig={updateConfig} configReady={configReady} user={user} />
+          <TikTokLivePanel config={config} updateConfig={updateConfig} configReady={configReady} user={user} darkModeOverride={darkMode} />
 
         {/* Botones principales: Configuracion, Taller de Voces, Estadisticas */}
         <div className="grid grid-cols-3 gap-4 mb-6">

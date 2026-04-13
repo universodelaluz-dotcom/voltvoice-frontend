@@ -262,6 +262,14 @@ const normalizeHighlightRules = (value) => {
   return out
 }
 
+const deepEqual = (a, b) => {
+  try {
+    return JSON.stringify(a) === JSON.stringify(b)
+  } catch {
+    return false
+  }
+}
+
 const normalizeModerationList = (value) => {
   if (!Array.isArray(value)) return []
   const seen = new Set()
@@ -426,15 +434,23 @@ const apiNicks = {
   }
 }
 
-export default function TikTokLivePanel({ config = {}, updateConfig, configReady = true, user = null }) {
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
+export default function TikTokLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride }) {
+  const [darkMode, setDarkMode] = useState(() =>
+    typeof darkModeOverride === 'boolean'
+      ? darkModeOverride
+      : localStorage.getItem('voltvoice-theme') !== 'light'
+  )
 
   useEffect(() => {
+    if (typeof darkModeOverride === 'boolean') {
+      setDarkMode(darkModeOverride)
+      return
+    }
     const sync = () => setDarkMode(localStorage.getItem('voltvoice-theme') !== 'light')
     sync()
-    const interval = setInterval(sync, 500)
-    return () => clearInterval(interval)
-  }, [])
+    window.addEventListener('storage', sync)
+    return () => window.removeEventListener('storage', sync)
+  }, [darkModeOverride])
 
   const [tiktokUser, setTiktokUser] = useState(config.lastTiktokUser || '')
   const [connectedTikTokUser, setConnectedTikTokUser] = useState(() => normalizeTikTokUsername(config.lastTiktokUser || ''))
@@ -515,9 +531,14 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   }, [volume, canPersistConfig, updateConfig])
   useEffect(() => {
     if (canPersistConfig) {
-      updateConfig('highlightedUsers', highlightedUsers)
+      const current = (config.highlightedUsers && typeof config.highlightedUsers === 'object' && !Array.isArray(config.highlightedUsers))
+        ? config.highlightedUsers
+        : {}
+      if (!deepEqual(current, highlightedUsers)) {
+        updateConfig('highlightedUsers', highlightedUsers)
+      }
     }
-  }, [highlightedUsers, canPersistConfig, updateConfig])
+  }, [highlightedUsers, config.highlightedUsers, canPersistConfig, updateConfig])
   useEffect(() => {
     if (canPersistConfig) {
       updateConfig('highlightSelectedColor', selectedColor)
@@ -535,14 +556,18 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   }, [mobilePreviewMuted, canPersistConfig, updateConfig])
   useEffect(() => {
     if (canPersistConfig) {
-      updateConfig('highlightRules', highlightRules)
+      const current = normalizeHighlightRules(config.highlightRules)
+      if (!deepEqual(current, highlightRules)) {
+        updateConfig('highlightRules', highlightRules)
+      }
     }
-  }, [highlightRules, canPersistConfig, updateConfig])
+  }, [highlightRules, config.highlightRules, canPersistConfig, updateConfig])
   useEffect(() => {
     setSessionModerationList(normalizeModerationList(config.sessionModerationList))
   }, [config.sessionModerationList])
   useEffect(() => {
-    setHighlightRules(normalizeHighlightRules(config.highlightRules))
+    const nextRules = normalizeHighlightRules(config.highlightRules)
+    setHighlightRules((prev) => (deepEqual(prev, nextRules) ? prev : nextRules))
   }, [config.highlightRules])
   useEffect(() => {
     setChatFontSize(config.chatFontSize || 14)
@@ -558,10 +583,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   useEffect(() => {
     const raw = config.highlightedUsers
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-      setHighlightedUsers({})
+      setHighlightedUsers((prev) => (Object.keys(prev || {}).length === 0 ? prev : {}))
       return
     }
-    setHighlightedUsers(raw)
+    setHighlightedUsers((prev) => (deepEqual(prev, raw) ? prev : raw))
   }, [config.highlightedUsers])
   useEffect(() => {
     setSelectedColor(config.highlightSelectedColor || '#06b6d4')
@@ -589,10 +614,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   }, [config.chatMsgColor, config.chatMsgColorDark, config.chatMsgColorLight, darkMode])
   useEffect(() => {
     const savedLastUser = config.lastTiktokUser || ''
-    if (!isConnected && normalizeTikTokUsername(savedLastUser) !== normalizeTikTokUsername(tiktokUser)) {
+    const currentInput = String(tiktokUser || '').trim()
+    if (!isConnected && !currentInput && savedLastUser) {
       setTiktokUser(savedLastUser)
     }
-  }, [config.lastTiktokUser, isConnected])
+  }, [config.lastTiktokUser, isConnected, tiktokUser])
   useEffect(() => {
     if (!canPersistConfig) return
     const normalized = normalizeTikTokUsername(tiktokUser)
