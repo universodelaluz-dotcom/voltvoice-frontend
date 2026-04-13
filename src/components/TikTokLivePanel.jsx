@@ -493,14 +493,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const [sessionSummary, setSessionSummary] = useState(null)
   const [highlightRules, setHighlightRules] = useState(() => normalizeHighlightRules(config.highlightRules))
   const canPersistConfig = Boolean(updateConfig) && Boolean(configReady)
-  const suppressConfigWritesUntilRef = useRef(0)
-  const canWriteConfigNow = canPersistConfig && Date.now() >= suppressConfigWritesUntilRef.current
+  const [canWriteConfig, setCanWriteConfig] = useState(false)
+  const canWriteConfigNow = canPersistConfig && canWriteConfig
 
   useEffect(() => {
-    if (!configReady) return
-    // Evita bucles al aplicar config remota/local después de reconectar o hidratar sesión.
-    suppressConfigWritesUntilRef.current = Date.now() + 300
-  }, [configReady, config.configUpdatedAt])
+    if (!configReady) {
+      setCanWriteConfig(false)
+      return
+    }
+    // Bloqueo breve únicamente al hidratar, luego habilitar guardado continuo.
+    setCanWriteConfig(false)
+    const id = setTimeout(() => setCanWriteConfig(true), 600)
+    return () => clearTimeout(id)
+  }, [configReady, user?.id])
 
   const syncSessionModerationList = (updater) => {
     setSessionModerationList((prev) => {
