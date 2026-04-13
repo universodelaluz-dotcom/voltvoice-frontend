@@ -14,7 +14,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
   const toggleTheme = () => {
     const newMode = darkMode ? 'light' : 'dark'
-    localStorage.setItem('STREAM VOICER-theme', newMode)
+    localStorage.setItem('voltvoice-theme', newMode)
     document.documentElement.classList.toggle('dark', newMode === 'dark')
     setDarkMode(newMode === 'dark')
   }

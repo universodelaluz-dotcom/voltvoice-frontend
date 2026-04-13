@@ -447,13 +447,19 @@ export function App() {
         const cachedConfigRaw = loadCachedConfig(userKey) || {}
         const remoteConfigRaw = normalizeServerConfigPayload(data.config)
         const hasRemoteConfig = Object.keys(remoteConfigRaw).length > 0
+        // Prioriza cache local para no perder el ultimo estado del usuario
+        // cuando el backend aun no refleja el guardado mas reciente.
         const mergedConfig = normalizeUserConfig(
           hasRemoteConfig
-            ? { ...cachedConfigRaw, ...remoteConfigRaw }
+            ? { ...remoteConfigRaw, ...cachedConfigRaw }
             : cachedConfigRaw
         )
         setConfig(mergedConfig)
         setDarkMode(mergedConfig.themeMode !== 'light')
+        if (hasRemoteConfig && Object.keys(cachedConfigRaw).length > 0) {
+          // Backfill asíncrono: sincroniza servidor con el estado local efectivo.
+          persistConfigNow(token, mergedConfig).catch(() => {})
+        }
         console.log('[Config] Configuracion del usuario cargada')
       }
     } catch (err) {
@@ -661,7 +667,7 @@ export function App() {
 
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('STREAM VOICER-theme') !== 'light'
+      return localStorage.getItem('voltvoice-theme') !== 'light'
     }
     return true
   })
@@ -669,10 +675,10 @@ export function App() {
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark')
-      localStorage.setItem('STREAM VOICER-theme', 'dark')
+      localStorage.setItem('voltvoice-theme', 'dark')
     } else {
       document.documentElement.classList.remove('dark')
-      localStorage.setItem('STREAM VOICER-theme', 'light')
+      localStorage.setItem('voltvoice-theme', 'light')
     }
   }, [darkMode])
 
