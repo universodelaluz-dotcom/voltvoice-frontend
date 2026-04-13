@@ -867,6 +867,107 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 </div>
               </div>
 
+              {/* Uso por horario y día de la semana */}
+              {(stats.hourlyUsage || stats.weekdayUsage) && (() => {
+                const hours   = stats.hourlyUsage  || []
+                const weekdays = stats.weekdayUsage || []
+                const maxHToken = Math.max(...hours.map(h => h.tokens), 1)
+                const maxWToken = Math.max(...weekdays.map(d => d.tokens), 1)
+                const DOW_NAMES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
+                const peakHour = hours.reduce((p, c) => c.tokens > p.tokens ? c : p, hours[0] || { hour: 0, tokens: 0 })
+                const peakDay  = weekdays.reduce((p, c) => c.tokens > p.tokens ? c : p, weekdays[0] || { dow: 0, tokens: 0 })
+
+                // heat color based on intensity
+                const heatColor = (val, max) => {
+                  const pct = max > 0 ? val / max : 0
+                  if (pct === 0) return darkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'
+                  const r = Math.round(34 + pct * (250 - 34))
+                  const g = Math.round(211 - pct * (211 - 100))
+                  const b = Math.round(238 - pct * (238 - 20))
+                  return `rgba(${r},${g},${b},${0.3 + pct * 0.7})`
+                }
+
+                return (
+                  <div className={card}>
+                    <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+                      <h3 className="font-bold">Uso por Horario — {dashboardYear}</h3>
+                      <div className="flex gap-4 text-xs">
+                        <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
+                          Pico diario: <span className="text-cyan-400 font-bold">{peakHour.hour}:00h</span>
+                        </span>
+                        <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
+                          Pico semanal: <span className="text-yellow-400 font-bold">{DOW_NAMES[peakDay.dow]}</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Gráfico de horas — 24 barras */}
+                    <p className={`text-xs mb-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Tokens por hora del día (hora México)</p>
+                    <div className="flex items-end gap-px h-24 mb-1">
+                      {hours.map((h) => {
+                        const pct = Math.max(2, (h.tokens / maxHToken) * 100)
+                        const isNight = h.hour < 6 || h.hour >= 22
+                        const isPeak  = h.hour === peakHour.hour
+                        return (
+                          <div key={h.hour} className="flex-1 h-full flex flex-col justify-end group relative cursor-default">
+                            <div
+                              className="w-full rounded-t-sm transition-all"
+                              style={{ height: `${pct}%`, backgroundColor: isPeak ? '#facc15' : isNight ? '#6366f1' : '#22d3ee', opacity: isPeak ? 1 : 0.7 }}
+                              title={`${h.hour}:00h — ${fmtCompact(h.tokens)} tokens · ${h.messages.toLocaleString()} msgs`}
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {/* etiquetas cada 3 horas */}
+                    <div className="flex mb-5">
+                      {hours.map((h) => (
+                        <div key={h.hour} className={`flex-1 text-center text-[8px] ${h.hour % 3 === 0 ? (darkMode ? 'text-gray-500' : 'text-gray-400') : 'text-transparent'}`}>
+                          {h.hour}h
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Gráfico de días de semana — 7 barras grandes */}
+                    <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Tokens por día de la semana</p>
+                    <div className="grid grid-cols-7 gap-2">
+                      {weekdays.map((d) => {
+                        const pct = maxWToken > 0 ? Math.round((d.tokens / maxWToken) * 100) : 0
+                        const isWeekend = d.dow === 0 || d.dow === 6
+                        const isPeakD   = d.dow === peakDay.dow
+                        const barColor  = isPeakD ? '#facc15' : isWeekend ? '#a78bfa' : '#22d3ee'
+                        return (
+                          <div key={d.dow} className="flex flex-col items-center gap-1">
+                            <span className={`text-[10px] font-bold ${isPeakD ? 'text-yellow-400' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              {fmtCompact(d.tokens)}
+                            </span>
+                            <div className={`w-full rounded-lg ${darkMode ? 'bg-white/5' : 'bg-gray-100'}`} style={{ height: 80 }}>
+                              <div
+                                className="w-full rounded-lg transition-all"
+                                style={{ height: `${Math.max(4, pct)}%`, backgroundColor: barColor, opacity: 0.85 }}
+                                title={`${DOW_NAMES[d.dow]}: ${fmtCompact(d.tokens)} tokens · ${d.messages.toLocaleString()} msgs`}
+                              />
+                            </div>
+                            <span className={`text-xs font-semibold ${isPeakD ? 'text-yellow-400' : isWeekend ? 'text-violet-400' : darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                              {DOW_NAMES[d.dow]}
+                            </span>
+                            <span className={`text-[10px] ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>{d.messages.toLocaleString()} msgs</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* Leyenda */}
+                    <div className={`flex gap-4 mt-4 text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-yellow-400 inline-block" /> Hora/día pico</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-cyan-400 inline-block" /> Días laborales</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-violet-400 inline-block" /> Fin de semana</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-indigo-400 inline-block" /> Noche (22h–6h)</span>
+                    </div>
+                  </div>
+                )
+              })()}
+
               {/* Suscriptores por plan */}
               <div className={card}>
                 <div className="flex items-center justify-between mb-4">
