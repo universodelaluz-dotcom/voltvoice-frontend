@@ -327,6 +327,9 @@ export function App() {
   const [user, setUser] = useState(null)
   const [authToken, setAuthToken] = useState(null)
   const [tokens, setTokens] = useState(100)
+  const isLocalDevBypass = import.meta.env.DEV && typeof window !== 'undefined' &&
+    ['localhost', '127.0.0.1'].includes(window.location.hostname)
+  const canOpenStudioWithoutAuth = Boolean(user) || isLocalDevBypass
 
   // Currency detection state
   const [exchangeRates, setExchangeRates] = useState(null)
@@ -641,11 +644,11 @@ export function App() {
     if (!plan) return
 
     if (plan.price === 0) {
-      setCurrentPage(user ? 'studio' : 'auth')
+      setCurrentPage(canOpenStudioWithoutAuth ? 'studio' : 'auth')
       return
     }
 
-    if (!user) {
+    if (!canOpenStudioWithoutAuth) {
       setCurrentPage('auth')
       return
     }
@@ -736,6 +739,12 @@ export function App() {
 
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    if (currentPage === 'auth' && canOpenStudioWithoutAuth) {
+      setCurrentPage('studio')
+    }
+  }, [currentPage, canOpenStudioWithoutAuth])
 
   // Auth Page
   if (currentPage === 'auth') {
@@ -961,7 +970,7 @@ export function App() {
           {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
         <button
-          onClick={() => user ? setCurrentPage('studio') : setCurrentPage('auth')}
+          onClick={() => canOpenStudioWithoutAuth ? setCurrentPage('studio') : setCurrentPage('auth')}
           className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all text-sm"
         >
           Studio
@@ -990,10 +999,10 @@ export function App() {
           </>
         ) : (
           <button
-            onClick={() => setCurrentPage('auth')}
+            onClick={() => canOpenStudioWithoutAuth ? setCurrentPage('studio') : setCurrentPage('auth')}
             className={"px-4 py-2 rounded-lg font-semibold text-sm transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-white border border-white/20" : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm")}
           >
-            Iniciar Sesión
+            {canOpenStudioWithoutAuth ? 'Entrar al Studio' : 'Iniciar Sesión'}
           </button>
         )}
       </div>
@@ -1398,14 +1407,14 @@ export function App() {
             </p>
             <div className="flex gap-4 justify-center">
               <button
-                onClick={() => user ? setCurrentPage('studio') : setCurrentPage('auth')}
+                onClick={() => canOpenStudioWithoutAuth ? setCurrentPage('studio') : setCurrentPage('auth')}
                 className={`px-8 py-4 rounded-lg font-bold text-lg transition-all inline-flex items-center gap-2 ${
                   darkMode
                     ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white hover:shadow-xl hover:shadow-cyan-400/50'
                     : 'bg-white text-slate-900 hover:bg-slate-100'
                 }`}
               >
-                {user ? 'Ir al Studio' : 'Comenzar Gratis'} <ChevronRight className="w-5 h-5" />
+                {canOpenStudioWithoutAuth ? 'Ir al Studio' : 'Comenzar Gratis'} <ChevronRight className="w-5 h-5" />
               </button>
               <button
                 onClick={() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' })}

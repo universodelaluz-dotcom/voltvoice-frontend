@@ -112,18 +112,25 @@ const isFeatureBlocked = (feature, userPlan) => {
 }
 
 // Componente wrapper para mostrar secciones bloqueadas
-function FeatureLockedOverlay({ darkMode, message = 'Función no disponible en tu plan' }) {
+function FeatureLockedOverlay({
+  darkMode,
+  message = 'Función no disponible en tu plan',
+  showIcon = false,
+  showMessage = false
+}) {
   return (
     <div className={`absolute inset-0 rounded-xl flex items-center justify-center pointer-events-none ${
       darkMode
         ? 'bg-gradient-to-br from-gray-900/80 to-gray-800/70'
         : 'bg-gradient-to-br from-gray-200/70 to-gray-100/60'
     }`}>
-      <div className="flex flex-col items-center gap-2 pointer-events-auto">
-        <Lock className={`w-5 h-5 ${darkMode ? 'text-gray-500' : 'text-gray-600'}`} />
-        <span className={`text-xs font-semibold text-center ${darkMode ? 'text-gray-400' : 'text-gray-700'}`}>
-          {message}
-        </span>
+      <div className={`flex flex-col items-center pointer-events-auto ${showMessage || showIcon ? 'gap-2' : 'gap-0'}`}>
+        {showIcon && <Lock className={`w-5 h-5 ${darkMode ? 'text-gray-500' : 'text-gray-600'}`} />}
+        {showMessage && (
+          <span className={`text-xs font-semibold text-center ${darkMode ? 'text-gray-400' : 'text-gray-700'}`}>
+            {message}
+          </span>
+        )}
       </div>
     </div>
   )
@@ -678,18 +685,17 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-            {/* LEFT COLUMN */}
-            <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-cyan-500/20' : 'bg-white border-slate-200'}`}>
-              <SectionHeader title="Lectura" tone="lectura" darkMode={darkMode} />
+            {/* LEFT SIDE: Lectura + Notificaciones */}
+            <div className="space-y-4">
+              {/* LEFT COLUMN */}
+              <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-cyan-500/20' : 'bg-white border-slate-200'}`}>
+                <SectionHeader title="Lectura" tone="lectura" darkMode={darkMode} />
 
               {/* AREA LECTURA - BLOQUEADA EN FREE (solo 3 elementos libres) */}
               {userPlan === 'free' ? (
                 <>
-                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
-                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-                  }`}>
-                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
-                    <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => {}} darkMode={darkMode} hint="Bloqueado en plan FREE" />
+                  <div className="mb-2 opacity-50 pointer-events-none">
+                    <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => {}} darkMode={darkMode} />
                   </div>
                 </>
               ) : (
@@ -701,38 +707,18 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
 
               {/* BLOQUEADO EN FREE */}
               {userPlan === 'free' ? (
-                <>
-                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
-                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-                  }`}>
-                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
-                    <CheckOption label="Leer solo preguntas" checked={config.onlyQuestions} onChange={() => {}} darkMode={darkMode} hint="Bloqueado en plan FREE" />
+                <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
+                  darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
+                }`}>
+                  <FeatureLockedOverlay darkMode={darkMode} message="Opciones avanzadas de lectura disponibles en START+" showIcon showMessage />
+                  <div>
+                    <CheckOption label="Leer solo preguntas" checked={config.onlyQuestions} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label="Leer solo donadores" checked={config.onlyDonors} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label="Leer solo suscriptores" checked={config.onlySubscribers} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label="Filtro de miembros de comunidad" checked={config.onlyCommunityMembers} onChange={() => {}} darkMode={darkMode} />
                   </div>
-                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
-                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-                  }`}>
-                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
-                    <CheckOption label="Leer solo donadores" checked={config.onlyDonors} onChange={() => {}} darkMode={darkMode} hint="Bloqueado en plan FREE" />
-                  </div>
-                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
-                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-                  }`}>
-                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
-                    <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => {}} darkMode={darkMode} hint="Bloqueado en plan FREE" />
-                  </div>
-                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
-                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-                  }`}>
-                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
-                    <CheckOption label="Leer solo suscriptores" checked={config.onlySubscribers} onChange={() => {}} darkMode={darkMode} hint="Bloqueado en plan FREE" />
-                  </div>
-                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
-                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-                  }`}>
-                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
-                    <CheckOption label="Filtro de miembros de comunidad" checked={config.onlyCommunityMembers} onChange={() => {}} darkMode={darkMode} hint="Bloqueado en plan FREE" />
-                  </div>
-                </>
+                </div>
               ) : (
                 <>
                   <CheckOption label="Leer solo preguntas" checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} hint="Solo lee mensajes que contengan signos de interrogación" />
@@ -743,20 +729,12 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 </>
               )}
 
-              {/* SECCIÓN VOCES - COMPLETAMENTE BLOQUEADA EN FREE */}
-              {userPlan === 'free' ? (
-                <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-40 pointer-events-none ${
-                  darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-                }`}>
-                  <FeatureLockedOverlay darkMode={darkMode} message="Area de Voces completamente bloqueada en plan FREE" />
-                  <SectionHeader title="Voces" tone="voces" darkMode={darkMode} />
-                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Todas las opciones de voces están bloqueadas en tu plan actual.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <SectionHeader title="Voces" tone="voces" darkMode={darkMode} />
+              {/* SECCIÓN VOCES */}
+              <div className={`relative ${userPlan === 'free' ? 'opacity-55 pointer-events-none' : ''}`}>
+                {userPlan === 'free' && (
+                  <FeatureLockedOverlay darkMode={darkMode} message="Voces disponibles en START+" showIcon showMessage />
+                )}
+                <SectionHeader title="Voces" tone="voces" darkMode={darkMode} />
               {/* Voz general */}
               <div className={`relative mb-2 rounded-xl px-4 py-3 border ${
                 darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
@@ -1004,8 +982,32 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   )}
                 </div>
               </div>
-                </>
-              )}
+              </div>
+              </div>
+
+              {/* LEFT COLUMN - BLOQUE INDEPENDIENTE DE NOTIFICACIONES */}
+              <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-rose-400/25' : 'bg-white border-slate-200'}`}>
+                <div className={`relative ${isFeatureBlocked('notifications', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                  {isFeatureBlocked('notifications', userPlan) && (
+                    <FeatureLockedOverlay
+                      darkMode={darkMode}
+                      message="Notificaciones disponibles en CREATOR+"
+                      showIcon
+                      showMessage
+                    />
+                  )}
+                  <SectionHeader title="Notificaciones en Vivo" tone="notificaciones" darkMode={darkMode} />
+
+                  <CheckWithInput label="Anunciar nuevos seguidores a cada (seg)" checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} hint="Anuncia en voz cuando alguien te sigue" />
+                  <CheckWithInput label="Anunciar regalos a cada (seg)" checked={config.announceGifts} onToggle={() => updateConfig('announceGifts', !config.announceGifts)} value={config.giftCooldown} onValueChange={(v) => updateConfig('giftCooldown', v)} placeholder="5" darkMode={darkMode} hint="Anuncia en voz cuando recibes un regalo" />
+                  <CheckWithInput label="Anunciar conteo de viewers a cada (seg)" checked={config.announceViewers} onToggle={() => updateConfig('announceViewers', !config.announceViewers)} value={config.viewerCooldown} onValueChange={(v) => updateConfig('viewerCooldown', v)} placeholder="120" darkMode={darkMode} hint="Dice cuántos viewers hay en el live periódicamente" />
+                  <CheckWithInput label="Anunciar likes a cada (seg)" checked={config.announceLikes} onToggle={() => updateConfig('announceLikes', !config.announceLikes)} value={config.likeCooldown} onValueChange={(v) => updateConfig('likeCooldown', v)} placeholder="60" darkMode={darkMode} hint="Anuncia la cantidad de likes acumulados" />
+                  <CheckWithInput label="Anunciar shares a cada (seg)" checked={config.announceShares} onToggle={() => updateConfig('announceShares', !config.announceShares)} value={config.shareCooldown} onValueChange={(v) => updateConfig('shareCooldown', v)} placeholder="15" darkMode={darkMode} hint="Anuncia cuando alguien comparte tu live" />
+                  <CheckOption label="Anunciar batallas" checked={config.announceBattles} onChange={() => updateConfig('announceBattles', !config.announceBattles)} darkMode={darkMode} hint="Anuncia inicio y resultado de batallas en vivo" />
+                  <CheckOption label="Anunciar encuestas" checked={config.announcePolls} onChange={() => updateConfig('announcePolls', !config.announcePolls)} darkMode={darkMode} hint="Anuncia cuando se crea una encuesta en el live" />
+                  <CheckOption label="Anunciar metas/goals" checked={config.announceGoals} onChange={() => updateConfig('announceGoals', !config.announceGoals)} darkMode={darkMode} hint="Anuncia progreso de metas del live" />
+                </div>
+              </div>
             </div>
 
             {/* RIGHT COLUMN */}
@@ -1014,56 +1016,20 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
 
               {userPlan === 'free' ? (
                 <>
-                  {/* FILTROS BLOQUEADOS EN FREE - SOLO MOSTRAR LOS 3 LIBRES */}
-                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
-                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-                  }`}>
-                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
-                    <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => {}} darkMode={darkMode} hint="Bloqueado en plan FREE" />
-                  </div>
-                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
-                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-                  }`}>
-                    <FeatureLockedOverlay darkMode={darkMode} message="Bloqueado en plan FREE" />
-                    <CheckOption
-                      label="Filtro de palabrotas"
-                      checked={config.profanityFilterEnabled}
-                      onChange={() => {}}
-                      darkMode={darkMode}
-                      hint="Bloqueado en plan FREE"
-                    />
-                  </div>
-                  {/* ESTOS TRES FILTROS SIEMPRE LIBRES EN FREE */}
                   <CheckOption label="Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint="Limpia el nombre del usuario dejando solo letras" />
                   <CheckOption label="No leer emojis en chat" checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} hint="Elimina emojis del mensaje antes de leerlo en voz" />
-                  {/* FILTROS AVANZADOS BLOQUEADOS EN FREE */}
                   <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
                     darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
                   }`}>
-                    <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />
-                    <div className="mb-2 font-semibold text-sm">Ignorar emojis excesivos del chat</div>
-                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Bloqueado en plan FREE</p>
-                  </div>
-                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
-                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-                  }`}>
-                    <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />
-                    <div className="mb-2 font-semibold text-sm">Ignorar mensajes muy cortos</div>
-                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Bloqueado en plan FREE</p>
-                  </div>
-                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
-                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-                  }`}>
-                    <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />
-                    <div className="mb-2 font-semibold text-sm">Límite de caracteres en todos los mensajes</div>
-                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Bloqueado en plan FREE</p>
-                  </div>
-                  <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
-                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-                  }`}>
-                    <FeatureLockedOverlay darkMode={darkMode} message="Disponible en START+" />
-                    <div className="mb-2 font-semibold text-sm">Límite de mensajes en espera</div>
-                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Bloqueado en plan FREE</p>
+                    <FeatureLockedOverlay darkMode={darkMode} message="Filtros avanzados disponibles en START+" showIcon showMessage />
+                    <div>
+                      <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => {}} darkMode={darkMode} />
+                      <CheckOption label="Filtro de palabrotas" checked={config.profanityFilterEnabled} onChange={() => {}} darkMode={darkMode} />
+                      <CheckWithInput label="Ignorar emojis excesivos del chat a cantidad máxima permitida:" checked={config.ignoreExcessiveEmojis} onToggle={() => {}} value={config.maxEmojisAllowed} onValueChange={() => {}} placeholder="3" darkMode={darkMode} />
+                      <CheckWithInput label="Ignorar mensajes muy cortos (mínimo de caracteres)" checked={config.minMessageLengthEnabled} onToggle={() => {}} value={config.minMessageLength} onValueChange={() => {}} placeholder="3" darkMode={darkMode} />
+                      <CheckWithInput label="Límite de caracteres en todos los mensajes (máximo)" checked={config.donorCharLimitEnabled} onToggle={() => {}} value={config.donorCharLimit} onValueChange={() => {}} placeholder="200" darkMode={darkMode} />
+                      <CheckWithInput label="Límite de mensajes en espera (descarta nuevos si se llena)" checked={config.maxQueueEnabled} onToggle={() => {}} value={config.maxQueueSize} onValueChange={() => {}} placeholder="20" darkMode={darkMode} />
+                    </div>
                   </div>
                 </>
               ) : (
@@ -1241,24 +1207,16 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 )}
               </div>
 
-              {/* NOTIFICACIONES EN VIVO - BLOQUEADAS EN FREE Y START */}
-              <div className={`relative ${isFeatureBlocked('notifications', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                {isFeatureBlocked('notifications', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Notificaciones disponibles en CREATOR+" />}
-                <SectionHeader title="Notificaciones en Vivo" tone="notificaciones" darkMode={darkMode} />
-
-                <CheckWithInput label="Anunciar nuevos seguidores a cada (seg)" checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} hint="Anuncia en voz cuando alguien te sigue" />
-              <CheckWithInput label="Anunciar regalos a cada (seg)" checked={config.announceGifts} onToggle={() => updateConfig('announceGifts', !config.announceGifts)} value={config.giftCooldown} onValueChange={(v) => updateConfig('giftCooldown', v)} placeholder="5" darkMode={darkMode} hint="Anuncia en voz cuando recibes un regalo" />
-              <CheckWithInput label="Anunciar conteo de viewers a cada (seg)" checked={config.announceViewers} onToggle={() => updateConfig('announceViewers', !config.announceViewers)} value={config.viewerCooldown} onValueChange={(v) => updateConfig('viewerCooldown', v)} placeholder="120" darkMode={darkMode} hint="Dice cuántos viewers hay en el live periódicamente" />
-              <CheckWithInput label="Anunciar likes a cada (seg)" checked={config.announceLikes} onToggle={() => updateConfig('announceLikes', !config.announceLikes)} value={config.likeCooldown} onValueChange={(v) => updateConfig('likeCooldown', v)} placeholder="60" darkMode={darkMode} hint="Anuncia la cantidad de likes acumulados" />
-              <CheckWithInput label="Anunciar shares a cada (seg)" checked={config.announceShares} onToggle={() => updateConfig('announceShares', !config.announceShares)} value={config.shareCooldown} onValueChange={(v) => updateConfig('shareCooldown', v)} placeholder="15" darkMode={darkMode} hint="Anuncia cuando alguien comparte tu live" />
-              <CheckOption label="Anunciar batallas" checked={config.announceBattles} onChange={() => updateConfig('announceBattles', !config.announceBattles)} darkMode={darkMode} hint="Anuncia inicio y resultado de batallas en vivo" />
-              <CheckOption label="Anunciar encuestas" checked={config.announcePolls} onChange={() => updateConfig('announcePolls', !config.announcePolls)} darkMode={darkMode} hint="Anuncia cuando se crea una encuesta en el live" />
-              <CheckOption label="Anunciar metas/goals" checked={config.announceGoals} onChange={() => updateConfig('announceGoals', !config.announceGoals)} darkMode={darkMode} hint="Anuncia progreso de metas del live" />
-              </div>
-
               {/* ASISTENTE DE IA - BLOQUEADO EN FREE, START Y CREATOR */}
               <div className={`relative ${isFeatureBlocked('aiAssistant', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                {isFeatureBlocked('aiAssistant', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Asistente disponible en plan PRO" />}
+                {isFeatureBlocked('aiAssistant', userPlan) && (
+                  <FeatureLockedOverlay
+                    darkMode={darkMode}
+                    message="Asistente disponible en plan PRO"
+                    showIcon
+                    showMessage
+                  />
+                )}
                 <div>
                   <SectionHeader title="Asistente de IA" tone="asistente" darkMode={darkMode} />
 
