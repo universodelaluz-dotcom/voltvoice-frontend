@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import { StripePayment } from './components/StripePayment'
 import { SynthesisStudio } from './components/SynthesisStudio'
 import VoiceWorkshopPanel from './components/VoiceCloningPanel'
@@ -335,7 +335,12 @@ export function App() {
   const [config, setConfig] = useState(() => normalizeUserConfig(loadCachedConfig('guest') || buildDefaultConfig()))
   const [configReady, setConfigReady] = useState(false)
 
-  const updateConfig = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
+  const updateConfig = useCallback((key, value) => {
+    setConfig((prev) => {
+      if (Object.is(prev?.[key], value)) return prev
+      return { ...prev, [key]: value }
+    })
+  }, [])
   const latestConfigRef = useRef(config)
 
   useEffect(() => {
@@ -1697,6 +1702,8 @@ export function App() {
   )
 }
 // Cache buster 1774553392
+
+
 
 
 
