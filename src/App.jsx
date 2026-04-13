@@ -200,6 +200,116 @@ const loadCachedConfig = (userIdentifier = 'guest') => {
   }
 }
 
+function AnimatedMetric({ value, className = '', animateOnView = false }) {
+  const buildZeroValue = (rawValue) => {
+    const raw = String(rawValue || '').trim()
+    const hasPlus = raw.startsWith('+')
+    const hasPercent = raw.includes('%')
+    const numericText = raw.replace(/[^0-9.,]/g, '')
+    const decimals = numericText.includes('.') ? (numericText.split('.')[1]?.length || 0) : 0
+    const zero = decimals > 0 ? (0).toFixed(decimals) : '0'
+    return `${hasPlus ? '+' : ''}${zero}${hasPercent ? '%' : ''}`
+  }
+
+  const [display, setDisplay] = useState(animateOnView ? buildZeroValue(value) : value)
+  const [isAnimating, setIsAnimating] = useState(false)
+  const targetRef = useRef(null)
+
+  useEffect(() => {
+    if (!animateOnView) {
+      setDisplay(value)
+      return
+    }
+
+    const node = targetRef.current
+    if (!node) return
+
+    const raw = String(value || '').trim()
+    const hasPlus = raw.startsWith('+')
+    const hasPercent = raw.includes('%')
+    const numericText = raw.replace(/[^0-9.,]/g, '').replace(/,/g, '')
+    const target = Number(numericText || 0)
+    const decimals = numericText.includes('.') ? (numericText.split('.')[1]?.length || 0) : 0
+    const durationMs = 1400
+    let rafId = null
+    let started = false
+    let startTimeoutId = null
+
+    const formatValue = (num) => {
+      const fixed = decimals > 0 ? num.toFixed(decimals) : Math.round(num).toString()
+      const withCommas = Number(fixed).toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      })
+      return `${hasPlus ? '+' : ''}${withCommas}${hasPercent ? '%' : ''}`
+    }
+
+    const animate = () => {
+      if (started) return
+      started = true
+      setIsAnimating(true)
+      setDisplay(buildZeroValue(value))
+      const start = performance.now()
+      const step = (now) => {
+        const progress = Math.min(1, (now - start) / durationMs)
+        const eased = 1 - Math.pow(1 - progress, 3)
+        const current = target * eased
+        setDisplay(formatValue(current))
+        if (progress < 1) {
+          rafId = requestAnimationFrame(step)
+        } else {
+          setIsAnimating(false)
+          setDisplay(value)
+        }
+      }
+      rafId = requestAnimationFrame(step)
+    }
+
+    const isVisibleEnough = () => {
+      const rect = node.getBoundingClientRect()
+      const viewport = window.innerHeight || 0
+      return rect.top <= viewport * 0.82 && rect.bottom >= viewport * 0.2
+    }
+
+    const onScrollCheck = () => {
+      const scrolled = (window.scrollY || window.pageYOffset || 0) > 100
+      const visible = isVisibleEnough()
+      if (!started && scrolled && visible) {
+        if (startTimeoutId) clearTimeout(startTimeoutId)
+        startTimeoutId = setTimeout(() => {
+          animate()
+        }, 180)
+      }
+      if (started && !visible) {
+        // Reinicia para que se vuelva a animar al reingresar.
+        started = false
+        setIsAnimating(false)
+        setDisplay(buildZeroValue(value))
+      }
+    }
+
+    window.addEventListener('scroll', onScrollCheck, { passive: true })
+    window.addEventListener('resize', onScrollCheck)
+    setTimeout(onScrollCheck, 40)
+
+    return () => {
+      window.removeEventListener('scroll', onScrollCheck)
+      window.removeEventListener('resize', onScrollCheck)
+      if (startTimeoutId) clearTimeout(startTimeoutId)
+      if (rafId) cancelAnimationFrame(rafId)
+    }
+  }, [animateOnView, value])
+
+  return (
+    <p
+      ref={targetRef}
+      className={`${className} transition-all duration-300 ${isAnimating ? 'scale-110 brightness-125' : 'scale-100'}`}
+    >
+      {display}
+    </p>
+  )
+}
+
 export function App() {
   const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-workshop', 'pricing', 'control-panel', 'statistics', 'auth', 'admin'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
@@ -551,7 +661,7 @@ export function App() {
 
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('voltvoice-theme') !== 'light'
+      return localStorage.getItem('STREAM VOICER-theme') !== 'light'
     }
     return true
   })
@@ -559,10 +669,10 @@ export function App() {
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark')
-      localStorage.setItem('voltvoice-theme', 'dark')
+      localStorage.setItem('STREAM VOICER-theme', 'dark')
     } else {
       document.documentElement.classList.remove('dark')
-      localStorage.setItem('voltvoice-theme', 'light')
+      localStorage.setItem('STREAM VOICER-theme', 'light')
     }
   }, [darkMode])
 
@@ -643,7 +753,7 @@ export function App() {
               onClick={() => setCurrentPage('landing')}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
             >
-              <img src="/images/Sin%20t%C3%ADtulo%20(200%20x%2060%20px)%20(250%20x%2060%20px).png" alt="StreamVoicer" className="h-12 w-auto" />
+                <img src="/images/streamvoicer6.png" alt="StreamVoicer" className="h-14 w-auto" />
             </button>
             <button
               onClick={() => setCurrentPage('studio')}
@@ -700,6 +810,7 @@ export function App() {
             setDarkMode={setDarkMode}
             config={config}
             updateConfig={updateConfig}
+            configReady={configReady}
             user={user}
           />
         </div>
@@ -814,7 +925,7 @@ export function App() {
     },
     {
       step: '2',
-      title: 'Activa StreamVoicer',
+      title: 'Activa STREAM VOICER',
       description: 'Inicia la lectura de mensajes de chat en tiempo real'
     },
     {
@@ -891,19 +1002,23 @@ export function App() {
           </div>
 
           <h2 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
-            Tu LIVE ya no suena
+            Tu LIVE ya no sonará
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-orange-400">
-              generico
+              genérico
             </span>
           </h2>
 
           <p className={"text-xl md:text-2xl mb-8 max-w-2xl mx-auto " + (darkMode ? "text-gray-300" : "text-gray-600")}>
-            Crea personajes con voz, responde al chat en tiempo real y convierte cada stream en una experiencia con identidad propia.
+              Dale voz a tu chat de TikTok LIVE con personajes en vivo y crea una experiencia única.
           </p>
 
           <div className="flex flex-wrap gap-3 mb-8 justify-center">
-            {['Narrador epico', 'Villano anime', 'Comedia gamer', 'Modo historia'].map((tag) => (
+            {[
+              '🎮 Tu personaje famoso leyendo comentarios',
+              '😂 Narrador gracioso reaccionando',
+              '😈 Voz troll para donaciones'
+            ].map((tag) => (
               <span
                 key={tag}
                 className={"px-3 py-2 rounded-lg text-sm border " + (darkMode ? "bg-white/5 border-cyan-400/20 text-cyan-200" : "bg-white border-cyan-200 text-cyan-700")}
@@ -913,19 +1028,24 @@ export function App() {
             ))}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => user ? setCurrentPage('studio') : setCurrentPage('auth')}
-              className="px-8 py-4 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-lg font-bold text-lg text-white hover:shadow-xl hover:shadow-cyan-400/50 transition-all flex items-center justify-center gap-2"
-            >
-              {user ? 'Ir al Studio' : 'Comenzar Gratis'} <ChevronRight className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className={"px-8 py-4 border-2 rounded-lg font-bold text-lg transition-all " + (darkMode ? "border-orange-300/60 text-orange-300 hover:bg-orange-400/10" : "border-orange-400 text-orange-500 hover:bg-orange-50")}
-            >
-              Ver Planes
-            </button>
+          <div className="flex justify-center">
+            <div className="relative inline-flex">
+              <span
+                className={"absolute -inset-1 rounded-xl pointer-events-none animate-ping opacity-60 " + (darkMode
+                  ? "bg-cyan-400/30"
+                  : "bg-cyan-300/40")}
+              />
+              <button
+                onClick={() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' })}
+                className={"relative z-10 px-10 py-4 rounded-lg font-extrabold text-lg transition-all shadow-lg hover:scale-[1.03] animate-pulse flex items-center gap-2 " + (darkMode
+                  ? "bg-gradient-to-r from-cyan-400 to-blue-500 text-white hover:shadow-cyan-400/50"
+                  : "bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:shadow-cyan-300/70")}
+              >
+                Ver Planes
+                <ChevronRight className="w-5 h-5" />
+              </button>
+              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none" />
+            </div>
           </div>
 
         </div>
@@ -946,12 +1066,9 @@ export function App() {
           {/* Success Cases Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { metric: '+150%', label: 'Aumento de seguidores', creator: 'Alex Gaming', category: 'Gaming Creator', description: 'En 3 meses pasó de 50k a 125k seguidores. Su comunidad creció exponencialmente gracias a Lives más dinámicos y engagement constante con StreamVoicer.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web1.png' },
-              { metric: '+2.5K', label: 'Comentarios por Live', creator: 'Sofia Music', category: 'Música Live', description: 'Sus Lives musicales ahora generan 2,500+ comentarios cada sesión. El chat está tan activo que sus viewers sienten que son parte del show.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web2.png' },
-              { metric: '+85%', label: 'Aumento en donaciones', creator: 'Carlos Comedy', category: 'Comedia', description: 'Las donaciones se multiplicaron cuando sus donadores se sintieron reconocidos automáticamente. De $500 a $925 por Live en promedio.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web3.png' },
-              { metric: '+200%', label: 'Nuevos seguidores diarios', creator: 'Javier Fitness', category: 'Fitness Coach', description: 'De 20 nuevos seguidores diarios pasó a 60. Su comunidad crece porque otros ven un chat activo, interactivo y valorado en sus transmisiones.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web4.png' },
-              { metric: '+70%', label: 'Conversión de seguidores', creator: 'Mario Arte', category: 'Artista Digital', description: 'Pasó de convertir el 5% de viewers a seguidores, a convertir el 8.5%. Un chat valorado y participativo es más propenso a seguir al creador.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web5.png' },
-              { metric: '+45%', label: 'Retención de viewers', creator: 'Diana Fashion', category: 'Moda & Estilo', description: 'Los viewers se quedan más tiempo en sus Lives. Antes perdía audiencia rápido, ahora el chat dinámico los mantiene enganchados durante toda la sesión.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web6.png' },
+              { metric: '+150%', label: 'De 50K → 125K seguidores en 3 meses', creator: '🎮 Alex Gaming', category: 'Gaming Live', description: 'Chat activo en vivo gracias a voces que reaccionan en tiempo real.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web1.png' },
+              { metric: '+2,500', label: 'Comentarios por LIVE', creator: '🎮 Max JuanGamingPro', category: 'Gaming Live', description: 'El chat cobra vida con voces y se vuelve parte del show.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/refs/heads/main/public/images/web%207.png' },
+              { metric: '+85%', label: 'Aumento en donaciones', creator: '😂 Carlos Comedy', category: 'Comedia Live', description: 'Las voces en vivo hacen el stream más divertido y participativo.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web3.png' },
             ].map((caseItem, idx) => (
               <div
                 key={idx}
@@ -965,9 +1082,11 @@ export function App() {
                 <div className={`p-6 text-center border-b ${
                   darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-200'
                 }`}>
-                  <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2">
-                    {caseItem.metric}
-                  </p>
+                  <AnimatedMetric
+                    value={caseItem.metric}
+                    animateOnView={true}
+                    className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 drop-shadow-[0_2px_8px_rgba(255,115,0,0.35)] mb-2"
+                  />
                   <p className={`text-sm font-bold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     {caseItem.label}
                   </p>
@@ -998,6 +1117,30 @@ export function App() {
               </div>
             ))}
           </div>
+
+          <div className="mt-32 mb-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+              {[
+                { metric: '+200%', title: 'Seguidores diarios' },
+                { metric: '+70%', title: 'Conversión a seguidores' },
+                { metric: '+45%', title: 'Retención de viewers' },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="text-center"
+                >
+                  <AnimatedMetric
+                    value={item.metric}
+                    animateOnView={true}
+                    className="text-6xl md:text-7xl font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 drop-shadow-[0_3px_12px_rgba(255,115,0,0.4)]"
+                  />
+                  <p className={`mt-3 text-base md:text-lg font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    {item.title}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1017,8 +1160,8 @@ export function App() {
           >
             <div className="flex gap-6 min-w-min">
               {[
-                { name: '@alexgamertok', type: 'TikTok Creator Gaming', benefit: '🟢 Tu stream nunca se queda muerto', text: 'Antes mis Lives en TikTok se moría si no hablaba constantemente. Con StreamVoicer, el chat siempre tiene algo que leer, comentar y participar. Los viewers ven que hay actividad incluso cuando estoy concentrado en el juego.', stars: 5 },
-                { name: '@sofiaart', type: 'TikTok Creator Art', benefit: '💬 Tu chat trabaja por ti', text: 'No tengo que estar leyendo comentarios todo el tiempo. StreamVoicer los procesa, destaca los mejores y mantiene la conversación fluida. Yo solo me concentro en crear contenido y el chat se cuida solo.', stars: 5 },
+                { name: '@alexgamertok', type: 'TikTok Creator Gaming', benefit: '🟢 Tu stream nunca se queda muerto', text: 'Antes mis Lives en TikTok se moría si no hablaba constantemente. Con STREAM VOICER, el chat siempre tiene algo que leer, comentar y participar. Los viewers ven que hay actividad incluso cuando estoy concentrado en el juego.', stars: 5 },
+                { name: '@sofiaart', type: 'TikTok Creator Art', benefit: '💬 Tu chat trabaja por ti', text: 'No tengo que estar leyendo comentarios todo el tiempo. STREAM VOICER los procesa, destaca los mejores y mantiene la conversación fluida. Yo solo me concentro en crear contenido y el chat se cuida solo.', stars: 5 },
                 { name: '@carlosmusica.live', type: 'TikTok Creator Música', benefit: '⚡ Más interacción sin más esfuerzo', text: 'Mis Lives ahora tienen 3x más engagement sin que yo haga nada diferente. La gente comenta más porque sabe que sus mensajes van a ser valorados. Es increíble cuánta interacción genera sin esfuerzo extra.', stars: 5 },
                 { name: '@dianabeauty_tk', type: 'TikTok Creator Belleza', benefit: '🎯 Convierte mensajes en participación', text: 'Cada comentario que llega se convierte en una participación real. Ya no es solo "jeje" abajo, ahora los comentarios generan conversación. Mi comunidad se siente escuchada y eso atrae más personas al Live.', stars: 5 },
                 { name: '@javierstreamer22', type: 'TikTok Creator Competitivo', benefit: '⭐ Destaca a tus seguidores y donadores', text: 'El sistema automáticamente reconoce a mis followers y donadores. No tengo que perder tiempo dándoles shout-outs manuales. Ellos se sienten valorados naturalmente y eso me genera más donaciones y suscripciones.', stars: 5 },
@@ -1101,21 +1244,23 @@ export function App() {
             <h3 className="text-4xl font-black mb-4">
               ❓ <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Preguntas Frecuentes</span>
             </h3>
-            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>Resuelve tus dudas sobre VoltVoice</p>
+            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>Resuelve tus dudas sobre STREAM VOICER</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {[
-              { icon: '🔊', q: '¿Cómo funciona StreamVoicer?', a: 'StreamVoicer es una plataforma de síntesis de voz (TTS) que lee automáticamente los mensajes de tu chat en TikTok LIVE en tiempo real. Utiliza inteligencia artificial para la clonación de voces, creación de personajes y también ofrece voces naturales en español.' },
-              { icon: '🧩', q: '¿Qué es un token?', a: 'Un token equivale a un carácter de texto. Cada vez que se reproduce una voz premium o clonada, se consumen tokens de tu plan mensual.' },
-              { icon: '🔄', q: '¿Puedo cambiar de plan cuando quiera?', a: 'Sí. Puedes actualizar, cambiar o cancelar tu plan en cualquier momento. Los cambios se aplicarán en tu siguiente período de facturación.' },
-              { icon: '💳', q: '¿Qué hago si se me acaban los tokens?', a: 'Puedes adquirir tokens adicionales en cualquier momento desde la sección "Recarga de Tokens". Estos se suman a los disponibles en tu plan de ese periodo mensual.' },
-              { icon: '⏳', q: '¿Los tokens expiran?', a: 'Los tokens incluidos en tu plan mensual expiran al finalizar el ciclo de facturación. Los tokens adquiridos en paquetes se acumulan y permanecen disponibles mientras tu suscripción esté activa.' },
-              { icon: '🌍', q: '¿Funciona con otros idiomas?', a: 'Actualmente StreamVoicer está optimizado para español. Estamos trabajando en la incorporación de nuevos idiomas próximamente.' },
-              { icon: '⚡', q: '¿Cuánto tiempo tarda en procesarse un mensaje?', a: 'Los mensajes se procesan en tiempo real, generalmente entre 1 y 5 segundos, dependiendo de su longitud y la carga del servidor.' },
-              { icon: '🎙️', q: '¿Puedo personalizar las voces?', a: 'Sí, la personalización de voces está disponible dentro de la plataforma, pero su alcance depende del plan que tengas activo. En el plan Free, puedes utilizar una voz local ilimitada. En los planes superiores, tienes acceso a un número determinado de voces premium y voces clonadas por IA.' },
-              { icon: '🔐', q: '¿Es seguro dar acceso a mi TikTok?', a: 'Sí. Solo solicitamos acceso a la información pública de tu transmisión en vivo. Tus datos están protegidos y no se comparten con terceros.' },
-              { icon: '🆓', q: '¿Hay un período de prueba gratuito?', a: 'Sí. Puedes comenzar con el plan gratuito y posteriormente actualizar a Start o Creator conforme crezca tu actividad.' },
+              { icon: '🔊', q: '¿Cómo funciona STREAM VOICER?', a: 'STREAM VOICER lee en tiempo real los mensajes de tu chat de TikTok LIVE y los reproduce con voz para mantener interacción constante en tu stream.' },
+              { icon: '🧩', q: '¿Qué es un token?', a: '1 token equivale a 1 carácter generado. El consumo aplica cuando usas voces premium o voces personalizadas.' },
+              { icon: '🎙️', q: '¿Qué voces consumen tokens?', a: 'Las voces premium y las voces personalizadas consumen tokens. La voz esencial no consume tokens.' },
+              { icon: '♻️', q: '¿Si el audio sale de caché también se cobran tokens?', a: 'Sí. El caché optimiza rendimiento y costos internos de procesamiento, pero el consumo de tokens del usuario se mantiene según caracteres generados en voces premium/personalizadas.' },
+              { icon: '💳', q: '¿Qué hago si se me acaban los tokens?', a: 'Puedes recargar al instante desde la sección "Recarga de Tokens". Si no tienes tokens, las voces premium/personalizadas dejan de reproducirse hasta recargar.' },
+              { icon: '⏳', q: '¿Cómo funciona el plan FREE?', a: 'El plan FREE incluye 1 voz esencial con 2 horas diarias. El contador se restablece cada 24 horas.' },
+              { icon: '🔄', q: '¿Puedo cambiar o cancelar mi plan cuando quiera?', a: 'Sí. Puedes actualizar, cambiar o cancelar tu plan cuando quieras desde tu cuenta. Los cambios se aplican según tu ciclo de facturación.' },
+              { icon: '🌍', q: '¿Funciona con otros idiomas?', a: 'Actualmente STREAM VOICER está optimizado para español. Próximamente se integrarán más idiomas.' },
+              { icon: '⚡', q: '¿Cuánto tarda en procesarse un mensaje?', a: 'Se procesa en tiempo real. Normalmente tarda entre 1 y 5 segundos según longitud del mensaje, voz elegida y carga del sistema.' },
+              { icon: '🔐', q: '¿Es seguro conectar mi TikTok?', a: 'Sí. Solo se usa el acceso necesario para leer la actividad pública de tu LIVE. No compartimos tus datos con terceros.' },
+              { icon: '🆓', q: '¿Hay prueba gratis?', a: 'Sí. Puedes empezar con FREE y subir a START, CREATOR o PRO cuando necesites más capacidad y más voces.' },
+              { icon: '🛠️', q: '¿Puedo crear y editar mis voces personalizadas?', a: 'Sí. Puedes gestionar voces personalizadas desde tu panel. La cantidad disponible depende de tu plan activo.' },
             ].map((faq, idx) => (
               <div key={idx} className={`p-6 rounded-lg border-l-4 ${darkMode ? 'bg-gray-800/50 border-cyan-500' : 'bg-gray-50 border-cyan-400'}`}>
                 <h4 className={`text-lg font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -1234,7 +1379,7 @@ export function App() {
               Listo para revolucionar tus streams?
             </h3>
             <p className={`text-xl mb-8 ${darkMode ? 'text-gray-300' : 'text-slate-200'}`}>
-              Únete a miles de creadores que ya están usando StreamVoicer
+              Únete a miles de creadores que ya están usando STREAM VOICER
             </p>
             <div className="flex gap-4 justify-center">
               <button
@@ -1267,7 +1412,7 @@ export function App() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h4 className="font-bold mb-4">StreamVoicer</h4>
+              <h4 className="font-bold mb-4">STREAM VOICER</h4>
               <p className="text-sm text-gray-400">La mejor solución para leer chats en vivo</p>
             </div>
             <div>
@@ -1287,7 +1432,7 @@ export function App() {
           </div>
 
           <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2026 StreamVoicer. Todos los derechos reservados.</p>
+            <p>&copy; 2026 STREAM VOICER. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>
@@ -1311,15 +1456,15 @@ export function App() {
             <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. Aceptación de Términos</h3>
-                <p>Al usar StreamVoicer, aceptas estos términos y condiciones. Si no estás de acuerdo, no uses el servicio.</p>
+                <p>Al usar STREAM VOICER, aceptas estos términos y condiciones. Si no estás de acuerdo, no uses el servicio.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. Descripción del Servicio</h3>
-                <p>StreamVoicer es una plataforma de síntesis de voz (TTS) para streamers. Proporciona características para leer mensajes en vivo usando inteligencia artificial.</p>
+                <p>STREAM VOICER es una plataforma de síntesis de voz (TTS) para streamers. Proporciona características para leer mensajes en vivo usando inteligencia artificial.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Uso Permitido</h3>
-                <p>Debes usar StreamVoicer solo para propósitos legales y éticos. Se prohíbe:</p>
+                <p>Debes usar STREAM VOICER solo para propósitos legales y éticos. Se prohíbe:</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>Contenido ofensivo, discriminatorio o ilegal</li>
                   <li>Intentos de piratería o acceso no autorizado</li>
@@ -1333,7 +1478,7 @@ export function App() {
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Limitaciones de Responsabilidad</h3>
-                <p>StreamVoicer se proporciona "tal cual". No garantizamos disponibilidad continua. No somos responsables por daños indirectos.</p>
+                <p>STREAM VOICER se proporciona "tal cual". No garantizamos disponibilidad continua. No somos responsables por daños indirectos.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en los Términos</h3>
@@ -1388,7 +1533,7 @@ export function App() {
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>7. Contacto</h3>
-                <p>Para preguntas sobre privacidad, contáctanos a: support@streamvoicer.com</p>
+                <p>Para preguntas sobre privacidad, contáctanos a: support@STREAM VOICER.com</p>
               </section>
             </div>
             <button onClick={() => setShowPrivacy(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
@@ -1438,14 +1583,14 @@ export function App() {
             <div className={`flex-1 overflow-y-auto px-8 pt-8 pb-16 space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Qué son las cookies?</h3>
-                <p>Las cookies son pequeños archivos de texto que se guardan en tu dispositivo cuando visitas nuestro sitio. Nos ayudan a mejorar tu experiencia y analizar cómo usas StreamVoicer.</p>
+                <p>Las cookies son pequeños archivos de texto que se guardan en tu dispositivo cuando visitas nuestro sitio. Nos ayudan a mejorar tu experiencia y analizar cómo usas STREAM VOICER.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Tipos de Cookies que Usamos</h3>
                 <ul className="list-disc pl-5 space-y-2">
                   <li><strong>Cookies Esenciales:</strong> Necesarias para el funcionamiento básico del sitio (autenticación, seguridad)</li>
                   <li><strong>Cookies de Rendimiento:</strong> Nos ayudan a entender cómo usas el sitio y mejorarlo</li>
-                  <li><strong>Cookies de Análisis:</strong> Rastrean cómo interactúas con StreamVoicer para optimizar la experiencia</li>
+                  <li><strong>Cookies de Análisis:</strong> Rastrean cómo interactúas con STREAM VOICER para optimizar la experiencia</li>
                   <li><strong>Cookies de Publicidad:</strong> Permiten mostrar anuncios relevantes según tus intereses</li>
                 </ul>
               </section>
@@ -1502,7 +1647,7 @@ export function App() {
                     🍪 POLÍTICA DE COOKIES
                   </h3>
                   <p className={`text-base mb-3 leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                    <strong>Utilizamos cookies</strong> para mejorar tu experiencia, analizar cómo usas VoltVoice y personalizar contenido. Al continuar navegando, aceptas nuestra política.
+                    <strong>Utilizamos cookies</strong> para mejorar tu experiencia, analizar cómo usas STREAM VOICER y personalizar contenido. Al continuar navegando, aceptas nuestra política.
                   </p>
                   <button
                     onClick={() => setShowCookies(true)}
@@ -1546,6 +1691,7 @@ export function App() {
   )
 }
 // Cache buster 1774553392
+
 
 
 

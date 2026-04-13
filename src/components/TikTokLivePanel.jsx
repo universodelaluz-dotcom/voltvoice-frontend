@@ -249,6 +249,19 @@ const defaultHighlightRules = {
   topFans: { enabled: false, color: '#06b6d4' },
 }
 
+const normalizeHighlightRules = (value) => {
+  const raw = value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+  const out = { ...defaultHighlightRules }
+  Object.keys(defaultHighlightRules).forEach((key) => {
+    const current = raw[key] && typeof raw[key] === 'object' ? raw[key] : {}
+    out[key] = {
+      enabled: Boolean(current.enabled),
+      color: String(current.color || defaultHighlightRules[key].color)
+    }
+  })
+  return out
+}
+
 const normalizeModerationList = (value) => {
   if (!Array.isArray(value)) return []
   const seen = new Set()
@@ -413,7 +426,7 @@ const apiNicks = {
   }
 }
 
-export default function TikTokLivePanel({ config = {}, updateConfig, user = null }) {
+export default function TikTokLivePanel({ config = {}, updateConfig, configReady = true, user = null }) {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
 
   useEffect(() => {
@@ -462,14 +475,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
   const [mobilePreviewMuted, setMobilePreviewMuted] = useState(config.mobilePreviewMuted ?? true)
   const [showSessionSummary, setShowSessionSummary] = useState(false)
   const [sessionSummary, setSessionSummary] = useState(null)
-  const [highlightRules, setHighlightRules] = useState({
-    ...defaultHighlightRules,
-    ...(config.highlightRules || {})
-  })
+  const [highlightRules, setHighlightRules] = useState(() => normalizeHighlightRules(config.highlightRules))
+  const canPersistConfig = Boolean(updateConfig) && Boolean(configReady)
   const syncSessionModerationList = (updater) => {
     setSessionModerationList((prev) => {
       const next = normalizeModerationList(typeof updater === 'function' ? updater(prev) : updater)
-      if (updateConfig) {
+      if (canPersistConfig) {
         updateConfig('sessionModerationList', next)
       }
       return next
@@ -478,64 +489,60 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
 
   // Sincronizar cambios de estilo y remarcar al config del usuario (auto-save)
   useEffect(() => {
-    if (updateConfig) {
+    if (canPersistConfig) {
       updateConfig('chatFontSize', chatFontSize)
     }
-  }, [chatFontSize])
+  }, [chatFontSize, canPersistConfig, updateConfig])
   useEffect(() => {
-    if (updateConfig) {
+    if (canPersistConfig) {
       updateConfig(darkMode ? 'chatNickColorDark' : 'chatNickColorLight', chatNickColor)
     }
-  }, [chatNickColor, darkMode])
+  }, [chatNickColor, darkMode, canPersistConfig, updateConfig])
   useEffect(() => {
-    if (updateConfig) {
+    if (canPersistConfig) {
       updateConfig(darkMode ? 'chatMsgColorDark' : 'chatMsgColorLight', chatMsgColor)
     }
-  }, [chatMsgColor, darkMode])
+  }, [chatMsgColor, darkMode, canPersistConfig, updateConfig])
   useEffect(() => {
-    if (updateConfig) {
+    if (canPersistConfig) {
       updateConfig('smartChatEnabled', smartChatEnabled)
     }
-  }, [smartChatEnabled])
+  }, [smartChatEnabled, canPersistConfig, updateConfig])
   useEffect(() => {
-    if (updateConfig) {
+    if (canPersistConfig) {
       updateConfig('chatVolume', Number.isFinite(volume) ? volume : 0.8)
     }
-  }, [volume, updateConfig])
+  }, [volume, canPersistConfig, updateConfig])
   useEffect(() => {
-    if (updateConfig) {
+    if (canPersistConfig) {
       updateConfig('highlightedUsers', highlightedUsers)
     }
-  }, [highlightedUsers, updateConfig])
+  }, [highlightedUsers, canPersistConfig, updateConfig])
   useEffect(() => {
-    if (updateConfig) {
+    if (canPersistConfig) {
       updateConfig('highlightSelectedColor', selectedColor)
     }
-  }, [selectedColor, updateConfig])
+  }, [selectedColor, canPersistConfig, updateConfig])
   useEffect(() => {
-    if (updateConfig) {
+    if (canPersistConfig) {
       updateConfig('mobilePreviewEnabled', mobilePreviewEnabled)
     }
-  }, [mobilePreviewEnabled])
+  }, [mobilePreviewEnabled, canPersistConfig, updateConfig])
   useEffect(() => {
-    if (updateConfig) {
+    if (canPersistConfig) {
       updateConfig('mobilePreviewMuted', mobilePreviewMuted)
     }
-  }, [mobilePreviewMuted])
+  }, [mobilePreviewMuted, canPersistConfig, updateConfig])
   useEffect(() => {
-    if (updateConfig) {
+    if (canPersistConfig) {
       updateConfig('highlightRules', highlightRules)
     }
-  }, [highlightRules])
+  }, [highlightRules, canPersistConfig, updateConfig])
   useEffect(() => {
     setSessionModerationList(normalizeModerationList(config.sessionModerationList))
   }, [config.sessionModerationList])
   useEffect(() => {
-    setHighlightRules(prev => ({
-      ...defaultHighlightRules,
-      ...(config.highlightRules || {}),
-      ...prev
-    }))
+    setHighlightRules(normalizeHighlightRules(config.highlightRules))
   }, [config.highlightRules])
   useEffect(() => {
     setChatFontSize(config.chatFontSize || 14)
@@ -562,9 +569,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
   useEffect(() => {
     if (isFreePlan && smartChatEnabled) {
       setSmartChatEnabled(false)
-      if (updateConfig) updateConfig('smartChatEnabled', false)
+      if (canPersistConfig) updateConfig('smartChatEnabled', false)
     }
-  }, [isFreePlan, smartChatEnabled, updateConfig])
+  }, [isFreePlan, smartChatEnabled, canPersistConfig, updateConfig])
   useEffect(() => {
     setMobilePreviewEnabled(config.mobilePreviewEnabled || false)
   }, [config.mobilePreviewEnabled])
@@ -587,10 +594,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
     }
   }, [config.lastTiktokUser, isConnected])
   useEffect(() => {
-    if (!updateConfig) return
+    if (!canPersistConfig) return
     const normalized = normalizeTikTokUsername(tiktokUser)
     updateConfig('lastTiktokUser', normalized || String(tiktokUser || '').trim())
-  }, [tiktokUser, updateConfig])
+  }, [tiktokUser, canPersistConfig, updateConfig])
   const isPausedRef = useRef(false)
   const isPttSuppressedRef = useRef(false)
   const isInteractionSuppressedRef = useRef(false)
@@ -1848,7 +1855,113 @@ export default function TikTokLivePanel({ config = {}, updateConfig, user = null
         const isLocalVoice = voiceId === 'es-ES' || voiceId === 'en-US'
 
         if (isLocalVoice) {
-          // Voz local — Web Speech API
+          const authToken = getAuthToken()
+          let backendAudio = null
+          let backendLimitReached = false
+          try {
+            const response = await fetch(`${API_URL}/api/tts/say`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+              },
+              body: JSON.stringify({
+                text,
+                voice: voiceId
+              })
+            })
+
+            const data = await response.json().catch(() => ({}))
+            if (response.ok && data?.audio) {
+              backendAudio = data.audio
+            } else if (data?.code === 'FREE_LOCAL_VOICE_DAILY_LIMIT_REACHED') {
+              backendLimitReached = true
+              const resetInSeconds = Number(data?.details?.resetInSeconds || 0)
+              const waitMinutes = Math.max(1, Math.ceil(resetInSeconds / 60))
+              const waitLabel = waitMinutes >= 60
+                ? `${Math.floor(waitMinutes / 60)}h ${waitMinutes % 60}m`
+                : `${waitMinutes} min`
+              const popupMessage = `Llegaste al límite diario de 2 horas de voces locales en plan FREE. Se restablece en aproximadamente ${waitLabel}.`
+              setError(popupMessage)
+              if ((Date.now() - localLimitPopupAtRef.current) > 5000) {
+                localLimitPopupAtRef.current = Date.now()
+                window.alert(popupMessage)
+              }
+            }
+          } catch (backendErr) {
+            console.warn('[TikTok] Local backend TTS fallback:', backendErr?.message || backendErr)
+          }
+
+          if (backendAudio) {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === item.id ? { ...msg, status: 'playing' } : msg
+              )
+            )
+
+            await new Promise((resolve) => {
+              if (disconnectedRef.current) { resolve(); return }
+              activePlaybackResolveRef.current = resolve
+              const audio = new Audio(backendAudio)
+              currentAudioRef.current = audio
+              audio.playbackRate = c.audioSpeed || 1.0
+              audio.volume = volumeRef.current
+              audio.onended = () => {
+                currentAudioRef.current = null
+                activePlaybackResolveRef.current = null
+                const duration = Number(audio.duration)
+                const effectiveDuration = Number.isFinite(duration) && duration > 0
+                  ? duration
+                  : (item.estimatedSpeakSeconds || estimateSpeakSeconds(item.rawText || item.text, c.audioSpeed || 1.0))
+                recentPlaybackDurationsRef.current = [...recentPlaybackDurationsRef.current, effectiveDuration].slice(-20)
+                sessionReadCountRef.current += 1
+                userLastSpokenAtRef.current[item.username] = Date.now()
+                const spokenKeywords = extractKeywords(item.rawText || item.text)
+                if (spokenKeywords.length) {
+                  recentTopicKeywordsRef.current = [...spokenKeywords, ...recentTopicKeywordsRef.current]
+                    .slice(0, 24)
+                }
+                const normalizedSpoken = normalizeMessageForMatching(item.rawText || item.text)
+                if (normalizedSpoken) {
+                  recentNormalizedMessagesRef.current = [
+                    ...recentNormalizedMessagesRef.current,
+                    { text: normalizedSpoken, timestamp: Date.now() }
+                  ].filter((entry) => entry.timestamp >= Date.now() - 180000).slice(-80)
+                }
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === item.id ? { ...msg, status: 'done' } : msg
+                  )
+                )
+                resolve()
+              }
+              audio.onerror = () => {
+                currentAudioRef.current = null
+                activePlaybackResolveRef.current = null
+                resolve()
+              }
+              if (isAudioSuppressed()) {
+                audio.pause()
+                currentAudioRef.current = null
+                activePlaybackResolveRef.current = null
+                resolve()
+                return
+              }
+              audio.play().catch(() => {
+                currentAudioRef.current = null
+                activePlaybackResolveRef.current = null
+                resolve()
+              })
+            })
+            continue
+          }
+
+          if (backendLimitReached) {
+            setMessages((prev) => prev.map((msg) => msg.id === item.id ? { ...msg, status: 'skipped' } : msg))
+            continue
+          }
+
+          // Fallback final: Web Speech API local si backend no responde.
           const estimatedDurationMs = Math.round(
             (item.estimatedSpeakSeconds || estimateSpeakSeconds(item.rawText || item.text, c.audioSpeed || 1.0)) * 1000
           )

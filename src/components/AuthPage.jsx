@@ -4,6 +4,7 @@ import { Mail, Lock, Eye, EyeOff, Loader, AlertCircle, ArrowLeft, CheckCircle } 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
+const RECAPTCHA_REQUIRED = ['1', 'true', 'yes', 'on'].includes(String(import.meta.env.VITE_RECAPTCHA_REQUIRED ?? 'false').toLowerCase())
 
 export function AuthPage({ onLogin, onGoHome, darkMode }) {
   const [mode, setMode] = useState('login')
@@ -147,6 +148,11 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       return
     }
 
+    if (RECAPTCHA_REQUIRED && !RECAPTCHA_SITE_KEY) {
+      setError('CAPTCHA no configurado. Falta VITE_RECAPTCHA_SITE_KEY.')
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -157,7 +163,18 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
           recaptchaToken = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'register' })
         } catch (err) {
           console.warn('[Auth] reCAPTCHA error:', err)
+          if (RECAPTCHA_REQUIRED) {
+            setError('No se pudo validar CAPTCHA. Intenta de nuevo.')
+            setLoading(false)
+            return
+          }
         }
+      }
+
+      if (RECAPTCHA_REQUIRED && !recaptchaToken) {
+        setError('CAPTCHA requerido para crear la cuenta.')
+        setLoading(false)
+        return
       }
 
       const response = await fetch(`${API_URL}/api/auth/register`, {
@@ -434,7 +451,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
               ? `Ingresa el código enviado a ${email}`
               : showEmailForm
               ? (mode === 'login' ? 'Accede con tu email' : 'Regístrate gratis y obtén 100 tokens')
-              : 'Inicia sesión para acceder a StreamVoicer'
+              : 'Inicia sesión para acceder a STREAM VOICER'
             }
           </p>
         </div>
@@ -703,5 +720,6 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
     </div>
   )
 }
+
 
 

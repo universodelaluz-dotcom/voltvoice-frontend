@@ -1340,7 +1340,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
                   }`}>
                     <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
-                      TamaAo aproximado de caracteres por mensajes de respuesta
+                      Tamaño aproximado de caracteres por mensaje de respuesta
                     </label>
                     <div className="flex items-center gap-3">
                       <input

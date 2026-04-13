@@ -4,7 +4,7 @@ import AudioVisualizer from './AudioVisualizer'
 import BotInvoker from './BotInvoker'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Shield, Lock } from 'lucide-react'
 
-export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAdmin, onGoPricingPage, darkMode, setDarkMode, config, updateConfig, user }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAdmin, onGoPricingPage, darkMode, setDarkMode, config, updateConfig, configReady = true, user }) {
   const audioSpeed = config.audioSpeed || 1.0
   const PREMIUM_TEST_CHAR_LIMIT = 500
   const FREE_LOCAL_LIMIT_CODE = 'FREE_LOCAL_VOICE_DAILY_LIMIT_REACHED'
@@ -14,7 +14,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
   const toggleTheme = () => {
     const newMode = darkMode ? 'light' : 'dark'
-    localStorage.setItem('voltvoice-theme', newMode)
+    localStorage.setItem('STREAM VOICER-theme', newMode)
     document.documentElement.classList.toggle('dark', newMode === 'dark')
     setDarkMode(newMode === 'dark')
   }
@@ -26,7 +26,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const [voices, setVoices] = useState([])
   const [userVoices, setUserVoices] = useState([])
   const selectedVoice = config.generalVoiceId || 'es-ES'
-  const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   // Synthesis
   const [text, setText] = useState('Asi suena tu voz elegida')
@@ -213,8 +213,8 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       }
     }
 
-    window.addEventListener('voltvoice:tokens-updated', handleTokenUpdate)
-    return () => window.removeEventListener('voltvoice:tokens-updated', handleTokenUpdate)
+    window.addEventListener('STREAM VOICER:tokens-updated', handleTokenUpdate)
+    return () => window.removeEventListener('STREAM VOICER:tokens-updated', handleTokenUpdate)
   }, [])
 
   useEffect(() => {
@@ -227,8 +227,8 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       }
     }
 
-    window.addEventListener('voltvoice:assistant-visualizer', handleAssistantVisualizer)
-    return () => window.removeEventListener('voltvoice:assistant-visualizer', handleAssistantVisualizer)
+    window.addEventListener('STREAM VOICER:assistant-visualizer', handleAssistantVisualizer)
+    return () => window.removeEventListener('STREAM VOICER:assistant-visualizer', handleAssistantVisualizer)
   }, [])
 
   useEffect(() => {
@@ -237,8 +237,8 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       setAssistantAudioElement(el)
     }
 
-    window.addEventListener('voltvoice:assistant-visualizer-audio', handleAssistantVisualizerAudio)
-    return () => window.removeEventListener('voltvoice:assistant-visualizer-audio', handleAssistantVisualizerAudio)
+    window.addEventListener('STREAM VOICER:assistant-visualizer-audio', handleAssistantVisualizerAudio)
+    return () => window.removeEventListener('STREAM VOICER:assistant-visualizer-audio', handleAssistantVisualizerAudio)
   }, [])
 
   useEffect(() => {
@@ -263,8 +263,8 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       setPttRecordingActive(Boolean(event?.detail?.active))
     }
 
-    window.addEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
-    return () => window.removeEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
+    window.addEventListener('STREAM VOICER:ptt-audio-state', handlePttAudioState)
+    return () => window.removeEventListener('STREAM VOICER:ptt-audio-state', handlePttAudioState)
   }, [])
 
   const handleSynthesize = async () => {
@@ -423,7 +423,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             onClick={onGoHome}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
           >
-            <img src="/images/Sin%20t%C3%ADtulo%20(200%20x%2060%20px)%20(250%20x%2060%20px).png" alt="StreamVoicer" className="h-12 w-auto" />
+          <img src="/images/streamvoicer6.png" alt="StreamVoicer" className="h-14 w-auto" />
             <div>
               {user && <p className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>{user.email}</p>}
             </div>
@@ -490,7 +490,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
           </div>
         )}
         {/* TikTok Live Section */}
-          <TikTokLivePanel config={config} updateConfig={updateConfig} user={user} />
+          <TikTokLivePanel config={config} updateConfig={updateConfig} configReady={configReady} user={user} />
 
         {/* Botones principales: Configuracion, Taller de Voces, Estadisticas */}
         <div className="grid grid-cols-3 gap-4 mb-6">
@@ -710,6 +710,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     </div>
   )
 }
+
 
 
 

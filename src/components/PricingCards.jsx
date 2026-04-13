@@ -10,7 +10,7 @@ const monthlyPlans = [
     cta: 'Comenzar Gratis',
     popular: false,
     voices: [
-      '1 voz básica (2 horas diarias)',
+      '1 voz esencial (2 horas diarias)',
     ],
     stream: 'Perfecto para experimentar con la plataforma',
     compatibility: [
@@ -28,9 +28,9 @@ const monthlyPlans = [
     cta: 'Adquirir START',
     popular: false,
     voices: [
-      '1 voz clonada por IA (editable)',
+      '1 voz personalizada por IA (editable)',
       '1 voz natural premium',
-      '1 voz básica (ilimitada)',
+      '1 voz esencial (ilimitada)',
       '200,000 caracteres (~tokens)',
     ],
     stream: 'En uso de voz premium rinde aprox 2-4 horas de stream activo',
@@ -49,9 +49,9 @@ const monthlyPlans = [
     cta: 'Adquirir CREATOR',
     popular: true,
     voices: [
-      '2 voces clonadas por IA (editables)',
+      '2 voces personalizadas por IA (editables)',
       '2 voces naturales premium',
-      '1 voz básica (ilimitada)',
+      '1 voz esencial (ilimitada)',
       '500,000 caracteres (~tokens)',
     ],
     stream: 'Rinde aprox 5-8 horas de stream activo',
@@ -70,9 +70,9 @@ const monthlyPlans = [
     cta: 'Adquirir PRO',
     popular: false,
     voices: [
-      '5 voces clonadas por IA (editables)',
+      '5 voces personalizadas por IA (editables)',
       '4 voces naturales premium',
-      '1 voz básica (ilimitada)',
+      '1 voz esencial (ilimitada)',
       '800,000 caracteres (~tokens)',
     ],
     stream: 'Rinde aprox 10-15 horas de stream activo',
@@ -93,9 +93,9 @@ const annualPlans = [
     saving: 'Ahorra ~$25 USD',
     planName: 'START',
     benefits: [
-      '1 voz clonada por IA (editable)',
+      '1 voz personalizada por IA (editable)',
       '1 voz natural premium',
-      '1 voz básica (ilimitada)',
+      '1 voz esencial (ilimitada)',
       '200,000 caracteres (~tokens)',
       'Rinde aprox 2-4 horas de stream activo',
       'filtrado inteligente',
@@ -111,9 +111,9 @@ const annualPlans = [
     hot: true,
     planName: 'CREATOR',
     benefits: [
-      '2 voces clonadas por IA (editables)',
+      '2 voces personalizadas por IA (editables)',
       '2 voces naturales premium',
-      '1 voz básica (ilimitada)',
+      '1 voz esencial (ilimitada)',
       '500,000 caracteres (~tokens)',
       'Rinde aprox 5-8 horas de stream activo',
       'lectura inteligente del chat',
@@ -129,9 +129,9 @@ const annualPlans = [
     fast: true,
     planName: 'PRO',
     benefits: [
-      '5 voces clonadas por IA (editables)',
+      '5 voces personalizadas por IA (editables)',
       '4 voces naturales premium',
-      '1 voz básica (ilimitada)',
+      '1 voz esencial (ilimitada)',
       '800,000 caracteres (~tokens)',
       'Rinde aprox 10-15 horas de stream activo',
       'Experiencia completa con IA',
@@ -301,7 +301,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {annualPlans.map((plan) => (
               <div key={plan.name} className={`rounded-lg p-8 ${darkMode ? 'bg-gradient-to-br from-gray-800/70 to-gray-900/70 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-                {(plan.hot || plan.fast) && (
+                {plan.hot && (
                   <div className="mb-3">
                     <span className="inline-block text-xs font-black tracking-wider px-3 py-1 rounded-full bg-gradient-to-r from-orange-400 to-pink-500 text-white">
                       🔥 MÁS POPULAR
@@ -355,4 +355,5 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
     </div>
   )
 }
+
 

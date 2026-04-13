@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+﻿import React, { useEffect, useMemo, useState } from 'react'
 import {
   ArrowLeft,
   BarChart3,
@@ -36,9 +36,9 @@ function StatTile({ darkMode, icon: Icon, label, value, hint, tone = 'cyan' }) {
   }
 
   return (
-    <div className={`rounded-2xl border p-4 ${tones[tone]}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
+    <div className={`h-full rounded-2xl border p-4 overflow-hidden ${tones[tone]}`}>
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
           <p className={`text-xs uppercase tracking-[0.18em] ${darkMode ? 'text-white/55' : 'text-gray-500'}`}>
             {label}
           </p>
@@ -51,7 +51,7 @@ function StatTile({ darkMode, icon: Icon, label, value, hint, tone = 'cyan' }) {
             </p>
           )}
         </div>
-        <div className={`rounded-xl p-2.5 ${darkMode ? 'bg-white/6' : 'bg-white/70'}`}>
+        <div className={`shrink-0 rounded-xl p-2.5 ${darkMode ? 'bg-white/6' : 'bg-white/70'}`}>
           <Icon className="w-5 h-5" />
         </div>
       </div>
@@ -323,10 +323,10 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
                 Vista general
               </div>
               <h2 className={`mt-4 text-3xl md:text-5xl font-black leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                Tu operación de voz ya te ahorra tiempo real.
+                Resumen real de tu operación de voz.
               </h2>
               <p className={`mt-4 max-w-2xl text-sm md:text-base leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                Aquí te dejé solo métricas que sí ayudan a un streamer: cuánto se está usando el sistema, cuánto saldo real te queda, qué tanto se movió este mes y qué voces o días están cargando la operación.
+                Aquí ves métricas clave de uso: saldo de tokens, actividad del mes, consumo y rendimiento por voz para tomar decisiones rápidas.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
@@ -395,7 +395,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
           <SectionCard
             darkMode={darkMode}
             title="Pulso del mes"
-            subtitle="Qué tanto se está moviendo tu stream en lectura de voz y consumo"
+            subtitle="Actividad de tu stream en lectura de voz y consumo"
           >
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
               <StatTile
@@ -403,7 +403,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
                 icon={BarChart3}
                 label="Mensajes procesados"
                 value={formatCompact(current_month.messages_count)}
-                hint="Mensajes que sí entraron al sistema este mes"
+                hint="Mensajes que entraron al sistema este mes"
                 tone="cyan"
               />
               <StatTile
@@ -483,7 +483,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
           <SectionCard
             darkMode={darkMode}
             title="Beneficios para el stream"
-            subtitle="Solo dejé lo que sí te ayuda a medir retorno y carga operativa"
+            subtitle="Indicadores para medir retorno y carga operativa"
           >
             <div className="space-y-4">
               <StatTile
@@ -499,7 +499,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
                   Valor más útil para ti
                 </p>
                 <p className={`mt-2 text-base leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                  Si mantienes este ritmo, el sistema ya te está quitando encima una parte real del trabajo repetitivo del chat y de la voz.
+                  Si mantienes este ritmo, el sistema seguirá reduciendo carga operativa en chat y lectura de voz.
                 </p>
               </div>
               <div className={`rounded-2xl p-4 ${darkMode ? 'bg-white/[0.03]' : 'bg-gray-50'}`}>
@@ -528,8 +528,8 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
         <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-6">
           <SectionCard
             darkMode={darkMode}
-            title="Voces que sí están cargando trabajo"
-            subtitle="Uso real de voces según logs, no estimaciones"
+            title="Voces más usadas"
+            subtitle="Uso real según logs"
           >
             {stats.top_voices?.length ? (
               <div className="space-y-3">
@@ -566,7 +566,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
           <SectionCard
             darkMode={darkMode}
             title="Tu cuenta"
-            subtitle="Lo importante para operación y crecimiento"
+            subtitle="Datos clave para operación y crecimiento"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <StatTile
@@ -608,3 +608,4 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
     </div>
   )
 }
+
