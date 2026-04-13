@@ -118,12 +118,12 @@ function FeatureLockedOverlay({
   showIcon = false,
   showMessage = false
 }) {
+  const glassClasses = darkMode
+    ? 'bg-gradient-to-br from-slate-950/48 via-slate-900/42 to-slate-800/34 border border-cyan-400/18 backdrop-blur-[1.5px]'
+    : 'bg-slate-900/8 border border-slate-500/20 backdrop-blur-[0.35px]'
+
   return (
-    <div className={`absolute inset-0 rounded-xl flex items-center justify-center pointer-events-none ${
-      darkMode
-        ? 'bg-gradient-to-br from-gray-900/80 to-gray-800/70'
-        : 'bg-gradient-to-br from-gray-200/70 to-gray-100/60'
-    }`}>
+    <div className={`absolute inset-0 rounded-xl flex items-center justify-center pointer-events-none ${glassClasses}`}>
       <div className={`flex flex-col items-center pointer-events-auto ${showMessage || showIcon ? 'gap-2' : 'gap-0'}`}>
         {showIcon && <Lock className={`w-5 h-5 ${darkMode ? 'text-gray-500' : 'text-gray-600'}`} />}
         {showMessage && (
@@ -730,7 +730,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               )}
 
               {/* SECCIÓN VOCES */}
-              <div className={`relative ${userPlan === 'free' ? 'opacity-55 pointer-events-none' : ''}`}>
+              <div className={`relative ${userPlan === 'free' ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
                 {userPlan === 'free' && (
                   <FeatureLockedOverlay darkMode={darkMode} message="Voces disponibles en START+" showIcon showMessage />
                 )}
@@ -987,7 +987,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
 
               {/* LEFT COLUMN - BLOQUE INDEPENDIENTE DE NOTIFICACIONES */}
               <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-rose-400/25' : 'bg-white border-slate-200'}`}>
-                <div className={`relative ${isFeatureBlocked('notifications', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className={`relative ${isFeatureBlocked('notifications', userPlan) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
                   {isFeatureBlocked('notifications', userPlan) && (
                     <FeatureLockedOverlay
                       darkMode={darkMode}
@@ -1208,7 +1208,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               </div>
 
               {/* ASISTENTE DE IA - BLOQUEADO EN FREE, START Y CREATOR */}
-              <div className={`relative ${isFeatureBlocked('aiAssistant', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+              <div className={`relative ${isFeatureBlocked('aiAssistant', userPlan) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
                 {isFeatureBlocked('aiAssistant', userPlan) && (
                   <FeatureLockedOverlay
                     darkMode={darkMode}
