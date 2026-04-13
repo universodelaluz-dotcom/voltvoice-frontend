@@ -119,7 +119,7 @@ function FeatureLockedOverlay({
   showMessage = false
 }) {
   const glassClasses = darkMode
-    ? 'bg-gradient-to-br from-slate-950/48 via-slate-900/42 to-slate-800/34 border border-cyan-400/18 backdrop-blur-[1.5px]'
+    ? 'bg-gradient-to-br from-slate-950/20 via-slate-900/14 to-slate-800/10 border border-cyan-300/14 backdrop-blur-[0.7px]'
     : 'bg-slate-900/8 border border-slate-500/20 backdrop-blur-[0.35px]'
 
   return (
