@@ -101,6 +101,7 @@ const DEFAULT_CONFIG = {
     communityMembers: { enabled: false, color: '#22c55e' },
     topFans: { enabled: false, color: '#06b6d4' },
   },
+  configUpdatedAt: 0,
 }
 
 const normalizeHighlightedUsers = (value) => {
@@ -157,6 +158,7 @@ const normalizeUserConfig = (rawConfig = {}) => {
     chatMsgColorDark: config.chatMsgColorDark || config.chatMsgColor || DEFAULT_CONFIG.chatMsgColorDark,
     chatMsgColorLight: config.chatMsgColorLight || DEFAULT_CONFIG.chatMsgColorLight,
     themeMode: config.themeMode || DEFAULT_CONFIG.themeMode,
+    configUpdatedAt: Number.isFinite(Number(config.configUpdatedAt)) ? Number(config.configUpdatedAt) : Number(DEFAULT_CONFIG.configUpdatedAt || 0),
     botAssistantVoiceSpeed: normalizedVoiceSpeed,
     botAssistantMaxResponseChars: normalizedMaxChars,
     sessionModerationList: normalizeSessionModerationList(config.sessionModerationList),
@@ -338,7 +340,7 @@ export function App() {
   const updateConfig = useCallback((key, value) => {
     setConfig((prev) => {
       if (Object.is(prev?.[key], value)) return prev
-      return { ...prev, [key]: value }
+      return { ...prev, [key]: value, configUpdatedAt: Date.now() }
     })
   }, [])
   const latestConfigRef = useRef(config)
@@ -452,17 +454,19 @@ export function App() {
         const cachedConfigRaw = loadCachedConfig(userKey) || {}
         const remoteConfigRaw = normalizeServerConfigPayload(data.config)
         const hasRemoteConfig = Object.keys(remoteConfigRaw).length > 0
-        // Prioriza cache local para no perder el ultimo estado del usuario
-        // cuando el backend aun no refleja el guardado mas reciente.
-        const mergedConfig = normalizeUserConfig(
-          hasRemoteConfig
+        const cachedUpdatedAt = Number(cachedConfigRaw?.configUpdatedAt || 0)
+        const remoteUpdatedAt = Number(remoteConfigRaw?.configUpdatedAt || 0)
+        const preferCached = cachedUpdatedAt >= remoteUpdatedAt
+        const mergedRaw = hasRemoteConfig
+          ? (preferCached
             ? { ...remoteConfigRaw, ...cachedConfigRaw }
-            : cachedConfigRaw
-        )
+            : { ...cachedConfigRaw, ...remoteConfigRaw })
+          : cachedConfigRaw
+        const mergedConfig = normalizeUserConfig(mergedRaw)
         setConfig(mergedConfig)
         setDarkMode(mergedConfig.themeMode !== 'light')
-        if (hasRemoteConfig && Object.keys(cachedConfigRaw).length > 0) {
-          // Backfill asíncrono: sincroniza servidor con el estado local efectivo.
+        if (hasRemoteConfig && preferCached && Object.keys(cachedConfigRaw).length > 0) {
+          // Backfill asíncrono: solo si local es mas reciente que remoto.
           persistConfigNow(token, mergedConfig).catch(() => {})
         }
         console.log('[Config] Configuracion del usuario cargada')
@@ -1702,6 +1706,7 @@ export function App() {
   )
 }
 // Cache buster 1774553392
+
 
 
 
