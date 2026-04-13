@@ -8,6 +8,7 @@ import CouponManager from './CouponManager'
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
 const PLANS = ['all', 'free', 'start', 'creator', 'pro', 'admin']
+const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
 const PLAN_STYLE = {
   all:     { bg: 'bg-white/10',          text: 'text-white',        dot: 'bg-white' },
@@ -91,6 +92,11 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [audioCacheScopeFilter, setAudioCacheScopeFilter] = useState('all')
   const [audioCacheLoading, setAudioCacheLoading] = useState(false)
 
+  const [dashboardYear, setDashboardYear] = useState(new Date().getFullYear())
+  const [dashboardMonth, setDashboardMonth] = useState(0) // 0 = todos
+  const [monthSortKey, setMonthSortKey] = useState('monthKey')
+  const [monthSortDir, setMonthSortDir] = useState('desc') // más reciente primero
+
     const [voicesUser, setVoicesUser] = useState(null)
   const [voicesList, setVoicesList] = useState([])
   const [voicesLoading, setVoicesLoading] = useState(false)
@@ -120,7 +126,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
     }
     setLoading(true)
     try {
-      const r = await fetch(`${API_URL}/api/admin/stats`, { headers: buildHeaders() })
+      const r = await fetch(`${API_URL}/api/admin/stats?year=${dashboardYear}`, { headers: buildHeaders() })
       const d = await r.json().catch(() => ({}))
       if (r.ok && d.success) {
         setStats(d.stats)
@@ -134,7 +140,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
       console.error('[Admin] Stats fetch error:', e)
     }
     setLoading(false)
-  }, [authToken])
+  }, [authToken, dashboardYear])
 
   const loadUsers = useCallback(async () => {
     if (!authToken) {
@@ -616,178 +622,331 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
       <div className="max-w-7xl mx-auto px-4 pt-32 pb-20">
 
         {/* ===== DASHBOARD ===== */}
-        {tab === 'dashboard' && stats && (
-          <div className="space-y-6">
-
-            {/* KPIs fila superior */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { label: 'Total Usuarios', value: stats.totalUsers.toLocaleString(), icon: Users, color: 'text-cyan-400', sub: `+${stats.usersToday} hoy` },
-                { label: 'En Línea Ahora', value: stats.onlineUsers.toLocaleString(), icon: Wifi, color: 'text-green-400', sub: 'Últimos 5 min', pulse: true },
-                { label: 'Tokens Usados', value: stats.totalTokensUsed >= 1000000 ? (stats.totalTokensUsed / 1000000).toFixed(1) + 'M' : (stats.totalTokensUsed / 1000).toFixed(1) + 'K', icon: Zap, color: 'text-yellow-400', sub: `${(stats.tokensUsedToday / 1000).toFixed(1)}K hoy` },
-                { label: 'Transacciones', value: stats.totalTransactions.toLocaleString(), icon: TrendingUp, color: 'text-purple-400', sub: 'completadas' },
-              ].map((k, i) => (
-                <div key={i} className={card}>
-                  <div className="flex items-start justify-between mb-3">
-                    <span className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{k.label}</span>
-                    <div className="relative">
-                      {k.pulse && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full animate-ping" />}
-                      <k.icon className={`w-4 h-4 ${k.color}`} />
-                    </div>
-                  </div>
-                  <div className={`text-2xl font-black ${k.color}`}>{k.value}</div>
-                  <div className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{k.sub}</div>
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className={card}>
-                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ingresos</p>
-                <p className="text-xl font-black text-emerald-400">{fmtUsd(stats.revenueMonthUsd)}</p>
-                <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual</p>
-                <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ano: {fmtUsd(stats.revenueYearUsd)}  Total: {fmtUsd(stats.revenueTotalUsd)}</p>
-              </div>
-              <div className={card}>
-                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Costos estimados</p>
-                <p className="text-xl font-black text-orange-400">{fmtUsd(stats.estimatedCostMonthUsd)}</p>
-                <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual</p>
-                <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ano: {fmtUsd(stats.estimatedCostYearUsd)}  Total: {fmtUsd(stats.estimatedCostTotalUsd)}</p>
-              </div>
-              <div className={card}>
-                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Margen estimado</p>
-                <p className={`text-xl font-black ${Number(stats.estimatedMarginMonthUsd || 0) >= 0 ? 'text-cyan-400' : 'text-red-400'}`}>{fmtUsd(stats.estimatedMarginMonthUsd)}</p>
-                <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual</p>
-                <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ano: {fmtUsd(stats.estimatedMarginYearUsd)}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className={card}>
-                <h3 className="font-bold mb-2">Usuarios registrados</h3>
-                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Hoy: <span className="font-bold">{stats.usersToday?.toLocaleString()}</span></p>
-                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Mes: <span className="font-bold">{stats.usersThisMonth?.toLocaleString()}</span></p>
-                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Ano: <span className="font-bold">{stats.usersThisYear?.toLocaleString()}</span></p>
-              </div>
-              <div className={card}>
-                <h3 className="font-bold mb-2">Tokens consumidos</h3>
-                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Hoy: <span className="font-bold">{fmtCompact(stats.tokensUsedToday)}</span></p>
-                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Mes: <span className="font-bold">{fmtCompact(stats.tokensUsedMonth)}</span></p>
-                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Ano: <span className="font-bold">{fmtCompact(stats.tokensUsedYear)}</span></p>
-              </div>
-              <div className={card}>
-                <h3 className="font-bold mb-2">Transacciones</h3>
-                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Mes: <span className="font-bold">{stats.transactionsMonth?.toLocaleString()}</span></p>
-                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Ano: <span className="font-bold">{stats.transactionsYear?.toLocaleString()}</span></p>
-                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total: <span className="font-bold">{stats.totalTransactions?.toLocaleString()}</span></p>
-              </div>
-            </div>
-
-            <div className={card}>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold">Resumen mensual (12 meses)</h3>
-                <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Usuarios, tokens e ingresos</span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
-                      <th className="text-left py-2">Mes</th>
-                      <th className="text-right py-2">Usuarios</th>
-                      <th className="text-right py-2">Tokens</th>
-                      <th className="text-right py-2">Ingresos USD</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(stats.monthlyOverview || []).map((m) => (
-                      <tr key={m.monthKey} className={`border-t ${darkMode ? 'border-white/10' : 'border-gray-100'}`}>
-                        <td className={`py-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{m.monthKey}</td>
-                        <td className="py-2 text-right">{Number(m.users || 0).toLocaleString()}</td>
-                        <td className="py-2 text-right">{fmtCompact(m.tokens || 0)}</td>
-                        <td className="py-2 text-right">{fmtUsd(m.revenueUsd || 0)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Contadores por plan */}
-            <div className={card}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold">Suscriptores por Plan</h3>
-                <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                  {stats.onlineUsers} online ahora
-                </span>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                {['free', 'start', 'creator', 'pro', 'admin'].map(plan => {
-                  const s = planStyle(plan)
-                  const count = planCount(plan)
-                  const online = planOnline(plan)
-                  const pct = stats.totalUsers > 0 ? Math.round((count / stats.totalUsers) * 100) : 0
-                  return (
-                    <div key={plan} className={`rounded-xl p-4 ${s.bg} border ${darkMode ? 'border-white/10' : 'border-black/5'}`}>
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <span className={`w-2 h-2 rounded-full ${s.dot}`} />
-                        <span className={`text-xs font-bold uppercase ${s.text}`}>{plan}</span>
-                      </div>
-                      <div className={`text-3xl font-black ${s.text}`}>{count}</div>
-                      <div className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{pct}% del total</div>
-                      {online > 0 && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                          <span className="text-xs text-green-400">{online} online</span>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Top usuarios + Actividad */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className={card}>
-                <h3 className="font-bold mb-4">Top por Tokens Usados</h3>
-                <div className="space-y-2">
-                  {stats.topUsers.slice(0, 8).map((u, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className={`text-xs font-bold w-4 shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{i + 1}</span>
-                        <span className={`text-xs truncate ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{u.email}</span>
-                      </div>
-                      <span className="text-yellow-400 font-bold text-xs shrink-0 ml-2">
-                        {parseInt(u.total_used) >= 1000000
-                          ? (parseInt(u.total_used) / 1000000).toFixed(1) + 'M'
-                          : (parseInt(u.total_used) / 1000).toFixed(1) + 'K'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className={card}>
-                <h3 className="font-bold mb-4">Actividad Reciente</h3>
-                <div className="space-y-2">
-                  {stats.recentActivity.slice(0, 8).map((a, i) => (
-                    <div key={i} className={`flex items-center justify-between text-xs border-b last:border-0 pb-1.5 ${darkMode ? 'border-white/5' : 'border-gray-100'}`}>
-                      <div className="min-w-0">
-                        <span className={`truncate block max-w-[160px] ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{a.email}</span>
-                        <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>{a.action || 'sAntesis'}</span>
-                      </div>
-                      <div className="text-right shrink-0 ml-2">
-                        <span className="text-yellow-400 font-bold block">{a.tokens_used?.toLocaleString()}</span>
-                        <span className={darkMode ? 'text-gray-600' : 'text-gray-400'}>
-                          {new Date(a.timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+        {tab === 'dashboard' && loading && (
+          <div className="flex items-center justify-center py-20">
+            <RefreshCw className="w-6 h-6 animate-spin text-cyan-400 mr-3" />
+            <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Cargando estadísticas...</span>
           </div>
         )}
+        {tab === 'dashboard' && !loading && !stats && (
+          <div className={`max-w-md mx-auto mt-16 ${darkMode ? 'bg-white/5 border border-white/10' : 'bg-white border border-gray-200 shadow-sm'} rounded-xl p-8 text-center`}>
+            <Shield className="w-10 h-10 text-red-400 mx-auto mb-4" />
+            <p className={`font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Sin datos</p>
+            <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              {usersError || 'No se pudieron cargar las estadísticas. Verifica que estés autenticado como admin.'}
+            </p>
+            <button onClick={loadStats} className="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors">
+              Reintentar
+            </button>
+          </div>
+        )}
+        {tab === 'dashboard' && !loading && stats && (() => {
+          const allMonths = stats.monthlyOverview || []
+          const filteredMonths = dashboardMonth === 0
+            ? allMonths
+            : allMonths.filter(m => parseInt(m.monthKey.split('-')[1], 10) === dashboardMonth)
+          const sortedMonths = [...filteredMonths].sort((a, b) => {
+            const va = monthSortKey === 'monthKey' ? a.monthKey : Number(a[monthSortKey] || 0)
+            const vb = monthSortKey === 'monthKey' ? b.monthKey : Number(b[monthSortKey] || 0)
+            if (va < vb) return monthSortDir === 'asc' ? -1 : 1
+            if (va > vb) return monthSortDir === 'asc' ? 1 : -1
+            return 0
+          })
+          const toggleSort = (key) => {
+            if (monthSortKey === key) setMonthSortDir(d => d === 'asc' ? 'desc' : 'asc')
+            else { setMonthSortKey(key); setMonthSortDir('desc') }
+          }
+          const sortIcon = (key) => monthSortKey === key ? (monthSortDir === 'desc' ? ' ↓' : ' ↑') : ' ↕'
+          const maxTokens  = Math.max(...allMonths.map(m => Number(m.tokens || 0)), 1)
+          const maxRevenue = Math.max(...allMonths.map(m => Number(m.revenueUsd || 0)), 1)
+          const maxUsers   = Math.max(...allMonths.map(m => Number(m.users || 0)), 1)
+          const yearOptions = []
+          for (let y = 2023; y <= new Date().getFullYear(); y++) yearOptions.push(y)
+
+          return (
+            <div className="space-y-6">
+
+              {/* === Selector Año / Mes === */}
+              <div className={card}>
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Año</span>
+                    <div className="flex gap-1">
+                      {yearOptions.map(y => (
+                        <button key={y} onClick={() => { setDashboardYear(y); setDashboardMonth(0) }}
+                          className={`px-3 py-1 rounded-lg text-sm font-bold transition-all ${dashboardYear === y ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' : darkMode ? 'bg-white/10 text-gray-300 hover:bg-white/20' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                        >{y}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={`w-px h-5 hidden md:block ${darkMode ? 'bg-white/10' : 'bg-gray-200'}`} />
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Mes</span>
+                    <div className="flex flex-wrap gap-1">
+                      {[['Todos', 0], ...MONTH_NAMES.map((m, i) => [m, i + 1])].map(([lbl, val]) => (
+                        <button key={val} onClick={() => setDashboardMonth(val)}
+                          className={`px-2 py-0.5 rounded text-xs font-semibold transition-all ${dashboardMonth === val ? 'bg-cyan-500 text-white' : darkMode ? 'bg-white/10 text-gray-300 hover:bg-white/20' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                        >{lbl}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <span className={`text-xs ml-auto hidden sm:block ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                    {dashboardYear}{dashboardMonth > 0 ? ` · ${MONTH_NAMES[dashboardMonth - 1]}` : ' · Todo el año'}
+                  </span>
+                </div>
+              </div>
+
+              {/* KPIs */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { label: 'Total Usuarios', value: stats.totalUsers.toLocaleString(), icon: Users, color: 'text-cyan-400', sub: `+${stats.usersToday} hoy` },
+                  { label: 'En Línea Ahora', value: stats.onlineUsers.toLocaleString(), icon: Wifi, color: 'text-green-400', sub: 'Últimos 5 min', pulse: true },
+                  { label: 'Tokens Usados', value: fmtCompact(stats.totalTokensUsed), icon: Zap, color: 'text-yellow-400', sub: `${fmtCompact(stats.tokensUsedToday)} hoy` },
+                  { label: 'Transacciones', value: stats.totalTransactions.toLocaleString(), icon: TrendingUp, color: 'text-purple-400', sub: 'completadas' },
+                ].map((k, i) => (
+                  <div key={i} className={card}>
+                    <div className="flex items-start justify-between mb-3">
+                      <span className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{k.label}</span>
+                      <div className="relative">
+                        {k.pulse && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full animate-ping" />}
+                        <k.icon className={`w-4 h-4 ${k.color}`} />
+                      </div>
+                    </div>
+                    <div className={`text-2xl font-black ${k.color}`}>{k.value}</div>
+                    <div className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{k.sub}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Financiero año seleccionado + mini gráficos */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className={card}>
+                  <p className={`text-xs font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ingresos {dashboardYear}</p>
+                  <p className="text-xl font-black text-emerald-400 mt-1">{fmtUsd(stats.revenueYearUsd)}</p>
+                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual: {fmtUsd(stats.revenueMonthUsd)} · Total: {fmtUsd(stats.revenueTotalUsd)}</p>
+                  <div className="flex items-end gap-0.5 h-10 mt-3">
+                    {allMonths.map((m, i) => (
+                      <div key={i} title={`${m.monthKey}: ${fmtUsd(m.revenueUsd)}`}
+                        className={`flex-1 rounded-t-sm transition-all cursor-pointer hover:opacity-100 ${dashboardMonth === i + 1 || dashboardMonth === 0 ? 'opacity-90' : 'opacity-20'}`}
+                        style={{ height: `${Math.max(4, (Number(m.revenueUsd || 0) / maxRevenue) * 100)}%`, backgroundColor: '#34d399' }}
+                        onClick={() => setDashboardMonth(dashboardMonth === i + 1 ? 0 : i + 1)}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex mt-1">
+                    {allMonths.map((m, i) => (
+                      <div key={i} className={`flex-1 text-center text-[9px] ${dashboardMonth === i + 1 ? 'text-emerald-400 font-bold' : darkMode ? 'text-gray-700' : 'text-gray-300'}`}>{MONTH_NAMES[i]}</div>
+                    ))}
+                  </div>
+                </div>
+                <div className={card}>
+                  <p className={`text-xs font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Costos est. {dashboardYear}</p>
+                  <p className="text-xl font-black text-orange-400 mt-1">{fmtUsd(stats.estimatedCostYearUsd)}</p>
+                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual: {fmtUsd(stats.estimatedCostMonthUsd)}</p>
+                  <div className="flex items-end gap-0.5 h-10 mt-3">
+                    {allMonths.map((m, i) => (
+                      <div key={i} title={`${m.monthKey}: ${fmtCompact(m.tokens)} tokens`}
+                        className={`flex-1 rounded-t-sm transition-all cursor-pointer hover:opacity-100 ${dashboardMonth === i + 1 || dashboardMonth === 0 ? 'opacity-90' : 'opacity-20'}`}
+                        style={{ height: `${Math.max(4, (Number(m.tokens || 0) / maxTokens) * 100)}%`, backgroundColor: '#fb923c' }}
+                        onClick={() => setDashboardMonth(dashboardMonth === i + 1 ? 0 : i + 1)}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex mt-1">
+                    {allMonths.map((m, i) => (
+                      <div key={i} className={`flex-1 text-center text-[9px] ${dashboardMonth === i + 1 ? 'text-orange-400 font-bold' : darkMode ? 'text-gray-700' : 'text-gray-300'}`}>{MONTH_NAMES[i]}</div>
+                    ))}
+                  </div>
+                </div>
+                <div className={card}>
+                  <p className={`text-xs font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Margen est. {dashboardYear}</p>
+                  <p className={`text-xl font-black mt-1 ${Number(stats.estimatedMarginYearUsd || 0) >= 0 ? 'text-cyan-400' : 'text-red-400'}`}>{fmtUsd(stats.estimatedMarginYearUsd)}</p>
+                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual: {fmtUsd(stats.estimatedMarginMonthUsd)}</p>
+                  <div className="flex items-end gap-0.5 h-10 mt-3">
+                    {allMonths.map((m, i) => (
+                      <div key={i} title={`${m.monthKey}: ${m.users} usuarios`}
+                        className={`flex-1 rounded-t-sm transition-all cursor-pointer hover:opacity-100 ${dashboardMonth === i + 1 || dashboardMonth === 0 ? 'opacity-90' : 'opacity-20'}`}
+                        style={{ height: `${Math.max(4, (Number(m.users || 0) / maxUsers) * 100)}%`, backgroundColor: '#22d3ee' }}
+                        onClick={() => setDashboardMonth(dashboardMonth === i + 1 ? 0 : i + 1)}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex mt-1">
+                    {allMonths.map((m, i) => (
+                      <div key={i} className={`flex-1 text-center text-[9px] ${dashboardMonth === i + 1 ? 'text-cyan-400 font-bold' : darkMode ? 'text-gray-700' : 'text-gray-300'}`}>{MONTH_NAMES[i]}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Contadores período */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className={card}>
+                  <h3 className="font-bold mb-2">Usuarios registrados</h3>
+                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Hoy: <span className="font-bold">{stats.usersToday?.toLocaleString()}</span></p>
+                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Mes actual: <span className="font-bold">{stats.usersThisMonth?.toLocaleString()}</span></p>
+                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{dashboardYear}: <span className="font-bold text-cyan-400">{stats.usersThisYear?.toLocaleString()}</span></p>
+                </div>
+                <div className={card}>
+                  <h3 className="font-bold mb-2">Tokens consumidos</h3>
+                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Hoy: <span className="font-bold">{fmtCompact(stats.tokensUsedToday)}</span></p>
+                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Mes actual: <span className="font-bold">{fmtCompact(stats.tokensUsedMonth)}</span></p>
+                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{dashboardYear}: <span className="font-bold text-yellow-400">{fmtCompact(stats.tokensUsedYear)}</span></p>
+                </div>
+                <div className={card}>
+                  <h3 className="font-bold mb-2">Transacciones</h3>
+                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Mes actual: <span className="font-bold">{stats.transactionsMonth?.toLocaleString()}</span></p>
+                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{dashboardYear}: <span className="font-bold text-purple-400">{stats.transactionsYear?.toLocaleString()}</span></p>
+                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total: <span className="font-bold">{stats.totalTransactions?.toLocaleString()}</span></p>
+                </div>
+              </div>
+
+              {/* Resumen mensual con gráfico + tabla ordenable */}
+              <div className={card}>
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                  <h3 className="font-bold">Resumen mensual — {dashboardYear}{dashboardMonth > 0 ? ` · ${MONTH_NAMES[dashboardMonth - 1]}` : ''}</h3>
+                  <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{sortedMonths.length} {sortedMonths.length === 1 ? 'mes' : 'meses'} · clic columna para ordenar</span>
+                </div>
+                {/* Gráfico de barras — tokens */}
+                <div className="mb-4">
+                  <p className={`text-xs mb-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Tokens por mes (clic para filtrar)</p>
+                  <div className="flex items-end gap-0.5 h-20">
+                    {allMonths.map((m, i) => {
+                      const isActive = dashboardMonth === 0 || dashboardMonth === i + 1
+                      return (
+                        <div key={i} className="flex-1 h-full flex flex-col justify-end cursor-pointer group"
+                          onClick={() => setDashboardMonth(dashboardMonth === i + 1 ? 0 : i + 1)}>
+                          <div
+                            title={`${m.monthKey}: ${fmtCompact(m.tokens)}`}
+                            className={`w-full rounded-t-sm transition-all group-hover:opacity-100 ${isActive ? 'opacity-85' : 'opacity-20'}`}
+                            style={{ height: `${Math.max(3, (Number(m.tokens || 0) / maxTokens) * 100)}%`, backgroundColor: '#facc15' }}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="flex mt-1">
+                    {allMonths.map((m, i) => (
+                      <div key={i} className={`flex-1 text-center text-[9px] cursor-pointer ${dashboardMonth === i + 1 ? 'text-yellow-400 font-bold' : darkMode ? 'text-gray-600' : 'text-gray-400'}`}
+                        onClick={() => setDashboardMonth(dashboardMonth === i + 1 ? 0 : i + 1)}>
+                        {MONTH_NAMES[i]}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Tabla ordenable */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
+                        {[['monthKey', 'Mes'], ['users', 'Usuarios'], ['tokens', 'Tokens'], ['revenueUsd', 'Ingresos USD']].map(([key, label]) => (
+                          <th key={key}
+                            className={`py-2 ${key === 'monthKey' ? 'text-left' : 'text-right'} cursor-pointer select-none hover:text-cyan-400 transition-colors`}
+                            onClick={() => toggleSort(key)}>
+                            {label}<span className="font-mono">{sortIcon(key)}</span>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedMonths.map((m) => (
+                        <tr key={m.monthKey} className={`border-t ${darkMode ? 'border-white/10' : 'border-gray-100'} hover:${darkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
+                          <td className={`py-2 font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{m.monthKey}</td>
+                          <td className="py-2 text-right">{Number(m.users || 0).toLocaleString()}</td>
+                          <td className="py-2 text-right text-yellow-400 font-semibold">{fmtCompact(m.tokens || 0)}</td>
+                          <td className="py-2 text-right text-emerald-400 font-semibold">{fmtUsd(m.revenueUsd || 0)}</td>
+                        </tr>
+                      ))}
+                      {sortedMonths.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className={`py-4 text-center ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>Sin datos para este período</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Suscriptores por plan */}
+              <div className={card}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold">Suscriptores por Plan</h3>
+                  <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{stats.onlineUsers} online ahora</span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {['free', 'start', 'creator', 'pro', 'admin'].map(plan => {
+                    const s = planStyle(plan)
+                    const count = planCount(plan)
+                    const online = planOnline(plan)
+                    const pct = stats.totalUsers > 0 ? Math.round((count / stats.totalUsers) * 100) : 0
+                    return (
+                      <div key={plan} className={`rounded-xl p-4 ${s.bg} border ${darkMode ? 'border-white/10' : 'border-black/5'}`}>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <span className={`w-2 h-2 rounded-full ${s.dot}`} />
+                          <span className={`text-xs font-bold uppercase ${s.text}`}>{plan}</span>
+                        </div>
+                        <div className={`text-3xl font-black ${s.text}`}>{count}</div>
+                        <div className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{pct}% del total</div>
+                        {online > 0 && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                            <span className="text-xs text-green-400">{online} online</span>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Top usuarios + Actividad reciente */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className={card}>
+                  <h3 className="font-bold mb-1">Top por Tokens Usados</h3>
+                  <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mayor a menor · histórico total</p>
+                  <div className="space-y-2.5">
+                    {[...stats.topUsers].sort((a, b) => Number(b.total_used) - Number(a.total_used)).slice(0, 10).map((u, i) => (
+                      <div key={i} className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`text-xs font-black w-5 shrink-0 ${i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-orange-400' : darkMode ? 'text-gray-600' : 'text-gray-400'}`}>#{i + 1}</span>
+                          <span className={`text-xs truncate ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{u.email}</span>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <span className="text-yellow-400 font-bold text-xs block">{fmtCompact(u.total_used)}</span>
+                          <div className="w-16 h-1 bg-white/10 rounded-full mt-0.5">
+                            <div className="h-1 bg-yellow-400 rounded-full" style={{ width: `${Math.min(100, (Number(u.total_used) / (Number(stats.topUsers[0]?.total_used) || 1)) * 100)}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={card}>
+                  <h3 className="font-bold mb-1">Actividad Reciente</h3>
+                  <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Más reciente primero</p>
+                  <div className="space-y-2">
+                    {[...stats.recentActivity].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10).map((a, i) => (
+                      <div key={i} className={`flex items-center justify-between text-xs border-b last:border-0 pb-1.5 ${darkMode ? 'border-white/5' : 'border-gray-100'}`}>
+                        <div className="min-w-0">
+                          <span className={`truncate block max-w-[150px] ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{a.email}</span>
+                          <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>{a.action || 'síntesis'}</span>
+                        </div>
+                        <div className="text-right shrink-0 ml-2">
+                          <span className="text-yellow-400 font-bold block">{a.tokens_used?.toLocaleString()}</span>
+                          <span className={darkMode ? 'text-gray-600' : 'text-gray-400'}>
+                            {new Date(a.timestamp).toLocaleString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          )
+        })()}
 
         {/* ===== OPERACIONES ===== */}
         {tab === 'ops' && (
