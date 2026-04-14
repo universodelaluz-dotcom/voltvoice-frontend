@@ -421,32 +421,100 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
   }
 
   return (
-    <div className={`min-h-screen flex items-center justify-center px-4 ${
-      darkMode
-        ? 'bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23]'
-        : 'bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1]'
-    }`}>
-      {/* Back button */}
-      <button
-        onClick={onGoHome}
-        className={`fixed top-6 left-6 flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
-          darkMode
-            ? 'bg-gray-800/80 border border-cyan-500/30 text-cyan-400 hover:bg-gray-700'
-            : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm'
-        }`}
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Inicio
-      </button>
+    <div className="min-h-screen flex">
+
+      {/* ===== PANEL IZQUIERDO — Branding ===== */}
+      <div className="hidden lg:flex w-1/2 relative overflow-hidden bg-gradient-to-br from-[#0a0a1a] via-[#110022] to-[#0a0a1a] flex-col items-center justify-center p-14 pulse-glow">
+
+        {/* Blobs decorativos */}
+        <div className="absolute top-[-80px] left-[-80px] w-72 h-72 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="absolute bottom-[-60px] right-[-60px] w-96 h-96 rounded-full bg-purple-600/10 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-cyan-400/5 blur-3xl" />
+
+        {/* Logo */}
+        <div className="relative z-10 text-center mb-10">
+          <img src="/images/logo-main.png" alt="Stream Voicer" className="h-14 mx-auto mb-6 object-contain drop-shadow-lg" />
+          <h2 className="text-4xl font-black text-white leading-tight mb-3">
+            Tu chat TikTok<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">cobró vida.</span>
+          </h2>
+          <p className="text-gray-400 text-lg max-w-xs mx-auto">Voces con IA que leen tu stream en tiempo real.</p>
+        </div>
+
+        {/* Features */}
+        <div className="relative z-10 space-y-4 w-full max-w-xs mb-10">
+          {[
+            { icon: '🎙️', title: 'Voces con IA', desc: 'Más de 20 voces premium' },
+            { icon: '⚡', title: 'Tiempo real', desc: 'Sin delay, sin complicaciones' },
+            { icon: '🎭', title: 'Bots con personalidad', desc: 'Personajes que interactúan solos' },
+          ].map((f, i) => (
+            <div key={i} className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl px-4 py-3 backdrop-blur-sm">
+              <span className="text-2xl">{f.icon}</span>
+              <div>
+                <p className="text-white font-bold text-sm">{f.title}</p>
+                <p className="text-gray-500 text-xs">{f.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Chat bubbles animados */}
+        <div className="relative z-10 w-full max-w-xs space-y-2">
+          <div className="float-1 bg-white/5 border border-cyan-500/20 rounded-2xl rounded-tl-sm px-4 py-2 text-sm text-gray-300 w-fit">
+            💬 <span className="text-cyan-400 font-bold">@alexgamer:</span> gg crack!
+          </div>
+          <div className="float-2 bg-white/5 border border-purple-500/20 rounded-2xl rounded-tr-sm px-4 py-2 text-sm text-gray-300 w-fit ml-auto">
+            🔊 <em className="text-purple-300">leyendo mensaje...</em>
+          </div>
+          <div className="float-3 bg-white/5 border border-cyan-500/20 rounded-2xl rounded-tl-sm px-4 py-2 text-sm text-gray-300 w-fit">
+            💬 <span className="text-cyan-400 font-bold">@sofia_art:</span> qué voz más chida
+          </div>
+        </div>
+
+        {/* Wave bars */}
+        <div className="relative z-10 mt-8 flex items-end gap-1 h-8">
+          {[0.3,0.6,1,0.7,0.4,0.8,1,0.5,0.3,0.9,0.6,1,0.4].map((h, i) => (
+            <div
+              key={i}
+              className="wave-bar w-1.5 rounded-full bg-gradient-to-t from-cyan-500 to-purple-400"
+              style={{ height: `${h * 100}%`, animationDelay: `${i * 0.1}s` }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ===== PANEL DERECHO — Formulario ===== */}
+      <div className={`w-full lg:w-1/2 flex flex-col items-center justify-center px-6 py-12 relative ${
+        darkMode
+          ? 'bg-[#0f0f23]'
+          : 'bg-gradient-to-b from-[#f0f2f5] to-[#e8ecf1]'
+      }`}>
+
+        {/* Back button */}
+        <button
+          onClick={onGoHome}
+          className={`absolute top-6 left-6 flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+            darkMode
+              ? 'bg-gray-800/80 border border-cyan-500/30 text-cyan-400 hover:bg-gray-700'
+              : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm'
+          }`}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Inicio
+        </button>
+
+        {/* Logo visible solo en mobile */}
+        <div className="lg:hidden mb-8">
+          <img src="/images/logo-main.png" alt="Stream Voicer" className="h-10 mx-auto object-contain" />
+        </div>
 
       <div className={`w-full max-w-md rounded-2xl p-8 ${
         darkMode
           ? 'bg-gray-900/80 border border-cyan-500/20 shadow-2xl shadow-cyan-500/5'
           : 'bg-white border border-gray-200 shadow-xl'
       }`}>
-        {/* Logo */}
+        {/* Header */}
         <div className="text-center mb-8">
-          <img src="/images/logo-main.png" alt="Stream Voicer" className="h-10 mx-auto mb-4 object-contain" />
           <h1 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>
             {step === 'verification'
               ? 'Verifica tu Email'
@@ -944,6 +1012,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
             </div>
           </>
         )}
+      </div>
       </div>
     </div>
   )
