@@ -643,6 +643,16 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                   </button>
                 </form>
 
+                {/* reCAPTCHA disclosure */}
+                {mode === 'register' && RECAPTCHA_SITE_KEY && (
+                  <p className={`text-xs text-center mt-3 ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>
+                    Protegido por reCAPTCHA.{' '}
+                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">Privacidad</a>
+                    {' '}y{' '}
+                    <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">Términos</a> de Google.
+                  </p>
+                )}
+
                 {/* Toggle mode */}
                 <div className="mt-5 text-center">
                   {mode === 'login' && (
