@@ -2449,7 +2449,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   }
 
   const currentReadingMessage = messages.find((msg) => msg.status === 'playing') || null
-  const showConnectedView = isConnected || showSessionSummary
+  const showConnectedView = true // siempre visible
   const mobilePreviewUsername = normalizeTikTokUsername(connectedTikTokUser || tiktokUser || config.lastTiktokUser || '')
   const normalizedHelpSearch = String(helpSearch || '').trim().toLowerCase()
   const visibleHelpFaq = PLATFORM_HELP_FAQ.filter((item) => {
@@ -2771,6 +2771,39 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         </form>
       ) : (
         <div className="space-y-4">
+
+          {/* Barra compacta de conexión — visible solo cuando no está conectado */}
+          {!isConnected && (
+            <form onSubmit={handleConnectSubmit}>
+              <div className={`flex gap-2 p-3 rounded-xl border ${darkMode ? 'bg-cyan-500/5 border-cyan-500/20' : 'bg-indigo-50 border-indigo-200'}`}>
+                <input
+                  type="text"
+                  value={tiktokUser}
+                  onChange={(e) => setTiktokUser(e.target.value)}
+                  placeholder="Usuario de TikTok (ej: @micanal)"
+                  className={`flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none ${darkMode ? 'bg-[#0f0f23] border border-cyan-400/30 text-white' : 'bg-white border border-indigo-300 text-gray-900'}`}
+                  disabled={isConnecting || isWaitingForLive}
+                />
+                <button
+                  type="submit"
+                  disabled={isConnecting || isWaitingForLive || !tiktokUser}
+                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg text-sm transition flex items-center gap-2 whitespace-nowrap"
+                >
+                  {isConnecting ? <Loader className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                  {isConnecting ? 'Conectando...' : 'Conectar'}
+                </button>
+                {isWaitingForLive && (
+                  <button type="button" onClick={() => cancelWaitingForLive({ clearError: true })}
+                    className="bg-red-500/15 border border-red-500/50 text-red-300 px-3 py-2 rounded-lg text-sm"
+                  ><X className="w-4 h-4" /></button>
+                )}
+              </div>
+              {error && !isConnected && (
+                <p className="text-red-400 text-xs mt-1 px-1">{error}</p>
+              )}
+            </form>
+          )}
+
           <div className="flex items-center justify-between">
               <div className="grid grid-cols-3 gap-3 flex-1 mr-4">
                 <div className={darkMode ? "bg-cyan-500/10 border border-cyan-500/30 rounded p-2" : "bg-slate-100 border border-slate-300 rounded p-2"}>
@@ -2830,15 +2863,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                   {mobilePreviewMuted ? 'Mute' : 'Audio'}
                 </button>
               )}
-              <button
-                onClick={handleDisconnect}
-                className={darkMode
-                  ? "bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-300 px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap"
-                  : "bg-slate-700 hover:bg-slate-600 border border-slate-600 text-white px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap"}
-              >
-                <Square className="w-4 h-4" />
-                Desconectar
-              </button>
+              {isConnected && (
+                <button
+                  onClick={handleDisconnect}
+                  className={darkMode
+                    ? "bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-300 px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap"
+                    : "bg-slate-700 hover:bg-slate-600 border border-slate-600 text-white px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap"}
+                >
+                  <Square className="w-4 h-4" />
+                  Desconectar
+                </button>
+              )}
             </div>
           </div>
 

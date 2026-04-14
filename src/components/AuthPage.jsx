@@ -424,21 +424,24 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
     <div className="min-h-screen flex">
 
       {/* ===== PANEL IZQUIERDO — Branding ===== */}
-      <div className="hidden lg:flex w-1/2 relative overflow-hidden bg-gradient-to-br from-[#0a0a1a] via-[#110022] to-[#0a0a1a] flex-col items-center justify-center p-14 pulse-glow">
+      <div className={`hidden lg:flex w-1/2 relative overflow-hidden flex-col items-center justify-center p-14 pulse-glow ${
+        darkMode
+          ? 'bg-gradient-to-br from-[#0a0a1a] via-[#110022] to-[#0a0a1a]'
+          : 'bg-gradient-to-br from-[#eef2ff] via-[#f5f0ff] to-[#e0f2fe]'
+      }`}>
 
         {/* Blobs decorativos */}
-        <div className="absolute top-[-80px] left-[-80px] w-72 h-72 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="absolute bottom-[-60px] right-[-60px] w-96 h-96 rounded-full bg-purple-600/10 blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-cyan-400/5 blur-3xl" />
+        <div className={`absolute top-[-80px] left-[-80px] w-72 h-72 rounded-full blur-3xl ${darkMode ? 'bg-cyan-500/10' : 'bg-cyan-400/20'}`} />
+        <div className={`absolute bottom-[-60px] right-[-60px] w-96 h-96 rounded-full blur-3xl ${darkMode ? 'bg-purple-600/10' : 'bg-purple-400/20'}`} />
 
         {/* Logo */}
         <div className="relative z-10 text-center mb-10">
           <img src="/images/logo-main.png" alt="Stream Voicer" className="h-14 mx-auto mb-6 object-contain drop-shadow-lg" />
-          <h2 className="text-4xl font-black text-white leading-tight mb-3">
+          <h2 className={`text-4xl font-black leading-tight mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
             Tu chat TikTok<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">cobró vida.</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-purple-500">cobró vida.</span>
           </h2>
-          <p className="text-gray-400 text-lg max-w-xs mx-auto">Voces con IA que leen tu stream en tiempo real.</p>
+          <p className={`text-lg max-w-xs mx-auto ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Voces con IA que leen tu stream en tiempo real.</p>
         </div>
 
         {/* Features */}
@@ -448,11 +451,13 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
             { icon: '⚡', title: 'Tiempo real', desc: 'Sin delay, sin complicaciones' },
             { icon: '🎭', title: 'Bots con personalidad', desc: 'Personajes que interactúan solos' },
           ].map((f, i) => (
-            <div key={i} className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl px-4 py-3 backdrop-blur-sm">
+            <div key={i} className={`flex items-center gap-4 rounded-xl px-4 py-3 backdrop-blur-sm border ${
+              darkMode ? 'bg-white/5 border-white/10' : 'bg-white/70 border-gray-200 shadow-sm'
+            }`}>
               <span className="text-2xl">{f.icon}</span>
               <div>
-                <p className="text-white font-bold text-sm">{f.title}</p>
-                <p className="text-gray-500 text-xs">{f.desc}</p>
+                <p className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-gray-800'}`}>{f.title}</p>
+                <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{f.desc}</p>
               </div>
             </div>
           ))}
@@ -460,14 +465,14 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
 
         {/* Chat bubbles animados */}
         <div className="relative z-10 w-full max-w-xs space-y-2">
-          <div className="float-1 bg-white/5 border border-cyan-500/20 rounded-2xl rounded-tl-sm px-4 py-2 text-sm text-gray-300 w-fit">
-            💬 <span className="text-cyan-400 font-bold">@alexgamer:</span> gg crack!
+          <div className={`float-1 border rounded-2xl rounded-tl-sm px-4 py-2 text-sm w-fit ${darkMode ? 'bg-white/5 border-cyan-500/20 text-gray-300' : 'bg-white border-cyan-300 text-gray-600 shadow-sm'}`}>
+            💬 <span className={`font-bold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>@alexgamer:</span> gg crack!
           </div>
-          <div className="float-2 bg-white/5 border border-purple-500/20 rounded-2xl rounded-tr-sm px-4 py-2 text-sm text-gray-300 w-fit ml-auto">
-            🔊 <em className="text-purple-300">leyendo mensaje...</em>
+          <div className={`float-2 border rounded-2xl rounded-tr-sm px-4 py-2 text-sm w-fit ml-auto ${darkMode ? 'bg-white/5 border-purple-500/20 text-gray-300' : 'bg-white border-purple-300 text-gray-600 shadow-sm'}`}>
+            🔊 <em className={darkMode ? 'text-purple-300' : 'text-purple-500'}>leyendo mensaje...</em>
           </div>
-          <div className="float-3 bg-white/5 border border-cyan-500/20 rounded-2xl rounded-tl-sm px-4 py-2 text-sm text-gray-300 w-fit">
-            💬 <span className="text-cyan-400 font-bold">@sofia_art:</span> qué voz más chida
+          <div className={`float-3 border rounded-2xl rounded-tl-sm px-4 py-2 text-sm w-fit ${darkMode ? 'bg-white/5 border-cyan-500/20 text-gray-300' : 'bg-white border-cyan-300 text-gray-600 shadow-sm'}`}>
+            💬 <span className={`font-bold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>@sofia_art:</span> qué voz más chida
           </div>
         </div>
 
@@ -476,7 +481,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
           {[0.3,0.6,1,0.7,0.4,0.8,1,0.5,0.3,0.9,0.6,1,0.4].map((h, i) => (
             <div
               key={i}
-              className="wave-bar w-1.5 rounded-full bg-gradient-to-t from-cyan-500 to-purple-400"
+              className={`wave-bar w-1.5 rounded-full ${darkMode ? 'bg-gradient-to-t from-cyan-500 to-purple-400' : 'bg-gradient-to-t from-cyan-500 to-purple-500'}`}
               style={{ height: `${h * 100}%`, animationDelay: `${i * 0.1}s` }}
             />
           ))}
@@ -484,10 +489,10 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       </div>
 
       {/* ===== PANEL DERECHO — Formulario ===== */}
-      <div className={`w-full lg:w-1/2 flex flex-col items-center justify-center px-8 py-12 relative ${
+      <div className={`w-full lg:w-1/2 min-h-screen flex flex-col items-center justify-center px-10 py-12 relative ${
         darkMode
           ? 'bg-[#0f0f23]'
-          : 'bg-gradient-to-br from-[#e8edf5] via-[#f0f4fa] to-[#e2e8f5]'
+          : 'bg-white'
       }`}>
 
         {/* Back button */}
@@ -508,10 +513,10 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
           <img src="/images/logo-main.png" alt="Stream Voicer" className="h-10 mx-auto object-contain" />
         </div>
 
-      <div className={`w-full max-w-lg rounded-2xl p-10 ${
+      <div className={`w-full max-w-md p-10 ${
         darkMode
-          ? 'bg-gray-900/80 border border-cyan-500/20 shadow-2xl shadow-cyan-500/5'
-          : 'bg-white border border-gray-200 shadow-2xl'
+          ? 'bg-gray-900/80 rounded-2xl border border-cyan-500/20 shadow-2xl shadow-cyan-500/5'
+          : 'bg-white rounded-2xl border border-gray-200 shadow-xl'
       }`}>
         {/* Header */}
         <div className="text-center mb-8">
@@ -725,18 +730,16 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                 <div className="mt-5 text-center">
                   {mode === 'login' && (
                     <div className={`text-sm mb-2 flex flex-col gap-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      <button
-                        onClick={() => { setStep('forgot-request'); setError(null); setInfo(null); setResetCode(''); setResetNewPassword(''); setResetConfirmPassword('') }}
-                        className="font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
-                      >
-                        Olvidé mi contraseña
-                      </button>
-                      <button
-                        onClick={() => { setStep('forgot-user'); setError(null); setInfo(null) }}
-                        className="font-semibold text-purple-400 hover:text-purple-300 transition-colors"
-                      >
-                        Olvidé mi user
-                      </button>
+                      <span className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                        Olvidé:{' '}
+                        <button onClick={() => { setStep('forgot-request'); setError(null); setInfo(null); setResetCode(''); setResetNewPassword(''); setResetConfirmPassword('') }} className={`font-semibold transition-colors ${darkMode ? 'text-cyan-400 hover:text-cyan-300' : 'text-indigo-600 hover:text-indigo-500'}`}>
+                          mi contraseña
+                        </button>
+                        {' · '}
+                        <button onClick={() => { setStep('forgot-user'); setError(null); setInfo(null) }} className={`font-semibold transition-colors ${darkMode ? 'text-cyan-400 hover:text-cyan-300' : 'text-indigo-600 hover:text-indigo-500'}`}>
+                          mi usuario
+                        </button>
+                      </span>
                     </div>
                   )}
                   <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>

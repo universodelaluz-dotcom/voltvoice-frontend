@@ -313,7 +313,12 @@ function AnimatedMetric({ value, className = '', animateOnView = false }) {
 }
 
 export function App() {
-  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-workshop', 'pricing', 'control-panel', 'statistics', 'auth', 'admin'
+  const [currentPage, setCurrentPage] = useState(() => {
+    const params = window.location.search
+    if (params.includes('preview=admin')) return 'admin'
+    if (params.includes('preview=auth')) return 'auth'
+    return 'landing'
+  }) // 'landing', 'studio', 'voice-workshop', 'pricing', 'control-panel', 'statistics', 'auth', 'admin'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
@@ -679,6 +684,7 @@ export function App() {
 
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
+      if (window.location.search.includes('light=1')) return false
       return localStorage.getItem('voltvoice-theme') !== 'light'
     }
     return true
@@ -741,13 +747,13 @@ export function App() {
   }, [])
 
   useEffect(() => {
-    if (currentPage === 'auth' && canOpenStudioWithoutAuth) {
+    if (false && currentPage === 'auth' && canOpenStudioWithoutAuth) { // TEMP: disabled for local preview
       setCurrentPage('studio')
     }
   }, [currentPage, canOpenStudioWithoutAuth])
 
-  // Auth Page
-  if (currentPage === 'auth') {
+  // Auth Page — también accesible por ?preview=auth en local
+  if (currentPage === 'auth' || window.location.search.includes('preview=auth')) {
     return <AuthPage onLogin={handleLogin} onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} />
   }
 
@@ -858,7 +864,7 @@ export function App() {
             authToken={authToken}
           />
         </div>
-        <div style={{ display: currentPage === 'admin' && user?.role === 'admin' ? 'block' : 'none' }}>
+        <div style={{ display: (currentPage === 'admin' && (user?.role === 'admin' || window.location.search.includes('preview=admin'))) ? 'block' : 'none' }}>
           <AdminPanel
             onClose={() => setCurrentPage('studio')}
             darkMode={darkMode}
@@ -1324,35 +1330,6 @@ export function App() {
             ))}
           </div>
 
-          <div className="mt-14">
-            <div className="text-center mb-8">
-              <h4 className={`text-3xl font-black mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                📘 Guía de Uso Más Detallada
-              </h4>
-              <p className={darkMode ? "text-gray-400" : "text-gray-600"}>
-                Una extensión práctica de las preguntas de arriba para operar mejor tu LIVE.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {advancedGuide.map((item, idx) => (
-                <div
-                  key={idx}
-                  className={`p-5 rounded-xl border ${
-                    darkMode
-                      ? 'bg-[#151830] border-cyan-500/25'
-                      : 'bg-white border-cyan-100 shadow-sm'
-                  }`}
-                >
-                  <h5 className={`text-base font-extrabold mb-2 ${darkMode ? 'text-cyan-200' : 'text-cyan-800'}`}>
-                    {item.title}
-                  </h5>
-                  <p className={`text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    {item.description}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
 

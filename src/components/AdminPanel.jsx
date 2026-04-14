@@ -941,7 +941,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                             <span className={`text-[10px] font-bold ${isPeakD ? 'text-yellow-400' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                               {fmtCompact(d.tokens)}
                             </span>
-                            <div className={`w-full rounded-lg ${darkMode ? 'bg-white/5' : 'bg-gray-100'}`} style={{ height: 80 }}>
+                            <div className={`w-full rounded-lg flex items-end ${darkMode ? 'bg-white/5' : 'bg-gray-100'}`} style={{ height: 80 }}>
                               <div
                                 className="w-full rounded-lg transition-all"
                                 style={{ height: `${Math.max(4, pct)}%`, backgroundColor: barColor, opacity: 0.85 }}
