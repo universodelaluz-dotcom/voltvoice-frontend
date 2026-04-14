@@ -949,7 +949,7 @@ export function App() {
     },
     {
       step: '2',
-      title: 'Activa STREAM VOICER',
+      title: 'Activa Stream Voicer',
       description: 'Inicia la lectura de mensajes de chat en tiempo real'
     },
     {
@@ -959,14 +959,14 @@ export function App() {
     }
   ]
   const faqItems = [
-    { icon: '🔊', q: '¿Cómo funciona STREAM VOICER?', a: 'STREAM VOICER lee en tiempo real los mensajes de tu chat de TikTok LIVE y los reproduce con voz para mantener interacción constante en tu stream.' },
+    { icon: '🔊', q: '¿Cómo funciona Stream Voicer?', a: 'Stream Voicer lee en tiempo real los mensajes de tu chat de TikTok LIVE y los reproduce con voz para mantener interacción constante en tu stream.' },
     { icon: '🧩', q: '¿Qué es un token?', a: '1 token equivale a 1 carácter generado. El consumo aplica cuando usas voces premium o voces personalizadas.' },
     { icon: '🎙️', q: '¿Qué voces consumen tokens?', a: 'Las voces premium y las voces personalizadas consumen tokens. La voz esencial no consume tokens.' },
     { icon: '♻️', q: '¿Si el audio sale de caché también se cobran tokens?', a: 'Sí. El caché optimiza rendimiento y costos internos de procesamiento, pero el consumo de tokens del usuario se mantiene según caracteres generados en voces premium/personalizadas.' },
     { icon: '💳', q: '¿Qué hago si se me acaban los tokens?', a: 'Puedes recargar al instante desde la sección "Recarga de Tokens". Si no tienes tokens, las voces premium/personalizadas dejan de reproducirse hasta recargar.' },
     { icon: '⏳', q: '¿Cómo funciona el plan FREE?', a: 'El plan FREE incluye 1 voz esencial con 2 horas diarias. El contador se restablece cada 24 horas.' },
     { icon: '🔄', q: '¿Puedo cambiar o cancelar mi plan cuando quiera?', a: 'Sí. Puedes actualizar, cambiar o cancelar tu plan cuando quieras desde tu cuenta. Los cambios se aplican según tu ciclo de facturación.' },
-    { icon: '🌍', q: '¿Funciona con otros idiomas?', a: 'Actualmente STREAM VOICER está optimizado para español. Próximamente se integrarán más idiomas.' },
+    { icon: '🌍', q: '¿Funciona con otros idiomas?', a: 'Actualmente Stream Voicer está optimizado para español. Próximamente se integrarán más idiomas.' },
     { icon: '⚡', q: '¿Cuánto tarda en procesarse un mensaje?', a: 'Se procesa en tiempo real. Normalmente tarda entre 1 y 5 segundos según longitud del mensaje, voz elegida y carga del sistema.' },
     { icon: '🔐', q: '¿Es seguro conectar mi TikTok?', a: 'Sí. Solo se usa el acceso necesario para leer la actividad pública de tu LIVE. No compartimos tus datos con terceros.' },
     { icon: '🆓', q: '¿Hay prueba gratis?', a: 'Sí. Puedes empezar con FREE y subir a START, CREATOR o PRO cuando necesites más capacidad y más voces.' },
@@ -1224,8 +1224,8 @@ export function App() {
           >
             <div className="flex gap-6 min-w-min">
               {[
-                { name: '@alexgamertok', type: 'TikTok Creator Gaming', benefit: '🟢 Tu stream nunca se queda muerto', text: 'Antes mis Lives en TikTok se moría si no hablaba constantemente. Con STREAM VOICER, el chat siempre tiene algo que leer, comentar y participar. Los viewers ven que hay actividad incluso cuando estoy concentrado en el juego.', stars: 5 },
-                { name: '@sofiaart', type: 'TikTok Creator Art', benefit: '💬 Tu chat trabaja por ti', text: 'No tengo que estar leyendo comentarios todo el tiempo. STREAM VOICER los procesa, destaca los mejores y mantiene la conversación fluida. Yo solo me concentro en crear contenido y el chat se cuida solo.', stars: 5 },
+                { name: '@alexgamertok', type: 'TikTok Creator Gaming', benefit: '🟢 Tu stream nunca se queda muerto', text: 'Antes mis Lives en TikTok se moría si no hablaba constantemente. Con Stream Voicer, el chat siempre tiene algo que leer, comentar y participar. Los viewers ven que hay actividad incluso cuando estoy concentrado en el juego.', stars: 5 },
+                { name: '@sofiaart', type: 'TikTok Creator Art', benefit: '💬 Tu chat trabaja por ti', text: 'No tengo que estar leyendo comentarios todo el tiempo. Stream Voicer los procesa, destaca los mejores y mantiene la conversación fluida. Yo solo me concentro en crear contenido y el chat se cuida solo.', stars: 5 },
                 { name: '@carlosmusica.live', type: 'TikTok Creator Música', benefit: '⚡ Más interacción sin más esfuerzo', text: 'Mis Lives ahora tienen 3x más engagement sin que yo haga nada diferente. La gente comenta más porque sabe que sus mensajes van a ser valorados. Es increíble cuánta interacción genera sin esfuerzo extra.', stars: 5 },
                 { name: '@dianabeauty_tk', type: 'TikTok Creator Belleza', benefit: '🎯 Convierte mensajes en participación', text: 'Cada comentario que llega se convierte en una participación real. Ya no es solo "jeje" abajo, ahora los comentarios generan conversación. Mi comunidad se siente escuchada y eso atrae más personas al Live.', stars: 5 },
                 { name: '@javierstreamer22', type: 'TikTok Creator Competitivo', benefit: '⭐ Destaca a tus seguidores y donadores', text: 'El sistema automáticamente reconoce a mis followers y donadores. No tengo que perder tiempo dándoles shout-outs manuales. Ellos se sienten valorados naturalmente y eso me genera más donaciones y suscripciones.', stars: 5 },
@@ -1308,7 +1308,7 @@ export function App() {
             <h3 className="text-4xl font-black mb-4">
               ❓ <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Preguntas Frecuentes</span>
             </h3>
-            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>Resuelve tus dudas sobre STREAM VOICER</p>
+            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>Resuelve tus dudas sobre Stream Voicer</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -1460,7 +1460,7 @@ export function App() {
               Listo para revolucionar tus streams?
             </h3>
             <p className={`text-xl mb-8 ${darkMode ? 'text-gray-300' : 'text-slate-200'}`}>
-              Únete a miles de creadores que ya están usando STREAM VOICER
+              Únete a miles de creadores que ya están usando Stream Voicer
             </p>
             <div className="flex gap-4 justify-center">
               <button
@@ -1493,7 +1493,7 @@ export function App() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h4 className="font-bold mb-4">STREAM VOICER</h4>
+              <h4 className="font-bold mb-4">Stream Voicer</h4>
               <p className="text-sm text-gray-400">La mejor solución para leer chats en vivo</p>
             </div>
             <div>
@@ -1513,7 +1513,7 @@ export function App() {
           </div>
 
           <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2026 STREAM VOICER. Todos los derechos reservados.</p>
+            <p>&copy; 2026 Stream Voicer. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>
@@ -1537,15 +1537,15 @@ export function App() {
             <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. Aceptación de Términos</h3>
-                <p>Al usar STREAM VOICER, aceptas estos términos y condiciones. Si no estás de acuerdo, no uses el servicio.</p>
+                <p>Al usar Stream Voicer, aceptas estos términos y condiciones. Si no estás de acuerdo, no uses el servicio.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. Descripción del Servicio</h3>
-                <p>STREAM VOICER es una plataforma de síntesis de voz (TTS) para streamers. Proporciona características para leer mensajes en vivo usando inteligencia artificial.</p>
+                <p>Stream Voicer es una plataforma de síntesis de voz (TTS) para streamers. Proporciona características para leer mensajes en vivo usando inteligencia artificial.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Uso Permitido</h3>
-                <p>Debes usar STREAM VOICER solo para propósitos legales y éticos. Se prohíbe:</p>
+                <p>Debes usar Stream Voicer solo para propósitos legales y éticos. Se prohíbe:</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>Contenido ofensivo, discriminatorio o ilegal</li>
                   <li>Intentos de piratería o acceso no autorizado</li>
@@ -1559,7 +1559,7 @@ export function App() {
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Limitaciones de Responsabilidad</h3>
-                <p>STREAM VOICER se proporciona "tal cual". No garantizamos disponibilidad continua. No somos responsables por daños indirectos.</p>
+                <p>Stream Voicer se proporciona "tal cual". No garantizamos disponibilidad continua. No somos responsables por daños indirectos.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en los Términos</h3>
@@ -1614,7 +1614,7 @@ export function App() {
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>7. Contacto</h3>
-                <p>Para preguntas sobre privacidad, contáctanos a: support@STREAM VOICER.com</p>
+                <p>Para preguntas sobre privacidad, contáctanos a: opusvolt@gmail.com</p>
               </section>
             </div>
             <button onClick={() => setShowPrivacy(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
@@ -1664,14 +1664,14 @@ export function App() {
             <div className={`flex-1 overflow-y-auto px-8 pt-8 pb-16 space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Qué son las cookies?</h3>
-                <p>Las cookies son pequeños archivos de texto que se guardan en tu dispositivo cuando visitas nuestro sitio. Nos ayudan a mejorar tu experiencia y analizar cómo usas STREAM VOICER.</p>
+                <p>Las cookies son pequeños archivos de texto que se guardan en tu dispositivo cuando visitas nuestro sitio. Nos ayudan a mejorar tu experiencia y analizar cómo usas Stream Voicer.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Tipos de Cookies que Usamos</h3>
                 <ul className="list-disc pl-5 space-y-2">
                   <li><strong>Cookies Esenciales:</strong> Necesarias para el funcionamiento básico del sitio (autenticación, seguridad)</li>
                   <li><strong>Cookies de Rendimiento:</strong> Nos ayudan a entender cómo usas el sitio y mejorarlo</li>
-                  <li><strong>Cookies de Análisis:</strong> Rastrean cómo interactúas con STREAM VOICER para optimizar la experiencia</li>
+                  <li><strong>Cookies de Análisis:</strong> Rastrean cómo interactúas con Stream Voicer para optimizar la experiencia</li>
                   <li><strong>Cookies de Publicidad:</strong> Permiten mostrar anuncios relevantes según tus intereses</li>
                 </ul>
               </section>
@@ -1728,7 +1728,7 @@ export function App() {
                     🍪 POLÍTICA DE COOKIES
                   </h3>
                   <p className={`text-base mb-3 leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                    <strong>Utilizamos cookies</strong> para mejorar tu experiencia, analizar cómo usas STREAM VOICER y personalizar contenido. Al continuar navegando, aceptas nuestra política.
+                    <strong>Utilizamos cookies</strong> para mejorar tu experiencia, analizar cómo usas Stream Voicer y personalizar contenido. Al continuar navegando, aceptas nuestra política.
                   </p>
                   <button
                     onClick={() => setShowCookies(true)}

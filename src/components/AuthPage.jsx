@@ -6,6 +6,13 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
 const RECAPTCHA_REQUIRED = ['1', 'true', 'yes', 'on'].includes(String(import.meta.env.VITE_RECAPTCHA_REQUIRED ?? 'false').toLowerCase())
 
+const maskEmail = (email) => {
+  const [local, domain] = (email || '').split('@')
+  if (!domain) return email
+  const visible = local.length > 2 ? local[0] + '***' + local[local.length - 1] : local[0] + '***'
+  return `${visible}@${domain}`
+}
+
 export function AuthPage({ onLogin, onGoHome, darkMode }) {
   const [mode, setMode] = useState('login')
   const [step, setStep] = useState('form') // form | verification | forgot-request | forgot-reset
@@ -79,14 +86,15 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
   useEffect(() => {
     if (!RECAPTCHA_SITE_KEY || mode !== 'register') return
 
+    const scriptSrc = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`
     const script = document.createElement('script')
-    script.src = 'https://www.google.com/recaptcha/api.js'
+    script.src = scriptSrc
     script.async = true
     script.defer = true
     document.head.appendChild(script)
 
     return () => {
-      const existing = document.querySelector('script[src="https://www.google.com/recaptcha/api.js"]')
+      const existing = document.querySelector(`script[src="${scriptSrc}"]`)
       if (existing) existing.remove()
     }
   }, [mode])
@@ -160,7 +168,16 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       let recaptchaToken = null
       if (window.grecaptcha && RECAPTCHA_SITE_KEY) {
         try {
-          recaptchaToken = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'register' })
+          recaptchaToken = await new Promise((resolve, reject) => {
+            window.grecaptcha.ready(async () => {
+              try {
+                const token = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'register' })
+                resolve(token)
+              } catch (err) {
+                reject(err)
+              }
+            })
+          })
         } catch (err) {
           console.warn('[Auth] reCAPTCHA error:', err)
           if (RECAPTCHA_REQUIRED) {
@@ -451,7 +468,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
               ? `Ingresa el código enviado a ${email}`
               : showEmailForm
               ? (mode === 'login' ? 'Accede con tu email' : 'Regístrate gratis y obtén 100 tokens')
-              : 'Inicia sesión para acceder a STREAM VOICER'
+              : 'Inicia sesión para acceder a Stream Voicer'
             }
           </p>
         </div>
@@ -712,6 +729,171 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                 className={`text-sm ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Cambiar email
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* PASO: Solicitar recuperación */}
+        {step === 'forgot-request' && (
+          <>
+            <form onSubmit={handleForgotPasswordRequest} className="space-y-4">
+              <div>
+                <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Tu email
+                </label>
+                <div className="relative mt-1">
+                  <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="tu@email.com"
+                    className={`w-full pl-10 pr-4 py-3 rounded-lg border text-sm ${
+                      darkMode
+                        ? 'bg-gray-800 border-cyan-500/30 text-white placeholder-gray-500 focus:border-cyan-400'
+                        : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500'
+                    } focus:outline-none transition-colors`}
+                    disabled={loading}
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || !email.trim()}
+                className="w-full py-3 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  'Enviarme código'
+                )}
+              </button>
+            </form>
+
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => { setStep('form'); setError(null); setInfo(null) }}
+                className={`text-sm ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                ← Volver al inicio de sesión
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* PASO: Restablecer contraseña */}
+        {step === 'forgot-reset' && (
+          <>
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm mb-4 ${
+              darkMode ? 'bg-gray-800 border border-cyan-500/20' : 'bg-gray-50 border border-gray-200'
+            }`}>
+              <Mail className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+              <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
+                Código enviado a <strong>{maskEmail(email)}</strong>
+              </span>
+            </div>
+
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Código de recuperación
+                </label>
+                <input
+                  type="text"
+                  value={resetCode}
+                  onChange={(e) => setResetCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  maxLength="6"
+                  className={`w-full mt-1 px-4 py-3 rounded-lg border text-center text-2xl font-bold ${
+                    darkMode
+                      ? 'bg-gray-800 border-cyan-500/30 text-white placeholder-gray-500 focus:border-cyan-400'
+                      : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500'
+                  } focus:outline-none transition-colors`}
+                  disabled={loading}
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Nueva contraseña
+                </label>
+                <div className="relative mt-1">
+                  <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={resetNewPassword}
+                    onChange={(e) => setResetNewPassword(e.target.value)}
+                    placeholder="Mínimo 8 caracteres"
+                    className={`w-full pl-10 pr-12 py-3 rounded-lg border text-sm ${
+                      darkMode
+                        ? 'bg-gray-800 border-cyan-500/30 text-white placeholder-gray-500 focus:border-cyan-400'
+                        : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500'
+                    } focus:outline-none transition-colors`}
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Confirmar nueva contraseña
+                </label>
+                <div className="relative mt-1">
+                  <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={resetConfirmPassword}
+                    onChange={(e) => setResetConfirmPassword(e.target.value)}
+                    placeholder="Repite la contraseña"
+                    className={`w-full pl-10 pr-4 py-3 rounded-lg border text-sm ${
+                      darkMode
+                        ? 'bg-gray-800 border-cyan-500/30 text-white placeholder-gray-500 focus:border-cyan-400'
+                        : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500'
+                    } focus:outline-none transition-colors`}
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || resetCode.length < 6 || !resetNewPassword || !resetConfirmPassword}
+                className="w-full py-3 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Actualizando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    Cambiar contraseña
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => { setStep('forgot-request'); setError(null); setInfo(null) }}
+                className={`text-sm ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                ← Usar otro email
               </button>
             </div>
           </>

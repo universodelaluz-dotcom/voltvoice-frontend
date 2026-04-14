@@ -213,8 +213,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
       }
     }
 
-    window.addEventListener('STREAM VOICER:tokens-updated', handleTokenUpdate)
-    return () => window.removeEventListener('STREAM VOICER:tokens-updated', handleTokenUpdate)
+    window.addEventListener('voltvoice:tokens-updated', handleTokenUpdate)
+    return () => window.removeEventListener('voltvoice:tokens-updated', handleTokenUpdate)
   }, [])
 
   useEffect(() => {
@@ -227,8 +227,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
       }
     }
 
-    window.addEventListener('STREAM VOICER:assistant-visualizer', handleAssistantVisualizer)
-    return () => window.removeEventListener('STREAM VOICER:assistant-visualizer', handleAssistantVisualizer)
+    window.addEventListener('voltvoice:assistant-visualizer', handleAssistantVisualizer)
+    return () => window.removeEventListener('voltvoice:assistant-visualizer', handleAssistantVisualizer)
   }, [])
 
   useEffect(() => {
@@ -237,8 +237,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
       setAssistantAudioElement(el)
     }
 
-    window.addEventListener('STREAM VOICER:assistant-visualizer-audio', handleAssistantVisualizerAudio)
-    return () => window.removeEventListener('STREAM VOICER:assistant-visualizer-audio', handleAssistantVisualizerAudio)
+    window.addEventListener('voltvoice:assistant-visualizer-audio', handleAssistantVisualizerAudio)
+    return () => window.removeEventListener('voltvoice:assistant-visualizer-audio', handleAssistantVisualizerAudio)
   }, [])
 
   useEffect(() => {
@@ -263,8 +263,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
       setPttRecordingActive(Boolean(event?.detail?.active))
     }
 
-    window.addEventListener('STREAM VOICER:ptt-audio-state', handlePttAudioState)
-    return () => window.removeEventListener('STREAM VOICER:ptt-audio-state', handlePttAudioState)
+    window.addEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
+    return () => window.removeEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
   }, [])
 
   const handleSynthesize = async () => {
