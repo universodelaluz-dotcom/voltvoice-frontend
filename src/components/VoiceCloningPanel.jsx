@@ -38,6 +38,19 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   const testRequestRef = useRef(0)
   const testingVoiceRef = useRef(false)
 
+  // Studio Pro section
+  const [studioPro, setStudioPro] = useState({
+    file: null,
+    fileId: null,
+    duration: 0,
+    startMs: 0,
+    endMs: 0,
+    voiceName: '',
+    langCode: 'ES_ES',
+    uploading: false,
+    processing: false
+  })
+
   const languageOptions = [
     { code: 'es-ES', label: 'Voz en Español' },
     { code: 'en-US', label: 'English (USA)' },
@@ -234,6 +247,138 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       }
       setAudioFile(file)
       setError(null)
+    }
+  }
+
+  // Studio Pro handlers
+  const handleStudioProFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const allowedMimes = ['audio/mpeg', 'audio/wav', 'audio/x-wav', 'video/mp4', 'video/x-msvideo', 'video/quicktime', 'video/x-matroska']
+      if (!allowedMimes.some(mime => file.type.includes(mime.split('/')[0]))) {
+        setError('Formato de archivo no soportado. Usa video (MP4, AVI, MOV) o audio (MP3, WAV)')
+        return
+      }
+      if (file.size > 150 * 1024 * 1024) {
+        setError('El archivo no debe exceder 150MB')
+        return
+      }
+      setStudioPro(prev => ({ ...prev, file }))
+      setError(null)
+    }
+  }
+
+  const handleStudioProUpload = async () => {
+    if (!studioPro.file) {
+      setError('Selecciona un archivo')
+      return
+    }
+
+    const token = localStorage.getItem('sv-token')
+    if (!token) {
+      setError('Debes iniciar sesión')
+      return
+    }
+
+    setError(null)
+    setStudioPro(prev => ({ ...prev, uploading: true }))
+
+    const formData = new FormData()
+    formData.append('file', studioPro.file)
+
+    try {
+      const res = await fetch(`${API_URL}/api/inworld/extract-audio`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      })
+
+      const data = await res.json()
+
+      if (res.ok && data.success) {
+        setStudioPro(prev => ({
+          ...prev,
+          fileId: data.fileId,
+          duration: data.duration,
+          endMs: data.duration,
+          uploading: false
+        }))
+        setMessage(`Archivo subido exitosamente. Duración: ${(data.duration / 1000).toFixed(1)}s`)
+        setTimeout(() => setMessage(null), 3000)
+      } else {
+        setError(data.error || 'Error subiendo archivo')
+        setStudioPro(prev => ({ ...prev, uploading: false }))
+      }
+    } catch (err) {
+      setError(`Error: ${err.message}`)
+      setStudioPro(prev => ({ ...prev, uploading: false }))
+    }
+  }
+
+  const handleStudioProExtract = async () => {
+    if (!studioPro.fileId || !studioPro.voiceName) {
+      setError('Ingresa nombre de voz')
+      return
+    }
+
+    const clipDuration = studioPro.endMs - studioPro.startMs
+    if (clipDuration < 1000) {
+      setError('El clip debe tener al menos 1 segundo')
+      return
+    }
+
+    const token = localStorage.getItem('sv-token')
+    if (!token) {
+      setError('Debes iniciar sesión')
+      return
+    }
+
+    setError(null)
+    setStudioPro(prev => ({ ...prev, processing: true }))
+
+    try {
+      const res = await fetch(`${API_URL}/api/inworld/extract-clip`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          fileId: studioPro.fileId,
+          startMs: studioPro.startMs,
+          endMs: studioPro.endMs,
+          voiceName: studioPro.voiceName,
+          langCode: studioPro.langCode
+        })
+      })
+
+      const data = await res.json()
+
+      if (res.ok && data.success) {
+        setMessage(`✅ ¡Voz "${studioPro.voiceName}" clonada exitosamente!`)
+        setStudioPro({
+          file: null,
+          fileId: null,
+          duration: 0,
+          startMs: 0,
+          endMs: 0,
+          voiceName: '',
+          langCode: 'ES_ES',
+          uploading: false,
+          processing: false
+        })
+        await loadUserVoices()
+        window.dispatchEvent(new CustomEvent('voice-added'))
+        setTimeout(() => setMessage(null), 5000)
+      } else {
+        setError(data.error || 'Error clonando voz')
+        setStudioPro(prev => ({ ...prev, processing: false }))
+      }
+    } catch (err) {
+      setError(`Error: ${err.message}`)
+      setStudioPro(prev => ({ ...prev, processing: false }))
     }
   }
 
@@ -437,10 +582,10 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   return (
     <div className={`relative space-y-6 ${isFreeUser ? 'opacity-50 pointer-events-none' : ''}`}>
       {/* Tabs */}
-      <div className={`flex gap-3 p-1 rounded-lg mb-2 ${darkMode ? 'bg-gray-800/60' : 'bg-gray-100'}`}>
+      <div className={`flex gap-3 p-1 rounded-lg mb-2 flex-wrap ${darkMode ? 'bg-gray-800/60' : 'bg-gray-100'}`}>
         <button
           onClick={() => setActiveTab('clone')}
-          className={`flex-1 px-6 py-3 rounded-md font-semibold transition-all ${
+          className={`flex-1 min-w-32 px-6 py-3 rounded-md font-semibold transition-all ${
             activeTab === 'clone'
               ? darkMode
                 ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg'
@@ -453,9 +598,26 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           <Mic2 className="inline w-4 h-4 mr-2" />
           Clonar Voz
         </button>
+        {['creator', 'pro'].includes((user?.plan || 'free').toLowerCase()) && (
+          <button
+            onClick={() => setActiveTab('studio-pro')}
+            className={`flex-1 min-w-32 px-6 py-3 rounded-md font-semibold transition-all ${
+              activeTab === 'studio-pro'
+                ? darkMode
+                  ? 'bg-gradient-to-r from-orange-500 to-pink-600 text-white shadow-lg'
+                  : 'bg-gradient-to-r from-orange-500 to-pink-600 text-white shadow-md'
+                : darkMode
+                  ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-white'
+            }`}
+          >
+            <Zap className="inline w-4 h-4 mr-2" />
+            Studio Pro
+          </button>
+        )}
         <button
           onClick={() => setActiveTab('ai-assistant')}
-          className={`flex-1 px-6 py-3 rounded-md font-semibold transition-all ${
+          className={`flex-1 min-w-32 px-6 py-3 rounded-md font-semibold transition-all ${
             activeTab === 'ai-assistant'
               ? darkMode
                 ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg'
@@ -593,6 +755,242 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       {/* Mis Voces Creadas — solo clonadas */}
       {renderVoiceList(clonedVoices)}
         </>
+      )}
+
+      {/* Studio Pro — Extract audio from video/long audio */}
+      {activeTab === 'studio-pro' && (
+        <div className={darkMode ? "bg-[#1a1a2e] border border-orange-400/30 rounded-lg p-6" : "bg-white border border-orange-200 rounded-lg p-6 shadow-sm"}>
+          <div className="flex items-center gap-3 mb-4">
+            <Zap className="w-6 h-6 text-orange-400" />
+            <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Studio Pro</h2>
+            <span className={`ml-auto text-xs font-semibold px-2 py-1 rounded-full ${darkMode ? 'bg-orange-500/20 text-orange-300' : 'bg-orange-50 text-orange-600'}`}>PRO</span>
+          </div>
+
+          <div className="space-y-6">
+            {/* Step 1: File Upload */}
+            {!studioPro.fileId && (
+              <div className={darkMode ? "bg-gray-800/40 border border-cyan-400/20 rounded-lg p-4" : "bg-gray-50 border border-orange-200 rounded-lg p-4"}>
+                <h3 className={`font-semibold mb-3 ${darkMode ? 'text-cyan-300' : 'text-orange-700'}`}>Paso 1: Sube tu archivo</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className={darkMode ? "block text-sm font-medium text-gray-300 mb-2" : "block text-sm font-medium text-gray-700 mb-2"}>
+                      Video o Audio (Máx 150MB, 10 min)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="audio/*,video/*"
+                        onChange={handleStudioProFileChange}
+                        disabled={studioPro.uploading}
+                        className="hidden"
+                        id="studio-pro-file"
+                      />
+                      <label
+                        htmlFor="studio-pro-file"
+                        className={darkMode ? "flex items-center justify-center gap-2 w-full bg-gray-900 border-2 border-dashed border-orange-500/30 rounded-lg p-4 cursor-pointer hover:border-orange-500 transition" : "flex items-center justify-center gap-2 w-full bg-white border-2 border-dashed border-orange-300 rounded-lg p-4 cursor-pointer hover:border-orange-500 transition"}
+                      >
+                        <Upload className="w-5 h-5 text-orange-400" />
+                        <span className={darkMode ? "text-gray-300" : "text-gray-600"}>
+                          {studioPro.file ? studioPro.file.name : 'Clic para seleccionar'}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                  {studioPro.file && (
+                    <button
+                      onClick={handleStudioProUpload}
+                      disabled={studioPro.uploading}
+                      className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-2 rounded-lg transition flex items-center justify-center gap-2"
+                    >
+                      {studioPro.uploading ? (
+                        <>
+                          <Loader className="w-5 h-5 animate-spin" />
+                          Subiendo...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-5 h-5" />
+                          Procesar archivo
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Timeline & Clip Selection */}
+            {studioPro.fileId && (
+              <div className={darkMode ? "bg-gray-800/40 border border-cyan-400/20 rounded-lg p-4" : "bg-gray-50 border border-orange-200 rounded-lg p-4"}>
+                <h3 className={`font-semibold mb-4 ${darkMode ? 'text-cyan-300' : 'text-orange-700'}`}>Paso 2: Selecciona tu clip (5-15 segundos recomendado)</h3>
+
+                {/* Timeline Bar */}
+                <div className="space-y-3">
+                  <div className={darkMode ? "bg-gray-900/60 border border-gray-700 rounded-lg p-3" : "bg-white border border-gray-200 rounded-lg p-3"}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Línea de tiempo</p>
+                      <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>Duración: {(studioPro.duration / 1000).toFixed(1)}s</p>
+                    </div>
+
+                    {/* Timeline visual */}
+                    <div className={darkMode ? "bg-gray-800 rounded-full h-2 mb-3 relative cursor-pointer group" : "bg-gray-200 rounded-full h-2 mb-3 relative cursor-pointer group"}
+                      onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect()
+                        const percent = (e.clientX - rect.left) / rect.width
+                        const ms = Math.max(0, Math.min(percent * studioPro.duration, studioPro.duration - 1000))
+                        setStudioPro(prev => ({ ...prev, startMs: Math.floor(ms), endMs: Math.floor(ms + 10000) }))
+                      }}
+                    >
+                      {/* Selected range highlight */}
+                      <div
+                        className="absolute h-full bg-gradient-to-r from-orange-500 to-orange-600 rounded-full"
+                        style={{
+                          left: `${(studioPro.startMs / studioPro.duration) * 100}%`,
+                          right: `${100 - (studioPro.endMs / studioPro.duration) * 100}%`
+                        }}
+                      />
+                    </div>
+
+                    {/* Time inputs */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className={`block text-xs font-medium mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Inicio (s)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max={studioPro.duration / 1000 - 1}
+                          step="0.1"
+                          value={(studioPro.startMs / 1000).toFixed(1)}
+                          onChange={(e) => {
+                            const ms = Math.max(0, parseFloat(e.target.value) * 1000)
+                            setStudioPro(prev => ({ ...prev, startMs: Math.floor(ms) }))
+                          }}
+                          className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-cyan-400" : "w-full bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 text-sm focus:outline-none focus:border-orange-400"}
+                        />
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-medium mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Fin (s)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max={studioPro.duration / 1000}
+                          step="0.1"
+                          value={(studioPro.endMs / 1000).toFixed(1)}
+                          onChange={(e) => {
+                            const ms = Math.min(studioPro.duration, parseFloat(e.target.value) * 1000)
+                            setStudioPro(prev => ({ ...prev, endMs: Math.floor(ms) }))
+                          }}
+                          className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-cyan-400" : "w-full bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 text-sm focus:outline-none focus:border-orange-400"}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Clip duration warning */}
+                  <div className={`p-3 rounded-lg ${
+                    studioPro.endMs - studioPro.startMs < 5000
+                      ? darkMode ? "bg-red-500/20 border border-red-500/30 text-red-300" : "bg-red-50 border border-red-200 text-red-700"
+                      : studioPro.endMs - studioPro.startMs > 15000
+                      ? darkMode ? "bg-yellow-500/20 border border-yellow-500/30 text-yellow-300" : "bg-yellow-50 border border-yellow-200 text-yellow-700"
+                      : darkMode ? "bg-green-500/20 border border-green-500/30 text-green-300" : "bg-green-50 border border-green-200 text-green-700"
+                  }`}>
+                    <p className="text-sm font-medium">
+                      ⏱️ Duración del clip: <strong>{((studioPro.endMs - studioPro.startMs) / 1000).toFixed(1)}s</strong>
+                      {studioPro.endMs - studioPro.startMs < 5000 && " (Muy corto)"}
+                      {studioPro.endMs - studioPro.startMs > 15000 && " (Largo)"}
+                      {studioPro.endMs - studioPro.startMs >= 5000 && studioPro.endMs - studioPro.startMs <= 15000 && " (Ideal)"}
+                    </p>
+                  </div>
+
+                  {/* Voice name & language */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className={darkMode ? "block text-sm font-medium text-gray-300 mb-1" : "block text-sm font-medium text-gray-700 mb-1"}>Nombre de la voz</label>
+                      <input
+                        type="text"
+                        value={studioPro.voiceName}
+                        onChange={(e) => setStudioPro(prev => ({ ...prev, voiceName: e.target.value }))}
+                        placeholder="Mi voz Studio Pro"
+                        className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-400" : "w-full bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 text-sm focus:outline-none focus:border-orange-400"}
+                      />
+                    </div>
+                    <div>
+                      <label className={darkMode ? "block text-sm font-medium text-gray-300 mb-1" : "block text-sm font-medium text-gray-700 mb-1"}>Idioma</label>
+                      <select
+                        value={studioPro.langCode}
+                        onChange={(e) => setStudioPro(prev => ({ ...prev, langCode: e.target.value }))}
+                        className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-400" : "w-full bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 text-sm focus:outline-none focus:border-orange-400"}
+                      >
+                        <option value="ES_ES">Español</option>
+                        <option value="EN_US">English (USA)</option>
+                        <option value="EN_GB">English (UK)</option>
+                        <option value="PT_BR">Português</option>
+                        <option value="FR_FR">Français</option>
+                        <option value="DE_DE">Deutsch</option>
+                        <option value="IT_IT">Italiano</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Extract button */}
+                  <button
+                    onClick={handleStudioProExtract}
+                    disabled={studioPro.processing || !studioPro.voiceName || studioPro.endMs - studioPro.startMs < 1000}
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+                  >
+                    {studioPro.processing ? (
+                      <>
+                        <Loader className="w-5 h-5 animate-spin" />
+                        Procesando clip...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-5 h-5" />
+                        Usar este clip
+                      </>
+                    )}
+                  </button>
+
+                  {/* Reset button */}
+                  <button
+                    onClick={() => setStudioPro({
+                      file: null,
+                      fileId: null,
+                      duration: 0,
+                      startMs: 0,
+                      endMs: 0,
+                      voiceName: '',
+                      langCode: 'ES_ES',
+                      uploading: false,
+                      processing: false
+                    })}
+                    className={`w-full px-4 py-2 rounded-lg font-semibold transition ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                  >
+                    ← Subir otro archivo
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Voces creadas con Studio Pro */}
+            {renderVoiceList(clonedVoices)}
+          </div>
+
+          {/* Messages */}
+          {message && (
+            <div className="mt-4 p-4 bg-gradient-to-r from-green-500/30 to-emerald-500/30 border-2 border-green-400 rounded-lg flex gap-3">
+              <CheckCircle className="w-5 h-5 text-green-300 flex-shrink-0 mt-0.5" />
+              <p className="text-green-50 font-semibold">{message}</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="mt-4 p-4 bg-gradient-to-r from-red-500/30 to-rose-500/30 border-2 border-red-400 rounded-lg flex gap-3">
+              <AlertCircle className="w-5 h-5 text-red-300 flex-shrink-0 mt-0.5" />
+              <p className="text-red-50 font-semibold">{error}</p>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Asistente IA — Primero Taller, luego Probar Voz */}
