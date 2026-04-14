@@ -626,6 +626,33 @@ export function App() {
     setCurrentPage('landing')
   }
 
+  // Detectar sesión desplazada desde cualquier fetch de la app
+  useEffect(() => {
+    const originalFetch = window.fetch
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args)
+      if (response.status === 401) {
+        const clone = response.clone()
+        try {
+          const data = await clone.json()
+          if (data?.error === 'SESSION_DISPLACED') {
+            localStorage.removeItem('sv-token')
+            localStorage.removeItem('sv-user')
+            setUser(null)
+            setAuthToken(null)
+            setCurrentPage('auth')
+            setConfig(buildDefaultConfig())
+            setTimeout(() => {
+              alert('⚠️ Tu sesión fue iniciada en otro dispositivo. Has sido desconectado.')
+            }, 100)
+          }
+        } catch (_) {}
+      }
+      return response
+    }
+    return () => { window.fetch = originalFetch }
+  }, [])
+
   useEffect(() => {
     const handleBeforeUnload = () => {
       const token = localStorage.getItem('sv-token')
@@ -1283,7 +1310,7 @@ export function App() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing-section" className="py-20 px-4">
+      <section id="pricing-section" className="pt-20 pb-8 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-black mb-4">
@@ -1308,7 +1335,7 @@ export function App() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 px-4">
+      <section className="pt-10 pb-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-black mb-4">
@@ -1413,9 +1440,19 @@ export function App() {
 
                     <p className={"text-sm mb-2 " + (darkMode ? "text-gray-400" : "text-gray-500")}>⏱️ {pkg.hours}</p>
 
-                  <button className={"w-full py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r transition-all mt-auto " + gradient + " hover:opacity-90 hover:shadow-lg"}>
-                    Comprar ahora →
-                  </button>
+                  {isPopular ? (
+                    <div className="relative mt-auto">
+                      <span className={"absolute -inset-1 rounded-xl pointer-events-none animate-ping opacity-50 bg-gradient-to-r " + gradient} />
+                      <button className={"relative z-10 w-full py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r animate-pulse transition-all shadow-lg " + gradient + " hover:opacity-90"}>
+                        🚀 Comprar ahora →
+                      </button>
+                      <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none z-20" />
+                    </div>
+                  ) : (
+                    <button className={"w-full py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r transition-all mt-auto " + gradient + " hover:opacity-90 hover:shadow-lg"}>
+                      Comprar ahora →
+                    </button>
+                  )}
                 </div>
               </div>
               )
@@ -1531,8 +1568,9 @@ export function App() {
                 </ul>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Suscripciones y Pagos</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Suscripciones, Pagos y Reembolsos</h3>
                 <p>Los planes son recurrentes. Puedes cancelar en cualquier momento. No hay reembolsos por uso parcial del período.</p>
+                <p className="mt-2"><strong>Paquetes de tokens:</strong> Los paquetes de tokens son productos digitales de consumo inmediato. Una vez procesada la compra, no aplican reembolsos ni devoluciones de ningún tipo, independientemente del uso realizado. Al completar la compra, el usuario acepta expresamente esta política.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Limitaciones de Responsabilidad</h3>
@@ -1591,7 +1629,7 @@ export function App() {
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>7. Contacto</h3>
-                <p>Para preguntas sobre privacidad, contáctanos a: opusvolt@gmail.com</p>
+                <p>Para preguntas sobre privacidad, contáctanos a: soporte@streamvoicer.com</p>
               </section>
             </div>
             <button onClick={() => setShowPrivacy(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
@@ -1613,8 +1651,8 @@ export function App() {
               <p>¿Tienes preguntas o necesitas ayuda? Nos encantaría escucharte.</p>
               <div className="bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl p-4 text-center">
                 <p className="text-white text-sm mb-2 font-bold">Envíanos un correo a:</p>
-                <a href="mailto:opusvolt@gmail.com" className="text-white text-lg font-black hover:opacity-80 transition">
-                  opusvolt@gmail.com
+                <a href="mailto:soporte@streamvoicer.com" className="text-white text-lg font-black hover:opacity-80 transition">
+                  soporte@streamvoicer.com
                 </a>
               </div>
               <p className="text-sm">Responderemos tu mensaje lo antes posible. Esperamos tu contacto.</p>

@@ -216,7 +216,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
             {monthlyPlans.map((plan) => (
               <div
                 key={plan.name}
-                className={`rounded-lg p-8 transition-all duration-300 ${
+                className={`rounded-lg p-8 transition-all duration-300 flex flex-col ${
                   plan.popular
                     ? darkMode
                       ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-cyan-400 shadow-2xl shadow-cyan-400/30 scale-105'
@@ -274,16 +274,40 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   <p className={`text-sm mb-6 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>👉 {plan.extension}</p>
                 )}
 
-                <button
-                  onClick={() => onPlanAction?.(plan, { billingCycle: 'monthly' })}
-                  className={`w-full py-3 rounded-lg font-bold transition-all ${
-                    plan.popular
-                      ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white hover:shadow-lg hover:shadow-cyan-400/50'
-                      : 'border border-cyan-400 text-cyan-400 hover:bg-cyan-400/10'
-                  }`}
-                >
-                  {plan.cta}
-                </button>
+                {plan.popular ? (
+                  <div className="relative mt-auto">
+                    {/* Ping ring exterior */}
+                    <span className="absolute -inset-1 rounded-xl pointer-events-none animate-ping opacity-50 bg-gradient-to-r from-cyan-400/40 to-purple-500/40" />
+                    <button
+                      onClick={() => onPlanAction?.(plan, { billingCycle: 'monthly' })}
+                      className="relative z-10 w-full py-4 rounded-xl font-black text-base text-white bg-gradient-to-r from-cyan-400 to-purple-500 animate-pulse hover:from-cyan-300 hover:to-purple-400 transition-all shadow-xl shadow-cyan-500/40 hover:shadow-cyan-400/60 hover:scale-[1.02] flex items-center justify-center gap-2"
+                    >
+                      🚀 {plan.cta}
+                    </button>
+                    {/* Punto naranja esquina */}
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none z-20" />
+                  </div>
+                ) : (
+                  <div className="relative mt-auto">
+                    <span className={`absolute -inset-0.5 rounded-xl blur-sm animate-pulse pointer-events-none opacity-40 ${
+                      plan.name === 'FREE' ? 'bg-gradient-to-r from-gray-400 to-gray-500' :
+                      plan.name === 'START' ? 'bg-gradient-to-r from-emerald-400 to-green-500' :
+                      'bg-gradient-to-r from-orange-400 to-red-500'
+                    }`} />
+                    <button
+                      onClick={() => onPlanAction?.(plan, { billingCycle: 'monthly' })}
+                      className={`relative w-full py-3.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] hover:opacity-90 flex items-center justify-center gap-2 shadow-lg ${
+                        plan.name === 'FREE'
+                          ? 'bg-gradient-to-r from-gray-500 to-gray-600 shadow-gray-500/30'
+                          : plan.name === 'START'
+                          ? 'bg-gradient-to-r from-emerald-400 to-green-500 shadow-emerald-500/30'
+                          : 'bg-gradient-to-r from-orange-400 to-red-500 shadow-orange-500/30'
+                      }`}
+                    >
+                      {plan.name === 'FREE' ? '⭐' : plan.name === 'START' ? '🟢' : '⚡'} {plan.cta}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -300,7 +324,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {annualPlans.map((plan) => (
-              <div key={plan.name} className={`rounded-lg p-8 ${darkMode ? 'bg-gradient-to-br from-gray-800/70 to-gray-900/70 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+              <div key={plan.name} className={`rounded-lg p-8 flex flex-col ${darkMode ? 'bg-gradient-to-br from-gray-800/70 to-gray-900/70 border border-gray-700' : 'bg-white border border-gray-200'}`}>
                 {plan.hot && (
                   <div className="mb-3">
                     <span className="inline-block text-xs font-black tracking-wider px-3 py-1 rounded-full bg-gradient-to-r from-orange-400 to-pink-500 text-white">
@@ -328,12 +352,34 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                     </div>
                   ))}
                 </div>
-                <button
-                  onClick={() => onPlanAction?.({ name: plan.planName || plan.name.replace(' ANUAL', ''), price: plan.price }, { billingCycle: 'annual' })}
-                  className="w-full mt-6 py-3 rounded-lg font-bold border border-cyan-400 text-cyan-400 hover:bg-cyan-400/10 transition-all"
-                >
-                  Comprar {plan.name}
-                </button>
+                {plan.hot ? (
+                  <div className="relative mt-6">
+                    <span className="absolute -inset-1 rounded-xl pointer-events-none animate-ping opacity-50 bg-gradient-to-r from-cyan-400/40 to-purple-500/40" />
+                    <button
+                      onClick={() => onPlanAction?.({ name: plan.planName || plan.name.replace(' ANUAL', ''), price: plan.price }, { billingCycle: 'annual' })}
+                      className="relative z-10 w-full py-4 rounded-xl font-black text-base text-white bg-gradient-to-r from-cyan-400 to-purple-500 animate-pulse hover:from-cyan-300 hover:to-purple-400 transition-all shadow-xl shadow-cyan-500/40 hover:scale-[1.02] flex items-center justify-center gap-2"
+                    >
+                      🚀 Comprar {plan.name}
+                    </button>
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none z-20" />
+                  </div>
+                ) : (
+                  <div className="relative mt-6">
+                    <span className={`absolute -inset-0.5 rounded-xl blur-sm animate-pulse pointer-events-none opacity-40 ${
+                      plan.planName === 'START' ? 'bg-gradient-to-r from-emerald-400 to-green-500' : 'bg-gradient-to-r from-orange-400 to-red-500'
+                    }`} />
+                    <button
+                      onClick={() => onPlanAction?.({ name: plan.planName || plan.name.replace(' ANUAL', ''), price: plan.price }, { billingCycle: 'annual' })}
+                      className={`relative w-full py-3.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] hover:opacity-90 flex items-center justify-center gap-2 shadow-lg ${
+                        plan.planName === 'START'
+                          ? 'bg-gradient-to-r from-emerald-400 to-green-500 shadow-emerald-500/30'
+                          : 'bg-gradient-to-r from-orange-400 to-red-500 shadow-orange-500/30'
+                      }`}
+                    >
+                      {plan.planName === 'START' ? '🟢' : '⚡'} Comprar {plan.name}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

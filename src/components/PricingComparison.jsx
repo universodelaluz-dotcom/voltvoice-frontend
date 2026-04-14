@@ -39,7 +39,7 @@ const comparisonData = {
     { id: 'free', name: 'FREE', price: '$0', color: 'from-gray-400 to-gray-600', bgColor: 'bg-gray-50', borderColor: 'border-gray-300', textColor: 'text-gray-900', angle: 'Para probar', usage: 'Voz esencial: 2 horas diarias', cta: 'Empieza gratis' },
     { id: 'start', name: 'START', price: '$6.99', color: 'from-green-400 to-emerald-600', bgColor: 'bg-gradient-to-br from-green-50 to-emerald-50', borderColor: 'border-green-300', textColor: 'text-gray-900', angle: 'Para empezar', usage: '200,000 tokens (≈ 2-4 h)', cta: 'Elegir plan' },
     { id: 'creator', name: 'CREATOR', price: '$12.99', color: 'from-blue-400 to-indigo-600', bgColor: 'bg-gradient-to-br from-blue-50 to-indigo-50', borderColor: 'border-blue-300', textColor: 'text-gray-900', popular: true, angle: 'Para creadores serios', usage: '500,000 tokens (≈ 5-8 h)', cta: 'Elegir plan' },
-    { id: 'pro', name: 'PRO', price: '$17.99', color: 'from-orange-400 to-red-600', bgColor: 'bg-gradient-to-br from-orange-50 to-red-50', borderColor: 'border-orange-300', textColor: 'text-gray-900', angle: 'Para automatizar y escalar', usage: '800,000 tokens (≈ 10-15 h)', cta: 'Probar ahora' }
+    { id: 'pro', name: 'PRO', price: '$17.99', color: 'from-orange-400 to-red-600', bgColor: 'bg-gradient-to-br from-orange-50 to-red-50', borderColor: 'border-orange-300', textColor: 'text-gray-900', angle: 'Para automatizar y escalar', usage: '800,000 tokens (≈ 10-15 h)', cta: 'Elegir plan' }
   ]
 }
 
@@ -105,16 +105,33 @@ export function PricingComparison({ darkMode, onPlanAction }) {
                           más popular
                         </div>
                       )}
-                      <button
-                        onClick={() => onPlanAction?.(plan.id)}
-                        className={`mt-3 px-4 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                          darkMode
-                            ? 'bg-cyan-500/20 text-cyan-200 hover:bg-cyan-500/30'
-                            : 'bg-cyan-100 text-cyan-800 hover:bg-cyan-200'
-                        }`}
-                      >
-                        {plan.cta}
-                      </button>
+                      <div className="relative mt-3">
+                        {plan.popular ? (
+                          <>
+                            <span className="absolute -inset-1 rounded-xl pointer-events-none animate-ping opacity-50 bg-gradient-to-r from-cyan-400/40 to-blue-500/40" />
+                            <button
+                              onClick={() => onPlanAction?.({ name: plan.name, price: parseFloat(plan.price.replace('$', '')) })}
+                              className="relative z-10 w-full px-5 py-2.5 rounded-xl text-sm font-black text-white transition-all animate-pulse hover:scale-[1.03] shadow-lg shadow-cyan-500/30 flex items-center justify-center gap-1.5 bg-gradient-to-r from-cyan-400 to-blue-500"
+                            >
+                              🚀 {plan.cta}
+                            </button>
+                            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none z-20" />
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => onPlanAction?.({ name: plan.name, price: parseFloat(plan.price.replace('$', '')) })}
+                            className={`relative w-full px-5 py-2.5 rounded-xl text-sm font-black text-white transition-all hover:scale-[1.03] hover:opacity-90 shadow-md flex items-center justify-center gap-1.5 bg-gradient-to-r ${
+                              plan.id === 'free'
+                                ? 'from-gray-500 to-gray-600 shadow-gray-500/20'
+                                : plan.id === 'start'
+                                ? 'from-emerald-400 to-green-500 shadow-emerald-500/20'
+                                : 'from-orange-400 to-red-500 shadow-orange-500/20'
+                            }`}
+                          >
+                            {plan.id === 'free' ? '⭐' : plan.id === 'start' ? '🟢' : '⚡'} {plan.cta}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </th>
                 ))}

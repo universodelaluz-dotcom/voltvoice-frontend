@@ -311,84 +311,84 @@ const removeModerationEntry = (list, username) => {
 
 const PLATFORM_HELP_FAQ = [
   {
-    q: 'Como empiezo a usar la plataforma?',
-    a: 'Inicia sesion, entra al Studio, conecta tu usuario de TikTok LIVE, elige voz y activa lectura.'
+    q: '¿Cómo empiezo a usar la plataforma?',
+    a: 'Inicia sesión, entra al Studio, conecta tu usuario de TikTok LIVE, elige voz y activa lectura.'
   },
   {
-    q: 'Que hace el filtro inteligente?',
-    a: 'Prioriza mensajes utiles y reduce ruido como spam, links, mensajes repetidos, vacios o poco legibles.'
+    q: '¿Qué hace el filtro inteligente?',
+    a: 'Prioriza mensajes útiles y reduce ruido como spam, links, mensajes repetidos, vacíos o poco legibles.'
   },
   {
-    q: 'El filtro inteligente cambia segun el ritmo del chat?',
-    a: 'Si. Cuando el chat va rapido filtra mas; cuando va tranquilo deja pasar mas mensajes.'
+    q: '¿El filtro inteligente cambia según el ritmo del chat?',
+    a: 'Sí. Cuando el chat va rápido filtra más; cuando va tranquilo deja pasar más mensajes.'
   },
   {
-    q: 'Que es un token?',
-    a: '1 token equivale a 1 caracter generado en voces premium o personalizadas.'
+    q: '¿Qué es un token?',
+    a: '1 token equivale a 1 carácter generado en voces premium o personalizadas.'
   },
   {
-    q: 'Que voces consumen tokens?',
+    q: '¿Qué voces consumen tokens?',
     a: 'Las voces premium y personalizadas. La voz esencial no consume tokens.'
   },
   {
-    q: 'Que pasa si me quedo sin tokens?',
+    q: '¿Qué pasa si me quedo sin tokens?',
     a: 'Si no alcanzan los tokens para voz premium o personalizada, cambia a voz esencial.'
   },
   {
-    q: 'Como funciona el plan FREE?',
+    q: '¿Cómo funciona el plan FREE?',
     a: 'Incluye voz esencial con 2 horas diarias. El contador se reinicia cada 24 horas.'
   },
   {
-    q: 'Como crear una voz personalizada?',
-    a: 'Entra a Voice Workshop, sube una muestra de voz, genera la voz, pruebala y asignala al uso que quieras.'
+    q: '¿Cómo crear una voz personalizada?',
+    a: 'Entra a Voice Workshop, sube una muestra de voz, genera la voz, pruébala y asígnala al uso que quieras.'
   },
   {
-    q: 'Asistente de IA: para que sirve?',
+    q: 'Asistente de IA: ¿para qué sirve?',
     a: 'Utiliza el contexto reciente del chat para responder preguntas breves con la personalidad y voz que configures.'
   },
   {
-    q: 'Asistente de IA: en que plan esta disponible?',
+    q: 'Asistente de IA: ¿en qué plan está disponible?',
     a: 'Disponible solo en Plan Pro.'
   },
   {
-    q: 'Puedo configurar tono y frecuencia del asistente?',
-    a: 'Si. Puedes ajustar frecuencia, tono y longitud de respuesta.'
+    q: '¿Puedo configurar tono y frecuencia del asistente?',
+    a: 'Sí. Puedes ajustar frecuencia, tono y longitud de respuesta.'
   },
   {
-    q: 'Como se si mi configuracion esta funcionando bien?',
-    a: 'Revisa el resumen de sesion: mensajes recibidos, leidos, filtrados y ritmo general del LIVE.'
+    q: '¿Cómo sé si mi configuración está funcionando bien?',
+    a: 'Revisa el resumen de sesión: mensajes recibidos, leídos, filtrados y ritmo general del LIVE.'
   },
   {
-    q: 'No conecta mi LIVE, que reviso primero?',
-    a: 'Verifica usuario exacto de TikTok, confirma que el LIVE este activo e intenta reconectar.'
+    q: '¿No conecta mi LIVE, qué reviso primero?',
+    a: 'Verifica usuario exacto de TikTok, confirma que el LIVE esté activo e intenta reconectar.'
   },
   {
-    q: 'No se escucha audio, que reviso?',
-    a: 'Valida volumen del panel, salida de audio del navegador y que no este en pausa.'
+    q: '¿No se escucha audio, qué reviso?',
+    a: 'Valida volumen del panel, salida de audio del navegador y que no esté en pausa.'
   },
   {
-    q: 'Como silenciar la voz de una persona?',
-    a: 'En el panel de chat, abre moderacion del usuario y agregalo a la lista de silenciados/baneados. Desde ese momento sus mensajes no se leen en voz.'
+    q: '¿Cómo silenciar la voz de una persona?',
+    a: 'En el panel de chat, abre moderación del usuario y agrégalo a la lista de silenciados/baneados. Desde ese momento sus mensajes no se leen en voz.'
   },
   {
-    q: 'Como desbloquear a una persona del silencio de voz?',
-    a: 'Ve a la lista de moderacion de la sesion, busca el usuario y quitalo del silencio/baneo. Sus mensajes volveran a leerse segun tus filtros.'
+    q: '¿Cómo desbloquear a una persona del silencio de voz?',
+    a: 'Ve a la lista de moderación de la sesión, busca el usuario y quítalo del silencio/baneo. Sus mensajes volverán a leerse según tus filtros.'
   },
   {
-    q: 'Como cambiar el nick de un usuario?',
-    a: 'En la seccion de nicks, selecciona al usuario, escribe el nuevo nombre y guarda. La lectura en voz usara ese nick en lugar del original.'
+    q: '¿Cómo cambiar el nick de un usuario?',
+    a: 'En la sección de nicks, selecciona al usuario, escribe el nuevo nombre y guarda. La lectura en voz usará ese nick en lugar del original.'
   },
   {
-    q: 'Puedo cambiar o cancelar mi plan cuando quiera?',
-    a: 'Si. Puedes actualizar, cambiar o cancelar desde tu cuenta.'
+    q: '¿Puedo cambiar o cancelar mi plan cuando quiera?',
+    a: 'Sí. Puedes actualizar, cambiar o cancelar desde tu cuenta.'
   },
   {
-    q: 'Es segura la conexion con TikTok?',
-    a: 'Si. Solo se usa acceso necesario para leer actividad publica de tu LIVE.'
+    q: '¿Es segura la conexión con TikTok?',
+    a: 'Sí. Solo se usa acceso necesario para leer actividad pública de tu LIVE.'
   },
   {
-    q: 'En que idioma funciona mejor actualmente?',
-    a: 'Actualmente esta optimizado para espanol.'
+    q: '¿En qué idioma funciona mejor actualmente?',
+    a: 'Actualmente está optimizado para español.'
   }
 ]
 
@@ -576,6 +576,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const [sessionSummary, setSessionSummary] = useState(null)
   const [showHelpGuide, setShowHelpGuide] = useState(false)
   const [helpSearch, setHelpSearch] = useState('')
+  const [showSupportForm, setShowSupportForm] = useState(false)
+  const [supportMsg, setSupportMsg] = useState('')
+  const [supportSending, setSupportSending] = useState(false)
+  const [supportDone, setSupportDone] = useState(false)
+  const [supportError, setSupportError] = useState(null)
   const [highlightRules, setHighlightRules] = useState(() => normalizeHighlightRules(config.highlightRules))
   const canPersistConfig = Boolean(updateConfig) && Boolean(configReady)
   const [canWriteConfig, setCanWriteConfig] = useState(false)
@@ -2448,6 +2453,27 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     sessionFilteredCountRef.current += 1
   }
 
+  const sendSupportMessage = async () => {
+    if (!supportMsg.trim() || supportSending) return
+    setSupportSending(true)
+    setSupportError(null)
+    try {
+      const res = await fetch(`${API_URL}/api/support/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAuthToken()}` },
+        body: JSON.stringify({ message: supportMsg.trim() })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Error al enviar')
+      setSupportDone(true)
+      setSupportMsg('')
+    } catch (e) {
+      setSupportError(e.message || 'Error al enviar el mensaje')
+    } finally {
+      setSupportSending(false)
+    }
+  }
+
   const currentReadingMessage = messages.find((msg) => msg.status === 'playing') || null
   const showConnectedView = true // siempre visible
   const mobilePreviewUsername = normalizeTikTokUsername(connectedTikTokUser || tiktokUser || config.lastTiktokUser || '')
@@ -2668,9 +2694,74 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               ))}
               {!visibleHelpFaq.length && (
                 <div className={darkMode ? "rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-4 text-gray-200" : "rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-gray-700"}>
-                  No encontre resultados para esa busqueda. Prueba con palabras como: voz, tokens, silenciar, nick, filtros.
+                  No encontré resultados para esa búsqueda. Prueba con palabras como: voz, tokens, silenciar, nick, filtros.
                 </div>
               )}
+
+              {/* ── Contactar Soporte ── */}
+              <div className={`mt-4 rounded-xl border p-4 ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
+                {currentPlan === 'free' ? (
+                  <div className="text-center py-2">
+                    <span className="text-2xl block mb-2">🔒</span>
+                    <p className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Soporte directo disponible para planes de pago</p>
+                    <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Actualiza tu plan para contactarnos directamente</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">✉️</span>
+                        <div>
+                          <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>Contactar Soporte</p>
+                          <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Respondemos en 24–48 hrs</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => { setShowSupportForm(f => !f); setSupportDone(false); setSupportError(null) }}
+                        className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition ${darkMode ? 'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30' : 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200'}`}
+                      >
+                        {showSupportForm ? 'Cancelar' : 'Enviar mensaje'}
+                      </button>
+                    </div>
+
+                    {showSupportForm && (
+                      supportDone ? (
+                        <div className={`text-center py-4 rounded-xl ${darkMode ? 'bg-green-500/10 border border-green-500/30' : 'bg-green-50 border border-green-200'}`}>
+                          <span className="text-3xl block mb-2">✅</span>
+                          <p className={`text-sm font-bold ${darkMode ? 'text-green-300' : 'text-green-700'}`}>¡Mensaje enviado!</p>
+                          <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Te responderemos a tu correo en 24–48 horas.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <textarea
+                            value={supportMsg}
+                            onChange={e => setSupportMsg(e.target.value.slice(0, 500))}
+                            rows={4}
+                            placeholder="Describe tu problema o consulta con el mayor detalle posible..."
+                            className={`w-full rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 ${darkMode
+                              ? 'bg-[#0b1327] border border-cyan-400/30 text-white placeholder:text-gray-500 focus:ring-cyan-500/40'
+                              : 'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-cyan-400/40'}`}
+                          />
+                          <div className="flex items-center justify-between">
+                            <span className={`text-xs ${supportMsg.length >= 450 ? 'text-orange-400' : darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                              {supportMsg.length}/500 caracteres
+                            </span>
+                            {supportError && <span className="text-xs text-red-400">{supportError}</span>}
+                          </div>
+                          <button
+                            onClick={sendSupportMessage}
+                            disabled={!supportMsg.trim() || supportSending}
+                            className="w-full py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-cyan-500 to-blue-500 disabled:opacity-40 hover:opacity-90 transition flex items-center justify-center gap-2"
+                          >
+                            {supportSending ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin inline-block" /> Enviando...</> : '📨 Enviar a soporte'}
+                          </button>
+                        </div>
+                      )
+                    )}
+                  </>
+                )}
+              </div>
+
             </div>
           </div>
         </div>
@@ -2921,8 +3012,18 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 >
                   {messages.length === 0 ? (
                     <div className="text-center text-gray-400 py-8">
-                      <Loader className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
-                      <p>Esperando comentarios en vivo...</p>
+                      {isConnected ? (
+                        <>
+                          <Loader className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
+                          <p>Esperando comentarios en vivo...</p>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-3xl mb-3 block">📡</span>
+                          <p className={`font-semibold text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>Conéctate para ver el chat</p>
+                          <p className={`text-xs mt-1 ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>Ingresa tu usuario de TikTok arriba</p>
+                        </>
+                      )}
                     </div>
                   ) : (
                     messages.map((msg, idx) => {
@@ -3134,9 +3235,20 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                             )}
                             <div className={darkMode ? "flex-1 rounded-md bg-[#050512] border border-cyan-500/10 p-2 overflow-y-auto space-y-1.5" : "flex-1 rounded-md bg-slate-50 border border-indigo-100 p-2 overflow-y-auto space-y-1.5"}>
                               {messages.length === 0 ? (
-                                <p className={darkMode ? "text-[10px] text-slate-400 text-center py-6" : "text-[10px] text-slate-500 text-center py-6"}>
-                                  Esperando comentarios en vivo...
-                                </p>
+                                <div className="text-center py-6">
+                                  {isConnected ? (
+                                    <p className={darkMode ? "text-[10px] text-slate-400" : "text-[10px] text-slate-500"}>
+                                      Esperando comentarios en vivo...
+                                    </p>
+                                  ) : (
+                                    <>
+                                      <span className="text-lg block mb-1">📡</span>
+                                      <p className={darkMode ? "text-[10px] text-slate-400" : "text-[10px] text-slate-500"}>
+                                        Conéctate para ver el chat
+                                      </p>
+                                    </>
+                                  )}
+                                </div>
                               ) : (
                                 messages.slice(-12).map((msg, idx) => (
                                   <div key={`mobile-feed-on-${msg.id || `${msg.timestamp}-${idx}`}`} className={darkMode ? "rounded-md border border-cyan-500/15 bg-cyan-500/5 p-1.5" : "rounded-md border border-cyan-100 bg-white p-1.5"}>

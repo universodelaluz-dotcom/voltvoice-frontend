@@ -371,7 +371,13 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
           </button>
         </div>
 
-        <p className={`text-xs mt-4 text-center ${dm ? 'text-gray-600' : 'text-gray-400'}`}>
+        {currentItem.type !== 'plan' && (
+          <div className={`mt-4 rounded-xl px-3 py-2.5 text-[11px] leading-relaxed ${dm ? 'bg-white/5 border border-white/10 text-gray-500' : 'bg-gray-50 border border-gray-200 text-gray-400'}`}>
+            <p className="font-semibold mb-0.5">⚠️ Sin reembolsos en paquetes de tokens</p>
+            <p>Los paquetes de tokens son productos digitales de consumo inmediato. Una vez procesada la compra, no aplican reembolsos ni devoluciones de ningún tipo.</p>
+          </div>
+        )}
+        <p className={`text-xs mt-3 text-center ${dm ? 'text-gray-600' : 'text-gray-400'}`}>
           Pagos 100% seguros - Mercado Pago y PayPal
         </p>
       </div>

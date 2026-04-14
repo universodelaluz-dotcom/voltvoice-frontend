@@ -55,6 +55,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [activityHours, setActivityHours] = useState(48)
   const [activityLimit, setActivityLimit] = useState(5000)
   const [createUserForm, setCreateUserForm] = useState({ email: '', password: '', plan: 'start', tokens: 1000, role: 'user' })
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false)
   const [suspendUserId, setSuspendUserId] = useState(null)
   const [suspendMinutes, setSuspendMinutes] = useState(60)
   const [suspendReason, setSuspendReason] = useState('Actividad anormal')
@@ -323,6 +324,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
       if (!r.ok || !d.success) return showMsg(d.error || 'Error creando usuario', 'error')
       showMsg(`Usuario creado: ${d.user.email}`)
       setCreateUserForm({ email: '', password: '', plan: 'start', tokens: 1000, role: 'user' })
+      setShowCreateUserModal(false)
       loadUsers()
       loadStats()
     } catch {
@@ -1366,6 +1368,13 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                   />
                 </div>
                 <button
+                  onClick={() => setShowCreateUserModal(true)}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Nuevo Usuario
+                </button>
+                <button
                   onClick={exportEmailsCsv}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold ${darkMode ? 'bg-white/10 text-gray-200 hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                 >
@@ -1601,6 +1610,77 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
           </div>
         </div>
       )}
+      {/* Modal crear usuario */}
+      {showCreateUserModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className={`rounded-2xl p-6 w-96 ${darkMode ? 'bg-[#1a1a35] border border-white/20' : 'bg-white border border-gray-200 shadow-xl'}`}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-bold text-lg">Nuevo Usuario</h3>
+              <button onClick={() => setShowCreateUserModal(false)} className={`p-1 rounded ${darkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}>
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Email *</label>
+                <input
+                  className={`${inp} w-full`}
+                  placeholder="email@dominio.com"
+                  value={createUserForm.email}
+                  onChange={e => setCreateUserForm(p => ({ ...p, email: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Contraseña inicial *</label>
+                <input
+                  className={`${inp} w-full`}
+                  placeholder="Mínimo 6 caracteres"
+                  value={createUserForm.password}
+                  onChange={e => setCreateUserForm(p => ({ ...p, password: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Plan</label>
+                  <select className={`${inp} w-full`} value={createUserForm.plan}
+                    onChange={e => setCreateUserForm(p => ({ ...p, plan: e.target.value }))}>
+                    {['free', 'start', 'creator', 'pro', 'admin'].map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tokens</label>
+                  <input type="number" className={`${inp} w-full`} value={createUserForm.tokens}
+                    onChange={e => setCreateUserForm(p => ({ ...p, tokens: parseInt(e.target.value || '0') }))} />
+                </div>
+                <div>
+                  <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Rol</label>
+                  <select className={`${inp} w-full`} value={createUserForm.role}
+                    onChange={e => setCreateUserForm(p => ({ ...p, role: e.target.value }))}>
+                    <option value="user">user</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => setShowCreateUserModal(false)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-white/10 text-gray-300 hover:bg-white/20' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={createUser}
+                  disabled={!createUserForm.email || !createUserForm.password}
+                  className="flex-1 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-bold disabled:opacity-40"
+                >
+                  Crear Usuario
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal agregar tokens */}
       {addTokensUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
