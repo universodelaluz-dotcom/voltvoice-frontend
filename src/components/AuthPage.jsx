@@ -446,9 +446,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       }`}>
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-gradient-to-br from-cyan-400 to-purple-500 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl font-black text-white">S</span>
-          </div>
+          <img src="/images/logo-main.png" alt="Stream Voicer" className="h-10 mx-auto mb-4 object-contain" />
           <h1 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>
             {step === 'verification'
               ? 'Verifica tu Email'
