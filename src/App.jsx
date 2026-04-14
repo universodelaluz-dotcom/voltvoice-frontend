@@ -958,6 +958,46 @@ export function App() {
       description: 'Los mensajes se leen automáticamente durante tu stream'
     }
   ]
+  const faqItems = [
+    { icon: '🔊', q: '¿Cómo funciona STREAM VOICER?', a: 'STREAM VOICER lee en tiempo real los mensajes de tu chat de TikTok LIVE y los reproduce con voz para mantener interacción constante en tu stream.' },
+    { icon: '🧩', q: '¿Qué es un token?', a: '1 token equivale a 1 carácter generado. El consumo aplica cuando usas voces premium o voces personalizadas.' },
+    { icon: '🎙️', q: '¿Qué voces consumen tokens?', a: 'Las voces premium y las voces personalizadas consumen tokens. La voz esencial no consume tokens.' },
+    { icon: '♻️', q: '¿Si el audio sale de caché también se cobran tokens?', a: 'Sí. El caché optimiza rendimiento y costos internos de procesamiento, pero el consumo de tokens del usuario se mantiene según caracteres generados en voces premium/personalizadas.' },
+    { icon: '💳', q: '¿Qué hago si se me acaban los tokens?', a: 'Puedes recargar al instante desde la sección "Recarga de Tokens". Si no tienes tokens, las voces premium/personalizadas dejan de reproducirse hasta recargar.' },
+    { icon: '⏳', q: '¿Cómo funciona el plan FREE?', a: 'El plan FREE incluye 1 voz esencial con 2 horas diarias. El contador se restablece cada 24 horas.' },
+    { icon: '🔄', q: '¿Puedo cambiar o cancelar mi plan cuando quiera?', a: 'Sí. Puedes actualizar, cambiar o cancelar tu plan cuando quieras desde tu cuenta. Los cambios se aplican según tu ciclo de facturación.' },
+    { icon: '🌍', q: '¿Funciona con otros idiomas?', a: 'Actualmente STREAM VOICER está optimizado para español. Próximamente se integrarán más idiomas.' },
+    { icon: '⚡', q: '¿Cuánto tarda en procesarse un mensaje?', a: 'Se procesa en tiempo real. Normalmente tarda entre 1 y 5 segundos según longitud del mensaje, voz elegida y carga del sistema.' },
+    { icon: '🔐', q: '¿Es seguro conectar mi TikTok?', a: 'Sí. Solo se usa el acceso necesario para leer la actividad pública de tu LIVE. No compartimos tus datos con terceros.' },
+    { icon: '🆓', q: '¿Hay prueba gratis?', a: 'Sí. Puedes empezar con FREE y subir a START, CREATOR o PRO cuando necesites más capacidad y más voces.' },
+    { icon: '🛠️', q: '¿Puedo crear y editar mis voces personalizadas?', a: 'Sí. Puedes gestionar voces personalizadas desde tu panel. La cantidad disponible depende de tu plan activo.' },
+  ]
+  const advancedGuide = [
+    {
+      title: 'Filtro inteligente (en simple)',
+      description: 'Cuando el chat va rápido, prioriza mensajes con valor de conversación y reduce ruido (spam, repetidos, puro emoji o texto poco legible). Cuando el chat se calma, abre más cobertura para leer más mensajes útiles.'
+    },
+    {
+      title: 'Asistente de IA en vivo',
+      description: 'El asistente toma contexto reciente del chat para responder en tono de tu stream. Puedes dispararlo manualmente o con reglas de interacción para equilibrar frecuencia, naturalidad y control.'
+    },
+    {
+      title: 'Tokens y consumo real',
+      description: 'Las voces premium y personalizadas consumen tokens por caracteres generados. La voz esencial del plan FREE no consume tokens, pero mantiene su ventana diaria de uso para cuidar estabilidad y costos.'
+    },
+    {
+      title: 'Roles y prioridad de lectura',
+      description: 'Puedes darle preferencia a moderadores, suscriptores, comunidad y donadores. También puedes forzar solo preguntas o combinarlas con otros filtros para que el chat mantenga foco.'
+    },
+    {
+      title: 'Recomendación de arranque',
+      description: 'Empieza con filtros básicos: saltar repetidos, ignorar links y mínimo de longitud. Luego ajusta voces por rol (ej. donadores/preguntas) y sube agresividad solo si el volumen del chat lo exige.'
+    },
+    {
+      title: 'Cómo evaluar si está bien configurado',
+      description: 'Usa el resumen de sesión: si mejora la calidad de mensajes leídos sin perder ritmo del live, vas bien. Ajusta poco a poco para mantener el balance entre cantidad, claridad y engagement.'
+    }
+  ]
 
   return (
     <div className={"min-h-screen overflow-hidden transition-colors duration-300 " + (darkMode ? "bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-gray-900") + ""}>
@@ -1272,20 +1312,7 @@ export function App() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {[
-              { icon: '🔊', q: '¿Cómo funciona STREAM VOICER?', a: 'STREAM VOICER lee en tiempo real los mensajes de tu chat de TikTok LIVE y los reproduce con voz para mantener interacción constante en tu stream.' },
-              { icon: '🧩', q: '¿Qué es un token?', a: '1 token equivale a 1 carácter generado. El consumo aplica cuando usas voces premium o voces personalizadas.' },
-              { icon: '🎙️', q: '¿Qué voces consumen tokens?', a: 'Las voces premium y las voces personalizadas consumen tokens. La voz esencial no consume tokens.' },
-              { icon: '♻️', q: '¿Si el audio sale de caché también se cobran tokens?', a: 'Sí. El caché optimiza rendimiento y costos internos de procesamiento, pero el consumo de tokens del usuario se mantiene según caracteres generados en voces premium/personalizadas.' },
-              { icon: '💳', q: '¿Qué hago si se me acaban los tokens?', a: 'Puedes recargar al instante desde la sección "Recarga de Tokens". Si no tienes tokens, las voces premium/personalizadas dejan de reproducirse hasta recargar.' },
-              { icon: '⏳', q: '¿Cómo funciona el plan FREE?', a: 'El plan FREE incluye 1 voz esencial con 2 horas diarias. El contador se restablece cada 24 horas.' },
-              { icon: '🔄', q: '¿Puedo cambiar o cancelar mi plan cuando quiera?', a: 'Sí. Puedes actualizar, cambiar o cancelar tu plan cuando quieras desde tu cuenta. Los cambios se aplican según tu ciclo de facturación.' },
-              { icon: '🌍', q: '¿Funciona con otros idiomas?', a: 'Actualmente STREAM VOICER está optimizado para español. Próximamente se integrarán más idiomas.' },
-              { icon: '⚡', q: '¿Cuánto tarda en procesarse un mensaje?', a: 'Se procesa en tiempo real. Normalmente tarda entre 1 y 5 segundos según longitud del mensaje, voz elegida y carga del sistema.' },
-              { icon: '🔐', q: '¿Es seguro conectar mi TikTok?', a: 'Sí. Solo se usa el acceso necesario para leer la actividad pública de tu LIVE. No compartimos tus datos con terceros.' },
-              { icon: '🆓', q: '¿Hay prueba gratis?', a: 'Sí. Puedes empezar con FREE y subir a START, CREATOR o PRO cuando necesites más capacidad y más voces.' },
-              { icon: '🛠️', q: '¿Puedo crear y editar mis voces personalizadas?', a: 'Sí. Puedes gestionar voces personalizadas desde tu panel. La cantidad disponible depende de tu plan activo.' },
-            ].map((faq, idx) => (
+            {faqItems.map((faq, idx) => (
               <div key={idx} className={`p-6 rounded-lg border-l-4 ${darkMode ? 'bg-gray-800/50 border-cyan-500' : 'bg-gray-50 border-cyan-400'}`}>
                 <h4 className={`text-lg font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                   {faq.icon} {faq.q}
@@ -1295,6 +1322,36 @@ export function App() {
                 </p>
               </div>
             ))}
+          </div>
+
+          <div className="mt-14">
+            <div className="text-center mb-8">
+              <h4 className={`text-3xl font-black mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                📘 Guía de Uso Más Detallada
+              </h4>
+              <p className={darkMode ? "text-gray-400" : "text-gray-600"}>
+                Una extensión práctica de las preguntas de arriba para operar mejor tu LIVE.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {advancedGuide.map((item, idx) => (
+                <div
+                  key={idx}
+                  className={`p-5 rounded-xl border ${
+                    darkMode
+                      ? 'bg-[#151830] border-cyan-500/25'
+                      : 'bg-white border-cyan-100 shadow-sm'
+                  }`}
+                >
+                  <h5 className={`text-base font-extrabold mb-2 ${darkMode ? 'text-cyan-200' : 'text-cyan-800'}`}>
+                    {item.title}
+                  </h5>
+                  <p className={`text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    {item.description}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

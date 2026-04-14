@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef } from 'react'
-import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X, Users, Clock3, TrendingUp, Filter, Trophy, Sparkles } from 'lucide-react'
+import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X, Users, Clock3, TrendingUp, Filter, Trophy, Sparkles, BookOpen } from 'lucide-react'
 import chatStore from '../services/chatStore.js'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
@@ -309,6 +309,89 @@ const removeModerationEntry = (list, username) => {
   return list.filter((item) => item.username !== normalizedUsername)
 }
 
+const PLATFORM_HELP_FAQ = [
+  {
+    q: 'Como empiezo a usar la plataforma?',
+    a: 'Inicia sesion, entra al Studio, conecta tu usuario de TikTok LIVE, elige voz y activa lectura.'
+  },
+  {
+    q: 'Que hace el filtro inteligente?',
+    a: 'Prioriza mensajes utiles y reduce ruido como spam, links, mensajes repetidos, vacios o poco legibles.'
+  },
+  {
+    q: 'El filtro inteligente cambia segun el ritmo del chat?',
+    a: 'Si. Cuando el chat va rapido filtra mas; cuando va tranquilo deja pasar mas mensajes.'
+  },
+  {
+    q: 'Que es un token?',
+    a: '1 token equivale a 1 caracter generado en voces premium o personalizadas.'
+  },
+  {
+    q: 'Que voces consumen tokens?',
+    a: 'Las voces premium y personalizadas. La voz esencial no consume tokens.'
+  },
+  {
+    q: 'Que pasa si me quedo sin tokens?',
+    a: 'Si no alcanzan los tokens para voz premium o personalizada, cambia a voz esencial.'
+  },
+  {
+    q: 'Como funciona el plan FREE?',
+    a: 'Incluye voz esencial con 2 horas diarias. El contador se reinicia cada 24 horas.'
+  },
+  {
+    q: 'Como crear una voz personalizada?',
+    a: 'Entra a Voice Workshop, sube una muestra de voz, genera la voz, pruebala y asignala al uso que quieras.'
+  },
+  {
+    q: 'Asistente de IA: para que sirve?',
+    a: 'Utiliza el contexto reciente del chat para responder preguntas breves con la personalidad y voz que configures.'
+  },
+  {
+    q: 'Asistente de IA: en que plan esta disponible?',
+    a: 'Disponible solo en Plan Pro.'
+  },
+  {
+    q: 'Puedo configurar tono y frecuencia del asistente?',
+    a: 'Si. Puedes ajustar frecuencia, tono y longitud de respuesta.'
+  },
+  {
+    q: 'Como se si mi configuracion esta funcionando bien?',
+    a: 'Revisa el resumen de sesion: mensajes recibidos, leidos, filtrados y ritmo general del LIVE.'
+  },
+  {
+    q: 'No conecta mi LIVE, que reviso primero?',
+    a: 'Verifica usuario exacto de TikTok, confirma que el LIVE este activo e intenta reconectar.'
+  },
+  {
+    q: 'No se escucha audio, que reviso?',
+    a: 'Valida volumen del panel, salida de audio del navegador y que no este en pausa.'
+  },
+  {
+    q: 'Como silenciar la voz de una persona?',
+    a: 'En el panel de chat, abre moderacion del usuario y agregalo a la lista de silenciados/baneados. Desde ese momento sus mensajes no se leen en voz.'
+  },
+  {
+    q: 'Como desbloquear a una persona del silencio de voz?',
+    a: 'Ve a la lista de moderacion de la sesion, busca el usuario y quitalo del silencio/baneo. Sus mensajes volveran a leerse segun tus filtros.'
+  },
+  {
+    q: 'Como cambiar el nick de un usuario?',
+    a: 'En la seccion de nicks, selecciona al usuario, escribe el nuevo nombre y guarda. La lectura en voz usara ese nick en lugar del original.'
+  },
+  {
+    q: 'Puedo cambiar o cancelar mi plan cuando quiera?',
+    a: 'Si. Puedes actualizar, cambiar o cancelar desde tu cuenta.'
+  },
+  {
+    q: 'Es segura la conexion con TikTok?',
+    a: 'Si. Solo se usa acceso necesario para leer actividad publica de tu LIVE.'
+  },
+  {
+    q: 'En que idioma funciona mejor actualmente?',
+    a: 'Actualmente esta optimizado para espanol.'
+  }
+]
+
 function AnimatedCount({ value, duration = 900, decimals = 0, suffix = '' }) {
   const [displayValue, setDisplayValue] = useState(0)
 
@@ -491,6 +574,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const [mobilePreviewMuted, setMobilePreviewMuted] = useState(config.mobilePreviewMuted ?? true)
   const [showSessionSummary, setShowSessionSummary] = useState(false)
   const [sessionSummary, setSessionSummary] = useState(null)
+  const [showHelpGuide, setShowHelpGuide] = useState(false)
+  const [helpSearch, setHelpSearch] = useState('')
   const [highlightRules, setHighlightRules] = useState(() => normalizeHighlightRules(config.highlightRules))
   const canPersistConfig = Boolean(updateConfig) && Boolean(configReady)
   const [canWriteConfig, setCanWriteConfig] = useState(false)
@@ -2366,6 +2451,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const currentReadingMessage = messages.find((msg) => msg.status === 'playing') || null
   const showConnectedView = isConnected || showSessionSummary
   const mobilePreviewUsername = normalizeTikTokUsername(connectedTikTokUser || tiktokUser || config.lastTiktokUser || '')
+  const normalizedHelpSearch = String(helpSearch || '').trim().toLowerCase()
+  const visibleHelpFaq = PLATFORM_HELP_FAQ.filter((item) => {
+    if (!normalizedHelpSearch) return true
+    return `${item.q} ${item.a}`.toLowerCase().includes(normalizedHelpSearch)
+  })
   const sessionTikTokUsername = normalizeTikTokUsername(connectedTikTokUser || tiktokUser || config.lastTiktokUser || '')
   const sessionTikTokHandle = sessionTikTokUsername ? `@${sessionTikTokUsername}` : ''
   const mobilePreviewLiveUrl = mobilePreviewUsername ? `https://www.tiktok.com/@${mobilePreviewUsername}/live` : ''
@@ -2474,6 +2564,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           <h2 className={darkMode ? "text-xl font-bold text-white truncate" : "text-xl font-bold text-gray-900 truncate"}>TikTok LIVE en Tiempo Real</h2>
         </div>
         <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
+          <button
+            type="button"
+            onClick={() => setShowHelpGuide(true)}
+            className={darkMode
+              ? "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-400/35 bg-cyan-500/10 text-cyan-100 hover:bg-cyan-500/20 transition-all"
+              : "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-300 bg-cyan-50 text-cyan-800 hover:bg-cyan-100 transition-all"}
+            title="Guía detallada de uso"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span className={darkMode ? "text-[10px] uppercase tracking-[0.16em] text-cyan-300/90" : "text-[10px] uppercase tracking-[0.16em] text-cyan-700"}>Ayuda</span>
+          </button>
           {sessionTikTokHandle && (
             <div className={darkMode
               ? "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-400/35 bg-cyan-500/10 text-cyan-100 shadow-[0_0_0_1px_rgba(34,211,238,0.12)]"
@@ -2506,6 +2607,74 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           </span>
         </div>
       </div>
+
+      {showHelpGuide && (
+        <div className="fixed inset-0 z-[220]">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/55"
+            onClick={() => setShowHelpGuide(false)}
+            aria-label="Cerrar guía"
+          />
+          <div className={`absolute top-0 right-0 h-full w-full max-w-xl overflow-y-auto p-5 sm:p-6 border-l shadow-2xl ${
+            darkMode ? 'bg-[#0f1022] border-cyan-400/30 text-gray-100' : 'bg-white border-indigo-200 text-gray-900'
+          }`}>
+            <div className="flex items-center justify-between gap-3 mb-5">
+              <div>
+                <h3 className={darkMode ? "text-xl font-black text-white" : "text-xl font-black text-gray-900"}>
+                  Guía detallada
+                </h3>
+                <p className={darkMode ? "text-sm text-cyan-200/80" : "text-sm text-cyan-700"}>
+                  Preguntas y respuestas de toda la plataforma
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowHelpGuide(false)}
+                className={darkMode
+                  ? "p-2 rounded-lg border border-cyan-400/30 bg-cyan-500/10 hover:bg-cyan-500/20 transition-all"
+                  : "p-2 rounded-lg border border-cyan-300 bg-cyan-50 hover:bg-cyan-100 transition-all"}
+                aria-label="Cerrar guía"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-sm leading-relaxed">
+              <div className={darkMode ? "rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-3" : "rounded-xl border border-cyan-200 bg-cyan-50 p-3"}>
+                <input
+                  type="text"
+                  value={helpSearch}
+                  onChange={(e) => setHelpSearch(e.target.value)}
+                  placeholder="Buscar en preguntas y respuestas..."
+                  className={darkMode
+                    ? "w-full bg-[#0b1327] border border-cyan-400/30 rounded-lg px-3 py-2 text-sm text-white placeholder:text-cyan-200/55 focus:outline-none focus:border-cyan-300"
+                    : "w-full bg-white border border-cyan-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-cyan-700/60 focus:outline-none focus:border-cyan-500"}
+                />
+              </div>
+
+              {visibleHelpFaq.map((item, idx) => (
+                <div
+                  key={item.q}
+                  className={darkMode ? "rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-4" : "rounded-xl border border-cyan-200 bg-cyan-50 p-4"}
+                >
+                  <p className={darkMode ? "font-semibold text-cyan-100 mb-1.5" : "font-semibold text-cyan-900 mb-1.5"}>
+                    {idx + 1}. {item.q}
+                  </p>
+                  <p className={darkMode ? "text-gray-200" : "text-gray-700"}>
+                    {item.a}
+                  </p>
+                </div>
+              ))}
+              {!visibleHelpFaq.length && (
+                <div className={darkMode ? "rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-4 text-gray-200" : "rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-gray-700"}>
+                  No encontre resultados para esa busqueda. Prueba con palabras como: voz, tokens, silenciar, nick, filtros.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {!showConnectedView ? (
         <form onSubmit={handleConnectSubmit} className="space-y-4">
