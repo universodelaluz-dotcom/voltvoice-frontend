@@ -536,6 +536,19 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
               </div>
             )}
 
+            {/* ¿Eres nuevo? — solo visible antes de expandir el email form */}
+            {!showEmailForm && GOOGLE_CLIENT_ID && mode === 'login' && (
+              <p className={`text-center text-sm mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                ¿Eres nuevo?{' '}
+                <button
+                  onClick={() => { setMode('register'); setShowEmailForm(true); setError(null) }}
+                  className="font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
+                >
+                  Regístrate gratis
+                </button>
+              </p>
+            )}
+
             {/* Email/Password Form */}
             {(showEmailForm || !GOOGLE_CLIENT_ID) && (
               <>
@@ -646,7 +659,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                         onClick={() => { setStep('forgot-user'); setError(null); setInfo(null) }}
                         className="font-semibold text-purple-400 hover:text-purple-300 transition-colors"
                       >
-                        Olvidé con qué correo me registré
+                        Olvidé mi user
                       </button>
                     </div>
                   )}
@@ -747,19 +760,8 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
         {/* PASO: Olvidé mi usuario */}
         {step === 'forgot-user' && (
           <div className="space-y-4">
-            <div className={`rounded-xl p-4 text-sm space-y-3 ${darkMode ? 'bg-gray-800 border border-gray-700 text-gray-300' : 'bg-gray-50 border border-gray-200 text-gray-600'}`}>
+            <div className={`rounded-xl p-4 text-sm ${darkMode ? 'bg-gray-800 border border-gray-700 text-gray-300' : 'bg-gray-50 border border-gray-200 text-gray-600'}`}>
               <p>Tu <strong>usuario</strong> en Stream Voicer es el <strong>correo electrónico</strong> con el que te registraste.</p>
-              <p>Si no recuerdas cuál usaste, escríbenos y te ayudamos a encontrarlo:</p>
-              <a
-                href="mailto:opusvolt@gmail.com?subject=Recuperar%20acceso%20a%20mi%20cuenta&body=Hola%2C%20no%20recuerdo%20con%20qu%C3%A9%20correo%20me%20registr%C3%A9%20en%20Stream%20Voicer.%20Cualquier%20dato%20que%20recuerde%3A%20"
-                className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:opacity-90 transition-opacity"
-              >
-                <Mail className="w-4 h-4" />
-                Contactar soporte
-              </a>
-              <p className={`text-xs text-center ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                opusvolt@gmail.com — respuesta en menos de 24h
-              </p>
             </div>
             <button
               onClick={() => { setStep('form'); setError(null); setInfo(null) }}
