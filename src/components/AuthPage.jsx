@@ -484,10 +484,10 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       </div>
 
       {/* ===== PANEL DERECHO — Formulario ===== */}
-      <div className={`w-full lg:w-1/2 flex flex-col items-center justify-center px-6 py-12 relative ${
+      <div className={`w-full lg:w-1/2 flex flex-col items-center justify-center px-8 py-12 relative ${
         darkMode
           ? 'bg-[#0f0f23]'
-          : 'bg-gradient-to-b from-[#f0f2f5] to-[#e8ecf1]'
+          : 'bg-gradient-to-br from-[#e8edf5] via-[#f0f4fa] to-[#e2e8f5]'
       }`}>
 
         {/* Back button */}
@@ -508,10 +508,10 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
           <img src="/images/logo-main.png" alt="Stream Voicer" className="h-10 mx-auto object-contain" />
         </div>
 
-      <div className={`w-full max-w-md rounded-2xl p-8 ${
+      <div className={`w-full max-w-lg rounded-2xl p-10 ${
         darkMode
           ? 'bg-gray-900/80 border border-cyan-500/20 shadow-2xl shadow-cyan-500/5'
-          : 'bg-white border border-gray-200 shadow-xl'
+          : 'bg-white border border-gray-200 shadow-2xl'
       }`}>
         {/* Header */}
         <div className="text-center mb-8">
