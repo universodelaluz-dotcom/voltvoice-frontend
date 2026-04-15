@@ -598,7 +598,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           <Mic2 className="inline w-4 h-4 mr-2" />
           Clonar Voz
         </button>
-        {['creator', 'pro'].includes((user?.plan || 'free').toLowerCase()) && (
+        {(user?.role === 'admin' || ['creator', 'pro'].includes((user?.plan || 'free').toLowerCase())) && (
           <button
             onClick={() => setActiveTab('studio-pro')}
             className={`flex-1 min-w-32 px-6 py-3 rounded-md font-semibold transition-all ${

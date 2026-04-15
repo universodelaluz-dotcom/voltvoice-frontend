@@ -129,7 +129,7 @@ const hasTrivialSmartChatContent = (text = '') => {
   return false
 }
 
-const normalizeTikTokUsername = (value) => String(value || '').trim().replace(/^@+/, '')
+const normalizeTikTokUsername = (value) => String(value || '').trim().replace(/^@+/, '').toLowerCase()
 const isEnabledFlag = (value) => value === true || value === 'true' || value === 1 || value === '1'
 const getBanCandidateKeys = (value) => {
   const raw = String(value || '').trim()
@@ -2332,10 +2332,14 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const handleConnect = async (e) => {
     e.preventDefault()
 
-    if (!tiktokUser.trim()) {
+    const cleanUsername = normalizeTikTokUsername(tiktokUser)
+    if (!cleanUsername) {
       setError('Ingresa un usuario de TikTok válido')
       return
     }
+
+    // Sync input to normalized value silently
+    if (tiktokUser !== cleanUsername) setTiktokUser(cleanUsername)
 
     setIsConnecting(true)
     setError(null)
@@ -2344,7 +2348,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       const response = await fetch(`${API_URL}/api/tiktok/connect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: tiktokUser.trim() })
+        body: JSON.stringify({ username: cleanUsername })
       })
 
       const data = await response.json()
@@ -2355,8 +2359,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         setStats({ count: 0, uptime: 0 })
         setIsConnected(true)
         setMessages([])
-        // Guardar último usuario conectado
-        if (updateConfig) updateConfig('lastTiktokUser', tiktokUser.trim())
+        // Guardar último usuario conectado (normalizado)
+        if (updateConfig) updateConfig('lastTiktokUser', cleanUsername)
       } else {
         setError(data.error || 'Error conectando a TikTok')
       }
