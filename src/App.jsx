@@ -2,7 +2,6 @@
 import { StripePayment } from './components/StripePayment'
 import { SynthesisStudio } from './components/SynthesisStudio'
 import VoiceWorkshopPanel from './components/VoiceCloningPanel'
-import TikTokLivePanel from './components/TikTokLivePanel'
 import { PricingPage } from './components/PricingPage'
 import { PricingCards } from './components/PricingCards'
 import { PricingComparison } from './components/PricingComparison'
@@ -813,13 +812,11 @@ export function App() {
     )
   }
 
-  // Studio + Voice Workshop + paneles secundarios: mantener TikTok WebSocket montado para no perder conexión al navegar
+  // Studio + Voice Workshop + paneles secundarios: todos en el mismo bloque con display:none/block
+  // para que SynthesisStudio nunca se desmonte (manteniendo el WebSocket de TikTok vivo al navegar a voice-workshop)
   if (['studio', 'control-panel', 'statistics', 'admin', 'voice-workshop'].includes(currentPage)) {
     return (
       <>
-        {/* TikTok Live Panel - kept mounted across ALL app pages (studio, control-panel, voice-workshop, etc) */}
-        <TikTokLivePanel config={config} updateConfig={updateConfig} configReady={configReady} user={user} darkModeOverride={darkMode} />
-
         <div style={{ display: currentPage === 'studio' ? 'block' : 'none' }}>
           <SynthesisStudio
             onGoHome={() => setCurrentPage('landing')}
