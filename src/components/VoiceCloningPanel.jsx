@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Edit2, Bot, Lock, Play, Square } from 'lucide-react'
 import AIRoleplayWorkshop from './AIRoleplayWorkshop'
+import { useTranslation } from 'react-i18next'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
 export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, config, updateConfig, user }) {
+  const { t } = useTranslation()
   const planKey = String(user?.plan || 'free').toLowerCase()
   const PLAN_MAX_CLONED_VOICES = {
     free: 0,
@@ -166,7 +168,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
   const handleSaveVoiceEdit = async () => {
     if (!editingVoiceName.trim()) {
-      setError('El nombre no puede estar vacío')
+      setError(t('voiceClone.rename.emptyName'))
       return
     }
 
@@ -185,14 +187,14 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         setUserVoices(prev =>
           prev.map(v => v.id === editingVoiceId ? {...v, voice_name: editingVoiceName.trim()} : v)
         )
-        setMessage(`Voz renombrada a "${editingVoiceName}"`)
+        setMessage(t('voiceClone.rename.success', { name: editingVoiceName }))
         setEditingVoiceId(null)
         setEditingVoiceName('')
         // Notificar a otros componentes que se actualizó una voz
         window.dispatchEvent(new CustomEvent('voice-added'))
         setTimeout(() => setMessage(null), 3000)
       } else {
-        setError('Error renombrando la voz')
+        setError(t('voiceClone.rename.error'))
       }
     } catch (err) {
       setError(`Error: ${err.message}`)
@@ -200,7 +202,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   }
 
   const handleDeleteVoice = async (id, name) => {
-    if (!confirm(`¿Eliminar la voz "${name}"?`)) return
+    if (!confirm(t('voiceClone.delete.confirm', { name }))) return
 
     try {
       const token = sessionStorage.getItem('sv-token')
@@ -210,11 +212,11 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       })
       if (res.ok) {
         setUserVoices(prev => prev.filter(v => v.id !== id))
-        setMessage(`Voz "${name}" eliminada`)
+        setMessage(t('voiceClone.delete.success', { name }))
         setTimeout(() => setMessage(null), 3000)
       }
     } catch (err) {
-      setError('Error eliminando voz')
+      setError(t('voiceClone.delete.error'))
     }
   }
 
@@ -222,7 +224,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     if (testingVoiceRef.current) return
 
     if (!testVoiceId || !testText.trim()) {
-      setError('Selecciona una voz y escribe un texto para probar')
+      setError(t('voiceClone.test.selectHint'))
       return
     }
 
@@ -275,10 +277,10 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       if (response.ok && (data.audio || data.audioUrl)) {
         setTestAudioUrl(data.audio || data.audioUrl)
         setShouldAutoPlayTestAudio(true)
-        setMessage('✓ Audio generado exitosamente')
+        setMessage(t('voiceClone.test.success'))
         setTimeout(() => setMessage(null), 3000)
       } else {
-        setError(data.error || 'Error al sintetizar el audio')
+        setError(data.error || t('voiceClone.errors.synthesis'))
       }
     } catch (err) {
       setError(`Error: ${err.message}`)
@@ -294,11 +296,11 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     const file = e.target.files?.[0]
     if (file) {
       if (!['audio/mpeg', 'audio/wav'].includes(file.type)) {
-        setError('Solo se aceptan archivos MP3 o WAV')
+        setError(t('voiceClone.errors.invalidFile'))
         return
       }
       if (file.size > 10 * 1024 * 1024) {
-        setError('El archivo no debe exceder 10MB')
+        setError(t('voiceClone.errors.fileTooLarge'))
         return
       }
       setAudioFile(file)
@@ -428,7 +430,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         setMessage(`Archivo subido exitosamente. Duración: ${(data.duration / 1000).toFixed(1)}s`)
         setTimeout(() => setMessage(null), 3000)
       } else {
-        setError(data.error || 'Error subiendo archivo')
+        setError(data.error || t('voiceClone.errors.upload'))
         setStudioPro(prev => ({ ...prev, uploading: false }))
       }
     } catch (err) {
@@ -479,11 +481,11 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       if (res.ok && data.success) {
         const remaining = Number(data?.extractorProUsage?.remaining)
         if (remaining === 2) {
-          setExtractorUsageNotice('Te quedan 2 usos por hoy, se renueva cada 24 hrs.')
+          setExtractorUsageNotice(t('voiceClone.extractor.usesLeft', { n: 2 }))
         } else {
           setExtractorUsageNotice(null)
         }
-        setMessage(`✅ ¡Voz "${studioPro.voiceName}" clonada exitosamente!`)
+        setMessage(t('voiceClone.clone.success', { name: studioPro.voiceName }))
         setStudioPro({
           file: null,
           fileId: null,
@@ -554,7 +556,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           const data = await response.json()
 
           if (response.ok && data.success) {
-            setMessage(`✅ ¡LISTO! Voz "${voiceName}" clonada exitosamente.`)
+            setMessage(t('voiceClone.clone.success', { name: voiceName }))
             setVoiceName('')
             setAudioFile(null)
             // Recargar lista de voces inmediatamente
@@ -564,7 +566,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
             // Auto-limpiar mensaje después de 5 segundos
             setTimeout(() => setMessage(null), 5000)
           } else {
-            setError(data.error || data.details || 'Error al clonar la voz')
+            setError(data.error || data.details || t('voiceClone.clone.error'))
           }
         } catch (err) {
           setError(`Error: ${err.message}`)
@@ -692,7 +694,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
             disabled={testingVoice || voices.length === 0 || !testVoiceId || !testText.trim()}
             className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
           >
-            {testingVoice ? <><Loader className="w-5 h-5 animate-spin" />Generando audio...</> : <><Mic2 className="w-5 h-5" />Probar voz</>}
+            {testingVoice ? <><Loader className="w-5 h-5 animate-spin" />{t('voiceClone.test.generating')}</> : <><Mic2 className="w-5 h-5" />{t('voiceClone.test.btn')}</>}
           </button>
           {testAudioUrl && (
             <div className={darkMode ? 'bg-gray-800/60 border border-gray-700/50 rounded-lg p-4' : 'bg-gray-50 border border-gray-200 rounded-lg p-4'}>
@@ -861,12 +863,12 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
             {loading ? (
               <>
                 <Loader className="w-5 h-5 animate-spin" />
-                Clonando voz...
+                {t('voiceClone.clone.cloning')}
               </>
             ) : (
               <>
                 <Zap className="w-5 h-5" />
-                Clonar voz
+                {t('voiceClone.clone.btn')}
               </>
             )}
           </button>
@@ -949,12 +951,12 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                       {studioPro.uploading ? (
                         <>
                           <Loader className="w-5 h-5 animate-spin" />
-                          Subiendo...
+                          {t('voiceClone.upload.processing')}
                         </>
                       ) : (
                         <>
                           <Upload className="w-5 h-5" />
-                          Procesar archivo
+                          {t('voiceClone.extractor.uploadBtn')}
                         </>
                       )}
                     </button>
@@ -1161,12 +1163,12 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                     {studioPro.processing ? (
                       <>
                         <Loader className="w-5 h-5 animate-spin" />
-                        Procesando clip...
+                        {t('voiceClone.extractor.processing')}
                       </>
                     ) : (
                       <>
                         <Zap className="w-5 h-5" />
-                        {studioPro.voiceName.trim() ? 'Usar este clip' : 'Pon un nombre primero ↑'}
+                        {studioPro.voiceName.trim() ? t('voiceClone.extractor.useClip') : 'Pon un nombre primero ↑'}
                       </>
                     )}
                   </button>

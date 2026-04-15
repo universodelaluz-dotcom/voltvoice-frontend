@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Mail, Lock, Eye, EyeOff, Loader, AlertCircle, ArrowLeft, CheckCircle } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
@@ -14,6 +15,7 @@ const maskEmail = (email) => {
 }
 
 export function AuthPage({ onLogin, onGoHome, darkMode }) {
+  const { t } = useTranslation()
   const [mode, setMode] = useState('login')
   const [step, setStep] = useState('form') // form | verification | forgot-request | forgot-reset | forgot-user
   const [email, setEmail] = useState('')
@@ -126,7 +128,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
           setError('Google rechazó el acceso: revisa que el Client ID de frontend coincida con el del backend.')
           return
         }
-        setError(data.error || 'Error con Google')
+        setError(data.error || t('auth.errors.googleError'))
         return
       }
 
@@ -134,7 +136,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       localStorage.setItem('sv-user', JSON.stringify(data.user))
       onLogin(data.user, data.token)
     } catch (err) {
-      setError('Error de conexión. Intenta de nuevo.')
+      setError(t('auth.errors.connectionError'))
     } finally {
       setGoogleLoading(false)
     }
@@ -146,17 +148,17 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
     setInfo(null)
 
     if (!email.trim() || !password) {
-      setError('Completa todos los campos')
+      setError(t('auth.errors.completeFields'))
       return
     }
 
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden')
+      setError(t('auth.errors.passwordMismatch'))
       return
     }
 
     if (password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres')
+      setError(t('auth.errors.passwordLength'))
       return
     }
 
@@ -185,7 +187,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
         } catch (err) {
           console.warn('[Auth] reCAPTCHA error:', err)
           if (RECAPTCHA_REQUIRED) {
-            setError('No se pudo validar CAPTCHA. Intenta de nuevo.')
+            setError(t('auth.errors.captchaFailed'))
             setLoading(false)
             return
           }
@@ -193,7 +195,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       }
 
       if (RECAPTCHA_REQUIRED && !recaptchaToken) {
-        setError('CAPTCHA requerido para crear la cuenta.')
+        setError(t('auth.errors.captchaRequired'))
         setLoading(false)
         return
       }
@@ -221,7 +223,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       setVerificationCode('')
       setResendCooldown(0)
     } catch (err) {
-      setError('Error de conexión. Intenta de nuevo.')
+      setError(t('auth.errors.connectionError'))
     } finally {
       setLoading(false)
     }
@@ -233,12 +235,12 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
     setInfo(null)
 
     if (!verificationCode.trim()) {
-      setError('Ingresa el código de verificación')
+      setError(t('auth.errors.codeRequired'))
       return
     }
 
     if (verificationCode.length < 6) {
-      setError('El código debe tener 6 dígitos')
+      setError(t('auth.errors.codeLength'))
       return
     }
 
@@ -258,7 +260,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Código incorrecto')
+        setError(data.error || t('auth.errors.codeIncorrect'))
         return
       }
 
@@ -266,7 +268,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       localStorage.setItem('sv-user', JSON.stringify(data.user))
       onLogin(data.user, data.token)
     } catch (err) {
-      setError('Error de conexión. Intenta de nuevo.')
+      setError(t('auth.errors.connectionError'))
     } finally {
       setLoading(false)
     }
@@ -294,7 +296,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
         return
       }
     } catch (err) {
-      setError('Error de conexión. Intenta de nuevo.')
+      setError(t('auth.errors.connectionError'))
       setResendCooldown(0)
     } finally {
       setLoading(false)
@@ -307,7 +309,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
     setInfo(null)
 
     if (!email.trim() || !password) {
-      setError('Completa todos los campos')
+      setError(t('auth.errors.completeFields'))
       return
     }
 
@@ -332,7 +334,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       localStorage.setItem('sv-user', JSON.stringify(data.user))
       onLogin(data.user, data.token)
     } catch (err) {
-      setError('Error de conexión. Intenta de nuevo.')
+      setError(t('auth.errors.connectionError'))
     } finally {
       setLoading(false)
     }
@@ -344,7 +346,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
     setInfo(null)
 
     if (!email.trim()) {
-      setError('Ingresa tu email para recuperar la contraseña')
+      setError(t('auth.errors.emailRequired'))
       return
     }
 
@@ -361,10 +363,10 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
         setError(data.error || 'Error enviando recuperación')
         return
       }
-      setInfo(data.message || 'Si el email existe, enviamos un código.')
+      setInfo(data.message || t('auth.success.codeSent'))
       setStep('forgot-reset')
     } catch (err) {
-      setError('Error de conexión. Intenta de nuevo.')
+      setError(t('auth.errors.connectionError'))
     } finally {
       setLoading(false)
     }
@@ -376,19 +378,19 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
     setInfo(null)
 
     if (!email.trim() || !resetCode.trim() || !resetNewPassword) {
-      setError('Completa email, código y nueva contraseña')
+      setError(t('auth.errors.resetRequired'))
       return
     }
     if (resetCode.trim().length < 6) {
-      setError('El código debe tener 6 dígitos')
+      setError(t('auth.errors.codeLength'))
       return
     }
     if (resetNewPassword !== resetConfirmPassword) {
-      setError('Las contraseñas no coinciden')
+      setError(t('auth.errors.passwordMismatch'))
       return
     }
     if (resetNewPassword.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres')
+      setError(t('auth.errors.passwordLength'))
       return
     }
 
@@ -406,10 +408,10 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        setError(data.error || 'No se pudo restablecer la contraseña')
+        setError(data.error || t('auth.errors.resetFailed'))
         return
       }
-      setInfo('Contraseña actualizada. Ya puedes iniciar sesión.')
+      setInfo(t('auth.success.passwordReset'))
       setStep('form')
       setMode('login')
       setPassword('')
@@ -418,7 +420,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       setResetNewPassword('')
       setResetConfirmPassword('')
     } catch (err) {
-      setError('Error de conexión. Intenta de nuevo.')
+      setError(t('auth.errors.connectionError'))
     } finally {
       setLoading(false)
     }
@@ -442,19 +444,15 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
         <div className="relative z-10 text-center mb-10">
           <img src="/images/logo-main.png" alt="Stream Voicer" className="h-14 mx-auto mb-6 object-contain drop-shadow-lg" />
           <h2 className={`text-4xl font-black leading-tight mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-            Tu chat TikTok<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-purple-500">cobró vida.</span>
+            {t('auth.branding.title')}<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-purple-500">{t('auth.branding.highlight')}</span>
           </h2>
-          <p className={`text-lg max-w-xs mx-auto ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Voces con IA que leen tu stream en tiempo real.</p>
+          <p className={`text-lg max-w-xs mx-auto ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('auth.branding.subtitle')}</p>
         </div>
 
         {/* Features */}
         <div className="relative z-10 space-y-4 w-full max-w-xs mb-10">
-          {[
-            { icon: '🎙️', title: 'Voces con IA', desc: 'Más de 20 voces premium' },
-            { icon: '⚡', title: 'Tiempo real', desc: 'Sin delay, sin complicaciones' },
-            { icon: '🎭', title: 'Bots con personalidad', desc: 'Personajes que interactúan solos' },
-          ].map((f, i) => (
+          {t('auth.branding.features', { returnObjects: true }).map((f, i) => (
             <div key={i} className={`flex items-center gap-4 rounded-xl px-4 py-3 backdrop-blur-sm border ${
               darkMode ? 'bg-white/5 border-white/10' : 'bg-white/70 border-gray-200 shadow-sm'
             }`}>
@@ -470,13 +468,13 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
         {/* Chat bubbles animados */}
         <div className="relative z-10 w-full max-w-xs space-y-2">
           <div className={`float-1 border rounded-2xl rounded-tl-sm px-4 py-2 text-sm w-fit ${darkMode ? 'bg-white/5 border-cyan-500/20 text-gray-300' : 'bg-white border-cyan-300 text-gray-600 shadow-sm'}`}>
-            💬 <span className={`font-bold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>@alexgamer:</span> gg crack!
+            💬 <span className={`font-bold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>@alexgamer:</span> {t('auth.branding.chatBubble1')}
           </div>
           <div className={`float-2 border rounded-2xl rounded-tr-sm px-4 py-2 text-sm w-fit ml-auto ${darkMode ? 'bg-white/5 border-purple-500/20 text-gray-300' : 'bg-white border-purple-300 text-gray-600 shadow-sm'}`}>
-            🔊 <em className={darkMode ? 'text-purple-300' : 'text-purple-500'}>leyendo mensaje...</em>
+            🔊 <em className={darkMode ? 'text-purple-300' : 'text-purple-500'}>{t('auth.branding.reading')}</em>
           </div>
           <div className={`float-3 border rounded-2xl rounded-tl-sm px-4 py-2 text-sm w-fit ${darkMode ? 'bg-white/5 border-cyan-500/20 text-gray-300' : 'bg-white border-cyan-300 text-gray-600 shadow-sm'}`}>
-            💬 <span className={`font-bold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>@sofia_art:</span> qué voz más chida
+            💬 <span className={`font-bold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>@sofia_art:</span> {t('auth.branding.chatBubble2')}
           </div>
         </div>
 
@@ -509,7 +507,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
           }`}
         >
           <ArrowLeft className="w-4 h-4" />
-          Inicio
+          {t('auth.login.homeBtn')}
         </button>
 
         {/* Logo visible solo en mobile */}
@@ -526,28 +524,28 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
         <div className="text-center mb-8">
           <h1 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>
             {step === 'verification'
-              ? 'Verifica tu Email'
+              ? t('auth.verify.title')
               : step === 'forgot-request'
-              ? 'Recuperar Contraseña'
+              ? t('auth.forgot.title')
               : step === 'forgot-reset'
-              ? 'Restablecer Contraseña'
+              ? t('auth.forgot.resetTitle')
               : step === 'forgot-user'
-              ? 'Olvidé mi Usuario'
-              : showEmailForm ? (mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta') : 'Bienvenido'
+              ? t('auth.forgotUser.title')
+              : showEmailForm ? (mode === 'login' ? t('auth.login.title') : t('auth.register.title')) : t('auth.login.welcomeTitle')
             }
           </h1>
           <p className={`text-sm mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             {step === 'verification'
-              ? `Enviamos un código a ${email}`
+              ? `${t('auth.verify.desc')} ${email}`
               : step === 'forgot-request'
-              ? 'Te enviaremos un código de recuperación por email'
+              ? t('auth.forgot.forgotDesc')
               : step === 'forgot-reset'
-              ? `Ingresa el código enviado a ${maskEmail(email)}`
+              ? `${t('auth.forgot.codeDesc')} ${maskEmail(email)}`
               : step === 'forgot-user'
-              ? 'Te ayudamos a recuperar el acceso a tu cuenta'
+              ? t('auth.forgotUser.helpDesc')
               : showEmailForm
-              ? (mode === 'login' ? 'Accede con tu email' : 'Regístrate gratis y obtén 100 tokens')
-              : 'Inicia sesión para acceder a Stream Voicer'
+              ? (mode === 'login' ? t('auth.login.enterEmail') : t('auth.login.registerDesc'))
+              : t('auth.login.welcomeDesc')
             }
           </p>
         </div>
@@ -580,7 +578,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                 {googleLoading ? (
                   <div className="flex items-center justify-center gap-3 py-3">
                     <Loader className="w-5 h-5 animate-spin text-cyan-400" />
-                    <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>Conectando con Google...</span>
+                    <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{t('auth.login.connectingGoogle')}</span>
                   </div>
                 ) : (
                   <div ref={googleBtnRef} className="flex justify-center [&>div]:w-full" />
@@ -600,11 +598,11 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                       onClick={() => setShowEmailForm(true)}
                       className={`px-4 text-sm ${darkMode ? 'bg-gray-900/80 text-gray-400 hover:text-gray-200' : 'bg-white text-gray-500 hover:text-gray-700'} transition-colors`}
                     >
-                      o continúa con email
+                      {t('auth.login.continueEmail')}
                     </button>
                   ) : (
                     <span className={`px-4 text-xs ${darkMode ? 'bg-gray-900/80 text-gray-500' : 'bg-white text-gray-400'}`}>
-                      o con email
+                      {t('auth.login.orEmail')}
                     </span>
                   )}
                 </div>
@@ -614,12 +612,12 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
             {/* ¿Eres nuevo? — solo visible antes de expandir el email form */}
             {!showEmailForm && GOOGLE_CLIENT_ID && mode === 'login' && (
               <p className={`text-center text-sm mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                ¿Eres nuevo?{' '}
+                {t('auth.login.isNew')}{' '}
                 <button
                   onClick={() => { setMode('register'); setShowEmailForm(true); setError(null) }}
                   className="font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
                 >
-                  Regístrate gratis
+                  {t('auth.login.registerFree')}
                 </button>
               </p>
             )}
@@ -631,7 +629,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                   {/* Email */}
                   <div>
                     <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      Email
+                      {t('auth.login.email')}
                     </label>
                     <div className="relative mt-1">
                       <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
@@ -653,7 +651,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                   {/* Password */}
                   <div>
                     <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      Contraseña
+                      {t('auth.login.password')}
                     </label>
                     <div className="relative mt-1">
                       <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
@@ -683,7 +681,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                   {mode === 'register' && (
                     <div>
                       <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Confirmar Contraseña
+                        {t('auth.register.confirm')}
                       </label>
                       <div className="relative mt-1">
                         <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
@@ -712,10 +710,10 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                     {loading ? (
                       <>
                         <Loader className="w-4 h-4 animate-spin" />
-                        {mode === 'login' ? 'Entrando...' : 'Enviando código...'}
+                        {mode === 'login' ? t('auth.login.loading') : t('auth.login.sendingCode')}
                       </>
                     ) : (
-                      mode === 'login' ? 'Entrar' : 'Crear cuenta gratis'
+                      mode === 'login' ? t('auth.login.enterBtn') : t('auth.login.createFreeBtn')
                     )}
                   </button>
                 </form>
@@ -723,10 +721,10 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                 {/* reCAPTCHA disclosure */}
                 {mode === 'register' && RECAPTCHA_SITE_KEY && (
                   <p className={`text-xs text-center mt-3 ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>
-                    Protegido por reCAPTCHA.{' '}
-                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">Privacidad</a>
+                    {t('auth.recaptcha.text')}{' '}
+                    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">{t('auth.recaptcha.privacy')}</a>
                     {' '}y{' '}
-                    <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">Términos</a> de Google.
+                    <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">{t('auth.recaptcha.terms')}</a> {t('auth.recaptcha.google')}
                   </p>
                 )}
 
@@ -735,24 +733,24 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                   {mode === 'login' && (
                     <div className={`text-sm mb-2 flex flex-col gap-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       <span className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                        Olvidé:{' '}
+                        {t('auth.login.forgotLabel')}{' '}
                         <button onClick={() => { setStep('forgot-request'); setError(null); setInfo(null); setResetCode(''); setResetNewPassword(''); setResetConfirmPassword('') }} className={`font-semibold transition-colors ${darkMode ? 'text-cyan-400 hover:text-cyan-300' : 'text-indigo-600 hover:text-indigo-500'}`}>
-                          mi contraseña
+                          {t('auth.login.myPassword')}
                         </button>
                         {' · '}
                         <button onClick={() => { setStep('forgot-user'); setError(null); setInfo(null) }} className={`font-semibold transition-colors ${darkMode ? 'text-cyan-400 hover:text-cyan-300' : 'text-indigo-600 hover:text-indigo-500'}`}>
-                          mi usuario
+                          {t('auth.login.myUser')}
                         </button>
                       </span>
                     </div>
                   )}
                   <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {mode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
+                    {mode === 'login' ? t('auth.login.noAccount') : t('auth.register.hasAccount')}
                     <button
                       onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null); setInfo(null); setStep('form') }}
                       className="ml-2 font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
                     >
-                      {mode === 'login' ? 'Regístrate gratis' : 'Inicia sesión'}
+                      {mode === 'login' ? t('auth.login.registerFree') : t('auth.register.login')}
                     </button>
                   </p>
                 </div>
@@ -768,7 +766,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
               {/* Código de verificación */}
               <div>
                 <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Código de Verificación (6 dígitos)
+                  {t('auth.verify.code6digits')}
                 </label>
                 <div className="relative mt-1">
                   <input
@@ -786,7 +784,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                   />
                 </div>
                 <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                  Revisa tu email para el código
+                  {t('auth.verify.checkEmail')}
                 </p>
               </div>
 
@@ -799,12 +797,12 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                 {loading ? (
                   <>
                     <Loader className="w-4 h-4 animate-spin" />
-                    Verificando...
+                    {t('auth.verify.verifying')}
                   </>
                 ) : (
                   <>
                     <CheckCircle className="w-4 h-4" />
-                    Verificar Email
+                    {t('auth.verify.verifyBtn')}
                   </>
                 )}
               </button>
@@ -813,7 +811,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
             {/* Resend code */}
             <div className="mt-4 text-center">
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                ¿No recibiste el código?
+                {t('auth.verify.notReceived')}
                 <button
                   onClick={handleResendCode}
                   disabled={resendCooldown > 0 || loading}
@@ -823,7 +821,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                       : 'text-cyan-400 hover:text-cyan-300'
                   }`}
                 >
-                  {resendCooldown > 0 ? `Reenviar en ${resendCooldown}s` : 'Reenviar'}
+                  {resendCooldown > 0 ? t('auth.verify.resendIn', { s: resendCooldown }) : t('auth.verify.resendBtn')}
                 </button>
               </p>
             </div>
@@ -834,7 +832,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                 onClick={() => { setStep('form'); setVerificationCode(''); setError(null) }}
                 className={`text-sm ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
               >
-                Cambiar email
+                {t('auth.verify.changeEmail')}
               </button>
             </div>
           </>
@@ -844,13 +842,13 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
         {step === 'forgot-user' && (
           <div className="space-y-4">
             <div className={`rounded-xl p-4 text-sm ${darkMode ? 'bg-gray-800 border border-gray-700 text-gray-300' : 'bg-gray-50 border border-gray-200 text-gray-600'}`}>
-              <p>Tu <strong>usuario</strong> en Stream Voicer es el <strong>correo electrónico</strong> con el que te registraste.</p>
+              <p>{t('auth.forgotUser.desc')}</p>
             </div>
             <button
               onClick={() => { setStep('form'); setError(null); setInfo(null) }}
               className={`w-full text-sm ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'} transition-colors`}
             >
-              ← Volver al inicio de sesión
+              {t('auth.forgotUser.back')}
             </button>
           </div>
         )}
@@ -861,7 +859,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
             <form onSubmit={handleForgotPasswordRequest} className="space-y-4">
               <div>
                 <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Tu email
+                  {t('auth.forgot.yourEmail')}
                 </label>
                 <div className="relative mt-1">
                   <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
@@ -889,10 +887,10 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                 {loading ? (
                   <>
                     <Loader className="w-4 h-4 animate-spin" />
-                    Enviando...
+                    {t('auth.forgot.sending')}
                   </>
                 ) : (
-                  'Enviarme código'
+                  t('auth.forgot.sendCodeBtn')
                 )}
               </button>
             </form>
@@ -902,7 +900,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                 onClick={() => { setStep('form'); setError(null); setInfo(null) }}
                 className={`text-sm ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
               >
-                ← Volver al inicio de sesión
+                {t('auth.forgot.backLogin')}
               </button>
             </div>
           </>
@@ -916,14 +914,14 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
             }`}>
               <Mail className="w-4 h-4 text-cyan-400 flex-shrink-0" />
               <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
-                Código enviado a <strong>{maskEmail(email)}</strong>
+                {t('auth.forgot.codeSentTo')} <strong>{maskEmail(email)}</strong>
               </span>
             </div>
 
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
                 <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Código de recuperación
+                  {t('auth.forgot.recoveryCode')}
                 </label>
                 <input
                   type="text"
@@ -943,7 +941,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
 
               <div>
                 <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Nueva contraseña
+                  {t('auth.forgot.newPassword')}
                 </label>
                 <div className="relative mt-1">
                   <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
@@ -951,7 +949,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                     type={showPassword ? 'text' : 'password'}
                     value={resetNewPassword}
                     onChange={(e) => setResetNewPassword(e.target.value)}
-                    placeholder="Mínimo 8 caracteres"
+                    placeholder={t('auth.forgot.minChars')}
                     className={`w-full pl-10 pr-12 py-3 rounded-lg border text-sm ${
                       darkMode
                         ? 'bg-gray-800 border-cyan-500/30 text-white placeholder-gray-500 focus:border-cyan-400'
@@ -971,7 +969,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
 
               <div>
                 <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Confirmar nueva contraseña
+                  {t('auth.forgot.confirmNew')}
                 </label>
                 <div className="relative mt-1">
                   <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
@@ -979,7 +977,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                     type={showPassword ? 'text' : 'password'}
                     value={resetConfirmPassword}
                     onChange={(e) => setResetConfirmPassword(e.target.value)}
-                    placeholder="Repite la contraseña"
+                    placeholder={t('auth.forgot.repeatPass')}
                     className={`w-full pl-10 pr-4 py-3 rounded-lg border text-sm ${
                       darkMode
                         ? 'bg-gray-800 border-cyan-500/30 text-white placeholder-gray-500 focus:border-cyan-400'
@@ -998,12 +996,12 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                 {loading ? (
                   <>
                     <Loader className="w-4 h-4 animate-spin" />
-                    Actualizando...
+                    {t('auth.forgot.updating')}
                   </>
                 ) : (
                   <>
                     <CheckCircle className="w-4 h-4" />
-                    Cambiar contraseña
+                    {t('auth.forgot.changeBtn')}
                   </>
                 )}
               </button>
@@ -1014,7 +1012,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
                 onClick={() => { setStep('forgot-request'); setError(null); setInfo(null) }}
                 className={`text-sm ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'}`}
               >
-                ← Usar otro email
+                {t('auth.forgot.useOtherEmail')}
               </button>
             </div>
           </>

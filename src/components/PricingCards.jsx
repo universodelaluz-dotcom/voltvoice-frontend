@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const monthlyPlans = [
   {
@@ -147,6 +148,7 @@ const annualPlans = [
 ]
 
 export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
+  const { t } = useTranslation()
   const [billingCycle, setBillingCycle] = useState('monthly')
   const [usdMxn, setUsdMxn] = useState(17)
 
@@ -192,7 +194,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   : darkMode ? 'text-gray-400' : 'text-gray-600'
               }`}
             >
-              Mensual
+              {t('pricing.toggle.monthly')}
             </button>
             <button
               onClick={() => setBillingCycle('annual')}
@@ -202,7 +204,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   : darkMode ? 'text-gray-400' : 'text-gray-600'
               }`}
             >
-              Anual
+              {t('pricing.toggle.annual')}
             </button>
           </div>
         </div>
@@ -212,7 +214,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
         <>
           <div className="text-center mb-8">
             <p className={`text-sm font-bold tracking-wider ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
-              💰 PAQUETES COMPLETOS
+              {t('pricing.header')}
             </p>
           </div>
 
@@ -233,7 +235,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                 {plan.popular && (
                   <div className="mb-3">
                     <span className="inline-block text-xs font-black tracking-wider px-3 py-1 rounded-full bg-gradient-to-r from-orange-400 to-pink-500 text-white">
-                      🔥 MÁS POPULAR
+                      {t('pricing.popular')}
                     </span>
                   </div>
                 )}
@@ -242,9 +244,9 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
                     ${plan.price.toFixed(2)}
                   </span>
-                  <span className={`ml-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>USD</span>
+                  <span className={`ml-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('pricing.perMonth')}</span>
                   <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Aprox. {formatMxnApprox(plan.price)} MXN
+                    {t('payment.approxMxn', { mxn: formatMxnApprox(plan.price) })}
                   </p>
                 </div>
 
@@ -322,7 +324,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
         <>
           <div className="text-center mb-8">
             <p className={`text-sm font-bold tracking-wider ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
-              💎 PLANES ANUALES
+              💎 {t('pricing.toggle.annual')}
             </p>
           </div>
 
@@ -332,7 +334,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                 {plan.hot && (
                   <div className="mb-3">
                     <span className="inline-block text-xs font-black tracking-wider px-3 py-1 rounded-full bg-gradient-to-r from-orange-400 to-pink-500 text-white">
-                      🔥 MÁS POPULAR
+                      {t('pricing.popular')}
                     </span>
                   </div>
                 )}
@@ -340,12 +342,12 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                 <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2">
                   ${plan.price}
                 </p>
-                <p className={darkMode ? 'text-gray-300 mb-1' : 'text-gray-700 mb-1'}>USD / año</p>
+                <p className={darkMode ? 'text-gray-300 mb-1' : 'text-gray-700 mb-1'}>{t('pricing.perYear')}</p>
                 <p className={darkMode ? 'text-[11px] font-bold text-cyan-300 mb-1' : 'text-[11px] font-bold text-cyan-700 mb-1'}>
-                  (~${(plan.price / 12).toFixed(2)} USD/mes)
+                  {t('pricing.approxMonth', { price: (plan.price / 12).toFixed(2) })}
                 </p>
                 <p className={`text-xs ${darkMode ? 'text-gray-400 mb-1' : 'text-gray-500 mb-1'}`}>
-                  Aprox. {formatMxnApprox(plan.price)} MXN
+                  {t('payment.approxMxn', { mxn: formatMxnApprox(plan.price) })}
                 </p>
                 <p className="text-sm text-green-400">({plan.saving})</p>
                 <div className="space-y-2 mt-4 mb-4">
@@ -389,15 +391,15 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
           </div>
 
           <div className="mt-8 text-center">
-            <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>🧠 NOTA</p>
+            <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t('pricing.note')}</p>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              El consumo depende de la actividad del chat y la configuración.
+              {t('pricing.noteText1')}
             </p>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Puedes extender la duración usando filtros inteligentes y lectura selectiva.
+              {t('pricing.noteText2')}
             </p>
             <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-              Referencia en MXN aproximada; se adapta al tipo de cambio USD/MXN del día.
+              {t('pricing.noteRef')}
             </p>
           </div>
         </>

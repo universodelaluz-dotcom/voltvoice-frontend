@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import TikTokLivePanel from './TikTokLivePanel'
 import AudioVisualizer from './AudioVisualizer'
 import BotInvoker from './BotInvoker'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Shield, Lock } from 'lucide-react'
 
 export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAdmin, onGoPricingPage, darkMode, setDarkMode, config, updateConfig, configReady = true, user }) {
+  const { t } = useTranslation()
   const audioSpeed = config.audioSpeed || 1.0
   const PREMIUM_TEST_CHAR_LIMIT = 500
   const FREE_LOCAL_LIMIT_CODE = 'FREE_LOCAL_VOICE_DAILY_LIMIT_REACHED'
   const currentPlan = String(user?.plan || 'free').toLowerCase()
-  const localVoiceLabelSuffix = currentPlan === 'free' ? '' : ' (ilimitada)'
+  const localVoiceLabelSuffix = currentPlan === 'free' ? '' : ` ${t('studio.voice.unlimited')}`
   const [showBotInvoker, setShowBotInvoker] = useState(false)
 
   const toggleTheme = () => {
@@ -437,7 +439,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
               <div className={`w-2 h-2 rounded-full ${
                 isStreamActive ? (darkMode ? 'bg-red-500 animate-pulse' : 'bg-red-300') : 'bg-gray-500'
               }`}></div>
-              <span className="text-xs font-semibold">{isStreamActive ? 'EN VIVO' : 'INACTIVO'}</span>
+              <span className="text-xs font-semibold">{isStreamActive ? t('studio.status.live') : t('studio.status.inactive')}</span>
             </div>
             <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
               darkMode
@@ -450,7 +452,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
             <button
               onClick={toggleTheme}
               className={darkMode ? "p-2 rounded-lg bg-gray-800 border border-cyan-500/30 hover:bg-gray-700 transition-colors" : "p-2 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 transition-colors shadow-sm"}
-              title={darkMode ? 'Modo claro' : 'Modo oscuro'}
+              title={darkMode ? t('common.lightMode') : t('common.darkMode')}
             >
               {darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
             </button>
@@ -503,7 +505,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
             }`}
           >
             <Settings className="w-5 h-5" />
-            <span>Configuracion</span>
+            <span>{t('studio.nav.config')}</span>
           </button>
           {onGoVoiceCloning && (() => {
             const userPlan = user?.plan || 'free'
@@ -521,7 +523,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
                   title={`Clic para explorar - Bloqueado para plan ${String(userPlan).toUpperCase()}`}
                 >
                   <Mic2 className="w-5 h-5" />
-                  <span>Taller de Voces</span>
+                  <span>{t('studio.nav.voiceWorkshop')}</span>
                   <Lock className="w-4 h-4 ml-auto" />
                 </button>
               )
@@ -551,7 +553,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
               }`}
             >
               <BarChart3 className="w-5 h-5" />
-              <span>Estadisticas</span>
+              <span>{t('studio.nav.stats')}</span>
             </button>
           )}
         </div>
@@ -563,7 +565,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
             {/* Voice Selection */}
             <div className={`${darkMode ? "space-y-2 bg-[#1a1a2e] border border-cyan-400/25 rounded-lg p-4" : "space-y-2 bg-white border border-indigo-200 rounded-lg p-4 shadow-sm"}`}>
               <label className="text-sm font-semibold text-cyan-300 uppercase tracking-wide">
-                Selecciona una voz
+                {t('studio.voice.select')}
               </label>
               <div className="relative">
                 <select
@@ -584,18 +586,18 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
             {/* Text Input */}
             <div className={`${darkMode ? "space-y-2 bg-[#1a1a2e] border border-purple-400/25 rounded-lg p-4" : "space-y-2 bg-white border border-indigo-200 rounded-lg p-4 shadow-sm"}`}>
               <label className="text-sm font-semibold text-purple-300 uppercase tracking-wide">
-                Texto a probar
+                {t('studio.voice.test')}
               </label>
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 maxLength={PREMIUM_TEST_CHAR_LIMIT}
-                placeholder="Escribe el texto que deseas convertir en voz..."
+                placeholder={t('studio.voice.testPlaceholder')}
                 className={`${darkMode ? "w-full h-32 bg-[#0f0f23] border border-purple-400/30 rounded p-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400 resize-none font-mono text-sm" : "w-full h-32 bg-gray-50 border border-indigo-300 rounded p-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 resize-none font-mono text-sm"}`}
               />
               <div className={`${darkMode ? "flex justify-between text-xs text-gray-400" : "flex justify-between text-xs text-gray-500"}`}>
-                <span>{charCount}/{PREMIUM_TEST_CHAR_LIMIT} caracteres</span>
-                <span>1 token = 1 caracter</span>
+                <span>{t('studio.chars', { count: charCount, max: PREMIUM_TEST_CHAR_LIMIT })}</span>
+                <span>{t('studio.tokens.charInfo')}</span>
               </div>
             </div>
 
@@ -610,7 +612,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
             {success && (
               <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
                 <Volume2 className="w-5 h-5 text-green-400 flex-shrink-0" />
-                <p className="text-sm text-green-400">Sintesis completada!</p>
+                <p className="text-sm text-green-400">{t('studio.success.done')}</p>
               </div>
             )}
 
@@ -628,12 +630,12 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
                 {loading ? (
                   <>
                     <Loader className="w-5 h-5 animate-spin" />
-                    Probando...
+                    {t('studio.voice.testing')}
                   </>
                 ) : (
                   <>
                     <Mic2 className="w-5 h-5" />
-                    Probar voz
+                    {t('studio.voice.testBtn')}
                   </>
                 )}
               </button>
@@ -647,7 +649,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
                     : 'text-amber-800 bg-amber-100 border-amber-300'
                 }`}
               >
-                No tienes suficientes tokens. Necesitas {estimatedTokens} pero solo tienes {tokens}.
+                {t('studio.tokens.insufficient', { needed: estimatedTokens, available: tokens })}
               </p>
             )}
           </div>

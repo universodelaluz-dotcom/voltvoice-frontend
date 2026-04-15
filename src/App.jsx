@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { StripePayment } from './components/StripePayment'
 import { SynthesisStudio } from './components/SynthesisStudio'
 import VoiceWorkshopPanel from './components/VoiceCloningPanel'
@@ -322,6 +323,7 @@ function AnimatedMetric({ value, className = '', animateOnView = false }) {
 }
 
 export function App() {
+  const { t } = useTranslation()
   const [currentPage, setCurrentPage] = useState(() => {
     const params = window.location.search
     if (params.includes('preview=admin')) return 'admin'
@@ -893,7 +895,7 @@ export function App() {
                   className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Volver al Studio
+                  {t('landing.backToStudio')}
                 </button>
               </div>
             </nav>
@@ -902,10 +904,10 @@ export function App() {
             <div className="pt-32 pb-20 px-4">
               <div className="max-w-7xl mx-auto">
                 <h2 className="text-4xl font-black mb-4">
-                  Preparativos <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">de Voces</span>
+                  {t('landing.voiceWorkshop.title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{t('landing.voiceWorkshop.titleHighlight')}</span>
                 </h2>
                 <p className={`text-lg mb-12 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                  Aquí puedes clonar y preparar tus voces personalizadas antes de usarlas en el Studio.
+                  {t('landing.voiceWorkshop.subtitle')}
                 </p>
                 <VoiceWorkshopPanel onCloneSuccess={() => {/* Success message shown in panel, no reload */}} darkModeOverride={darkMode} config={config} updateConfig={updateConfig} user={user} />
               </div>
@@ -916,134 +918,12 @@ export function App() {
     )
   }
 
-  const benefits = [
-    {
-      icon: '🎭',
-      title: 'Clonación y Sistema de Personajes',
-      subtitle: 'Crea identidades únicas dentro de tu stream.',
-      description: 'Clona voces y asigna personajes a cada tipo de usuario (chat, donadores, moderadores, etc).'
-    },
-    {
-      icon: '⚙️',
-      title: 'Más de 30 Herramientas de Control',
-      subtitle: 'Tú decides cómo se comporta tu chat.',
-      description: 'Filtros inteligentes, control de cola, bloqueo de spam, gestión de mensajes, límites, limpieza automática y más.'
-    },
-    {
-      icon: '🔊',
-      title: 'Interacción en Tiempo Real',
-      subtitle: 'Tu stream reacciona automáticamente.',
-      description: 'Lectura de chat, notificaciones, eventos y acciones sin retrasos.'
-    },
-    {
-      icon: '🎨',
-      title: 'Personalización Total',
-      subtitle: 'Diseña la experiencia completa.',
-      description: 'Colores, nicks, estilos, tipos de usuario, visual del chat y comportamiento.'
-    },
-    {
-      icon: '💰',
-      title: 'Optimizado para Engagement y Monetización',
-      subtitle: 'Convierte interacción en resultados.',
-      description: 'Diferencia donadores, destaca usuarios clave y aumenta participación en tu stream.'
-    },
-    {
-      icon: '🎮',
-      title: 'Preparado para Streaming en Vivo',
-      subtitle: 'Funciona donde lo necesitas.',
-      description: 'Optimizado para TikTok LIVE y flujos en tiempo real.'
-    },
-    {
-      icon: '🔒',
-      title: 'Seguro y Estable',
-      subtitle: 'Sistema confiable para streams largos.',
-      description: 'Protección de datos y rendimiento constante.'
-    }
-  ]
+  const benefits = t('landing.benefits', { returnObjects: true })
 
-  const additionalPackages = [
-    {
-      icon: '🟢',
-      size: 'MINI BOOST',
-      tokens: '150,000',
-      price: '$4.99',
-      priceMxn: '$4.99 USD',
-      hours: '1.5–3 horas'
-    },
-    {
-      icon: '🔵',
-      size: 'POWER BOOST',
-      tokens: '350,000',
-      price: '$9.99',
-      priceMxn: '$9.99 USD',
-      hours: '4–7 horas'
-    },
-    {
-      icon: '🔥',
-      size: 'MAX BOOST',
-      tokens: '700,000',
-      price: '$14.99',
-      priceMxn: '$14.99 USD',
-      hours: '8–12 horas'
-    }
-  ]
-  const howItWorks = [
-    {
-      step: '1',
-      title: 'Conecta tu canal',
-      description: 'Vincula tu cuenta de TikTok o YouTube en segundos'
-    },
-    {
-      step: '2',
-      title: 'Activa Stream Voicer',
-      description: 'Inicia la lectura de mensajes de chat en tiempo real'
-    },
-    {
-      step: '3',
-      title: 'Disfruta',
-      description: 'Los mensajes se leen automáticamente durante tu stream'
-    }
-  ]
-  const faqItems = [
-    { icon: '🔊', q: '¿Cómo funciona Stream Voicer?', a: 'Stream Voicer lee en tiempo real los mensajes de tu chat de TikTok LIVE y los reproduce con voz para mantener interacción constante en tu stream.' },
-    { icon: '🧩', q: '¿Qué es un token?', a: '1 token equivale a 1 carácter generado. El consumo aplica cuando usas voces premium o voces personalizadas.' },
-    { icon: '🎙️', q: '¿Qué voces consumen tokens?', a: 'Las voces premium y las voces personalizadas consumen tokens. La voz esencial no consume tokens.' },
-    { icon: '♻️', q: '¿Si el audio sale de caché también se cobran tokens?', a: 'Sí. El caché optimiza rendimiento y costos internos de procesamiento, pero el consumo de tokens del usuario se mantiene según caracteres generados en voces premium/personalizadas.' },
-    { icon: '💳', q: '¿Qué hago si se me acaban los tokens?', a: 'Puedes recargar al instante desde la sección "Recarga de Tokens". Si no tienes tokens, las voces premium/personalizadas dejan de reproducirse hasta recargar.' },
-    { icon: '⏳', q: '¿Cómo funciona el plan FREE?', a: 'El plan FREE incluye 1 voz esencial con 2 horas diarias. El contador se restablece cada 24 horas.' },
-    { icon: '🔄', q: '¿Puedo cambiar o cancelar mi plan cuando quiera?', a: 'Sí. Los upgrades se aplican de inmediato con ajuste proporcional al tiempo restante del ciclo (calculado con timestamps exactos). Los downgrades se aplican en el siguiente ciclo de facturación. Puedes cancelar en cualquier momento; el acceso se mantiene hasta el final del periodo.' },
-    { icon: '🌍', q: '¿Funciona con otros idiomas?', a: 'Actualmente Stream Voicer está optimizado para español. Próximamente se integrarán más idiomas.' },
-    { icon: '⚡', q: '¿Cuánto tarda en procesarse un mensaje?', a: 'Se procesa en tiempo real. Normalmente tarda entre 1 y 5 segundos según longitud del mensaje, voz elegida y carga del sistema.' },
-    { icon: '🔐', q: '¿Es seguro conectar mi TikTok?', a: 'Sí. Solo se usa el acceso necesario para leer la actividad pública de tu LIVE. No compartimos tus datos con terceros.' },
-    { icon: '🆓', q: '¿Hay prueba gratis?', a: 'Sí. Puedes empezar con FREE y subir a START, CREATOR o PRO cuando necesites más capacidad y más voces.' },
-    { icon: '🛠️', q: '¿Puedo crear y editar mis voces personalizadas?', a: 'Sí. Puedes gestionar voces personalizadas desde tu panel. La cantidad disponible depende de tu plan activo.' },
-  ]
-  const advancedGuide = [
-    {
-      title: 'Filtro inteligente (en simple)',
-      description: 'Cuando el chat va rápido, prioriza mensajes con valor de conversación y reduce ruido (spam, repetidos, puro emoji o texto poco legible). Cuando el chat se calma, abre más cobertura para leer más mensajes útiles.'
-    },
-    {
-      title: 'Asistente de IA en vivo',
-      description: 'El asistente toma contexto reciente del chat para responder en tono de tu stream. Puedes dispararlo manualmente o con reglas de interacción para equilibrar frecuencia, naturalidad y control.'
-    },
-    {
-      title: 'Tokens y consumo real',
-      description: 'Las voces premium y personalizadas consumen tokens por caracteres generados. La voz esencial del plan FREE no consume tokens, pero mantiene su ventana diaria de uso para cuidar estabilidad y costos.'
-    },
-    {
-      title: 'Roles y prioridad de lectura',
-      description: 'Puedes darle preferencia a moderadores, suscriptores, comunidad y donadores. También puedes forzar solo preguntas o combinarlas con otros filtros para que el chat mantenga foco.'
-    },
-    {
-      title: 'Recomendación de arranque',
-      description: 'Empieza con filtros básicos: saltar repetidos, ignorar links y mínimo de longitud. Luego ajusta voces por rol (ej. donadores/preguntas) y sube agresividad solo si el volumen del chat lo exige.'
-    },
-    {
-      title: 'Cómo evaluar si está bien configurado',
-      description: 'Usa el resumen de sesión: si mejora la calidad de mensajes leídos sin perder ritmo del live, vas bien. Ajusta poco a poco para mantener el balance entre cantidad, claridad y engagement.'
-    }
-  ]
+  const additionalPackages = t('landing.packages.items', { returnObjects: true })
+  const howItWorks = t('landing.howItWorks', { returnObjects: true })
+  const faqItems = t('landing.faq.items', { returnObjects: true })
+  const advancedGuide = t('landing.advancedGuide', { returnObjects: true })
 
   return (
     <div className={"min-h-screen overflow-hidden transition-colors duration-300 " + (darkMode ? "bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-gray-900") + ""}>
@@ -1051,6 +931,7 @@ export function App() {
       <div className="fixed top-4 left-4 z-40 flex items-center gap-3">
         <button
           onClick={() => setDarkMode(!darkMode)}
+          title={darkMode ? t('common.lightMode') : t('common.darkMode')}
           className={"p-2 rounded-lg transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-yellow-400" : "bg-white/90 hover:bg-white text-gray-700 shadow-md")}
         >
           {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -1078,7 +959,7 @@ export function App() {
             <button
               onClick={handleLogout}
               className={"p-2 rounded-lg transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-red-400" : "bg-white/90 hover:bg-white text-red-500 shadow-md")}
-              title="Cerrar sesión"
+              title={t('common.logout')}
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -1088,7 +969,7 @@ export function App() {
             onClick={() => canOpenStudioWithoutAuth ? setCurrentPage('studio') : setCurrentPage('auth')}
             className={"px-4 py-2 rounded-lg font-semibold text-sm transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-white border border-white/20" : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm")}
           >
-            {canOpenStudioWithoutAuth ? 'Entrar al Studio' : 'Iniciar Sesión'}
+            {canOpenStudioWithoutAuth ? t('landing.enterStudio') : t('auth.login.title')}
           </button>
         )}
       </div>
@@ -1112,23 +993,19 @@ export function App() {
           </div>
 
           <h2 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
-            Tu LIVE ya no sonará
+            {t('landing.hero.title')}
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-orange-400">
-              genérico
+              {t('landing.hero.titleHighlight')}
             </span>
           </h2>
 
           <p className={"text-xl md:text-2xl mb-8 max-w-2xl mx-auto " + (darkMode ? "text-gray-300" : "text-gray-600")}>
-              Dale voz a tu chat de TikTok LIVE con personajes en vivo y crea una experiencia única.
+              {t('landing.hero.subtitle')}
           </p>
 
           <div className="flex flex-wrap gap-3 mb-8 justify-center">
-            {[
-              '🎮 Tu personaje famoso leyendo comentarios',
-              '😂 Narrador gracioso reaccionando',
-              '😈 Voz troll para donaciones'
-            ].map((tag) => (
+            {t('landing.hero.tags', { returnObjects: true }).map((tag) => (
               <span
                 key={tag}
                 className={"px-3 py-2 rounded-lg text-sm border " + (darkMode ? "bg-white/5 border-cyan-400/20 text-cyan-200" : "bg-white border-cyan-200 text-cyan-700")}
@@ -1151,7 +1028,7 @@ export function App() {
                   ? "bg-gradient-to-r from-cyan-400 to-blue-500 text-white hover:shadow-cyan-400/50"
                   : "bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:shadow-cyan-300/70")}
               >
-                Ver Planes
+                {t('landing.hero.viewPlans')}
                 <ChevronRight className="w-5 h-5" />
               </button>
               <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none" />
@@ -1166,20 +1043,16 @@ export function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h3 className={`text-4xl font-black mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              Resultados reales de <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">nuestros creadores</span>
+              {t('landing.successCases.title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{t('landing.successCases.titleHighlight')}</span>
             </h3>
             <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Números que hablan por sí solos
+              {t('landing.successCases.subtitle')}
             </p>
           </div>
 
           {/* Success Cases Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              { metric: '+150%', label: 'De 50K → 125K seguidores en 3 meses', creator: '🎮 Alex Gaming', category: 'Gaming Live', description: 'Chat activo en vivo gracias a voces que reaccionan en tiempo real.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web1.png' },
-              { metric: '+2,500', label: 'Comentarios por LIVE', creator: '🎮 Max JuanGamingPro', category: 'Gaming Live', description: 'El chat cobra vida con voces y se vuelve parte del show.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/refs/heads/main/public/images/web%207.png' },
-              { metric: '+85%', label: 'Aumento en donaciones', creator: '😂 Carlos Comedy', category: 'Comedia Live', description: 'Las voces en vivo hacen el stream más divertido y participativo.', img: 'https://raw.githubusercontent.com/universodelaluz-dotcom/voltvoice-frontend/main/public/images/web3.png' },
-            ].map((caseItem, idx) => (
+            {t('landing.successCases.items', { returnObjects: true }).map((caseItem, idx) => (
               <div
                 key={idx}
                 className={`rounded-xl overflow-hidden border transition-all duration-300 hover:shadow-xl hover:-translate-y-2 ${
@@ -1230,11 +1103,7 @@ export function App() {
 
           <div className="mt-32 mb-0">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
-              {[
-                { metric: '+200%', title: 'Seguidores diarios' },
-                { metric: '+70%', title: 'Conversión a seguidores' },
-                { metric: '+45%', title: 'Retención de viewers' },
-              ].map((item) => (
+              {t('landing.metrics', { returnObjects: true }).map((item) => (
                 <div
                   key={item.title}
                   className="text-center"
@@ -1259,7 +1128,7 @@ export function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h3 className={`text-4xl font-black mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              Lo que dicen nuestros <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">creadores</span>
+              {t('landing.testimonials.title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{t('landing.testimonials.titleHighlight')}</span>
             </h3>
           </div>
 
@@ -1268,14 +1137,7 @@ export function App() {
             <div className="testimonials-track flex gap-6 w-max">
               {/* Cards duplicated for seamless infinite loop (CSS translateX -50%) */}
               {[...Array(2)].flatMap((_, copy) =>
-                [
-                  { name: '@alexgamertok', type: 'TikTok Creator Gaming', benefit: '🟢 Tu stream nunca se queda muerto', text: 'Antes si me callaba 30 segundos el Live se moría solo. Con Stream Voicer el chat tiene vida propia: los viewers leen, comentan y se quedan aunque yo esté enfocado en el juego.', stars: 5 },
-                  { name: '@sofiaart', type: 'TikTok Creator Art', benefit: '💬 Tu chat trabaja por ti', text: 'No tengo que estar leyendo comentarios todo el tiempo. Stream Voicer los procesa, destaca los mejores y mantiene la conversación fluida. Yo solo me concentro en crear contenido y el chat se cuida solo.', stars: 5 },
-                  { name: '@carlosmusica.live', type: 'TikTok Creator Música', benefit: '⚡ Más interacción sin más esfuerzo', text: 'Mis Lives ahora tienen 3x más engagement sin que yo haga nada diferente. La gente comenta más porque sabe que sus mensajes van a ser valorados. Es increíble cuánta interacción genera sin esfuerzo extra.', stars: 5 },
-                  { name: '@dianabeauty_tk', type: 'TikTok Creator Belleza', benefit: '🎯 Convierte mensajes en participación', text: 'Cada comentario que llega se convierte en una participación real. Ya no es solo "jeje" abajo, ahora los comentarios generan conversación. Mi comunidad se siente escuchada y eso atrae más personas al Live.', stars: 5 },
-                  { name: '@javierstreamer22', type: 'TikTok Creator Competitivo', benefit: '⭐ Destaca a tus seguidores y donadores', text: 'El sistema automáticamente reconoce a mis followers y donadores. No tengo que perder tiempo dándoles shout-outs manuales. Ellos se sienten valorados naturalmente y eso me genera más donaciones y suscripciones.', stars: 5 },
-                  { name: '@mariacomedy_tk', type: 'TikTok Creator Comedia', benefit: '🚀 Haz tu stream dinámico sin hablar más', text: 'Mi Live es mucho más dinámico y entretenido sin que tenga que estar hablando todo el tiempo para mantener atención. El chat está tan activo y valorado que la gente viene por la comunidad, no solo por mí.', stars: 5 },
-                ].map((testimonial, idx) => (
+                t('landing.testimonials.items', { returnObjects: true }).map((testimonial, idx) => (
                   <div
                     key={`${copy}-${idx}`}
                     aria-hidden={copy === 1}
@@ -1328,9 +1190,9 @@ export function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-black mb-4">
-              💰 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">PAQUETES COMPLETOS</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{t('landing.pricing.title')}</span>
             </h3>
-            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>Elige el plan perfecto para tu stream</p>
+            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{t('landing.pricing.subtitle')}</p>
           </div>
           <PricingCards darkMode={darkMode} showToggle={true} onPlanAction={handlePlanAction} />
 
@@ -1338,7 +1200,7 @@ export function App() {
           <div className="my-20 flex items-center gap-4">
             <div className={`flex-1 h-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
             <span className={`text-sm font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              📋 Comparativa detallada
+              {t('landing.pricing.comparison')}
             </span>
             <div className={`flex-1 h-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
           </div>
@@ -1353,9 +1215,9 @@ export function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-black mb-4">
-              ❓ <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Preguntas Frecuentes</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{t('landing.faq.title')}</span>
             </h3>
-            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>Resuelve tus dudas sobre Stream Voicer</p>
+            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{t('landing.faq.subtitle')}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -1385,14 +1247,14 @@ export function App() {
         <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-16">
             <span className={"text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 inline-block " + (darkMode ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "bg-cyan-50 text-cyan-600 border border-cyan-200")}>
-              💰 PAQUETES EXTRA (RECARGAS) →
+              {t('landing.packages.badge')}
             </span>
             <h3 className="text-5xl font-black mt-4 mb-4">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500">
-                Recarga de Tokens
+                {t('landing.packages.title')}
               </span>
             </h3>
-            <p className={"text-xl font-medium " + (darkMode ? "text-gray-200" : "text-gray-700")}>Si tu plan mensual se queda corto, recarga al instante sin esperar al siguiente mes.</p>
+            <p className={"text-xl font-medium " + (darkMode ? "text-gray-200" : "text-gray-700")}>{t('landing.packages.subtitle')}</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -1417,7 +1279,7 @@ export function App() {
 
                   {isPopular && (
                     <div className={"text-[10px] font-black tracking-wider mb-4 px-3 py-1 rounded-full text-center w-full bg-gradient-to-r " + gradient + " text-white"}>
-                      🔥 MÁS POPULAR
+                      {t('landing.packages.popular')}
                     </div>
                   )}
                   {!isPopular && <div className="mb-4 h-6" />}
@@ -1441,14 +1303,14 @@ export function App() {
                             currency: 'MXN',
                             maximumFractionDigits: 0
                           }).format(mxnAmount)
-                          return `Aprox. ${mxnDisplay} MXN`
+                          return t('landing.packages.approxMxn', { mxn: mxnDisplay })
                         })()}
                       </div>
                     )}
                   </div>
 
                     <div className={"rounded-xl px-3 py-2 mb-4 " + (darkMode ? "bg-white/5" : "bg-gray-50")}>
-                      <div className={"text-xs " + (darkMode ? "text-gray-500" : "text-gray-400")}>🎙️ Caracteres</div>
+                      <div className={"text-xs " + (darkMode ? "text-gray-500" : "text-gray-400")}>{t('landing.packages.characters')}</div>
                       <div className={"font-black text-lg text-transparent bg-clip-text bg-gradient-to-r " + gradient}>{pkg.tokens}</div>
                     </div>
 
@@ -1458,13 +1320,13 @@ export function App() {
                     <div className="relative mt-auto">
                       <span className={"absolute -inset-1 rounded-xl pointer-events-none animate-ping opacity-50 bg-gradient-to-r " + gradient} />
                       <button className={"relative z-10 w-full py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r animate-pulse transition-all shadow-lg " + gradient + " hover:opacity-90"}>
-                        🚀 Comprar ahora →
+                        {t('landing.packages.buyNowPopular')}
                       </button>
                       <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none z-20" />
                     </div>
                   ) : (
                     <button className={"w-full py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r transition-all mt-auto " + gradient + " hover:opacity-90 hover:shadow-lg"}>
-                      Comprar ahora →
+                      {t('landing.packages.buyNow')}
                     </button>
                   )}
                 </div>
@@ -1475,7 +1337,7 @@ export function App() {
 
           {/* Bottom note */}
           <p className={"text-center text-xs mt-10 " + (darkMode ? "text-gray-600" : "text-gray-400")}>
-            🧠 NOTA: El consumo depende de la actividad del chat y la configuración. Puedes extender la duración usando filtros inteligentes y lectura selectiva.
+            {t('landing.packages.note')}
           </p>
         </div>
       </section>
@@ -1485,10 +1347,10 @@ export function App() {
         <div className="max-w-4xl mx-auto text-center">
           <div className={`rounded-2xl p-12 ${darkMode ? 'bg-gradient-to-br from-cyan-400/20 to-purple-500/20 border border-cyan-400/30' : 'bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600'}`}>
             <h3 className={`text-4xl font-black mb-6 ${darkMode ? 'text-white' : 'text-white'}`}>
-              Listo para revolucionar tus streams?
+              {t('landing.cta.title')}
             </h3>
             <p className={`text-xl mb-8 ${darkMode ? 'text-gray-300' : 'text-slate-200'}`}>
-              Únete a miles de creadores que ya están usando Stream Voicer
+              {t('landing.cta.subtitle')}
             </p>
             <div className="flex gap-4 justify-center">
               <button
@@ -1499,7 +1361,7 @@ export function App() {
                     : 'bg-white text-slate-900 hover:bg-slate-100'
                 }`}
               >
-                {canOpenStudioWithoutAuth ? 'Ir al Studio' : 'Comenzar Gratis'} <ChevronRight className="w-5 h-5" />
+                {t('landing.cta.btn')} <ChevronRight className="w-5 h-5" />
               </button>
               <button
                 onClick={() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' })}
@@ -1509,7 +1371,7 @@ export function App() {
                     : 'border-slate-200 text-white hover:bg-white/10'
                 }`}
               >
-                Ver Planes
+                {t('landing.hero.viewPlans')}
               </button>
             </div>
           </div>
@@ -1527,21 +1389,21 @@ export function App() {
             <div>
               <h4 className="font-bold mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><button onClick={() => setShowTerms(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Términos</button></li>
-                <li><button onClick={() => setShowPrivacy(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Privacidad</button></li>
+                <li><button onClick={() => setShowTerms(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">{t('landing.footer.terms')}</button></li>
+                <li><button onClick={() => setShowPrivacy(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">{t('landing.footer.privacy')}</button></li>
                 <li><button onClick={() => setShowCookies(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Cookies</button></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-4">Soporte</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><button onClick={() => setShowContact(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Contacto</button></li>
+                <li><button onClick={() => setShowContact(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">{t('landing.footer.contact')}</button></li>
               </ul>
             </div>
           </div>
 
           <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2026 Stream Voicer. Todos los derechos reservados.</p>
+            <p>{t('landing.footer.rights')}</p>
           </div>
         </div>
       </footer>

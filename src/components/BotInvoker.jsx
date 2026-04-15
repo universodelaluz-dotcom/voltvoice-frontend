@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Mic2, Send, Volume2, Lock } from 'lucide-react'
 import inworldRealtimeService from '../services/inworldRealtimeService'
 import chatStore from '../services/chatStore.js'
+import { useTranslation } from 'react-i18next'
 
 const BUILTIN_VOICE_OPTIONS = [
   { id: 'Diego', name: 'Diego' },
@@ -244,6 +245,7 @@ const CONFIG_COMMANDS = [
 ]
 
 export default function BotInvoker({ user, onGoPricingPage, darkMode = true, onClose, config, updateConfig }) {
+  const { t } = useTranslation()
   const [characters, setCharacters] = useState([])
   const [userVoices, setUserVoices] = useState([])
   const [voicesLoaded, setVoicesLoaded] = useState(false)
@@ -372,9 +374,9 @@ const formatResetWait = (seconds = 0) => {
     const hasCharacter = Boolean(selectedCharacterIdRef.current)
     const hasVoice = Boolean(selectedRealtimeVoiceIdRef.current)
     if (hasCharacter && hasVoice) return null
-    if (!hasCharacter && !hasVoice) return 'Error: selecciona una personalidad y una voz en Configuracion.'
-    if (!hasCharacter) return 'Error: selecciona una personalidad en Configuracion.'
-    return 'Error: selecciona una voz en Configuracion.'
+    if (!hasCharacter && !hasVoice) return t('bot.errors.setup')
+    if (!hasCharacter) return t('bot.errors.noCharacter')
+    return t('bot.errors.noVoice')
   }
 
   const ensureAssistantReady = () => {
@@ -385,7 +387,7 @@ const formatResetWait = (seconds = 0) => {
     setIsRecording(false)
     setPttSuppressed(false)
     unlockChatSuppression()
-    setResponse(`${setupError} Nota: para usar F9/F8 debes seleccionar ambas opciones.`)
+    setResponse(`${setupError} ${t('bot.note')}`)
     return false
   }
 
@@ -2392,7 +2394,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
       setIsLoading(false)
       setPttSuppressed(false)
       restoreChatAudioImmediate()
-      alert('No se pudo iniciar el bot de voz')
+      alert(t('bot.errors.micFailed'))
     }
   }
 
@@ -2794,7 +2796,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
 
       <div className="flex items-center justify-between">
         <h3 className={`text-sm font-bold ${darkMode ? 'text-cyan-300' : 'text-indigo-600'}`}>
-          Llamar a Asistente
+          {t('bot.title')}
         </h3>
       </div>
 
@@ -2860,7 +2862,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
             ? 'bg-amber-500/10 border-amber-400/30 text-amber-300'
             : 'bg-amber-50 border-amber-300 text-amber-800'
         }`}>
-          Nota: selecciona una personalidad y una voz en Configuracion para usar el asistente (F9/F8).
+          {t('bot.note')}
         </div>
       )}
 
@@ -2873,7 +2875,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
               : darkMode ? 'bg-[#0f0f23] text-gray-400' : 'bg-slate-100 text-slate-700 border border-slate-300'
           }`}
         >
-          Microfono
+          {t('bot.modes.mic')}
         </button>
         <button
           onClick={() => setInputMode('text')}
@@ -2883,7 +2885,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
               : darkMode ? 'bg-[#0f0f23] text-gray-400' : 'bg-slate-100 text-slate-700 border border-slate-300'
           }`}
         >
-          Texto
+          {t('bot.modes.text')}
         </button>
       </div>
 
@@ -2932,7 +2934,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
 
       {isLoading && (
         <div className={`text-center text-sm ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`}>
-          Procesando...
+          {t('bot.invoking')}
         </div>
       )}
 
@@ -2948,7 +2950,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
       }`}>
         {response ? (
           <>
-            <p className="font-bold mb-2">Respuesta del Bot:</p>
+            <p className="font-bold mb-2">{t('bot.audio.responded')}:</p>
             <p>{response}</p>
             <p className="mt-2 text-xs text-gray-400">Voz realtime: {voiceLabel}</p>
 
@@ -2963,7 +2965,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
                     <Volume2 className="w-4 h-4" />
                   </button>
                   <span className="text-xs text-gray-400">
-                    {isPlayingResponse ? 'La respuesta de voz se esta reproduciendo' : 'Si no se oyo, toca este boton para reactivar el audio'}
+                    {isPlayingResponse ? t('bot.audio.play') : t('bot.audio.pause')}
                   </span>
                 </div>
               </div>

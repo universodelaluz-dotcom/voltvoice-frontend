@@ -1,48 +1,49 @@
 ﻿import React from 'react'
 import { Check, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
-const comparisonData = {
+const getComparisonData = (t) => ({
   features: [
     {
-      category: 'Voces para stream',
+      category: t('pricing.comparison.categories.voices'),
       items: [
-        { name: 'Voz esencial', free: '2 horas diarias', start: 'ILIMITADO', creator: 'ILIMITADO', pro: 'ILIMITADO' },
-        { name: 'Voces personalizadas', free: false, start: '1 voz personalizada', creator: '2 voces personalizadas', pro: '5 voces personalizadas' },
-        { name: 'Voces premium', free: false, start: '1 voz premium', creator: '2 voces premium', pro: '4 voces premium' }
+        { name: t('pricing.comparison.features.essentialVoice'), free: '2 horas diarias', start: t('pricing.comparison.values.unlimited'), creator: t('pricing.comparison.values.unlimited'), pro: t('pricing.comparison.values.unlimited') },
+        { name: t('pricing.comparison.features.customVoices'), free: false, start: '1 voz personalizada', creator: '2 voces personalizadas', pro: '5 voces personalizadas' },
+        { name: t('pricing.comparison.features.premiumVoices'), free: false, start: '1 voz premium', creator: '2 voces premium', pro: '4 voces premium' }
       ]
     },
     {
-      category: 'Tiempo de uso real (voces premium y personalizadas)',
+      category: t('pricing.comparison.categories.usage'),
       items: [
-        { name: 'Capacidad mensual', free: '-', start: '200,000 tokens (≈ 2-4 h)', creator: '500,000 tokens (≈ 5-8 h)', pro: '800,000 tokens (≈ 10-15 h)' }
+        { name: t('pricing.comparison.features.monthlyCapacity'), free: '-', start: '200,000 tokens (≈ 2-4 h)', creator: '500,000 tokens (≈ 5-8 h)', pro: '800,000 tokens (≈ 10-15 h)' }
       ]
     },
     {
-      category: 'Herramientas y Características',
+      category: t('pricing.comparison.categories.tools'),
       items: [
-        { name: 'Herramientas optimizadoras de mensajes', free: false, start: true, creator: true, pro: true },
-        { name: 'Voces dinámicas por tipo de usuario', free: false, start: 'limitado', creator: true, pro: true },
-        { name: '🎬 Extractor de audio', free: false, start: false, creator: true, pro: true },
-        { name: 'Filtros básicos para optimizar el chat', free: 'limitado', start: true, creator: true, pro: true },
-        { name: 'Controles avanzados de mensajes', free: false, start: true, creator: true, pro: true },
-        { name: 'Lectura inteligente del chat', free: false, start: false, creator: true, pro: true },
+        { name: t('pricing.comparison.features.messageTools'), free: false, start: true, creator: true, pro: true },
+        { name: t('pricing.comparison.features.dynamicVoices'), free: false, start: t('pricing.comparison.values.limited'), creator: true, pro: true },
+        { name: t('pricing.comparison.features.audioExtractor'), free: false, start: false, creator: true, pro: true },
+        { name: t('pricing.comparison.features.basicFilters'), free: t('pricing.comparison.values.limited'), start: true, creator: true, pro: true },
+        { name: t('pricing.comparison.features.advancedControls'), free: false, start: true, creator: true, pro: true },
+        { name: t('pricing.comparison.features.smartReading'), free: false, start: false, creator: true, pro: true },
       ]
     },
     {
-      category: 'IA y Automatización',
+      category: t('pricing.comparison.categories.ai'),
       items: [
-        { name: 'Asistente por IA', free: false, start: false, creator: false, pro: true },
-        { name: 'Comentarista en vivo por IA', free: false, start: false, creator: false, pro: true }
+        { name: t('pricing.comparison.features.aiAssistant'), free: false, start: false, creator: false, pro: true },
+        { name: t('pricing.comparison.features.aiCommentator'), free: false, start: false, creator: false, pro: true }
       ]
     }
   ],
   plans: [
-    { id: 'free', name: 'FREE', price: '$0', color: 'from-gray-400 to-gray-600', bgColor: 'bg-gray-50', borderColor: 'border-gray-300', textColor: 'text-gray-900', angle: 'Para probar', usage: 'Voz esencial: 2 horas diarias', cta: 'Empieza gratis' },
-    { id: 'start', name: 'START', price: '$6.99', color: 'from-green-400 to-emerald-600', bgColor: 'bg-gradient-to-br from-green-50 to-emerald-50', borderColor: 'border-green-300', textColor: 'text-gray-900', angle: 'Para empezar', usage: '200,000 tokens (≈ 2-4 h)', cta: 'Elegir plan' },
-    { id: 'creator', name: 'CREATOR', price: '$12.99', color: 'from-blue-400 to-indigo-600', bgColor: 'bg-gradient-to-br from-blue-50 to-indigo-50', borderColor: 'border-blue-300', textColor: 'text-gray-900', popular: true, angle: 'Para creadores serios', usage: '500,000 tokens (≈ 5-8 h)', cta: 'Elegir plan' },
-    { id: 'pro', name: 'PRO', price: '$17.99', color: 'from-orange-400 to-red-600', bgColor: 'bg-gradient-to-br from-orange-50 to-red-50', borderColor: 'border-orange-300', textColor: 'text-gray-900', angle: 'Para automatizar y escalar', usage: '800,000 tokens (≈ 10-15 h)', cta: 'Elegir plan' }
+    { id: 'free', name: 'FREE', price: '$0', color: 'from-gray-400 to-gray-600', bgColor: 'bg-gray-50', borderColor: 'border-gray-300', textColor: 'text-gray-900', usage: 'Voz esencial: 2 horas diarias', cta: t('pricing.comparison.startFree') },
+    { id: 'start', name: 'START', price: '$6.99', color: 'from-green-400 to-emerald-600', bgColor: 'bg-gradient-to-br from-green-50 to-emerald-50', borderColor: 'border-green-300', textColor: 'text-gray-900', usage: '200,000 tokens (≈ 2-4 h)', cta: t('pricing.comparison.choosePlan') },
+    { id: 'creator', name: 'CREATOR', price: '$12.99', color: 'from-blue-400 to-indigo-600', bgColor: 'bg-gradient-to-br from-blue-50 to-indigo-50', borderColor: 'border-blue-300', textColor: 'text-gray-900', popular: true, usage: '500,000 tokens (≈ 5-8 h)', cta: t('pricing.comparison.choosePlan') },
+    { id: 'pro', name: 'PRO', price: '$17.99', color: 'from-orange-400 to-red-600', bgColor: 'bg-gradient-to-br from-orange-50 to-red-50', borderColor: 'border-orange-300', textColor: 'text-gray-900', usage: '800,000 tokens (≈ 10-15 h)', cta: t('pricing.comparison.choosePlan') }
   ]
-}
+})
 
 const renderFeatureValue = (value, plan, darkMode) => {
   if (value === null) return '-'
@@ -52,15 +53,17 @@ const renderFeatureValue = (value, plan, darkMode) => {
 }
 
 export function PricingComparison({ darkMode, onPlanAction }) {
+  const { t } = useTranslation()
+  const comparisonData = getComparisonData(t)
   return (
     <div className={`min-h-screen py-16 px-4 ${darkMode ? 'bg-gradient-to-b from-[#0f0f23] to-[#1a0033] text-white' : 'bg-gradient-to-b from-gray-50 via-white to-gray-100'}`}>
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h1 className="text-5xl font-black mb-4">
-            Haz que tu audiencia escuche... se impacte! y genere interacción!
+            {t('pricing.comparison.title')}
           </h1>
           <p className={`text-lg md:text-xl ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            Plataforma de voz avanzada para streamers, gamers y creadores.
+            {t('pricing.comparison.subtitle')}
           </p>
         </div>
 
@@ -69,7 +72,7 @@ export function PricingComparison({ darkMode, onPlanAction }) {
             <thead>
               <tr className={darkMode ? 'bg-gray-800/30' : 'bg-gray-50'}>
                 <th className={`text-left py-6 px-6 ${darkMode ? 'text-cyan-300' : 'text-cyan-800'}`}>
-                  <span className="text-lg md:text-xl font-black tracking-wide">Capacidades</span>
+                  <span className="text-lg md:text-xl font-black tracking-wide">{t('pricing.comparison.capabilities')}</span>
                 </th>
                 {comparisonData.plans.map((plan) => (
                   <th key={plan.id} className="py-6 px-3 align-middle text-center">
@@ -98,12 +101,12 @@ export function PricingComparison({ darkMode, onPlanAction }) {
                           {plan.price}
                         </span>
                         <span className={`text-[15px] leading-none font-medium mb-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                          / mes
+                          {t('pricing.comparison.perMonth')}
                         </span>
                       </div>
                       {plan.popular && (
                         <div className={`mt-2 text-[10px] font-semibold uppercase tracking-[0.14em] ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
-                          más popular
+                          {t('pricing.comparison.mostPopular')}
                         </div>
                       )}
                       <div className="relative mt-3">
@@ -176,7 +179,7 @@ export function PricingComparison({ darkMode, onPlanAction }) {
                 </div>
                 {plan.popular && (
                   <div className="text-xs font-bold tracking-wider px-2 py-1 rounded-full bg-gradient-to-r from-orange-400 to-pink-500 text-white inline-block mt-2">
-                    POPULAR
+                    {t('pricing.comparison.mostPopular')}
                   </div>
                 )}
               </div>
@@ -208,14 +211,12 @@ export function PricingComparison({ darkMode, onPlanAction }) {
 
         <div className={`mt-12 p-6 rounded-xl border ${darkMode ? 'bg-gray-800/80 border-cyan-500/20' : 'bg-cyan-50 border-cyan-200'}`}>
           <p className={`text-base font-bold mb-3 ${darkMode ? 'text-cyan-300' : 'text-cyan-900'}`}>
-            Cómo funciona
+            {t('pricing.comparison.howWorks')}
           </p>
           <ul className={`text-sm space-y-2 ${darkMode ? 'text-gray-100' : 'text-gray-700'}`}>
-            <li>• FREE incluye voz esencial con 2 horas diarias.</li>
-            <li>• En planes de pago, la voz esencial es ilimitada.</li>
-            <li>• Voces premium y personalizadas consumen tokens según uso real de audio.</li>
-            <li>• Los tokens se renuevan cada mes automáticamente.</li>
-            <li>• Puedes combinar voz esencial y voces premium para optimizar costo y rendimiento.</li>
+            {t('pricing.comparison.howWorksList', { returnObjects: true }).map((item, idx) => (
+              <li key={idx}>• {item}</li>
+            ))}
           </ul>
         </div>
       </div>

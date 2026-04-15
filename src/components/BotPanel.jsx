@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { Loader, Mic2, Send, Volume2, AlertCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import AudioVisualizer from './AudioVisualizer'
 import { inworldRealtimeService } from '../services/inworldRealtimeService'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
 export default function BotPanel({ tiktokUsername, darkMode = true }) {
+  const { t } = useTranslation()
   const [characters, setCharacters] = useState([])
   const [selectedCharacter, setSelectedCharacter] = useState(null)
   const [inputMode, setInputMode] = useState('text') // 'text' or 'microphone'
@@ -99,7 +101,7 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
       setIsRecording(true)
     } catch (err) {
       console.error('[BotPanel] Error starting recording:', err)
-      alert('No se pudo acceder al micrófono')
+      alert(t('bot.errors.micFailed'))
     }
   }
 
@@ -113,12 +115,12 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
   // Invocar personaje con Inworld Realtime API
   const handleInvoke = async () => {
     if (!selectedCharacter || !question.trim()) {
-      alert('Selecciona un personaje y escribe una pregunta')
+      alert(t('bot.errors.selectAndWrite'))
       return
     }
 
     if (!tiktokUsername) {
-      alert('No hay stream conectado')
+      alert(t('bot.errors.noStream'))
       return
     }
 
@@ -238,7 +240,7 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
   return (
     <div className={`rounded-lg p-6 space-y-4 ${darkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white border border-gray-200'}`}>
       <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-        🤖 Invocar Personaje
+        {t('bot.title')}
       </h2>
 
       {/* Errores */}
@@ -252,7 +254,7 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
       {/* Selector de personaje */}
       <div>
         <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-          Selecciona personaje:
+          {t('bot.select')}
         </label>
         <select
           value={selectedCharacter?.id || ''}
@@ -264,7 +266,7 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
         >
           {characters.map(char => (
             <option key={char.id} value={char.id}>
-              {char.name} {char.is_custom ? '✓' : '(ejemplo)'}
+              {char.name} {char.is_custom ? t('aiWorkshop.character.custom') : t('aiWorkshop.character.example')}
             </option>
           ))}
         </select>
@@ -280,7 +282,7 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
             onChange={(e) => setInputMode(e.target.value)}
             className="w-4 h-4"
           />
-          <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>Texto</span>
+          <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{t('bot.modes.text')}</span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer">
           <input
@@ -290,7 +292,7 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
             onChange={(e) => setInputMode(e.target.value)}
             className="w-4 h-4"
           />
-          <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>Micrófono</span>
+          <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{t('bot.modes.mic')}</span>
         </label>
       </div>
 
@@ -299,7 +301,7 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="¿Qué pregunta quieres hacer al personaje?"
+          placeholder={t('bot.question')}
           className={`w-full px-4 py-3 rounded-lg resize-none h-24 ${darkMode ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-400' : 'bg-white text-gray-900 border-gray-300'} border`}
         />
       )}
@@ -315,7 +317,7 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
           }`}
         >
           <Mic2 className="w-5 h-5" />
-          {isRecording ? 'Detener grabación' : 'Iniciar grabación'}
+          {isRecording ? t('bot.record.stop') : t('bot.record.start')}
         </button>
       )}
 
@@ -328,12 +330,12 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
         {isInvoking ? (
           <>
             <Loader className="w-5 h-5 animate-spin" />
-            Invocando...
+            {t('bot.invoking')}
           </>
         ) : (
           <>
             <Send className="w-5 h-5" />
-            Invocar {selectedCharacter?.name}
+            {t('bot.invoke', { name: selectedCharacter?.name })}
           </>
         )}
       </button>
@@ -352,10 +354,10 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
               className="px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold flex items-center gap-2"
             >
               <Volume2 className="w-4 h-4" />
-              {isPlaying ? 'Pausar' : 'Reproducir'}
+              {isPlaying ? t('bot.audio.pause') : t('bot.audio.play')}
             </button>
             <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              {selectedCharacter?.name} respondió
+              {selectedCharacter?.name} {t('bot.audio.responded')}
             </span>
           </div>
         </div>

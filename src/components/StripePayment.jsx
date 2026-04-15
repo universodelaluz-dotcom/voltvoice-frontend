@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { X, Zap, Check, AlertCircle, Loader2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
@@ -10,6 +11,7 @@ const tokenPackages = [
 ]
 
 export function StripePayment({ isOpen, onClose, initialPackageTokens = null, initialCheckoutItem = null }) {
+  const { t } = useTranslation()
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
   const [selectedPackage, setSelectedPackage] = useState(tokenPackages[1])
   const [checkoutItem, setCheckoutItem] = useState(() => initialCheckoutItem || { type: 'tokens', package: tokenPackages[1] })
@@ -148,7 +150,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     try {
       const headers = getAuthHeaders()
       if (!headers) {
-        alert('Inicia sesión para continuar con el pago.')
+        alert(t('payment.loginRequired'))
         setLoading(null)
         return
       }
@@ -160,7 +162,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
       })
       const data = await res.json()
       if (data.requiresPayment === false) {
-        alert(data.message || 'Cambio de plan programado para el siguiente ciclo.')
+        alert(data.message || t('payment.planScheduled'))
         onClose?.()
       } else if (data.checkoutUrl) window.location.href = data.checkoutUrl
       else if (data.sandboxUrl) window.location.href = data.sandboxUrl
@@ -177,7 +179,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     try {
       const headers = getAuthHeaders()
       if (!headers) {
-        alert('Inicia sesión para continuar con el pago.')
+        alert(t('payment.loginRequired'))
         setLoading(null)
         return
       }
@@ -189,7 +191,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
       })
       const data = await res.json()
       if (data.requiresPayment === false) {
-        alert(data.message || 'Cambio de plan programado para el siguiente ciclo.')
+        alert(data.message || t('payment.planScheduled'))
         onClose?.()
       } else if (data.approvalUrl) {
         const w = 500
@@ -230,7 +232,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
           <div className="flex items-center gap-2">
             <Zap className="w-6 h-6 text-cyan-400" />
             <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-              {currentItem.type === 'plan' ? 'Comprar Plan' : 'Comprar Recarga'}
+              {currentItem.type === 'plan' ? t('payment.titlePlan') : t('payment.titleTokens')}
             </h2>
           </div>
           <button onClick={onClose} className={dm ? 'p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400' : 'p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500'}>
@@ -253,13 +255,13 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
                 >
                   {pkg.popular && (
                     <span className="absolute -top-2 right-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      POPULAR
+                      {t('payment.popular')}
                     </span>
                   )}
                   <p className="text-xl font-black text-cyan-400">{pkg.size}</p>
-                  <p className={`text-xs mb-1 ${dm ? 'text-gray-400' : 'text-gray-500'}`}>{pkg.label} caracteres</p>
+                  <p className={`text-xs mb-1 ${dm ? 'text-gray-400' : 'text-gray-500'}`}>{pkg.label} {t('payment.characters')}</p>
                   <p className={`text-base font-black ${dm ? 'text-white' : 'text-gray-900'}`}>${pkg.price} USD</p>
-                  <p className={`text-[11px] ${dm ? 'text-gray-500' : 'text-gray-500'}`}>Aprox. {formatMxnApprox(pkg.price)} MXN</p>
+                  <p className={`text-[11px] ${dm ? 'text-gray-500' : 'text-gray-500'}`}>{t('payment.approxMxn', { mxn: formatMxnApprox(pkg.price) })}</p>
                 </button>
               )
             })}
@@ -272,19 +274,19 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
             <p className={`text-sm ${dm ? 'text-gray-300' : 'text-gray-600'}`}>
               <span className="font-bold text-cyan-400">{currentItem.label}</span>{' '}por{' '}
               <span className="font-bold">${currentItem.price} USD</span>{' '}
-              <span>- facturación {currentItem.billingCycle === 'annual' ? 'anual' : 'mensual'}</span>
+              <span>- {currentItem.billingCycle === 'annual' ? t('payment.billingAnnual') : t('payment.billingMonthly')}</span>
               <span className={`block text-[11px] ${dm ? 'text-gray-500' : 'text-gray-500'}`}>
-                Aprox. {formatMxnApprox(Number(currentItem.price))} MXN
+                {t('payment.approxMxn', { mxn: formatMxnApprox(Number(currentItem.price)) })}
               </span>
             </p>
           </div>
         )}
         <p className={`text-[11px] mb-3 text-center ${dm ? 'text-gray-600' : 'text-gray-500'}`}>
-          Referencia en MXN aproximada; se adapta al tipo de cambio USD/MXN del día.
+          {t('payment.reference')}
         </p>
 
         <div className="space-y-3">
-          <p className={`text-xs text-center ${dm ? 'text-gray-500' : 'text-gray-400'}`}>Elige método de pago</p>
+          <p className={`text-xs text-center ${dm ? 'text-gray-500' : 'text-gray-400'}`}>{t('payment.chooseMethod')}</p>
 
           <button
             onClick={handleMercadoPago}
@@ -292,7 +294,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
             className="w-full py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 disabled:opacity-60 transition-all hover:opacity-90"
             style={{ background: 'linear-gradient(135deg, #009ee3, #00b1ea)' }}
           >
-            {loading === 'mercadopago' ? 'Procesando...' : 'Pagar con Mercado Pago'}
+            {loading === 'mercadopago' ? t('payment.processing') : t('payment.mercadopago')}
           </button>
 
           <button
@@ -301,12 +303,12 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
             className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-60 transition-all hover:opacity-90"
             style={{ background: '#ffc439', color: '#003087' }}
           >
-            {loading === 'paypal' ? 'Procesando...' : 'Pagar con PayPal'}
+            {loading === 'paypal' ? t('payment.processing') : t('payment.paypal')}
           </button>
 
           <div className="pt-0.5">
             <label className={`block text-[10px] font-medium mb-1 ${dm ? 'text-gray-500' : 'text-gray-500'}`}>
-              Cupón de descuento
+              {t('payment.coupon.label')}
             </label>
             <div className="flex gap-1.5 items-start">
               <div className="flex-1 max-w-[180px]">
@@ -337,7 +339,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
                     : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100 border border-cyan-200'
                 }`}
               >
-                {couponLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Aplicar'}
+                {couponLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : t('payment.coupon.apply')}
               </button>
             </div>
             {couponValidation && (
@@ -354,15 +356,15 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
             {validCoupon && (
               <div className={`mt-2 rounded-lg p-2 text-[11px] ${dm ? 'bg-green-500/10 border border-green-500/20' : 'bg-green-50 border border-green-200'}`}>
                 <div className="flex justify-between">
-                  <span className={dm ? 'text-gray-400' : 'text-gray-500'}>Subtotal</span>
+                  <span className={dm ? 'text-gray-400' : 'text-gray-500'}>{t('payment.coupon.subtotal')}</span>
                   <span>${validCoupon.originalAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-green-400 font-bold">
-                  <span>Descuento</span>
+                  <span>{t('payment.coupon.discount')}</span>
                   <span>-${validCoupon.discount.toFixed(2)}</span>
                 </div>
                 <div className={`flex justify-between font-black pt-1 mt-1 border-t ${dm ? 'border-white/10' : 'border-gray-200'}`}>
-                  <span>Total</span>
+                  <span>{t('payment.coupon.total')}</span>
                   <span className="text-cyan-400">${validCoupon.finalAmount.toFixed(2)} USD</span>
                 </div>
               </div>
@@ -373,18 +375,18 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
             onClick={onClose}
             className={`w-full py-2 rounded-xl text-sm font-semibold transition-all ${dm ? 'text-gray-500 hover:text-gray-300 hover:bg-white/5' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
           >
-            Cancelar
+            {t('payment.cancel')}
           </button>
         </div>
 
         {currentItem.type !== 'plan' && (
           <div className={`mt-4 rounded-xl px-3 py-2.5 text-[11px] leading-relaxed ${dm ? 'bg-white/5 border border-white/10 text-gray-500' : 'bg-gray-50 border border-gray-200 text-gray-400'}`}>
-            <p className="font-semibold mb-0.5">⚠️ Sin reembolsos en paquetes de tokens</p>
-            <p>Los paquetes de tokens son productos digitales de consumo inmediato. Una vez procesada la compra, no aplican reembolsos ni devoluciones de ningún tipo.</p>
+            <p className="font-semibold mb-0.5">{t('payment.noRefund')}</p>
+            <p>{t('payment.noRefundDetail')}</p>
           </div>
         )}
         <p className={`text-xs mt-3 text-center ${dm ? 'text-gray-600' : 'text-gray-400'}`}>
-          Pagos 100% seguros - Mercado Pago y PayPal
+          {t('payment.secure')}
         </p>
       </div>
     </div>

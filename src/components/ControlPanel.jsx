@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Check, HelpCircle, Keyboard, ChevronRight, Ban, Lock } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 // Determina si una feature estA bloqueada segAon el plan del usuario
 const isFeatureBlocked = (feature, userPlan) => {
@@ -286,44 +287,45 @@ const normalizeModerationList = (value) => {
     seen.add(username)
     normalized.push({
       username,
-      reason: String(item?.reason || 'Baneado o silenciado'),
+      reason: String(item?.reason || ''),
       source: String(item?.source || 'unknown')
     })
   }
   return normalized.slice(0, 500)
 }
 
-const formatModerationReason = (reason) => {
+const formatModerationReason = (reason, t) => {
   const raw = String(reason || '').trim()
-  if (!raw) return 'Baneado o silenciado'
+  if (!raw) return t('control.moderation.banned')
   const normalized = raw.toLowerCase()
-  if (normalized.includes('banned by ai assistant')) return 'Silenciado por asistente IA'
-  if (normalized.includes('silenced by ai assistant')) return 'Silenciado por asistente IA'
-  if (normalized.includes('banned from chat')) return 'Silenciado desde chat'
-  if (normalized.includes('silenced from chat')) return 'Silenciado desde chat'
-  if (normalized.includes('muted from chat')) return 'Silenciado desde chat'
-  if (normalized.includes('banned')) return 'Baneado o silenciado'
-  if (normalized.includes('muted')) return 'Baneado o silenciado'
-  if (normalized.includes('silenced')) return 'Baneado o silenciado'
+  if (normalized.includes('banned by ai assistant')) return t('control.moderation.silencedAI')
+  if (normalized.includes('silenced by ai assistant')) return t('control.moderation.silencedAI')
+  if (normalized.includes('banned from chat')) return t('control.moderation.silencedChat')
+  if (normalized.includes('silenced from chat')) return t('control.moderation.silencedChat')
+  if (normalized.includes('muted from chat')) return t('control.moderation.silencedChat')
+  if (normalized.includes('banned')) return t('control.moderation.banned')
+  if (normalized.includes('muted')) return t('control.moderation.banned')
+  if (normalized.includes('silenced')) return t('control.moderation.banned')
   return raw
 }
 
-const formatModerationSource = (source) => {
+const formatModerationSource = (source, t) => {
   const normalized = String(source || '').trim().toLowerCase()
-  if (!normalized) return 'sistema'
-  if (normalized === 'system') return 'sistema'
-  if (normalized === 'unknown') return 'desconocido'
-  if (normalized === 'user') return 'usuario'
-  if (normalized === 'bot') return 'asistente IA'
-  if (normalized === 'ai assistant') return 'asistente IA'
-  if (normalized === 'assistant') return 'asistente IA'
-  if (normalized === 'chat') return 'chat'
-  if (normalized === 'manual') return 'manual'
-  if (normalized === 'database') return 'base de datos'
-  return 'sistema'
+  if (!normalized) return t('control.moderation.sources.system')
+  if (normalized === 'system') return t('control.moderation.sources.system')
+  if (normalized === 'unknown') return t('control.moderation.sources.unknown')
+  if (normalized === 'user') return t('control.moderation.sources.user')
+  if (normalized === 'bot') return t('control.moderation.sources.bot')
+  if (normalized === 'ai assistant') return t('control.moderation.sources.bot')
+  if (normalized === 'assistant') return t('control.moderation.sources.bot')
+  if (normalized === 'chat') return t('control.moderation.sources.chat')
+  if (normalized === 'manual') return t('control.moderation.sources.manual')
+  if (normalized === 'database') return t('control.moderation.sources.database')
+  return t('control.moderation.sources.system')
 }
 
 function BotShortcutCapture({ darkMode, onCapture }) {
+  const { t } = useTranslation()
   const [capturing, setCapturing] = useState(false)
   const captureRef = useRef(null)
 
@@ -356,7 +358,7 @@ function BotShortcutCapture({ darkMode, onCapture }) {
           autoFocus
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
-          placeholder="Presiona una tecla..."
+          placeholder={t('control.shortcut.press')}
           className={`w-40 px-3 py-1.5 text-sm rounded-lg border-2 outline-none animate-pulse ${
             darkMode
               ? 'bg-cyan-500/10 border-cyan-400 text-cyan-300 placeholder-cyan-500'
@@ -373,7 +375,7 @@ function BotShortcutCapture({ darkMode, onCapture }) {
           }`}
         >
           <Keyboard className="w-3.5 h-3.5" />
-          Cambiar tecla
+          {t('control.shortcut.change')}
         </button>
       )}
     </>
@@ -381,6 +383,7 @@ function BotShortcutCapture({ darkMode, onCapture }) {
 }
 
 export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode, config, updateConfig, user }) {
+  const { t } = useTranslation()
   const [userVoices, setUserVoices] = useState([])
   const [botCharacters, setBotCharacters] = useState([])
   const [presetStatus, setPresetStatus] = useState('')
@@ -490,14 +493,14 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
       data: buildPresetSnapshot(),
     }
     updateConfig(key, payload)
-    setPresetStatus(`Preset ${index + 1} guardado`)
+    setPresetStatus(t('control.preset.saved', { num: index + 1 }))
   }
 
   const applyPreset = (index) => {
     const key = presetKeys[index]
     const preset = config?.[key]
     if (!preset?.data || typeof preset.data !== 'object') {
-      setPresetStatus(`Preset ${index + 1} vacío`)
+      setPresetStatus(t('control.preset.empty', { num: index + 1 }))
       return
     }
     Object.entries(preset.data).forEach(([k, v]) => updateConfig(k, v))
@@ -573,7 +576,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
             <span className="text-base">Volver</span>
           </button>
           <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500">
-            Configuración
+            {t('control.title')}
           </h1>
           <div className="w-20"></div>
         </div>
@@ -1185,7 +1188,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                                 @{entry.username}
                               </p>
                               <p className={`text-[11px] truncate ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>
-                                {formatModerationReason(entry.reason)} a {formatModerationSource(entry.source)}
+                                {formatModerationReason(entry.reason, t)} a {formatModerationSource(entry.source, t)}
                               </p>
                             </div>
                             <button

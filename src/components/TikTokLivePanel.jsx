@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X, Users, Clock3, TrendingUp, Filter, Trophy, Sparkles, BookOpen } from 'lucide-react'
 import chatStore from '../services/chatStore.js'
+import { useTranslation } from 'react-i18next'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 const FREE_LOCAL_VOICE_DAILY_LIMIT_MS = 2 * 60 * 60 * 1000
@@ -318,128 +319,6 @@ const removeModerationEntry = (list, username) => {
   return list.filter((item) => item.username !== normalizedUsername)
 }
 
-const PLATFORM_HELP_FAQ = [
-  {
-    q: '¿Cómo empiezo a usar la plataforma?',
-    a: 'Inicia sesión, entra al Studio, conecta tu usuario de TikTok LIVE, elige voz y activa lectura.'
-  },
-  {
-    q: '¿Qué hace el filtro inteligente?',
-    a: 'Prioriza mensajes útiles y reduce ruido como spam, links, mensajes repetidos, vacíos o poco legibles.'
-  },
-  {
-    q: '¿El filtro inteligente cambia según el ritmo del chat?',
-    a: 'Sí. Cuando el chat va rápido filtra más; cuando va tranquilo deja pasar más mensajes.'
-  },
-  {
-    q: '¿Qué es un token?',
-    a: '1 token equivale a 1 carácter generado en voces premium o personalizadas.'
-  },
-  {
-    q: '¿Qué voces consumen tokens?',
-    a: 'Las voces premium y personalizadas. La voz esencial no consume tokens.'
-  },
-  {
-    q: '¿Qué pasa si me quedo sin tokens?',
-    a: 'Si no alcanzan los tokens para voz premium o personalizada, cambia a voz esencial.'
-  },
-  {
-    q: '¿Cómo funciona el plan FREE?',
-    a: 'Incluye voz esencial con 2 horas diarias. El contador se reinicia cada 24 horas.'
-  },
-  {
-    q: '¿Cómo crear una voz personalizada?',
-    a: 'Entra a Voice Workshop, sube una muestra de voz, genera la voz, pruébala y asígnala al uso que quieras.'
-  },
-  {
-    q: '¿Cuántas voces clonadas puedo eliminar por día?',
-    a: 'En plan Start puedes eliminar hasta 3 voces por día. En Creator y Pro, hasta 6 por día.'
-  },
-  {
-    q: '¿Cómo subir un audio ideal para clonar voz?',
-    a: 'Usa una voz clara, sin ruido ni música de fondo. Recomendado: 10 a 15 segundos. Entre mejor calidad del audio, mejor resultado del clonado.'
-  },
-  {
-    q: '¿Cuáles límites tiene Extractor Pro?',
-    a: 'Creator: 4 usos por día. Pro: 7 usos por día. Se reinicia cada 24 horas.'
-  },
-  {
-    q: 'Asistente de IA: ¿para qué sirve?',
-    a: 'Utiliza el contexto reciente del chat para responder preguntas breves con la personalidad y voz que configures.'
-  },
-  {
-    q: 'Asistente de IA: ¿en qué plan está disponible?',
-    a: 'Disponible solo en Plan Pro.'
-  },
-  {
-    q: '¿Puedo configurar tono y frecuencia del asistente?',
-    a: 'Sí. Puedes ajustar frecuencia, tono y longitud de respuesta.'
-  },
-  {
-    q: '¿Cómo sé si mi configuración está funcionando bien?',
-    a: 'Revisa el resumen de sesión: mensajes recibidos, leídos, filtrados y ritmo general del LIVE.'
-  },
-  {
-    q: '¿No conecta mi LIVE, qué reviso primero?',
-    a: 'Verifica usuario exacto de TikTok, confirma que el LIVE esté activo e intenta reconectar.'
-  },
-  {
-    q: '¿No se escucha audio, qué reviso?',
-    a: 'Valida volumen del panel, salida de audio del navegador y que no esté en pausa.'
-  },
-  {
-    q: '¿Cómo silenciar la voz de una persona?',
-    a: 'En el panel de chat, abre moderación del usuario y agrégalo a la lista de silenciados/baneados. Desde ese momento sus mensajes no se leen en voz.'
-  },
-  {
-    q: '¿Cómo desbloquear a una persona del silencio de voz?',
-    a: 'Ve a la lista de moderación de la sesión, busca el usuario y quítalo del silencio/baneo. Sus mensajes volverán a leerse según tus filtros.'
-  },
-  {
-    q: '¿Cómo cambiar el nick de un usuario?',
-    a: 'En la sección de nicks, selecciona al usuario, escribe el nuevo nombre y guarda. La lectura en voz usará ese nick en lugar del original.'
-  },
-  {
-    q: '¿Puedo cambiar o cancelar mi plan cuando quiera?',
-    a: 'Sí. Puedes actualizar, cambiar o cancelar desde tu cuenta.'
-  },
-  {
-    q: '¿Puedo cambiar de plan en cualquier momento?',
-    a: 'Sí, puedes cambiar de plan cuando quieras desde la configuración de tu cuenta.'
-  },
-  {
-    q: '¿Qué pasa si subo de plan (upgrade)?',
-    a: 'El cambio se aplica de inmediato y solo pagas la diferencia proporcional del tiempo restante en tu ciclo de facturación.'
-  },
-  {
-    q: '¿Qué pasa si bajo de plan (downgrade)?',
-    a: 'El cambio se aplicará al inicio del siguiente ciclo de facturación. Hasta entonces sigues disfrutando tu plan actual.'
-  },
-  {
-    q: '¿Puedo cancelar mi plan en cualquier momento?',
-    a: 'Sí, puedes cancelar cuando quieras. Seguirás teniendo acceso hasta el final del periodo ya pagado.'
-  },
-  {
-    q: '¿Puedo solicitar un reembolso?',
-    a: 'Solo dentro de las primeras 24 a 48 horas desde la contratación. Pasado ese tiempo no aplica reembolso.'
-  },
-  {
-    q: '¿Aplica reembolso si ya usé el servicio?',
-    a: 'No si el servicio fue utilizado de forma significativa durante ese periodo.'
-  },
-  {
-    q: '¿Hay alguna alternativa al reembolso?',
-    a: 'En algunos casos podemos ofrecerte crédito interno para usar en futuros ciclos. Contáctanos para evaluarlo.'
-  },
-  {
-    q: '¿Es segura la conexión con TikTok?',
-    a: 'Sí. Solo se usa acceso necesario para leer actividad pública de tu LIVE.'
-  },
-  {
-    q: '¿En qué idioma funciona mejor actualmente?',
-    a: 'Actualmente está optimizado para español.'
-  }
-]
 
 function AnimatedCount({ value, duration = 900, decimals = 0, suffix = '' }) {
   const [displayValue, setDisplayValue] = useState(0)
@@ -567,6 +446,10 @@ const apiNicks = {
 }
 
 export default function TikTokLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride }) {
+  const { t } = useTranslation()
+
+  const PLATFORM_HELP_FAQ = t('tiktok.faq.questions', { returnObjects: true })
+
   const [darkMode, setDarkMode] = useState(() =>
     typeof darkModeOverride === 'boolean'
       ? darkModeOverride
@@ -2702,10 +2585,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             <div className="flex items-center justify-between gap-3 mb-5">
               <div>
                 <h3 className={darkMode ? "text-xl font-black text-white" : "text-xl font-black text-gray-900"}>
-                  Guía detallada
+                  {t('tiktok.faq.title')}
                 </h3>
                 <p className={darkMode ? "text-sm text-cyan-200/80" : "text-sm text-cyan-700"}>
-                  Preguntas y respuestas de toda la plataforma
+                  {t('landing.faq.subtitle')}
                 </p>
               </div>
               <button
