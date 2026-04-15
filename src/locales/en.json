@@ -510,7 +510,22 @@
       "selectAndWrite": "Select a character and write a question",
       "noStream": "No stream connected"
     },
-    "note": "Note: to use F9/F8 you must select both options."
+    "note": "Note: to use F9/F8 you must select both options.",
+    "selectOne": "Select one",
+    "messagePlaceholder": "Write a message..."
+  },
+  "cookies": {
+    "title": "🍪 COOKIE POLICY",
+    "text": "We use cookies to improve your experience, analyze how you use Stream Voicer and personalize content. By continuing to browse, you accept our policy.",
+    "details": "👉 View full details",
+    "acceptAll": "✅ ACCEPT ALL",
+    "reject": "Reject",
+    "whatAre": "What are cookies?",
+    "whatAreText": "Cookies are small text files saved on your device when you visit our site. They help us improve your experience and analyze how you use Stream Voicer.",
+    "weUse": "We use cookies for:",
+    "thirdParty": "We use third-party services like Google Analytics that may also save cookies. Check their policies for more information.",
+    "control": "You can control or delete cookies from your browser settings. Note that disabling them may affect site functionality.",
+    "shortText": "We use cookies to improve your experience and analyze service usage."
   },
   "payment": {
     "titleTokens": "Buy Recharge",
@@ -561,30 +576,58 @@
         "description": "Great for testing the platform",
         "cta": "Start Free",
         "stream": "Perfect for experimenting with the platform",
-        "extension": "Silence users in one click"
+        "extension": "Silence users in one click",
+        "voices": ["1 essential voice (2 daily hours)"],
+        "compatibility": ["Specific user marker", "Visible chat", "Basic filters"]
       },
       "start": {
         "name": "START",
         "description": "Ideal for light streams",
         "cta": "Get START",
         "stream": "Premium voice usage yields approx 2-4 hours active stream",
-        "extension": "Allows extending duration by optimizing chat"
+        "extension": "Allows extending duration by optimizing chat",
+        "voices": ["1 custom AI voice (reusable)", "1 natural premium voice", "1 essential voice (unlimited)", "200,000 characters (~tokens)"],
+        "compatibility": ["smart filtering", "selective reading (questions, donors, etc.)", "message control"]
       },
       "creator": {
         "name": "CREATOR",
         "description": "Ideal for active streams",
         "cta": "Get CREATOR",
         "stream": "Yields approx 5-8 hours active stream",
-        "extension": "Better performance and token usage efficiency"
+        "extension": "Better performance and token usage efficiency",
+        "voices": ["2 custom AI voices (reusable)", "2 natural premium voices", "1 essential voice (unlimited)", "500,000 characters (~tokens)"],
+        "compatibility": ["smart chat reading", "dynamic voices by user type", "🎬 Audio extractor", "advanced message control"]
       },
       "pro": {
         "name": "PRO",
         "description": "Ideal for constant interaction",
         "cta": "Get PRO",
         "stream": "Yields approx 10-15 hours active stream",
-        "experience": "Complete AI experience"
+        "experience": "Complete AI experience",
+        "voices": ["5 custom AI voices (reusable)", "4 natural premium voices", "1 essential voice (unlimited)", "800,000 characters (~tokens)"],
+        "compatibility": ["complete filtering system", "🎬 Audio extractor", "total chat control", "maximum consumption optimization"]
       }
     },
+    "annual": {
+      "buyPlan": "Buy {{name}}",
+      "start": {
+        "name": "START ANNUAL",
+        "saving": "Save ~$25 USD",
+        "benefits": ["1 custom AI voice (reusable)", "1 natural premium voice", "1 essential voice (unlimited)", "200,000 characters (~tokens)", "Yields approx 2-4 hours of active stream", "smart filtering", "selective reading (questions, donors, etc.)", "message control"]
+      },
+      "creator": {
+        "name": "CREATOR ANNUAL",
+        "saving": "Save ~$46 USD",
+        "benefits": ["2 custom AI voices (reusable)", "2 natural premium voices", "1 essential voice (unlimited)", "500,000 characters (~tokens)", "Yields approx 5-8 hours of active stream", "smart chat reading", "dynamic voices by user type", "🎬 Audio extractor", "advanced message control"]
+      },
+      "pro": {
+        "name": "PRO ANNUAL",
+        "saving": "Save ~$67 USD",
+        "benefits": ["5 custom AI voices (reusable)", "4 natural premium voices", "1 essential voice (unlimited)", "800,000 characters (~tokens)", "Yields approx 10-15 hours of active stream", "Complete AI experience", "complete filtering system", "🎬 Audio extractor", "total chat control", "maximum consumption optimization"]
+      }
+    },
+    "compatible": "Compatible with:",
+    "includes": "Includes:",
     "comparison": {
       "title": "Make your audience listen... be amazed! and generate interaction!",
       "subtitle": "Advanced voice platform for streamers, gamers and creators.",
@@ -615,7 +658,17 @@
       },
       "values": {
         "unlimited": "UNLIMITED",
-        "limited": "limited"
+        "limited": "limited",
+        "freeHours": "2 daily hours",
+        "customVoices1": "1 custom voice",
+        "customVoices2": "2 custom voices",
+        "customVoices5": "5 custom voices",
+        "premiumVoices1": "1 premium voice",
+        "premiumVoices2": "2 premium voices",
+        "premiumVoices4": "4 premium voices",
+        "monthlyStart": "200,000 tokens (≈ 2-4 h)",
+        "monthlyCreator": "500,000 tokens (≈ 5-8 h)",
+        "monthlyPro": "800,000 tokens (≈ 10-15 h)"
       },
       "howWorks": "How it works",
       "howWorksList": [

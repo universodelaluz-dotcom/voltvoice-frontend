@@ -510,7 +510,22 @@
       "selectAndWrite": "Selecciona un personaje y escribe una pregunta",
       "noStream": "No hay stream conectado"
     },
-    "note": "Nota: para usar F9/F8 debes seleccionar ambas opciones."
+    "note": "Nota: para usar F9/F8 debes seleccionar ambas opciones.",
+    "selectOne": "Seleccionar uno",
+    "messagePlaceholder": "Escribe un mensaje..."
+  },
+  "cookies": {
+    "title": "🍪 POLÍTICA DE COOKIES",
+    "text": "Utilizamos cookies para mejorar tu experiencia, analizar cómo usas Stream Voicer y personalizar contenido. Al continuar navegando, aceptas nuestra política.",
+    "details": "👉 Ver detalles completos",
+    "acceptAll": "✅ ACEPTAR TODAS",
+    "reject": "Rechazar",
+    "whatAre": "¿Qué son las cookies?",
+    "whatAreText": "Las cookies son pequeños archivos de texto que se guardan en tu dispositivo cuando visitas nuestro sitio. Nos ayudan a mejorar tu experiencia y analizar cómo usas Stream Voicer.",
+    "weUse": "Usamos cookies para:",
+    "thirdParty": "Usamos servicios de terceros como Google Analytics que también pueden guardar cookies. Consulta sus políticas para más información.",
+    "control": "Puedes controlar o eliminar cookies desde la configuración de tu navegador. Ten en cuenta que desactivarlas puede afectar la funcionalidad del sitio.",
+    "shortText": "Usamos cookies para mejorar tu experiencia y analizar el uso del servicio."
   },
   "payment": {
     "titleTokens": "Comprar Recarga",
@@ -561,30 +576,58 @@
         "description": "Excelente para probar plataforma",
         "cta": "Comenzar Gratis",
         "stream": "Perfecto para experimentar con la plataforma",
-        "extension": "Silencia usuarios en un click"
+        "extension": "Silencia usuarios en un click",
+        "voices": ["1 voz esencial (2 horas diarias)"],
+        "compatibility": ["Marcador de usuarios específicos", "Chat visible", "Filtros básicos"]
       },
       "start": {
         "name": "START",
         "description": "Ideal para streams ligeros",
         "cta": "Adquirir START",
         "stream": "En uso de voz premium rinde aprox 2-4 horas de stream activo",
-        "extension": "Permite extender la duración optimizando tu chat"
+        "extension": "Permite extender la duración optimizando tu chat",
+        "voices": ["1 voz personalizada por IA (reutilizable)", "1 voz natural premium", "1 voz esencial (ilimitada)", "200,000 caracteres (~tokens)"],
+        "compatibility": ["filtrado inteligente", "lectura selectiva (preguntas, donadores, etc.)", "control de mensajes"]
       },
       "creator": {
         "name": "CREATOR",
         "description": "Ideal para streams activos",
         "cta": "Adquirir CREATOR",
         "stream": "Rinde aprox 5-8 horas de stream activo",
-        "extension": "Mejor rendimiento y eficiencia en el uso de tokens"
+        "extension": "Mejor rendimiento y eficiencia en el uso de tokens",
+        "voices": ["2 voces personalizadas por IA (reutilizables)", "2 voces naturales premium", "1 voz esencial (ilimitada)", "500,000 caracteres (~tokens)"],
+        "compatibility": ["lectura inteligente del chat", "voces dinámicas por tipo de usuario", "🎬 Extractor de audio", "control avanzado de mensajes"]
       },
       "pro": {
         "name": "PRO",
         "description": "Ideal para interacción constante",
         "cta": "Adquirir PRO",
         "stream": "Rinde aprox 10-15 horas de stream activo",
-        "experience": "Experiencia completa con IA"
+        "experience": "Experiencia completa con IA",
+        "voices": ["5 voces personalizadas por IA (reutilizables)", "4 voces naturales premium", "1 voz esencial (ilimitada)", "800,000 caracteres (~tokens)"],
+        "compatibility": ["sistema completo de filtrado", "🎬 Extractor de audio", "control total del chat", "optimización máxima del consumo"]
       }
     },
+    "annual": {
+      "buyPlan": "Comprar {{name}}",
+      "start": {
+        "name": "START ANUAL",
+        "saving": "Ahorra ~$25 USD",
+        "benefits": ["1 voz personalizada por IA (reutilizable)", "1 voz natural premium", "1 voz esencial (ilimitada)", "200,000 caracteres (~tokens)", "Rinde aprox 2-4 horas de stream activo", "filtrado inteligente", "lectura selectiva (preguntas, donadores, etc.)", "control de mensajes"]
+      },
+      "creator": {
+        "name": "CREATOR ANUAL",
+        "saving": "Ahorra ~$46 USD",
+        "benefits": ["2 voces personalizadas por IA (reutilizables)", "2 voces naturales premium", "1 voz esencial (ilimitada)", "500,000 caracteres (~tokens)", "Rinde aprox 5-8 horas de stream activo", "lectura inteligente del chat", "voces dinámicas por tipo de usuario", "🎬 Extractor de audio", "control avanzado de mensajes"]
+      },
+      "pro": {
+        "name": "PRO ANUAL",
+        "saving": "Ahorra ~$67 USD",
+        "benefits": ["5 voces personalizadas por IA (reutilizables)", "4 voces naturales premium", "1 voz esencial (ilimitada)", "800,000 caracteres (~tokens)", "Rinde aprox 10-15 horas de stream activo", "Experiencia completa con IA", "sistema completo de filtrado", "🎬 Extractor de audio", "control total del chat", "optimización máxima del consumo"]
+      }
+    },
+    "compatible": "Compatible con:",
+    "includes": "Incluye:",
     "comparison": {
       "title": "Haz que tu audiencia escuche... se impacte! y genere interacción!",
       "subtitle": "Plataforma de voz avanzada para streamers, gamers y creadores.",
@@ -615,7 +658,17 @@
       },
       "values": {
         "unlimited": "ILIMITADO",
-        "limited": "limitado"
+        "limited": "limitado",
+        "freeHours": "2 horas diarias",
+        "customVoices1": "1 voz personalizada",
+        "customVoices2": "2 voces personalizadas",
+        "customVoices5": "5 voces personalizadas",
+        "premiumVoices1": "1 voz premium",
+        "premiumVoices2": "2 voces premium",
+        "premiumVoices4": "4 voces premium",
+        "monthlyStart": "200,000 tokens (≈ 2-4 h)",
+        "monthlyCreator": "500,000 tokens (≈ 5-8 h)",
+        "monthlyPro": "800,000 tokens (≈ 10-15 h)"
       },
       "howWorks": "Cómo funciona",
       "howWorksList": [

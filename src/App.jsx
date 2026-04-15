@@ -1493,7 +1493,7 @@ export function App() {
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Cookies y Tecnologías Similares</h3>
-                <p>Usamos cookies para mejorar tu experiencia y analizar el uso del servicio.</p>
+                <p>{t('cookies.shortText')}</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Derechos del Usuario</h3>
@@ -1554,8 +1554,8 @@ export function App() {
             {/* Contenido scrolleable */}
             <div className={`flex-1 overflow-y-auto px-8 pt-8 pb-16 space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Qué son las cookies?</h3>
-                <p>Las cookies son pequeños archivos de texto que se guardan en tu dispositivo cuando visitas nuestro sitio. Nos ayudan a mejorar tu experiencia y analizar cómo usas Stream Voicer.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{t('cookies.whatAre')}</h3>
+                <p>{t('cookies.whatAreText')}</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Tipos de Cookies que Usamos</h3>
@@ -1568,7 +1568,7 @@ export function App() {
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Cómo Usamos las Cookies?</h3>
-                <p>Usamos cookies para:</p>
+                <p>{t('cookies.weUse')}</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>Mantener tu sesión iniciada</li>
                   <li>Recordar tus preferencias de idioma y tema</li>
@@ -1579,11 +1579,11 @@ export function App() {
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Control de Cookies</h3>
-                <p>Puedes controlar o eliminar cookies desde la configuración de tu navegador. Ten en cuenta que desactivarlas puede afectar la funcionalidad del sitio.</p>
+                <p>{t('cookies.control')}</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cookies de Terceros</h3>
-                <p>Usamos servicios de terceros como Google Analytics que también pueden guardar cookies. Consulta sus políticas para más información.</p>
+                <p>{t('cookies.thirdParty')}</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cambios en la Política</h3>
@@ -1616,16 +1616,16 @@ export function App() {
                 {/* Texto */}
                 <div className="md:col-span-2">
                   <h3 className={`text-2xl font-black mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    🍪 POLÍTICA DE COOKIES
+                    {t('cookies.title')}
                   </h3>
                   <p className={`text-base mb-3 leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                    <strong>Utilizamos cookies</strong> para mejorar tu experiencia, analizar cómo usas Stream Voicer y personalizar contenido. Al continuar navegando, aceptas nuestra política.
+                    {t('cookies.text')}
                   </p>
                   <button
                     onClick={() => setShowCookies(true)}
                     className="text-cyan-400 hover:text-cyan-300 font-bold underline text-base"
                   >
-                    👉 Ver detalles completos
+                    {t('cookies.details')}
                   </button>
                 </div>
 
@@ -1638,7 +1638,7 @@ export function App() {
                     }}
                     className="px-8 py-4 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-black text-lg rounded-lg hover:shadow-lg hover:shadow-cyan-400/60 transition-all whitespace-nowrap"
                   >
-                    ✅ ACEPTAR TODAS
+                    {t('cookies.acceptAll')}
                   </button>
                   <button
                     onClick={() => {
@@ -1651,7 +1651,7 @@ export function App() {
                         : 'bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-300'
                     }`}
                   >
-                    Rechazar
+                    {t('cookies.reject')}
                   </button>
                 </div>
               </div>

@@ -7,15 +7,15 @@ const getComparisonData = (t) => ({
     {
       category: t('pricing.comparison.categories.voices'),
       items: [
-        { name: t('pricing.comparison.features.essentialVoice'), free: '2 horas diarias', start: t('pricing.comparison.values.unlimited'), creator: t('pricing.comparison.values.unlimited'), pro: t('pricing.comparison.values.unlimited') },
-        { name: t('pricing.comparison.features.customVoices'), free: false, start: '1 voz personalizada', creator: '2 voces personalizadas', pro: '5 voces personalizadas' },
-        { name: t('pricing.comparison.features.premiumVoices'), free: false, start: '1 voz premium', creator: '2 voces premium', pro: '4 voces premium' }
+        { name: t('pricing.comparison.features.essentialVoice'), free: t('pricing.comparison.values.freeHours'), start: t('pricing.comparison.values.unlimited'), creator: t('pricing.comparison.values.unlimited'), pro: t('pricing.comparison.values.unlimited') },
+        { name: t('pricing.comparison.features.customVoices'), free: false, start: t('pricing.comparison.values.customVoices1'), creator: t('pricing.comparison.values.customVoices2'), pro: t('pricing.comparison.values.customVoices5') },
+        { name: t('pricing.comparison.features.premiumVoices'), free: false, start: t('pricing.comparison.values.premiumVoices1'), creator: t('pricing.comparison.values.premiumVoices2'), pro: t('pricing.comparison.values.premiumVoices4') }
       ]
     },
     {
       category: t('pricing.comparison.categories.usage'),
       items: [
-        { name: t('pricing.comparison.features.monthlyCapacity'), free: '-', start: '200,000 tokens (≈ 2-4 h)', creator: '500,000 tokens (≈ 5-8 h)', pro: '800,000 tokens (≈ 10-15 h)' }
+        { name: t('pricing.comparison.features.monthlyCapacity'), free: '-', start: t('pricing.comparison.values.monthlyStart'), creator: t('pricing.comparison.values.monthlyCreator'), pro: t('pricing.comparison.values.monthlyPro') }
       ]
     },
     {

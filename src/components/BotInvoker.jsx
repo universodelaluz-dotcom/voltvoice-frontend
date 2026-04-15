@@ -2814,7 +2814,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
               : 'bg-gray-50 border border-indigo-300 text-gray-900'
           }`}
         >
-          <option value="">Seleccionar uno</option>
+          <option value="">{t('bot.selectOne')}</option>
           {characters.map(char => (
             <option key={char.id} value={char.id}>
               {char.name}
@@ -2837,7 +2837,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
               : 'bg-gray-50 border border-purple-300 text-gray-900'
           }`}
         >
-          <option value="">Seleccionar uno</option>
+          <option value="">{t('bot.selectOne')}</option>
           <optgroup label="Voces Premium">
             <option value="Diego">Voz natural de Luis - Premium</option>
             <option value="Lupita">Voz natural de Sofia - Premium</option>
@@ -2913,7 +2913,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
-            placeholder="Escribe un mensaje..."
+            placeholder={t('bot.messagePlaceholder')}
             className={`flex-1 p-2 rounded text-sm ${
               darkMode
                 ? 'bg-[#0f0f23] border border-cyan-400/30 text-white placeholder-gray-600'

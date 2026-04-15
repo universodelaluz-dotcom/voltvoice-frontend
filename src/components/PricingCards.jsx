@@ -2,148 +2,83 @@
 import { Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-const monthlyPlans = [
+const getMonthlyPlans = (t) => [
   {
     icon: '⭐',
     name: 'FREE',
     price: 0,
-    description: 'Excelente para probar plataforma',
-    cta: 'Comenzar Gratis',
+    description: t('pricing.plans.free.description'),
+    cta: t('pricing.plans.free.cta'),
     popular: false,
-    voices: [
-      '1 voz esencial (2 horas diarias)',
-    ],
-    stream: 'Perfecto para experimentar con la plataforma',
-    compatibility: [
-      'Marcador de usuarios específicos',
-      'Chat visible',
-      'Filtros básicos',
-    ],
-    extension: 'Silencia usuarios en un click',
+    voices: t('pricing.plans.free.voices', { returnObjects: true }),
+    stream: t('pricing.plans.free.stream'),
+    compatibility: t('pricing.plans.free.compatibility', { returnObjects: true }),
+    extension: t('pricing.plans.free.extension'),
   },
   {
     icon: '🟢',
     name: 'START',
     price: 6.99,
-    description: 'Ideal para streams ligeros',
-    cta: 'Adquirir START',
+    description: t('pricing.plans.start.description'),
+    cta: t('pricing.plans.start.cta'),
     popular: false,
-    voices: [
-      '1 voz personalizada por IA (reutilizable)',
-      '1 voz natural premium',
-      '1 voz esencial (ilimitada)',
-      '200,000 caracteres (~tokens)',
-    ],
-    stream: 'En uso de voz premium rinde aprox 2-4 horas de stream activo',
-    compatibility: [
-      'filtrado inteligente',
-      'lectura selectiva (preguntas, donadores, etc.)',
-      'control de mensajes',
-    ],
-    extension: 'Permite extender la duración optimizando tu chat',
+    voices: t('pricing.plans.start.voices', { returnObjects: true }),
+    stream: t('pricing.plans.start.stream'),
+    compatibility: t('pricing.plans.start.compatibility', { returnObjects: true }),
+    extension: t('pricing.plans.start.extension'),
   },
   {
     icon: '🔵',
     name: 'CREATOR',
     price: 12.99,
-    description: 'Ideal para streams activos',
-    cta: 'Adquirir CREATOR',
+    description: t('pricing.plans.creator.description'),
+    cta: t('pricing.plans.creator.cta'),
     popular: true,
-    voices: [
-      '2 voces personalizadas por IA (reutilizables)',
-      '2 voces naturales premium',
-      '1 voz esencial (ilimitada)',
-      '500,000 caracteres (~tokens)',
-    ],
-    stream: 'Rinde aprox 5-8 horas de stream activo',
-    compatibility: [
-      'lectura inteligente del chat',
-      'voces dinámicas por tipo de usuario',
-      '🎬 Extractor de audio',
-      'control avanzado de mensajes',
-    ],
-    extension: 'Mejor rendimiento y eficiencia en el uso de tokens',
+    voices: t('pricing.plans.creator.voices', { returnObjects: true }),
+    stream: t('pricing.plans.creator.stream'),
+    compatibility: t('pricing.plans.creator.compatibility', { returnObjects: true }),
+    extension: t('pricing.plans.creator.extension'),
   },
   {
     icon: '🔥',
     name: 'PRO',
     price: 17.99,
-    description: 'Ideal para interacción constante',
-    cta: 'Adquirir PRO',
+    description: t('pricing.plans.pro.description'),
+    cta: t('pricing.plans.pro.cta'),
     popular: false,
-    voices: [
-      '5 voces personalizadas por IA (reutilizables)',
-      '4 voces naturales premium',
-      '1 voz esencial (ilimitada)',
-      '800,000 caracteres (~tokens)',
-    ],
-    stream: 'Rinde aprox 10-15 horas de stream activo',
-    compatibility: [
-      'sistema completo de filtrado',
-      '🎬 Extractor de audio',
-      'control total del chat',
-      'optimización máxima del consumo',
-    ],
-    experience: 'Experiencia completa con IA',
+    voices: t('pricing.plans.pro.voices', { returnObjects: true }),
+    stream: t('pricing.plans.pro.stream'),
+    compatibility: t('pricing.plans.pro.compatibility', { returnObjects: true }),
+    experience: t('pricing.plans.pro.experience'),
   },
 ]
 
-const annualPlans = [
+const getAnnualPlans = (t) => [
   {
     icon: '🟢',
-    name: 'START ANUAL',
+    name: t('pricing.annual.start.name'),
     price: 59,
-    saving: 'Ahorra ~$25 USD',
+    saving: t('pricing.annual.start.saving'),
     planName: 'START',
-    benefits: [
-      '1 voz personalizada por IA (reutilizable)',
-      '1 voz natural premium',
-      '1 voz esencial (ilimitada)',
-      '200,000 caracteres (~tokens)',
-      'Rinde aprox 2-4 horas de stream activo',
-      'filtrado inteligente',
-      'lectura selectiva (preguntas, donadores, etc.)',
-      'control de mensajes',
-    ],
+    benefits: t('pricing.annual.start.benefits', { returnObjects: true }),
   },
   {
     icon: '🔵',
-    name: 'CREATOR ANUAL',
+    name: t('pricing.annual.creator.name'),
     price: 109,
-    saving: 'Ahorra ~$46 USD',
+    saving: t('pricing.annual.creator.saving'),
     hot: true,
     planName: 'CREATOR',
-    benefits: [
-      '2 voces personalizadas por IA (reutilizables)',
-      '2 voces naturales premium',
-      '1 voz esencial (ilimitada)',
-      '500,000 caracteres (~tokens)',
-      'Rinde aprox 5-8 horas de stream activo',
-      'lectura inteligente del chat',
-      'voces dinámicas por tipo de usuario',
-      '🎬 Extractor de audio',
-      'control avanzado de mensajes',
-    ],
+    benefits: t('pricing.annual.creator.benefits', { returnObjects: true }),
   },
   {
     icon: '🔥',
-    name: 'PRO ANUAL',
+    name: t('pricing.annual.pro.name'),
     price: 149,
-    saving: 'Ahorra ~$67 USD',
+    saving: t('pricing.annual.pro.saving'),
     fast: true,
     planName: 'PRO',
-    benefits: [
-      '5 voces personalizadas por IA (reutilizables)',
-      '4 voces naturales premium',
-      '1 voz esencial (ilimitada)',
-      '800,000 caracteres (~tokens)',
-      'Rinde aprox 10-15 horas de stream activo',
-      'Experiencia completa con IA',
-      'sistema completo de filtrado',
-      '🎬 Extractor de audio',
-      'control total del chat',
-      'optimización máxima del consumo',
-    ],
+    benefits: t('pricing.annual.pro.benefits', { returnObjects: true }),
   },
 ]
 
@@ -219,7 +154,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {monthlyPlans.map((plan) => (
+            {getMonthlyPlans(t).map((plan) => (
               <div
                 key={plan.name}
                 className={`rounded-lg p-8 transition-all duration-300 flex flex-col ${
@@ -266,7 +201,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   <p className={`text-sm mb-2 font-semibold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>🧠 {plan.experience}</p>
                 )}
 
-                <p className={`text-sm font-bold mt-4 mb-2 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>🛠️ Compatible con:</p>
+                <p className={`text-sm font-bold mt-4 mb-2 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>🛠️ {t('pricing.compatible')}</p>
                 <div className="space-y-2 mb-4">
                   {plan.compatibility.map((line, idx) => (
                     <div key={idx} className="flex items-start gap-2">
@@ -329,7 +264,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {annualPlans.map((plan) => (
+            {getAnnualPlans(t).map((plan) => (
               <div key={plan.name} className={`rounded-lg p-8 flex flex-col ${darkMode ? 'bg-gradient-to-br from-gray-800/70 to-gray-900/70 border border-gray-700' : 'bg-white border border-gray-200'}`}>
                 {plan.hot && (
                   <div className="mb-3">
@@ -365,7 +300,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                       onClick={() => onPlanAction?.({ name: plan.planName || plan.name.replace(' ANUAL', ''), price: plan.price }, { billingCycle: 'annual' })}
                       className="relative z-10 w-full py-4 rounded-xl font-black text-base text-white bg-gradient-to-r from-cyan-400 to-purple-500 animate-pulse hover:from-cyan-300 hover:to-purple-400 transition-all shadow-xl shadow-cyan-500/40 hover:scale-[1.02] flex items-center justify-center gap-2"
                     >
-                      🚀 Comprar {plan.name}
+                      🚀 {t('pricing.annual.buyPlan', { name: plan.name })}
                     </button>
                     <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none z-20" />
                   </div>
@@ -375,14 +310,14 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                       plan.planName === 'START' ? 'bg-gradient-to-r from-emerald-400 to-green-500' : 'bg-gradient-to-r from-orange-400 to-red-500'
                     }`} />
                     <button
-                      onClick={() => onPlanAction?.({ name: plan.planName || plan.name.replace(' ANUAL', ''), price: plan.price }, { billingCycle: 'annual' })}
+                      onClick={() => onPlanAction?.({ name: plan.planName || plan.name.replace(' ANUAL', '').replace(' ANNUAL', ''), price: plan.price }, { billingCycle: 'annual' })}
                       className={`relative w-full py-3.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] hover:opacity-90 flex items-center justify-center gap-2 shadow-lg ${
                         plan.planName === 'START'
                           ? 'bg-gradient-to-r from-emerald-400 to-green-500 shadow-emerald-500/30'
                           : 'bg-gradient-to-r from-orange-400 to-red-500 shadow-orange-500/30'
                       }`}
                     >
-                      {plan.planName === 'START' ? '🟢' : '⚡'} Comprar {plan.name}
+                      {plan.planName === 'START' ? '🟢' : '⚡'} {t('pricing.annual.buyPlan', { name: plan.name })}
                     </button>
                   </div>
                 )}

@@ -31,7 +31,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   // Synthesis
-  const [text, setText] = useState('Asi suena tu voz elegida')
+  const [text, setText] = useState(t('studio.voice.defaultText'))
   const [loading, setLoading] = useState(false)
   const [audioUrl, setAudioUrl] = useState(null)
   const [audioPlaybackNonce, setAudioPlaybackNonce] = useState(0)
