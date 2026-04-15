@@ -58,6 +58,7 @@ const monthlyPlans = [
     compatibility: [
       'lectura inteligente del chat',
       'voces dinámicas por tipo de usuario',
+      '🎬 Extractor de audio',
       'control avanzado de mensajes',
     ],
     extension: 'Mejor rendimiento y eficiencia en el uso de tokens',
@@ -78,6 +79,7 @@ const monthlyPlans = [
     stream: 'Rinde aprox 10-15 horas de stream activo',
     compatibility: [
       'sistema completo de filtrado',
+      '🎬 Extractor de audio',
       'control total del chat',
       'optimización máxima del consumo',
     ],
@@ -118,6 +120,7 @@ const annualPlans = [
       'Rinde aprox 5-8 horas de stream activo',
       'lectura inteligente del chat',
       'voces dinámicas por tipo de usuario',
+      '🎬 Extractor de audio',
       'control avanzado de mensajes',
     ],
   },
@@ -136,6 +139,7 @@ const annualPlans = [
       'Rinde aprox 10-15 horas de stream activo',
       'Experiencia completa con IA',
       'sistema completo de filtrado',
+      '🎬 Extractor de audio',
       'control total del chat',
       'optimización máxima del consumo',
     ],

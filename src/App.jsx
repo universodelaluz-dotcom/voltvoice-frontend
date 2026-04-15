@@ -791,28 +791,7 @@ export function App() {
     }
   }, [cookieConsent])
 
-  // Auto-scroll testimonials
-  useEffect(() => {
-    const container = testimonialsScrollRef.current
-    if (!container) return
-
-    let scrollAmount = 0
-    const scrollStep = 2
-    const scrollInterval = 50
-
-    const interval = setInterval(() => {
-      scrollAmount += scrollStep
-      container.scrollLeft = scrollAmount
-
-      // Reset cuando llega al final
-      if (container.scrollLeft >= container.scrollWidth - container.clientWidth) {
-        scrollAmount = 0
-        container.scrollLeft = 0
-      }
-    }, scrollInterval)
-
-    return () => clearInterval(interval)
-  }, [])
+  // Testimonials carousel uses CSS animation (see .testimonials-track in index.css)
 
   useEffect(() => {
     if (false && currentPage === 'auth' && canOpenStudioWithoutAuth) { // TEMP: disabled for local preview
@@ -1037,7 +1016,7 @@ export function App() {
     { icon: '♻️', q: '¿Si el audio sale de caché también se cobran tokens?', a: 'Sí. El caché optimiza rendimiento y costos internos de procesamiento, pero el consumo de tokens del usuario se mantiene según caracteres generados en voces premium/personalizadas.' },
     { icon: '💳', q: '¿Qué hago si se me acaban los tokens?', a: 'Puedes recargar al instante desde la sección "Recarga de Tokens". Si no tienes tokens, las voces premium/personalizadas dejan de reproducirse hasta recargar.' },
     { icon: '⏳', q: '¿Cómo funciona el plan FREE?', a: 'El plan FREE incluye 1 voz esencial con 2 horas diarias. El contador se restablece cada 24 horas.' },
-    { icon: '🔄', q: '¿Puedo cambiar o cancelar mi plan cuando quiera?', a: 'Sí. Puedes actualizar, cambiar o cancelar tu plan cuando quieras desde tu cuenta. Los cambios se aplican según tu ciclo de facturación.' },
+    { icon: '🔄', q: '¿Puedo cambiar o cancelar mi plan cuando quiera?', a: 'Sí. Los upgrades se aplican de inmediato con ajuste proporcional al tiempo restante del ciclo (calculado con timestamps exactos). Los downgrades se aplican en el siguiente ciclo de facturación. Puedes cancelar en cualquier momento; el acceso se mantiene hasta el final del periodo.' },
     { icon: '🌍', q: '¿Funciona con otros idiomas?', a: 'Actualmente Stream Voicer está optimizado para español. Próximamente se integrarán más idiomas.' },
     { icon: '⚡', q: '¿Cuánto tarda en procesarse un mensaje?', a: 'Se procesa en tiempo real. Normalmente tarda entre 1 y 5 segundos según longitud del mensaje, voz elegida y carga del sistema.' },
     { icon: '🔐', q: '¿Es seguro conectar mi TikTok?', a: 'Sí. Solo se usa el acceso necesario para leer la actividad pública de tu LIVE. No compartimos tus datos con terceros.' },
@@ -1289,60 +1268,61 @@ export function App() {
             </h3>
           </div>
 
-          {/* Horizontal Scroll Testimonials - Auto Scroll */}
-          <div
-            ref={testimonialsScrollRef}
-            className="overflow-x-hidden pb-4 -mx-4 px-4"
-          >
-            <div className="flex gap-6 min-w-min">
-              {[
-                { name: '@alexgamertok', type: 'TikTok Creator Gaming', benefit: '🟢 Tu stream nunca se queda muerto', text: 'Antes mis Lives en TikTok se moría si no hablaba constantemente. Con Stream Voicer, el chat siempre tiene algo que leer, comentar y participar. Los viewers ven que hay actividad incluso cuando estoy concentrado en el juego.', stars: 5 },
-                { name: '@sofiaart', type: 'TikTok Creator Art', benefit: '💬 Tu chat trabaja por ti', text: 'No tengo que estar leyendo comentarios todo el tiempo. Stream Voicer los procesa, destaca los mejores y mantiene la conversación fluida. Yo solo me concentro en crear contenido y el chat se cuida solo.', stars: 5 },
-                { name: '@carlosmusica.live', type: 'TikTok Creator Música', benefit: '⚡ Más interacción sin más esfuerzo', text: 'Mis Lives ahora tienen 3x más engagement sin que yo haga nada diferente. La gente comenta más porque sabe que sus mensajes van a ser valorados. Es increíble cuánta interacción genera sin esfuerzo extra.', stars: 5 },
-                { name: '@dianabeauty_tk', type: 'TikTok Creator Belleza', benefit: '🎯 Convierte mensajes en participación', text: 'Cada comentario que llega se convierte en una participación real. Ya no es solo "jeje" abajo, ahora los comentarios generan conversación. Mi comunidad se siente escuchada y eso atrae más personas al Live.', stars: 5 },
-                { name: '@javierstreamer22', type: 'TikTok Creator Competitivo', benefit: '⭐ Destaca a tus seguidores y donadores', text: 'El sistema automáticamente reconoce a mis followers y donadores. No tengo que perder tiempo dándoles shout-outs manuales. Ellos se sienten valorados naturalmente y eso me genera más donaciones y suscripciones.', stars: 5 },
-                { name: '@mariacomedy_tk', type: 'TikTok Creator Comedia', benefit: '🚀 Haz tu stream dinámico sin hablar más', text: 'Mi Live es mucho más dinámico y entretenido sin que tenga que estar hablando todo el tiempo para mantener atención. El chat está tan activo y valorado que la gente viene por la comunidad, no solo por mí.', stars: 5 },
-              ].map((testimonial, idx) => (
-                <div
-                  key={idx}
-                  className={`flex-shrink-0 w-80 p-6 rounded-xl border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
-                    darkMode
-                      ? 'bg-gray-800 border-gray-700'
-                      : 'bg-white border-gray-200'
-                  }`}
-                >
-                  {/* Stars */}
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(testimonial.stars)].map((_, i) => (
-                      <span key={i} className="text-yellow-400 text-lg">⭐</span>
-                    ))}
-                  </div>
+          {/* Horizontal Scroll Testimonials - CSS infinite animation */}
+          <div className="overflow-x-hidden pb-4 -mx-4 px-4">
+            <div className="testimonials-track flex gap-6 w-max">
+              {/* Cards duplicated for seamless infinite loop (CSS translateX -50%) */}
+              {[...Array(2)].flatMap((_, copy) =>
+                [
+                  { name: '@alexgamertok', type: 'TikTok Creator Gaming', benefit: '🟢 Tu stream nunca se queda muerto', text: 'Antes si me callaba 30 segundos el Live se moría solo. Con Stream Voicer el chat tiene vida propia: los viewers leen, comentan y se quedan aunque yo esté enfocado en el juego.', stars: 5 },
+                  { name: '@sofiaart', type: 'TikTok Creator Art', benefit: '💬 Tu chat trabaja por ti', text: 'No tengo que estar leyendo comentarios todo el tiempo. Stream Voicer los procesa, destaca los mejores y mantiene la conversación fluida. Yo solo me concentro en crear contenido y el chat se cuida solo.', stars: 5 },
+                  { name: '@carlosmusica.live', type: 'TikTok Creator Música', benefit: '⚡ Más interacción sin más esfuerzo', text: 'Mis Lives ahora tienen 3x más engagement sin que yo haga nada diferente. La gente comenta más porque sabe que sus mensajes van a ser valorados. Es increíble cuánta interacción genera sin esfuerzo extra.', stars: 5 },
+                  { name: '@dianabeauty_tk', type: 'TikTok Creator Belleza', benefit: '🎯 Convierte mensajes en participación', text: 'Cada comentario que llega se convierte en una participación real. Ya no es solo "jeje" abajo, ahora los comentarios generan conversación. Mi comunidad se siente escuchada y eso atrae más personas al Live.', stars: 5 },
+                  { name: '@javierstreamer22', type: 'TikTok Creator Competitivo', benefit: '⭐ Destaca a tus seguidores y donadores', text: 'El sistema automáticamente reconoce a mis followers y donadores. No tengo que perder tiempo dándoles shout-outs manuales. Ellos se sienten valorados naturalmente y eso me genera más donaciones y suscripciones.', stars: 5 },
+                  { name: '@mariacomedy_tk', type: 'TikTok Creator Comedia', benefit: '🚀 Haz tu stream dinámico sin hablar más', text: 'Mi Live es mucho más dinámico y entretenido sin que tenga que estar hablando todo el tiempo para mantener atención. El chat está tan activo y valorado que la gente viene por la comunidad, no solo por mí.', stars: 5 },
+                ].map((testimonial, idx) => (
+                  <div
+                    key={`${copy}-${idx}`}
+                    aria-hidden={copy === 1}
+                    className={`flex-shrink-0 w-80 p-6 rounded-xl border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                      darkMode
+                        ? 'bg-gray-800 border-gray-700'
+                        : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    {/* Stars */}
+                    <div className="flex gap-1 mb-4">
+                      {[...Array(testimonial.stars)].map((_, i) => (
+                        <span key={i} className="text-yellow-400 text-lg">⭐</span>
+                      ))}
+                    </div>
 
-                  {/* Benefit Highlight */}
-                  <p className={`text-sm font-bold mb-3 pb-3 border-b ${
-                    darkMode
-                      ? 'text-cyan-400 border-gray-700'
-                      : 'text-cyan-600 border-gray-200'
-                  }`}>
-                    {testimonial.benefit}
-                  </p>
-
-                  {/* Text */}
-                  <p className={`text-sm leading-relaxed mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    {testimonial.text}
-                  </p>
-
-                  {/* Name & Type */}
-                  <div className="border-t pt-4" style={{borderColor: darkMode ? '#374151' : '#e5e7eb'}}>
-                    <p className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {testimonial.name}
+                    {/* Benefit Highlight */}
+                    <p className={`text-sm font-bold mb-3 pb-3 border-b ${
+                      darkMode
+                        ? 'text-cyan-400 border-gray-700'
+                        : 'text-cyan-600 border-gray-200'
+                    }`}>
+                      {testimonial.benefit}
                     </p>
-                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {testimonial.type}
+
+                    {/* Text */}
+                    <p className={`text-sm leading-relaxed mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {testimonial.text}
                     </p>
+
+                    {/* Name & Type */}
+                    <div className="border-t pt-4" style={{borderColor: darkMode ? '#374151' : '#e5e7eb'}}>
+                      <p className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {testimonial.name}
+                      </p>
+                      <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {testimonial.type}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -1608,7 +1588,7 @@ export function App() {
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Suscripciones, Pagos y Reembolsos</h3>
-                <p>Los planes son recurrentes. Puedes cancelar en cualquier momento. No hay reembolsos por uso parcial del período.</p>
+                <p>Los upgrades se aplican de inmediato con ajuste proporcional según tiempo restante y tiempo total del ciclo (calculado con timestamps exactos). Los downgrades se aplican en el siguiente ciclo de facturación. Puedes cancelar en cualquier momento y conservarás acceso hasta el final del período actual. No hay reembolsos por uso parcial del período.</p>
                 <p className="mt-2"><strong>Paquetes de tokens:</strong> Los paquetes de tokens son productos digitales de consumo inmediato. Una vez procesada la compra, no aplican reembolsos ni devoluciones de ningún tipo, independientemente del uso realizado. Al completar la compra, el usuario acepta expresamente esta política.</p>
               </section>
               <section>

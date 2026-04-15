@@ -22,6 +22,7 @@ const comparisonData = {
       items: [
         { name: 'Herramientas optimizadoras de mensajes', free: false, start: true, creator: true, pro: true },
         { name: 'Voces dinámicas por tipo de usuario', free: false, start: 'limitado', creator: true, pro: true },
+        { name: '🎬 Extractor de audio', free: false, start: false, creator: true, pro: true },
         { name: 'Filtros básicos para optimizar el chat', free: 'limitado', start: true, creator: true, pro: true },
         { name: 'Controles avanzados de mensajes', free: false, start: true, creator: true, pro: true },
         { name: 'Lectura inteligente del chat', free: false, start: false, creator: true, pro: true },
