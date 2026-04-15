@@ -432,7 +432,7 @@ export function App() {
         }
 
         // Obtener tipos de cambio desde USD a todas las monedas principales
-        const ratesResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD')
+        const ratesResponse = await fetch('https://open.er-api.com/v6/latest/USD')
         const ratesData = await ratesResponse.json()
 
         if (ratesData.rates) {
