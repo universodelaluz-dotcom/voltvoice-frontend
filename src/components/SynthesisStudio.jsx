@@ -161,10 +161,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
     on_demand: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
   }
   const ALL_PREMIUM_VOICES = [
-    { id: "Diego", name: t('control.voiceSection.premiumLuis'), category: "premium", engine: "inworld" },
-    { id: "Lupita", name: t('control.voiceSection.premiumSofia'), category: "premium", engine: "inworld" },
-    { id: "Miguel", name: t('control.voiceSection.premiumGustavo'), category: "premium", engine: "inworld" },
-    { id: "Rafael", name: t('control.voiceSection.premiumLeonel'), category: "premium", engine: "inworld" },
+    { id: "Diego", name: "Voz natural de Luis - Premium", category: "premium", engine: "inworld" },
+    { id: "Lupita", name: "Voz natural de Sofia - Premium", category: "premium", engine: "inworld" },
+    { id: "Miguel", name: "Voz natural de Gustavo - Premium", category: "premium", engine: "inworld" },
+    { id: "Rafael", name: "Voz natural de Leonel - Premium", category: "premium", engine: "inworld" },
   ]
 
   // Cargar voces disponibles de Inworld AI + Google TTS + Voces del usuario
@@ -173,8 +173,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
     const allowedPremium = PREMIUM_BY_PLAN[userPlan] ?? []
     const allVoices = [
       // === VOCES LOCALES — incluidas en todos los planes, sin tokens ===
-      { id: "es-ES", name: `${t('studio.voiceLocal.spanish')}${localVoiceLabelSuffix}`, category: "webspeech", engine: "webspeech" },
-      { id: "en-US", name: `${t('studio.voiceLocal.english')}${localVoiceLabelSuffix}`, category: "webspeech", engine: "webspeech" },
+      { id: "es-ES", name: `Voz Local Espanol${localVoiceLabelSuffix}`, category: "webspeech", engine: "webspeech" },
+      { id: "en-US", name: `Voz Local Ingles${localVoiceLabelSuffix}`, category: "webspeech", engine: "webspeech" },
 
       // === Voces Premium — filtradas por plan ===
       ...ALL_PREMIUM_VOICES.filter(v => allowedPremium.includes(v.id)),
@@ -271,17 +271,17 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
 
   const handleSynthesize = async () => {
     if (!text.trim()) {
-      setError(t('studio.errors.textRequired'))
+      setError('Por favor escribe algo para sintetizar')
       return
     }
 
     if (!selectedVoice) {
-      setError(t('studio.errors.voiceRequired'))
+      setError('Por favor selecciona una voz')
       return
     }
 
     if (text.length > PREMIUM_TEST_CHAR_LIMIT) {
-      setError(t('studio.errors.textTooLong'))
+      setError(`El texto de prueba supera el limite de ${PREMIUM_TEST_CHAR_LIMIT} caracteres.`)
       return
     }
 
@@ -314,9 +314,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
         if (!response.ok || !data.audio) {
           if (data?.code === FREE_LOCAL_LIMIT_CODE) {
             const wait = formatResetWait(data?.details?.resetInSeconds)
-            window.alert(t('studio.errors.dailyLimit', { wait }))
+            window.alert(`Llegaste al límite diario de 2 horas de voces locales en plan FREE.\nSe restablece en aproximadamente ${wait}.`)
           }
-          setError(data.error || t('studio.errors.synthesis'))
+          setError(data.error || "Error al sintetizar la voz básica")
         } else {
           setAudioUrl(data.audio)
           setAudioPlaybackNonce((prev) => prev + 1)
@@ -375,11 +375,11 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
           setSuccess(true)
           setTimeout(() => setSuccess(false), 3000)
         } else {
-          setError(data.error || t('studio.errors.synthesis'))
+          setError(data.error || "Error al sintetizar la voz")
         }
       }
     } catch (err) {
-      setError(t('studio.errors.connection'))
+      setError("Error de conexion. Verifica tu conexion a internet.")
       console.error(err)
     } finally {
       setLoading(false)
@@ -459,7 +459,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
             {user?.role === 'admin' && onGoAdmin && (
               <button
                 onClick={onGoAdmin}
-                title={t('studio.nav.admin')}
+                title="Panel Admin"
                 className={darkMode
                   ? "p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/30 transition-all"
                   : "p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 border border-red-300 transition-all shadow-sm"}
@@ -520,7 +520,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
                       ? 'bg-gradient-to-r from-purple-600/70 to-pink-600/70 text-gray-200 cursor-not-allowed'
                       : 'bg-gradient-to-r from-slate-600 to-slate-700 text-gray-200 cursor-not-allowed'
                   }`}
-                  title={t('studio.nav.voiceWorkshopLocked', { plan: String(userPlan).toUpperCase() })}
+                  title={`Clic para explorar - Bloqueado para plan ${String(userPlan).toUpperCase()}`}
                 >
                   <Mic2 className="w-5 h-5" />
                   <span>{t('studio.nav.voiceWorkshop')}</span>
@@ -539,7 +539,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
                 }`}
               >
                 <Mic2 className="w-5 h-5" />
-                <span>{t('studio.nav.voiceWorkshop')}</span>
+                <span>Taller de Voces</span>
               </button>
             )
           })()}
@@ -676,7 +676,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
                     <Volume2 className="w-5 h-5 text-white" />
                   </button>
                   <div className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>
-                    <span className="text-cyan-400 font-bold">{tokensUsed}</span> {t('studio.tokens.used')}
+                    <span className="text-cyan-400 font-bold">{tokensUsed}</span> tokens usados
                   </div>
                 </div>
               )}
@@ -706,8 +706,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
                 />
               </div>
               <div className="flex justify-between mt-2">
-                <span className={`text-[11px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{totalTokensUsed.toLocaleString()} {t('studio.tokens.usedShort')}</span>
-                <span className="text-[11px] font-semibold text-cyan-400">{Math.min(100, Math.round((tokens / (totalTokensUsed + tokens || 1)) * 100))}% {t('studio.tokens.remaining')}</span>
+                <span className={`text-[11px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{totalTokensUsed.toLocaleString()} usados</span>
+                <span className="text-[11px] font-semibold text-cyan-400">{Math.min(100, Math.round((tokens / (totalTokensUsed + tokens || 1)) * 100))}% restante</span>
               </div>
             </div>
 
