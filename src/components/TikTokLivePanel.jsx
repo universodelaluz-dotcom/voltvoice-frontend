@@ -113,6 +113,15 @@ const expandUnicodeEmojiForSpeech = (text = '') => String(text || '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const getMessageRenderKey = (msg, idx = 0) => {
+  if (msg?.id) return String(msg.id)
+  if (msg?.clientKey) return String(msg.clientKey)
+  const ts = Number(msg?.timestamp) || 0
+  const user = String(msg?.user || 'anon')
+  const text = String(msg?.text || '').slice(0, 40)
+  return `${ts}-${user}-${text}-${idx}`
+}
+
 const isPriorityUser = (meta = {}) => Boolean(
   meta.isDonor
   || meta.isModerator
@@ -351,6 +360,10 @@ const PLATFORM_HELP_FAQ = [
     a: 'Usa una voz clara, sin ruido ni música de fondo. Recomendado: 10 a 15 segundos. Entre mejor calidad del audio, mejor resultado del clonado.'
   },
   {
+    q: '¿Cuáles límites tiene Extractor Pro?',
+    a: 'Creator: 4 usos por día. Pro: 7 usos por día. Se reinicia cada 24 horas.'
+  },
+  {
     q: 'Asistente de IA: ¿para qué sirve?',
     a: 'Utiliza el contexto reciente del chat para responder preguntas breves con la personalidad y voz que configures.'
   },
@@ -389,6 +402,34 @@ const PLATFORM_HELP_FAQ = [
   {
     q: '¿Puedo cambiar o cancelar mi plan cuando quiera?',
     a: 'Sí. Puedes actualizar, cambiar o cancelar desde tu cuenta.'
+  },
+  {
+    q: '¿Puedo cambiar de plan en cualquier momento?',
+    a: 'Sí, puedes cambiar de plan cuando quieras desde la configuración de tu cuenta.'
+  },
+  {
+    q: '¿Qué pasa si subo de plan (upgrade)?',
+    a: 'El cambio se aplica de inmediato y solo pagas la diferencia proporcional del tiempo restante en tu ciclo de facturación.'
+  },
+  {
+    q: '¿Qué pasa si bajo de plan (downgrade)?',
+    a: 'El cambio se aplicará al inicio del siguiente ciclo de facturación. Hasta entonces sigues disfrutando tu plan actual.'
+  },
+  {
+    q: '¿Puedo cancelar mi plan en cualquier momento?',
+    a: 'Sí, puedes cancelar cuando quieras. Seguirás teniendo acceso hasta el final del periodo ya pagado.'
+  },
+  {
+    q: '¿Puedo solicitar un reembolso?',
+    a: 'Solo dentro de las primeras 24 a 48 horas desde la contratación. Pasado ese tiempo no aplica reembolso.'
+  },
+  {
+    q: '¿Aplica reembolso si ya usé el servicio?',
+    a: 'No si el servicio fue utilizado de forma significativa durante ese periodo.'
+  },
+  {
+    q: '¿Hay alguna alternativa al reembolso?',
+    a: 'En algunos casos podemos ofrecerte crédito interno para usar en futuros ciclos. Contáctanos para evaluarlo.'
   },
   {
     q: '¿Es segura la conexión con TikTok?',
@@ -1408,6 +1449,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             ...prev,
             {
               id: messageId,
+              clientKey: messageId,
               user: msg.username,
               nickname: msg.nickname || msg.username,
               text: msg.text,
@@ -2857,7 +2899,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 ) : (
                   messages.slice(-12).map((msg, idx) => (
                     <div
-                      key={msg.id || `${msg.timestamp}-${msg.user}-${idx}`}
+                      key={getMessageRenderKey(msg, idx)}
                       className={darkMode ? "border-l border-cyan-500/30 pl-3 py-2 rounded-r" : "border-l border-indigo-300 pl-3 py-2 rounded-r"}
                     >
                       <p className="font-semibold" style={{ color: chatNickColor, fontSize: `${chatFontSize}px` }}>
@@ -3052,29 +3094,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                   : (effectiveHighlightRules.banned.enabled && isUserBannedBySet(bannedUsers, msg.user)) ? effectiveHighlightRules.banned.color
                   : null
                 const hlColor = highlightedUsers[msg.user] || autoColor
-                // DEBUG: Log para test messages
-                if (msg.user?.startsWith('test_')) {
-                  console.log(`[RENDER DEBUG] ${msg.user}:`, {
-                    isModerator: msg.isModerator,
-                    isDonor: msg.isDonor,
-                    isSubscriber: msg.isSubscriber,
-                    isTopGifter: msg.isTopGifter,
-                    rules: {
-                      modEnabled: effectiveHighlightRules.moderators.enabled,
-                      donorEnabled: effectiveHighlightRules.donors.enabled,
-                      subEnabled: effectiveHighlightRules.subscribers.enabled,
-                      communityEnabled: effectiveHighlightRules.communityMembers.enabled,
-                      topEnabled: effectiveHighlightRules.topFans.enabled,
-                    },
-                    autoColor,
-                    hlColor
-                  })
-                }
                 // Tipo de badge para mostrar
                 const badgeLabel = msg.isModerator ? '⚔️ MOD' : msg.isTopGifter ? '🏆 TOP' : msg.isDonor ? '🎁 DONOR' : msg.isSubscriber ? '⭐ SUB' : msg.isCommunityMember ? '💚 CLUB' : null
                 return (
                 <div
-                  key={msg.id || `${msg.timestamp}-${msg.user}-${idx}`}
+                  key={getMessageRenderKey(msg, idx)}
                   style={{ fontSize: `${chatFontSize}px`, ...(hlColor ? { backgroundColor: `${hlColor}40`, borderLeftColor: hlColor, borderLeftWidth: '4px' } : {}) }}
                   className={`pl-3 py-2 rounded-r relative ${
                     msg.status === 'playing'
@@ -3263,7 +3287,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                                 </div>
                               ) : (
                                 messages.slice(-12).map((msg, idx) => (
-                                  <div key={`mobile-feed-on-${msg.id || `${msg.timestamp}-${idx}`}`} className={darkMode ? "rounded-md border border-cyan-500/15 bg-cyan-500/5 p-1.5" : "rounded-md border border-cyan-100 bg-white p-1.5"}>
+                                  <div key={`mobile-feed-on-${getMessageRenderKey(msg, idx)}`} className={darkMode ? "rounded-md border border-cyan-500/15 bg-cyan-500/5 p-1.5" : "rounded-md border border-cyan-100 bg-white p-1.5"}>
                                     <p className="text-[10px] font-semibold truncate" style={{ color: chatNickColor }}>
                           {getNickOverrideValue(nickOverrides, msg.user) || msg.nickname || msg.user}
                                     </p>
