@@ -721,11 +721,6 @@ export function App() {
       return
     }
 
-    if (!canOpenStudioWithoutAuth) {
-      setCurrentPage('auth')
-      return
-    }
-
     const planMapping = {
       START: 'start',
       CREATOR: 'creator',

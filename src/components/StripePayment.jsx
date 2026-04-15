@@ -221,11 +221,11 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
   const dm = darkMode
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className={dm
-        ? 'bg-gradient-to-br from-[#0f0f23] to-[#1a0033] border border-cyan-500/30 rounded-2xl max-w-md w-full p-8'
-        : 'bg-white border border-indigo-200 rounded-2xl max-w-md w-full p-8 shadow-2xl'
-      }>
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className={`max-w-md w-full p-6 rounded-2xl max-h-[92vh] overflow-y-auto my-auto ${dm
+        ? 'bg-gradient-to-br from-[#0f0f23] to-[#1a0033] border border-cyan-500/30'
+        : 'bg-white border border-indigo-200 shadow-2xl'
+      }`}>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Zap className="w-6 h-6 text-cyan-400" />
