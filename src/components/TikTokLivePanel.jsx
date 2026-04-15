@@ -648,13 +648,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   useEffect(() => {
     setChatMsgColor(getThemeChatMsgColor(config, darkMode))
   }, [config.chatMsgColor, config.chatMsgColorDark, config.chatMsgColorLight, darkMode])
-  useEffect(() => {
-    const savedLastUser = config.lastTiktokUser || ''
-    const currentInput = String(tiktokUser || '').trim()
-    if (!isConnected && !currentInput && savedLastUser) {
-      setTiktokUser(savedLastUser)
-    }
-  }, [config.lastTiktokUser, isConnected, tiktokUser])
+  // Removed auto-restore of last user to allow clearing the input field
+  // Users can manually enter a username without it being auto-filled
   useEffect(() => {
     if (!canWriteConfigNow) return
     const normalized = normalizeTikTokUsername(tiktokUser)
