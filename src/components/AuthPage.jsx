@@ -122,6 +122,10 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       const data = await res.json()
 
       if (!res.ok) {
+        if (res.status === 401) {
+          setError('Google rechazó el acceso: revisa que el Client ID de frontend coincida con el del backend.')
+          return
+        }
         setError(data.error || 'Error con Google')
         return
       }
