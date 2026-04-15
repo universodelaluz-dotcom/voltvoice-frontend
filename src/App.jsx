@@ -2,6 +2,7 @@
 import { StripePayment } from './components/StripePayment'
 import { SynthesisStudio } from './components/SynthesisStudio'
 import VoiceWorkshopPanel from './components/VoiceCloningPanel'
+import TikTokLivePanel from './components/TikTokLivePanel'
 import { PricingPage } from './components/PricingPage'
 import { PricingCards } from './components/PricingCards'
 import { PricingComparison } from './components/PricingComparison'
@@ -799,45 +800,6 @@ export function App() {
     )
   }
 
-  // Voice Workshop Page (se desmonta al salir, no tiene estado persistente crítico)
-  if (currentPage === 'voice-workshop') {
-    return (
-      <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-gray-900"}>
-        {/* Header */}
-        <nav className={`fixed top-0 w-full backdrop-blur-md z-50 transition-colors duration-300 ${darkMode ? 'bg-[#0f0f23]/80 border-b border-cyan-500/20' : 'bg-white/75 border-b border-[#d7dce3] shadow-sm'}`}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-            <button
-              onClick={() => setCurrentPage('landing')}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
-            >
-                <img src="/images/streamvoicer6.png" alt="StreamVoicer" className="h-14 w-auto" />
-            </button>
-            <button
-              onClick={() => setCurrentPage('studio')}
-              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Volver al Studio
-            </button>
-          </div>
-        </nav>
-
-        {/* Voice Cloning Content */}
-        <div className="pt-32 pb-20 px-4">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-4xl font-black mb-4">
-              Preparativos <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">de Voces</span>
-            </h2>
-            <p className={`text-lg mb-12 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              Aquí puedes clonar y preparar tus voces personalizadas antes de usarlas en el Studio.
-            </p>
-            <VoiceWorkshopPanel onCloneSuccess={() => {/* Success message shown in panel, no reload */}} darkModeOverride={darkMode} config={config} updateConfig={updateConfig} user={user} />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   // AI Roleplay Workshop
   if (currentPage === 'ai-roleplay') {
     return (
@@ -851,10 +813,13 @@ export function App() {
     )
   }
 
-  // Studio + paneles secundarios: mantener Studio montado para no perder WebSocket/live al navegar.
-  if (['studio', 'control-panel', 'statistics', 'admin'].includes(currentPage)) {
+  // Studio + Voice Workshop + paneles secundarios: mantener TikTok WebSocket montado para no perder conexión al navegar
+  if (['studio', 'control-panel', 'statistics', 'admin', 'voice-workshop'].includes(currentPage)) {
     return (
       <>
+        {/* TikTok Live Panel - kept mounted across ALL app pages (studio, control-panel, voice-workshop, etc) */}
+        <TikTokLivePanel config={config} updateConfig={updateConfig} configReady={configReady} user={user} darkModeOverride={darkMode} />
+
         <div style={{ display: currentPage === 'studio' ? 'block' : 'none' }}>
           <SynthesisStudio
             onGoHome={() => setCurrentPage('landing')}
@@ -898,6 +863,42 @@ export function App() {
             user={user}
             authToken={authToken}
           />
+        </div>
+        {/* Voice Workshop Page */}
+        <div style={{ display: currentPage === 'voice-workshop' ? 'block' : 'none' }}>
+          <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-gray-900"}>
+            {/* Header */}
+            <nav className={`fixed top-0 w-full backdrop-blur-md z-50 transition-colors duration-300 ${darkMode ? 'bg-[#0f0f23]/80 border-b border-cyan-500/20' : 'bg-white/75 border-b border-[#d7dce3] shadow-sm'}`}>
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+                <button
+                  onClick={() => setCurrentPage('landing')}
+                  className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                  <img src="/images/streamvoicer6.png" alt="StreamVoicer" className="h-14 w-auto" />
+                </button>
+                <button
+                  onClick={() => setCurrentPage('studio')}
+                  className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Volver al Studio
+                </button>
+              </div>
+            </nav>
+
+            {/* Voice Cloning Content */}
+            <div className="pt-32 pb-20 px-4">
+              <div className="max-w-7xl mx-auto">
+                <h2 className="text-4xl font-black mb-4">
+                  Preparativos <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">de Voces</span>
+                </h2>
+                <p className={`text-lg mb-12 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  Aquí puedes clonar y preparar tus voces personalizadas antes de usarlas en el Studio.
+                </p>
+                <VoiceWorkshopPanel onCloneSuccess={() => {/* Success message shown in panel, no reload */}} darkModeOverride={darkMode} config={config} updateConfig={updateConfig} user={user} />
+              </div>
+            </div>
+          </div>
         </div>
       </>
     )
