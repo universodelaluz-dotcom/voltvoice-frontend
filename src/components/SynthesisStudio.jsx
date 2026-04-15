@@ -512,7 +512,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
             if (isVoiceWorkshopBlocked) {
               return (
                 <button
-                  onClick={() => {}}
+                  onClick={onGoVoiceCloning}
                   className={`relative flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
                     darkMode
                       ? 'bg-gradient-to-r from-purple-600/70 to-pink-600/70 text-gray-200 cursor-not-allowed'

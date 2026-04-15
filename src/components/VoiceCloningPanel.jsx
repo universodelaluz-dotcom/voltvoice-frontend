@@ -5,6 +5,18 @@ import AIRoleplayWorkshop from './AIRoleplayWorkshop'
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
 export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, config, updateConfig, user }) {
+  const planKey = String(user?.plan || 'free').toLowerCase()
+  const PLAN_MAX_CLONED_VOICES = {
+    free: 0,
+    start: 1,
+    creator: 2,
+    premium: 2,
+    pro: 5,
+    elite: 5,
+    on_demand: 999,
+    admin: 999
+  }
+  const planMaxVoices = PLAN_MAX_CLONED_VOICES[planKey] ?? 0
   const [darkMode, setDarkMode] = useState(() => darkModeOverride !== undefined ? darkModeOverride : localStorage.getItem('voltvoice-theme') !== 'light')
 
   useEffect(() => {
@@ -23,6 +35,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   const [error, setError] = useState(null)
   const [userVoices, setUserVoices] = useState([])
   const [loadingVoices, setLoadingVoices] = useState(true)
+  const [maxVoicesAllowed, setMaxVoicesAllowed] = useState(planMaxVoices)
   const [activeTab, setActiveTab] = useState('clone')
 
   // Modal de renombrar voz existente
@@ -85,6 +98,10 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     loadUserVoices()
   }, [])
 
+  useEffect(() => {
+    setMaxVoicesAllowed(planMaxVoices)
+  }, [planMaxVoices])
+
   // Limpiar audio cuando cambia la voz seleccionada
   useEffect(() => {
     setTestAudioUrl(null)
@@ -131,6 +148,9 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       const data = await res.json()
       if (data.success) {
         setUserVoices(data.voices || [])
+        const apiMax = Number(data.maxVoices)
+        const safeApiMax = Number.isFinite(apiMax) ? apiMax : planMaxVoices
+        setMaxVoicesAllowed(Math.min(safeApiMax, planMaxVoices))
       }
     } catch (err) {
       console.error('[Voices] Error cargando voces:', err)
@@ -569,7 +589,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         <Mic2 className="w-6 h-6 text-purple-400" />
         <h2 className={darkMode ? 'text-xl font-bold text-white' : 'text-xl font-bold text-gray-900'}>Mis Voces Creadas</h2>
         <span className={`ml-auto text-xs font-semibold px-2 py-1 rounded-full ${darkMode ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-50 text-purple-600'}`}>
-          {voices.length}/10
+          {voices.length}/{maxVoicesAllowed}
         </span>
       </div>
       {loadingVoices ? (
