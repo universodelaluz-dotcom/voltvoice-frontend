@@ -692,21 +692,21 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
             <div className="space-y-4">
               {/* LEFT COLUMN */}
               <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-cyan-500/20' : 'bg-white border-slate-200'}`}>
-                <SectionHeader title="Lectura" tone="lectura" darkMode={darkMode} />
+                <SectionHeader title={t('control.sections.reading')} tone="lectura" darkMode={darkMode} />
 
               {/* AREA LECTURA - BLOQUEADA EN FREE (solo 3 elementos libres) */}
               {userPlan === 'free' ? (
                 <>
                   <div className="mb-2 opacity-50 pointer-events-none">
-                    <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label={t('control.reading.onlyMessage')} checked={config.readOnlyMessage} onChange={() => {}} darkMode={darkMode} />
                   </div>
                 </>
               ) : (
-                <CheckOption label="Leer solo mensajes (sin nombre)" checked={config.readOnlyMessage} onChange={() => updateConfig('readOnlyMessage', !config.readOnlyMessage)} darkMode={darkMode} hint="Lee el mensaje sin mencionar quién lo escribió" />
+                <CheckOption label={t('control.reading.onlyMessage')} checked={config.readOnlyMessage} onChange={() => updateConfig('readOnlyMessage', !config.readOnlyMessage)} darkMode={darkMode} hint={t('control.reading.onlyMessageHint')} />
               )}
 
               {/* SIEMPRE LIBRE EN TODOS LOS PLANES */}
-              <CheckOption label="Saltar mensajes repetidos" checked={config.skipRepeated} onChange={() => updateConfig('skipRepeated', !config.skipRepeated)} darkMode={darkMode} hint="Ignora mensajes idAnticos consecutivos para evitar spam" />
+              <CheckOption label={t('control.reading.skipRepeated')} checked={config.skipRepeated} onChange={() => updateConfig('skipRepeated', !config.skipRepeated)} darkMode={darkMode} hint="Ignora mensajes idAnticos consecutivos para evitar spam" />
 
               {/* BLOQUEADO EN FREE */}
               {userPlan === 'free' ? (
@@ -715,20 +715,20 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 }`}>
                   <FeatureLockedOverlay darkMode={darkMode} message="Opciones avanzadas de lectura disponibles en START+" showIcon showMessage />
                   <div>
-                    <CheckOption label="Leer solo preguntas" checked={config.onlyQuestions} onChange={() => {}} darkMode={darkMode} />
-                    <CheckOption label="Leer solo donadores" checked={config.onlyDonors} onChange={() => {}} darkMode={darkMode} />
-                    <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => {}} darkMode={darkMode} />
-                    <CheckOption label="Leer solo suscriptores" checked={config.onlySubscribers} onChange={() => {}} darkMode={darkMode} />
-                    <CheckOption label="Filtro de miembros de comunidad" checked={config.onlyCommunityMembers} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label={t('control.reading.onlyQuestions')} checked={config.onlyQuestions} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label={t('control.reading.onlyDonors')} checked={config.onlyDonors} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label={t('control.reading.onlyMods')} checked={config.onlyModerators} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label={t('control.reading.onlySubs')} checked={config.onlySubscribers} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label={t('control.reading.onlyCommunity')} checked={config.onlyCommunityMembers} onChange={() => {}} darkMode={darkMode} />
                   </div>
                 </div>
               ) : (
                 <>
-                  <CheckOption label="Leer solo preguntas" checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} hint="Solo lee mensajes que contengan signos de interrogación" />
-                  <CheckOption label="Leer solo donadores" checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron regalos" />
-                  <CheckOption label="Leer solo moderadores" checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} hint="Solo lee mensajes de moderadores del live" />
-                  <CheckOption label="Leer solo suscriptores" checked={config.onlySubscribers} onChange={() => updateConfig('onlySubscribers', !config.onlySubscribers)} darkMode={darkMode} hint="Solo lee usuarios suscritos al creador del live" />
-                  <CheckOption label="Filtro de miembros de comunidad" checked={config.onlyCommunityMembers} onChange={() => updateConfig('onlyCommunityMembers', !config.onlyCommunityMembers)} darkMode={darkMode} hint="Solo lee usuarios Fan o SuperFan del LIVE bajo el mismo filtro de comunidad" />
+                  <CheckOption label={t('control.reading.onlyQuestions')} checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} hint={t('control.reading.onlyQuestionsHint')} />
+                  <CheckOption label={t('control.reading.onlyDonors')} checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron regalos" />
+                  <CheckOption label={t('control.reading.onlyMods')} checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} hint={t('control.reading.onlyModsHint')} />
+                  <CheckOption label={t('control.reading.onlySubs')} checked={config.onlySubscribers} onChange={() => updateConfig('onlySubscribers', !config.onlySubscribers)} darkMode={darkMode} hint={t('control.reading.onlySubsHint')} />
+                  <CheckOption label={t('control.reading.onlyCommunity')} checked={config.onlyCommunityMembers} onChange={() => updateConfig('onlyCommunityMembers', !config.onlyCommunityMembers)} darkMode={darkMode} hint={t('control.reading.onlyCommunityHint')} />
                 </>
               )}
 
@@ -737,12 +737,12 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 {userPlan === 'free' && (
                   <FeatureLockedOverlay darkMode={darkMode} message="Voces disponibles en START+" showIcon showMessage />
                 )}
-                <SectionHeader title="Voces" tone="voces" darkMode={darkMode} />
+                <SectionHeader title={t('control.sections.voice')} tone="voces" darkMode={darkMode} />
               {/* Voz general */}
               <div className={`relative mb-2 rounded-xl px-4 py-3 border ${
                 darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
               }`}>
-                {isFeatureBlocked('voicesGeneral', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en otros planes" />}
+                {isFeatureBlocked('voicesGeneral', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.voiceSection.available')} />}
                 <div className={`${isFeatureBlocked('voicesGeneral', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-[15px] font-medium ${darkMode ? 'text-white' : 'text-slate-800'}`}>Voz general</span>
@@ -771,7 +771,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                     : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                {isFeatureBlocked('voicesDonor', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en otros planes" />}
+                {isFeatureBlocked('voicesDonor', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.voiceSection.available')} />}
                 <div className={`${isFeatureBlocked('voicesDonor', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
                   <button onClick={() => updateConfig('donorVoiceEnabled', !config.donorVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                     <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
@@ -844,7 +844,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                     : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                {isFeatureBlocked('voicesSubscriber', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en otros planes" />}
+                {isFeatureBlocked('voicesSubscriber', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.voiceSection.available')} />}
                 <div className={`${isFeatureBlocked('voicesSubscriber', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
                   <button onClick={() => updateConfig('subscriberVoiceEnabled', !config.subscriberVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
@@ -882,7 +882,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                     : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                {isFeatureBlocked('voicesCommunity', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en otros planes" />}
+                {isFeatureBlocked('voicesCommunity', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.voiceSection.available')} />}
                 <div className={`${isFeatureBlocked('voicesCommunity', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
                   <button onClick={() => updateConfig('communityMemberVoiceEnabled', !config.communityMemberVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
@@ -920,7 +920,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                     : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                {isFeatureBlocked('voicesQuestion', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en otros planes" />}
+                {isFeatureBlocked('voicesQuestion', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.voiceSection.available')} />}
                 <div className={`${isFeatureBlocked('voicesQuestion', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
                   <button onClick={() => updateConfig('questionVoiceEnabled', !config.questionVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
@@ -958,7 +958,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                     : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                {isFeatureBlocked('voicesNotif', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en otros planes" />}
+                {isFeatureBlocked('voicesNotif', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.voiceSection.available')} />}
                 <div className={`${isFeatureBlocked('voicesNotif', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
                   <button onClick={() => updateConfig('notifVoiceEnabled', !config.notifVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
@@ -1001,33 +1001,33 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   )}
                   <SectionHeader title="Notificaciones en Vivo" tone="notificaciones" darkMode={darkMode} />
 
-                  <CheckWithInput label="Anunciar nuevos seguidores a cada (seg)" checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} hint="Anuncia en voz cuando alguien te sigue" />
-                  <CheckWithInput label="Anunciar regalos a cada (seg)" checked={config.announceGifts} onToggle={() => updateConfig('announceGifts', !config.announceGifts)} value={config.giftCooldown} onValueChange={(v) => updateConfig('giftCooldown', v)} placeholder="5" darkMode={darkMode} hint="Anuncia en voz cuando recibes un regalo" />
-                  <CheckWithInput label="Anunciar conteo de viewers a cada (seg)" checked={config.announceViewers} onToggle={() => updateConfig('announceViewers', !config.announceViewers)} value={config.viewerCooldown} onValueChange={(v) => updateConfig('viewerCooldown', v)} placeholder="120" darkMode={darkMode} hint="Dice cuántos viewers hay en el live periódicamente" />
-                  <CheckWithInput label="Anunciar likes a cada (seg)" checked={config.announceLikes} onToggle={() => updateConfig('announceLikes', !config.announceLikes)} value={config.likeCooldown} onValueChange={(v) => updateConfig('likeCooldown', v)} placeholder="60" darkMode={darkMode} hint="Anuncia la cantidad de likes acumulados" />
-                  <CheckWithInput label="Anunciar shares a cada (seg)" checked={config.announceShares} onToggle={() => updateConfig('announceShares', !config.announceShares)} value={config.shareCooldown} onValueChange={(v) => updateConfig('shareCooldown', v)} placeholder="15" darkMode={darkMode} hint="Anuncia cuando alguien comparte tu live" />
-                  <CheckOption label="Anunciar batallas" checked={config.announceBattles} onChange={() => updateConfig('announceBattles', !config.announceBattles)} darkMode={darkMode} hint="Anuncia inicio y resultado de batallas en vivo" />
-                  <CheckOption label="Anunciar encuestas" checked={config.announcePolls} onChange={() => updateConfig('announcePolls', !config.announcePolls)} darkMode={darkMode} hint="Anuncia cuando se crea una encuesta en el live" />
-                  <CheckOption label="Anunciar metas/goals" checked={config.announceGoals} onChange={() => updateConfig('announceGoals', !config.announceGoals)} darkMode={darkMode} hint="Anuncia progreso de metas del live" />
+                  <CheckWithInput label={t('control.announcements.followers')} checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} hint={t('control.announcements.followersHint')} />
+                  <CheckWithInput label={t('control.announcements.gifts')} checked={config.announceGifts} onToggle={() => updateConfig('announceGifts', !config.announceGifts)} value={config.giftCooldown} onValueChange={(v) => updateConfig('giftCooldown', v)} placeholder="5" darkMode={darkMode} hint={t('control.announcements.giftsHint')} />
+                  <CheckWithInput label={t('control.announcements.viewers')} checked={config.announceViewers} onToggle={() => updateConfig('announceViewers', !config.announceViewers)} value={config.viewerCooldown} onValueChange={(v) => updateConfig('viewerCooldown', v)} placeholder="120" darkMode={darkMode} hint={t('control.announcements.viewersHint')} />
+                  <CheckWithInput label={t('control.announcements.likes')} checked={config.announceLikes} onToggle={() => updateConfig('announceLikes', !config.announceLikes)} value={config.likeCooldown} onValueChange={(v) => updateConfig('likeCooldown', v)} placeholder="60" darkMode={darkMode} hint={t('control.announcements.likesHint')} />
+                  <CheckWithInput label={t('control.announcements.shares')} checked={config.announceShares} onToggle={() => updateConfig('announceShares', !config.announceShares)} value={config.shareCooldown} onValueChange={(v) => updateConfig('shareCooldown', v)} placeholder="15" darkMode={darkMode} hint={t('control.announcements.sharesHint')} />
+                  <CheckOption label={t('control.announcements.battles')} checked={config.announceBattles} onChange={() => updateConfig('announceBattles', !config.announceBattles)} darkMode={darkMode} hint={t('control.announcements.battlesHint')} />
+                  <CheckOption label={t('control.announcements.polls')} checked={config.announcePolls} onChange={() => updateConfig('announcePolls', !config.announcePolls)} darkMode={darkMode} hint={t('control.announcements.pollsHint')} />
+                  <CheckOption label={t('control.announcements.goals')} checked={config.announceGoals} onChange={() => updateConfig('announceGoals', !config.announceGoals)} darkMode={darkMode} hint={t('control.announcements.goalsHint')} />
                 </div>
               </div>
             </div>
 
             {/* RIGHT COLUMN */}
             <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/60 border-violet-400/25' : 'bg-slate-50 border-slate-300'}`}>
-              <SectionHeader title="Filtros" tone="filtros" darkMode={darkMode} />
+              <SectionHeader title={t('control.sections.filters')} tone="filtros" darkMode={darkMode} />
 
               {userPlan === 'free' ? (
                 <>
-                  <CheckOption label="Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint="Limpia el nombre del usuario dejando solo letras" />
-                  <CheckOption label="No leer emojis en chat" checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} hint="Elimina emojis del mensaje antes de leerlo en voz" />
+                  <CheckOption label={t('control.filterSection.cleanNicks')} checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint={t('control.filterSection.cleanNicksHint')} />
+                  <CheckOption label={t('control.filterSection.noEmojis')} checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} hint={t('control.filterSection.noEmojisHint')} />
                   <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
                     darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
                   }`}>
                     <FeatureLockedOverlay darkMode={darkMode} message="Filtros avanzados disponibles en START+" showIcon showMessage />
                     <div>
                       <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => {}} darkMode={darkMode} />
-                      <CheckOption label="Filtro de palabrotas" checked={config.profanityFilterEnabled} onChange={() => {}} darkMode={darkMode} />
+                      <CheckOption label={t('control.filterSection.profanity')} checked={config.profanityFilterEnabled} onChange={() => {}} darkMode={darkMode} />
                       <CheckWithInput label="Ignorar emojis excesivos del chat a cantidad máxima permitida:" checked={config.ignoreExcessiveEmojis} onToggle={() => {}} value={config.maxEmojisAllowed} onValueChange={() => {}} placeholder="3" darkMode={darkMode} />
                       <CheckWithInput label="Ignorar mensajes muy cortos (mínimo de caracteres)" checked={config.minMessageLengthEnabled} onToggle={() => {}} value={config.minMessageLength} onValueChange={() => {}} placeholder="3" darkMode={darkMode} />
                       <CheckWithInput label="Límite de caracteres en todos los mensajes (máximo)" checked={config.donorCharLimitEnabled} onToggle={() => {}} value={config.donorCharLimit} onValueChange={() => {}} placeholder="200" darkMode={darkMode} />
@@ -1040,7 +1040,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   {/* FILTROS EN START+ */}
                   <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} hint="No lee links ni URLs en los mensajes" />
                   <CheckOption
-                    label="Filtro de palabrotas"
+                    label={t('control.filterSection.profanity')}
                     checked={config.profanityFilterEnabled}
                     onChange={() => {
                       const next = !config.profanityFilterEnabled
@@ -1048,7 +1048,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                       if (!next) setShowProfanityEditor(false)
                     }}
                     darkMode={darkMode}
-                    hint="Bloquea mensajes que contengan palabras prohibidas"
+                    hint={t('control.filterSection.profanityHint')}
                   />
                   {config.profanityFilterEnabled && (
                     <div className={`mb-2 rounded-xl px-4 py-3 border ${
@@ -1073,7 +1073,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                             value={config.profanityWords || ''}
                             onChange={(e) => updateConfig('profanityWords', e.target.value)}
                             rows={3}
-                            placeholder="Escribe tus palabras aquí"
+                            placeholder={t('control.filterSection.wordListPlaceholder')}
                             className={`w-full px-3 py-2 text-sm rounded-lg border resize-y ${
                               darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
                             }`}
@@ -1083,8 +1083,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     </div>
                   )}
                   {/* ESTOS TRES FILTROS SIEMPRE LIBRES */}
-                  <CheckOption label="Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)" checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint="Limpia el nombre del usuario dejando solo letras" />
-                  <CheckOption label="No leer emojis en chat" checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} hint="Elimina emojis del mensaje antes de leerlo en voz" />
+                  <CheckOption label={t('control.filterSection.cleanNicks')} checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint={t('control.filterSection.cleanNicksHint')} />
+                  <CheckOption label={t('control.filterSection.noEmojis')} checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} hint={t('control.filterSection.noEmojisHint')} />
                   {/* IGNORAR EMOJIS EXCESIVOS - BLOQUEADO EN FREE Y START */}
                   <div className={`relative ${isFeatureBlocked('excessiveEmojis', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
                     {isFeatureBlocked('excessiveEmojis', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
@@ -1096,7 +1096,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                       onValueChange={(v) => updateConfig('maxEmojisAllowed', v)}
                       placeholder="3"
                       darkMode={darkMode}
-                      hint="Lee el mensaje pero quita emojis si pasan del límite"
+                      hint={t('control.filterSection.excessiveEmojisHint')}
                     />
                   </div>
 
@@ -1126,7 +1126,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                       onValueChange={(v) => updateConfig('donorCharLimit', v)}
                       placeholder="200"
                       darkMode={darkMode}
-                      hint="Corta mensajes largos al máximo de caracteres indicado"
+                      hint={t('control.filterSection.charLimitHint')}
                     />
                   </div>
 
@@ -1141,7 +1141,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                       onValueChange={(v) => updateConfig('maxQueueSize', v)}
                       placeholder="20"
                       darkMode={darkMode}
-                      hint="Evita acumulación excesiva de mensajes por leer"
+                      hint={t('control.filterSection.queueHint')}
                     />
                   </div>
                 </>

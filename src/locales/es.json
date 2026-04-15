@@ -331,6 +331,62 @@
       "empty": "Esperando mensajes...",
       "filters": "Filtros"
     },
+    "panel": {
+      "title": "TikTok LIVE en Tiempo Real",
+      "sessionTab": "Sesion",
+      "helpBtn": "AYUDA",
+      "disconnected": "DESCONECTADO",
+      "waitingLive": "ESPERANDO LIVE",
+      "sessionExplosive": "Sesion explosiva",
+      "sessionActive": "Sesion activa",
+      "sessionChill": "Sesion fluida",
+      "searchPlaceholder": "Buscar en preguntas y respuestas...",
+      "messageInProgress": "Mensaje en curso",
+      "messageHint": "Cuando se empiece a leer un comentario, aparecera aqui fijo.",
+      "connectToChat": "Conéctate para ver el chat",
+      "connectHint": "Ingresa tu usuario de TikTok arriba",
+      "waitingMessage": "Esperando mensaje en curso..."
+    },
+    "support": {
+      "title": "Contactar Soporte",
+      "response": "Respondemos en 24–48 hrs",
+      "sendBtn": "Enviar mensaje",
+      "placeholder": "Describe tu problema o consulta con el mayor detalle posible...",
+      "charCount": "{{count}}/500 caracteres",
+      "submit": "📨 Enviar a soporte",
+      "sending": "Enviando..."
+    },
+    "stats": {
+      "comments": "Comentarios",
+      "msgsMin": "Msgs/min",
+      "time": "Tiempo"
+    },
+    "controls": {
+      "pause": "Pausar",
+      "resume": "Reanudar",
+      "pauseTitle": "Pausar lectura",
+      "resumeTitle": "Reanudar lectura",
+      "refresh": "Refrescar",
+      "aiFilter": "Filtro IA",
+      "highlight": "Remarcar",
+      "highlightTitle": "Remarcar usuarios con color",
+      "vol": "VOL",
+      "vel": "VEL"
+    },
+    "highlight": {
+      "byType": "Remarcar por tipo",
+      "manual": "Remarcar usuario manual",
+      "moderators": "Moderadores"
+    },
+    "summary": {
+      "title": "Resumen premium",
+      "desc": "Asi se movio tu chat en esta sesion.",
+      "received": "Mensajes recibidos",
+      "uptime": "Tiempo de transmision",
+      "peak": "Pico mensajes/min",
+      "filtered": "Mensajes filtrados",
+      "close": "Cerrar resumen"
+    },
     "faq": {
       "title": "Guía de ayuda",
       "questions": [
@@ -481,6 +537,56 @@
       "announceGoals": "anunciar goals",
       "autoSpam": "chequeos automáticos de spam",
       "pushToTalk": "push to talk"
+    },
+    "reading": {
+      "title": "Lectura",
+      "onlyMessage": "Leer solo mensajes (sin nombre)",
+      "onlyMessageHint": "Lee el mensaje sin mencionar quién lo escribió",
+      "skipRepeated": "Saltar mensajes repetidos",
+      "onlyQuestions": "Leer solo preguntas",
+      "onlyQuestionsHint": "Solo lee mensajes que contengan signos de interrogación",
+      "onlyDonors": "Leer solo donadores",
+      "onlyMods": "Leer solo moderadores",
+      "onlyModsHint": "Solo lee mensajes de moderadores del live",
+      "onlySubs": "Leer solo suscriptores",
+      "onlySubsHint": "Solo lee usuarios suscritos al creador del live",
+      "onlyCommunity": "Filtro de miembros de comunidad",
+      "onlyCommunityHint": "Solo lee usuarios Fan o SuperFan del LIVE bajo el mismo filtro de comunidad"
+    },
+    "voiceSection": {
+      "title": "Voces",
+      "available": "Disponible en otros planes"
+    },
+    "announcements": {
+      "followers": "Anunciar nuevos seguidores a cada (seg)",
+      "followersHint": "Anuncia en voz cuando alguien te sigue",
+      "gifts": "Anunciar regalos a cada (seg)",
+      "giftsHint": "Anuncia en voz cuando recibes un regalo",
+      "viewers": "Anunciar conteo de viewers a cada (seg)",
+      "viewersHint": "Dice cuántos viewers hay en el live periódicamente",
+      "likes": "Anunciar likes a cada (seg)",
+      "likesHint": "Anuncia la cantidad de likes acumulados",
+      "shares": "Anunciar shares a cada (seg)",
+      "sharesHint": "Anuncia cuando alguien comparte tu live",
+      "battles": "Anunciar batallas",
+      "battlesHint": "Anuncia inicio y resultado de batallas en vivo",
+      "polls": "Anunciar encuestas",
+      "pollsHint": "Anuncia cuando se crea una encuesta en el live",
+      "goals": "Anunciar metas/goals",
+      "goalsHint": "Anuncia progreso de metas del live"
+    },
+    "filterSection": {
+      "title": "Filtros",
+      "cleanNicks": "Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)",
+      "cleanNicksHint": "Limpia el nombre del usuario dejando solo letras",
+      "noEmojis": "No leer emojis en chat",
+      "noEmojisHint": "Elimina emojis del mensaje antes de leerlo en voz",
+      "profanity": "Filtro de palabrotas",
+      "profanityHint": "Bloquea mensajes que contengan palabras prohibidas",
+      "wordListPlaceholder": "Escribe tus palabras aquí",
+      "excessiveEmojisHint": "Lee el mensaje pero quita emojis si pasan del límite",
+      "charLimitHint": "Corta mensajes largos al máximo de caracteres indicado",
+      "queueHint": "Evita acumulación excesiva de mensajes por leer"
     }
   },
   "bot": {

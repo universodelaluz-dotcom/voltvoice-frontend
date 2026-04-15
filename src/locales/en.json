@@ -331,6 +331,62 @@
       "empty": "Waiting for messages...",
       "filters": "Filters"
     },
+    "panel": {
+      "title": "TikTok LIVE in Real Time",
+      "sessionTab": "Session",
+      "helpBtn": "HELP",
+      "disconnected": "DISCONNECTED",
+      "waitingLive": "WAITING FOR LIVE",
+      "sessionExplosive": "Explosive session",
+      "sessionActive": "Active session",
+      "sessionChill": "Smooth session",
+      "searchPlaceholder": "Search questions and answers...",
+      "messageInProgress": "Message in progress",
+      "messageHint": "When a comment starts being read, it will appear here.",
+      "connectToChat": "Connect to view chat",
+      "connectHint": "Enter your TikTok username above",
+      "waitingMessage": "Waiting for message in progress..."
+    },
+    "support": {
+      "title": "Contact Support",
+      "response": "We respond in 24–48 hrs",
+      "sendBtn": "Send message",
+      "placeholder": "Describe your problem or question in as much detail as possible...",
+      "charCount": "{{count}}/500 characters",
+      "submit": "📨 Send to support",
+      "sending": "Sending..."
+    },
+    "stats": {
+      "comments": "Comments",
+      "msgsMin": "Msgs/min",
+      "time": "Time"
+    },
+    "controls": {
+      "pause": "Pause",
+      "resume": "Resume",
+      "pauseTitle": "Pause reading",
+      "resumeTitle": "Resume reading",
+      "refresh": "Refresh",
+      "aiFilter": "AI Filter",
+      "highlight": "Highlight",
+      "highlightTitle": "Highlight users with color",
+      "vol": "VOL",
+      "vel": "SPD"
+    },
+    "highlight": {
+      "byType": "Highlight by type",
+      "manual": "Highlight user manually",
+      "moderators": "Moderators"
+    },
+    "summary": {
+      "title": "Premium summary",
+      "desc": "Here's how your chat moved this session.",
+      "received": "Messages received",
+      "uptime": "Broadcast time",
+      "peak": "Peak msgs/min",
+      "filtered": "Filtered messages",
+      "close": "Close summary"
+    },
     "faq": {
       "title": "Help guide",
       "questions": [
@@ -481,6 +537,56 @@
       "announceGoals": "announce goals",
       "autoSpam": "automatic spam checks",
       "pushToTalk": "push to talk"
+    },
+    "reading": {
+      "title": "Reading",
+      "onlyMessage": "Read messages only (no name)",
+      "onlyMessageHint": "Reads the message without mentioning who wrote it",
+      "skipRepeated": "Skip repeated messages",
+      "onlyQuestions": "Read questions only",
+      "onlyQuestionsHint": "Only reads messages containing question marks",
+      "onlyDonors": "Read donors only",
+      "onlyMods": "Read moderators only",
+      "onlyModsHint": "Only reads messages from live moderators",
+      "onlySubs": "Read subscribers only",
+      "onlySubsHint": "Only reads users subscribed to the live creator",
+      "onlyCommunity": "Community members filter",
+      "onlyCommunityHint": "Only reads Fan or SuperFan users of the LIVE under the same community filter"
+    },
+    "voiceSection": {
+      "title": "Voices",
+      "available": "Available on other plans"
+    },
+    "announcements": {
+      "followers": "Announce new followers every (sec)",
+      "followersHint": "Announces by voice when someone follows you",
+      "gifts": "Announce gifts every (sec)",
+      "giftsHint": "Announces by voice when you receive a gift",
+      "viewers": "Announce viewer count every (sec)",
+      "viewersHint": "Says how many viewers are in the live periodically",
+      "likes": "Announce likes every (sec)",
+      "likesHint": "Announces the accumulated like count",
+      "shares": "Announce shares every (sec)",
+      "sharesHint": "Announces when someone shares your live",
+      "battles": "Announce battles",
+      "battlesHint": "Announces start and result of live battles",
+      "polls": "Announce polls",
+      "pollsHint": "Announces when a poll is created in the live",
+      "goals": "Announce goals",
+      "goalsHint": "Announces live goal progress"
+    },
+    "filterSection": {
+      "title": "Filters",
+      "cleanNicks": "Clean nicks (won't read emojis, numbers or weird characters)",
+      "cleanNicksHint": "Cleans the username leaving only letters",
+      "noEmojis": "Don't read emojis in chat",
+      "noEmojisHint": "Removes emojis from message before reading it",
+      "profanity": "Profanity filter",
+      "profanityHint": "Blocks messages containing forbidden words",
+      "wordListPlaceholder": "Type your words here",
+      "excessiveEmojisHint": "Reads the message but removes emojis if over the limit",
+      "charLimitHint": "Cuts long messages at the max character count indicated",
+      "queueHint": "Prevents excessive accumulation of messages to read"
     }
   },
   "bot": {
