@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Mail, Lock, Eye, EyeOff, Loader, AlertCircle, ArrowLeft, CheckCircle } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
@@ -130,7 +130,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
         return
       }
 
-      localStorage.setItem('sv-token', data.token)
+      sessionStorage.setItem('sv-token', data.token)
       localStorage.setItem('sv-user', JSON.stringify(data.user))
       onLogin(data.user, data.token)
     } catch (err) {
@@ -262,7 +262,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
         return
       }
 
-      localStorage.setItem('sv-token', data.token)
+      sessionStorage.setItem('sv-token', data.token)
       localStorage.setItem('sv-user', JSON.stringify(data.user))
       onLogin(data.user, data.token)
     } catch (err) {
@@ -328,7 +328,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
         return
       }
 
-      localStorage.setItem('sv-token', data.token)
+      sessionStorage.setItem('sv-token', data.token)
       localStorage.setItem('sv-user', JSON.stringify(data.user))
       onLogin(data.user, data.token)
     } catch (err) {

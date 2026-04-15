@@ -124,7 +124,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   }
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     return {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -133,7 +133,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
   const loadUserVoices = async () => {
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       if (!token) { setLoadingVoices(false); return }
 
       // Migrar voces pre-existentes (solo la primera vez, ON CONFLICT ignora duplicados)
@@ -171,7 +171,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     }
 
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       const res = await fetch(`${API_URL}/api/settings/voices/${editingVoiceId}`, {
         method: 'PATCH',
         headers: {
@@ -203,7 +203,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     if (!confirm(`¿Eliminar la voz "${name}"?`)) return
 
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       const res = await fetch(`${API_URL}/api/settings/voices/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -238,7 +238,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     }
 
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       let response = await fetch(`${API_URL}/api/inworld/tts`, {
         method: 'POST',
         headers: {
@@ -311,7 +311,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     if (!studioPro.fileId) return
     setStudioProPreview({ loading: true, audioUrl: null })
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       const res = await fetch(`${API_URL}/api/inworld/preview-clip`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -394,7 +394,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       return
     }
 
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     if (!token) {
       setError('Debes iniciar sesión')
       return
@@ -449,7 +449,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       return
     }
 
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     if (!token) {
       setError('Debes iniciar sesión')
       return
@@ -521,7 +521,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       return
     }
 
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     if (!token) {
       setError('Debes iniciar sesión para clonar voces')
       return

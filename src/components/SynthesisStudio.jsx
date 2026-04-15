@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import TikTokLivePanel from './TikTokLivePanel'
 import AudioVisualizer from './AudioVisualizer'
 import BotInvoker from './BotInvoker'
@@ -49,7 +49,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
   const [synthesisCount, setSynthesisCount] = useState(0)
   const [announcements, setAnnouncements] = useState([])
 
-  const getAuthToken = () => localStorage.getItem('sv-token') || ''
+  const getAuthToken = () => sessionStorage.getItem('sv-token') || ''
   const formatResetWait = (seconds = 0) => {
     const safe = Math.max(0, Number(seconds) || 0)
     const hours = Math.floor(safe / 3600)

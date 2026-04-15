@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Check, HelpCircle, Keyboard, ChevronRight, Ban, Lock } from 'lucide-react'
 
 // Determina si una feature estA bloqueada segAon el plan del usuario
@@ -398,7 +398,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   // Cargar voces del usuario desde la API
   const loadUserVoices = async () => {
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       if (!token) return
 
       const res = await fetch(`${API_URL}/api/settings/voices`, {
@@ -522,7 +522,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
 
   const loadBotCharacters = async () => {
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       if (!token) return
 
       const res = await fetch(`${API_URL}/api/bot/characters`, {
@@ -549,7 +549,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     const target = String(username || '').trim().replace(/^@+/, '').toLowerCase()
     if (!target) return
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       if (token) {
         await fetch(`${API_URL}/api/bans/${target}`, {
           method: 'DELETE',

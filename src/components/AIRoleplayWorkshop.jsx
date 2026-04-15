@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Trash2, Edit2, CheckCircle, AlertCircle, Loader } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
@@ -56,7 +56,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
   }, [])
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     return {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -65,7 +65,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
 
   const loadCharacters = async () => {
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       if (!token) { setLoadingCharacters(false); return }
 
       const res = await fetch(`${API_URL}/api/bot/characters`, {
@@ -86,7 +86,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
 
   const loadUserVoices = async () => {
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       if (!token) return
 
       const res = await fetch(`${API_URL}/api/settings/voices`, {
@@ -199,7 +199,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
     if (!confirm(`¿Eliminar el personaje "${charName}"?`)) return
 
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       const res = await fetch(`${API_URL}/api/bot/characters/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }

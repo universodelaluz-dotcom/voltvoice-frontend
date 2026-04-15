@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X, Users, Clock3, TrendingUp, Filter, Trophy, Sparkles, BookOpen } from 'lucide-react'
 import chatStore from '../services/chatStore.js'
 
@@ -247,7 +247,7 @@ const extractKeywords = (text = '') => {
 }
 
 // Obtener token del localStorage
-const getAuthToken = () => localStorage.getItem('sv-token') || ''
+const getAuthToken = () => sessionStorage.getItem('sv-token') || ''
 
 const defaultHighlightRules = {
   moderators: { enabled: false, color: '#a855f7' },

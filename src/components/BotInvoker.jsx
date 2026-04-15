@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Mic2, Send, Volume2, Lock } from 'lucide-react'
 import inworldRealtimeService from '../services/inworldRealtimeService'
 import chatStore from '../services/chatStore.js'
@@ -554,7 +554,7 @@ const formatResetWait = (seconds = 0) => {
   }
 
   const reportRealtimeUsage = async (text, voiceId) => {
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     if (!token || !text?.trim()) {
       return
     }
@@ -1005,7 +1005,7 @@ const formatResetWait = (seconds = 0) => {
   }
 
   const fetchStatsSummary = async () => {
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     if (!token) {
       throw new Error('No encontre sesion activa para consultar estadisticas.')
     }
@@ -1021,7 +1021,7 @@ const formatResetWait = (seconds = 0) => {
   }
 
   const speakLocalResponse = async (text, voiceId) => {
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     const selectedVoice = voiceId || selectedRealtimeVoiceId || 'Clive'
 
     // Detectar si es una voz basica de Google (no Inworld)
@@ -2221,7 +2221,7 @@ Extras obligatorios:
 
   const loadCharacters = async () => {
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       const res = await fetch(`${API_URL}/api/bot/characters`, {
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -2242,7 +2242,7 @@ Extras obligatorios:
 
   const loadUserVoices = async () => {
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       const res = await fetch(`${API_URL}/api/settings/voices`, {
         headers: { Authorization: `Bearer ${token}` }
       })

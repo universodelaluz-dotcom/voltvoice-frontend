@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { StripePayment } from './components/StripePayment'
 import { SynthesisStudio } from './components/SynthesisStudio'
 import VoiceWorkshopPanel from './components/VoiceCloningPanel'
@@ -368,14 +368,14 @@ export function App() {
 
   // Restaurar sesión al cargar
   useEffect(() => {
-    const savedToken = localStorage.getItem('sv-token')
+    const savedToken = sessionStorage.getItem('sv-token')
     const savedUser = localStorage.getItem('sv-user')
     const savedTokenApi = localStorage.getItem(TOKEN_API_KEY)
     const currentApi = getApiFingerprint()
 
     if (savedToken && savedTokenApi && savedTokenApi !== currentApi) {
       // Evita usar un token generado contra otro backend (local vs prod).
-      localStorage.removeItem('sv-token')
+      sessionStorage.removeItem('sv-token')
       localStorage.removeItem('sv-user')
       localStorage.setItem(TOKEN_API_KEY, currentApi)
       setConfigReady(true)
@@ -405,7 +405,7 @@ export function App() {
           setConfigReady(true)
         })
       } catch {
-        localStorage.removeItem('sv-token')
+        sessionStorage.removeItem('sv-token')
         localStorage.removeItem('sv-user')
         setConfigReady(true)
       }
@@ -586,7 +586,7 @@ export function App() {
   }, [config, user])
 
   useEffect(() => {
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     if (!token || !user || !configReady) return
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
@@ -630,7 +630,7 @@ export function App() {
   }
 
   const handleLogout = async () => {
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     const currentUser = user
     if (token && currentUser) {
       await persistConfigNow(token, latestConfigRef.current)
@@ -638,7 +638,7 @@ export function App() {
 
     setUser(null)
     setAuthToken(null)
-    localStorage.removeItem('sv-token')
+    sessionStorage.removeItem('sv-token')
     localStorage.removeItem('sv-user')
     localStorage.removeItem(TOKEN_API_KEY)
     setConfigReady(true)
@@ -661,7 +661,7 @@ export function App() {
           const errText = String(data?.error || data?.message || '').toLowerCase()
 
           if (data?.error === 'SESSION_DISPLACED') {
-            localStorage.removeItem('sv-token')
+            sessionStorage.removeItem('sv-token')
             localStorage.removeItem('sv-user')
             localStorage.removeItem(TOKEN_API_KEY)
             setUser(null)
@@ -672,11 +672,11 @@ export function App() {
               alert('⚠️ Tu sesión fue iniciada en otro dispositivo. Has sido desconectado.')
             }, 100)
           } else if (
-            localStorage.getItem('sv-token') &&
+            sessionStorage.getItem('sv-token') &&
             (errText.includes('invalid token') || errText.includes('no token provided') || errText.includes('jwt'))
           ) {
             // Token vencido / inválido: limpiar sesión para evitar bloqueos raros.
-            localStorage.removeItem('sv-token')
+            sessionStorage.removeItem('sv-token')
             localStorage.removeItem('sv-user')
             localStorage.removeItem(TOKEN_API_KEY)
             setUser(null)
@@ -696,7 +696,7 @@ export function App() {
 
   useEffect(() => {
     const handleBeforeUnload = () => {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       const currentUser = user
       if (!token || !currentUser) return
       fetch(`${API_URL}/api/settings`, {

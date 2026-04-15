@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X, Zap, Check, AlertCircle, Loader2 } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
@@ -72,7 +72,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     }).format(usdPrice * usdMxn)
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     if (!token) return null
     return {
       'Content-Type': 'application/json',
@@ -159,7 +159,10 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         body: JSON.stringify(requestPayload),
       })
       const data = await res.json()
-      if (data.checkoutUrl) window.location.href = data.checkoutUrl
+      if (data.requiresPayment === false) {
+        alert(data.message || 'Cambio de plan programado para el siguiente ciclo.')
+        onClose?.()
+      } else if (data.checkoutUrl) window.location.href = data.checkoutUrl
       else if (data.sandboxUrl) window.location.href = data.sandboxUrl
       else alert('Error MercadoPago: ' + (data.error || 'desconocido'))
     } catch (e) {
@@ -185,7 +188,10 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         body: JSON.stringify(requestPayload),
       })
       const data = await res.json()
-      if (data.approvalUrl) {
+      if (data.requiresPayment === false) {
+        alert(data.message || 'Cambio de plan programado para el siguiente ciclo.')
+        onClose?.()
+      } else if (data.approvalUrl) {
         const w = 500
         const h = 650
         const left = (screen.width - w) / 2

@@ -26,7 +26,7 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
   useEffect(() => {
     const loadCharacters = async () => {
       try {
-        const token = localStorage.getItem('sv-token')
+        const token = sessionStorage.getItem('sv-token')
         if (!token) return
 
         const res = await fetch(`${API_URL}/api/bot/characters`, {
@@ -52,7 +52,7 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const token = localStorage.getItem('sv-token')
+        const token = sessionStorage.getItem('sv-token')
         if (!token) return
 
         const res = await fetch(`${API_URL}/api/settings`, {
@@ -128,7 +128,7 @@ export default function BotPanel({ tiktokUsername, darkMode = true }) {
     setAudioUrl(null)
 
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       const res = await fetch(`${API_URL}/api/bot/invoke`, {
         method: 'POST',
         headers: {
