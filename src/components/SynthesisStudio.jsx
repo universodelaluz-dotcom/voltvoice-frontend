@@ -507,7 +507,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
           </button>
           {onGoVoiceCloning && (() => {
             const userPlan = user?.plan || 'free'
-            const isVoiceWorkshopBlocked = ['free', 'creator'].includes(String(userPlan).toLowerCase())
+            const isVoiceWorkshopBlocked = String(userPlan).toLowerCase() === 'free'
 
             if (isVoiceWorkshopBlocked) {
               return (
