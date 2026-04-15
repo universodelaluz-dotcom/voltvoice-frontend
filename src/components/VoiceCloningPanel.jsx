@@ -34,6 +34,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   const [testText, setTestText] = useState('Asi suena tu voz elegida')
   const [testingVoice, setTestingVoice] = useState(false)
   const [testAudioUrl, setTestAudioUrl] = useState(null)
+  const [shouldAutoPlayTestAudio, setShouldAutoPlayTestAudio] = useState(false)
   const testAudioRef = useRef(null)
   const testRequestRef = useRef(0)
   const testingVoiceRef = useRef(false)
@@ -43,6 +44,8 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   const dragRef = useRef(null) // { handle: 'start'|'end', initX, initStartMs, initEndMs }
   const studioProRef = useRef({ startMs: 0, endMs: 0, duration: 0 })
   const [studioProPreview, setStudioProPreview] = useState({ loading: false, audioUrl: null })
+  const [shouldAutoPlayStudioPreview, setShouldAutoPlayStudioPreview] = useState(false)
+  const studioPreviewAudioRef = useRef(null)
 
   // Studio Pro section
   const [studioPro, setStudioPro] = useState({
@@ -84,7 +87,23 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   // Limpiar audio cuando cambia la voz seleccionada
   useEffect(() => {
     setTestAudioUrl(null)
+    setShouldAutoPlayTestAudio(false)
   }, [testVoiceId])
+
+  // Evitar replays automáticos al moverte entre pestañas
+  const handleTabChange = (nextTab) => {
+    if (testAudioRef.current) {
+      testAudioRef.current.pause()
+      testAudioRef.current.currentTime = 0
+    }
+    if (studioPreviewAudioRef.current) {
+      studioPreviewAudioRef.current.pause()
+      studioPreviewAudioRef.current.currentTime = 0
+    }
+    setShouldAutoPlayTestAudio(false)
+    setShouldAutoPlayStudioPreview(false)
+    setActiveTab(nextTab)
+  }
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('sv-token')
@@ -234,6 +253,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
       if (response.ok && (data.audio || data.audioUrl)) {
         setTestAudioUrl(data.audio || data.audioUrl)
+        setShouldAutoPlayTestAudio(true)
         setMessage('✓ Audio generado exitosamente')
         setTimeout(() => setMessage(null), 3000)
       } else {
@@ -278,6 +298,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       })
       const data = await res.json()
       if (res.ok && data.audio) {
+        setShouldAutoPlayStudioPreview(true)
         setStudioProPreview({ loading: false, audioUrl: data.audio })
       } else {
         setError(data.error || 'Error cargando preview')
@@ -643,7 +664,14 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           {testAudioUrl && (
             <div className={darkMode ? 'bg-gray-800/60 border border-gray-700/50 rounded-lg p-4' : 'bg-gray-50 border border-gray-200 rounded-lg p-4'}>
               <p className={`text-sm mb-2 ${darkMode ? 'text-cyan-300' : 'text-gray-700'}`}>🔊 Escucha el resultado:</p>
-              <audio key={testAudioUrl} ref={testAudioRef} controls className="w-full" autoPlay>
+              <audio
+                key={testAudioUrl}
+                ref={testAudioRef}
+                controls
+                className="w-full"
+                autoPlay={shouldAutoPlayTestAudio}
+                onPlay={() => setShouldAutoPlayTestAudio(false)}
+              >
                 <source src={testAudioUrl} type="audio/mpeg" />
               </audio>
             </div>
@@ -662,7 +690,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       {/* Tabs */}
       <div className={`flex gap-3 p-1 rounded-lg mb-2 flex-wrap ${darkMode ? 'bg-gray-800/60' : 'bg-gray-100'}`}>
         <button
-          onClick={() => setActiveTab('clone')}
+          onClick={() => handleTabChange('clone')}
           className={`flex-1 min-w-32 px-6 py-3 rounded-md font-semibold transition-all ${
             activeTab === 'clone'
               ? darkMode
@@ -678,7 +706,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         </button>
         {(user?.role === 'admin' || ['creator', 'pro'].includes((user?.plan || 'free').toLowerCase())) && (
           <button
-            onClick={() => setActiveTab('studio-pro')}
+            onClick={() => handleTabChange('studio-pro')}
             className={`flex-1 min-w-32 px-6 py-3 rounded-md font-semibold transition-all ${
               activeTab === 'studio-pro'
                 ? darkMode
@@ -694,7 +722,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           </button>
         )}
         <button
-          onClick={() => setActiveTab('ai-assistant')}
+          onClick={() => handleTabChange('ai-assistant')}
           className={`flex-1 min-w-32 px-6 py-3 rounded-md font-semibold transition-all ${
             activeTab === 'ai-assistant'
               ? darkMode
@@ -788,7 +816,6 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
             <p>✓ Duración ideal: 10-15 segundos (máx 15 seg)</p>
             <p>✓ Audio claro, sin ruido de fondo ni música</p>
             <p>✓ Formato: MP3 o WAV</p>
-            <p>✓ Mejor calidad si incluyes la transcripción</p>
           </div>
 
           {/* Submit */}
@@ -1008,8 +1035,10 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                       {studioProPreview.audioUrl && (
                         <audio
                           key={studioProPreview.audioUrl}
+                          ref={studioPreviewAudioRef}
                           controls
-                          autoPlay
+                          autoPlay={shouldAutoPlayStudioPreview}
+                          onPlay={() => setShouldAutoPlayStudioPreview(false)}
                           className="w-full mt-2 h-9"
                           src={studioProPreview.audioUrl}
                         />

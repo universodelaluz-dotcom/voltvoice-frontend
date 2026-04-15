@@ -14,8 +14,17 @@ import AdminPanel from './components/AdminPanel'
 import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft, LogOut } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const TOKEN_API_KEY = 'sv-token-api-v1'
 const LOCAL_CONFIG_CACHE_KEY = 'sv-config-cache-v1'
 const LOCAL_CONFIG_CACHE_KEY_PREFIX = 'sv-config-cache-v2'
+
+const getApiFingerprint = () => {
+  try {
+    return new URL(API_URL).origin
+  } catch {
+    return String(API_URL || '').trim().toLowerCase()
+  }
+}
 
 const DEFAULT_CONFIG = {
   audioSpeed: 1.0,
@@ -361,6 +370,18 @@ export function App() {
   useEffect(() => {
     const savedToken = localStorage.getItem('sv-token')
     const savedUser = localStorage.getItem('sv-user')
+    const savedTokenApi = localStorage.getItem(TOKEN_API_KEY)
+    const currentApi = getApiFingerprint()
+
+    if (savedToken && savedTokenApi && savedTokenApi !== currentApi) {
+      // Evita usar un token generado contra otro backend (local vs prod).
+      localStorage.removeItem('sv-token')
+      localStorage.removeItem('sv-user')
+      localStorage.setItem(TOKEN_API_KEY, currentApi)
+      setConfigReady(true)
+      return
+    }
+
     if (savedToken && savedUser) {
       try {
         const userData = JSON.parse(savedUser)
@@ -595,6 +616,7 @@ export function App() {
   }, [config, user, configReady])
 
   const handleLogin = (userData, token) => {
+    localStorage.setItem(TOKEN_API_KEY, getApiFingerprint())
     setUser(userData)
     setAuthToken(token)
     setTokens(userData.tokens || 100)
@@ -618,6 +640,7 @@ export function App() {
     setAuthToken(null)
     localStorage.removeItem('sv-token')
     localStorage.removeItem('sv-user')
+    localStorage.removeItem(TOKEN_API_KEY)
     setConfigReady(true)
     // Reset config a defaults
     const cleanConfig = buildDefaultConfig()
@@ -635,15 +658,33 @@ export function App() {
         const clone = response.clone()
         try {
           const data = await clone.json()
+          const errText = String(data?.error || data?.message || '').toLowerCase()
+
           if (data?.error === 'SESSION_DISPLACED') {
             localStorage.removeItem('sv-token')
             localStorage.removeItem('sv-user')
+            localStorage.removeItem(TOKEN_API_KEY)
             setUser(null)
             setAuthToken(null)
             setCurrentPage('auth')
             setConfig(buildDefaultConfig())
             setTimeout(() => {
               alert('⚠️ Tu sesión fue iniciada en otro dispositivo. Has sido desconectado.')
+            }, 100)
+          } else if (
+            localStorage.getItem('sv-token') &&
+            (errText.includes('invalid token') || errText.includes('no token provided') || errText.includes('jwt'))
+          ) {
+            // Token vencido / inválido: limpiar sesión para evitar bloqueos raros.
+            localStorage.removeItem('sv-token')
+            localStorage.removeItem('sv-user')
+            localStorage.removeItem(TOKEN_API_KEY)
+            setUser(null)
+            setAuthToken(null)
+            setCurrentPage('auth')
+            setConfig(buildDefaultConfig())
+            setTimeout(() => {
+              alert('Tu sesión expiró o quedó inválida. Inicia sesión de nuevo.')
             }, 100)
           }
         } catch (_) {}
