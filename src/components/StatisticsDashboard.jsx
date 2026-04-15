@@ -1,4 +1,5 @@
-﻿import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowLeft,
   BarChart3,
@@ -80,7 +81,7 @@ function SectionCard({ darkMode, title, subtitle, action, children }) {
   )
 }
 
-function TinyBarChart({ darkMode, values }) {
+function TinyBarChart({ darkMode, values, tooltipUnit }) {
   const max = Math.max(...values.map((item) => item.messages), 1)
 
   return (
@@ -96,7 +97,7 @@ function TinyBarChart({ darkMode, values }) {
                   : 'bg-gradient-to-t from-cyan-500 via-sky-400 to-indigo-400'
               }`}
               style={{ height: `${height}%` }}
-              title={`${item.label}: ${formatCompact(item.messages)} mensajes`}
+              title={`${item.label}: ${formatCompact(item.messages)} ${tooltipUnit}`}
             />
             <span className={`mt-2 text-[11px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
               {item.shortLabel}
@@ -109,6 +110,144 @@ function TinyBarChart({ darkMode, values }) {
 }
 
 export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, authToken }) {
+  const { i18n } = useTranslation()
+  const isSpanish = String(i18n.resolvedLanguage || i18n.language || '').toLowerCase().startsWith('es')
+  const locale = isSpanish ? 'es-MX' : 'en-US'
+
+  const copy = isSpanish
+    ? {
+        loadError: 'Error cargando estadisticas',
+        serverError: 'Error conectando con el servidor',
+        back: 'Volver',
+        title: 'Rendimiento del Stream',
+        loading: 'Cargando estadisticas...',
+        panelError: 'No pude cargar el panel',
+        retry: 'Reintentar',
+        refresh: 'Actualizar',
+        overview: 'Vista general',
+        heroTitle: 'Resumen real de tu operacion de voz.',
+        heroSubtitle: 'Aqui ves metricas clave de uso: saldo de tokens, actividad del mes, consumo y rendimiento por voz para tomar decisiones rapidas.',
+        tokensAvailable: 'Tokens disponibles',
+        usageHint: (pct) => `${pct}% del cupo actual todavia disponible`,
+        monthMessages: 'Mensajes del mes',
+        avgPerActiveDay: (avg) => `${avg} promedio por dia activo`,
+        hoursSaved: 'Horas ahorradas',
+        hoursSavedHint: 'Tiempo recuperado este mes gracias a lectura automatizada',
+        planBalance: 'Saldo del plan',
+        readyTokens: 'tokens listos para usar',
+        available: 'disponibles',
+        baseCapacity: 'de capacidad base',
+        monthPulse: 'Pulso del mes',
+        monthPulseSubtitle: 'Actividad de tu stream en lectura de voz y consumo',
+        processedMessages: 'Mensajes procesados',
+        processedMessagesHint: 'Mensajes que entraron al sistema este mes',
+        tokensUsed: 'Tokens usados',
+        avgTokensPerMessage: (avg) => `${avg} tokens por mensaje en promedio`,
+        charsSynth: 'Caracteres sintetizados',
+        charsSynthHint: 'Texto total convertido en voz este mes',
+        monthChange: 'Cambio vs mes pasado',
+        monthChangeHint: 'Comparacion de actividad frente al mes anterior',
+        bestRecentDay: 'Mejor dia reciente',
+        noData: 'Sin datos',
+        activeDays: 'Dias activos',
+        last30Days: 'de los ultimos 30 dias',
+        voicesUsed: 'Voces usadas',
+        monthVariety: 'variedad real este mes',
+        trendNoData: 'Aun no hay suficiente historial diario para dibujar tendencia.',
+        streamBenefits: 'Beneficios para el stream',
+        streamBenefitsSubtitle: 'Indicadores para medir retorno y carga operativa',
+        estimatedSavings: 'Ahorro estimado del mes',
+        estimatedSavingsHint: 'Estimacion basada en tiempo de lectura que ya no haces manualmente',
+        usefulValue: 'Valor mas util para ti',
+        usefulValueText: 'Si mantienes este ritmo, el sistema seguira reduciendo carga operativa en chat y lectura de voz.',
+        totalHistory: 'Historial total',
+        totalMessages: 'mensajes totales',
+        recoveredHours: 'horas recuperadas',
+        topVoices: 'Voces mas usadas',
+        topVoicesSubtitle: 'Uso real segun logs',
+        unnamed: 'Sin nombre',
+        uses: 'usos',
+        topVoicesNoData: 'Todavia no hay suficientes usos registrados para mostrar ranking de voces.',
+        account: 'Tu cuenta',
+        accountSubtitle: 'Datos clave para operacion y crecimiento',
+        currentPlan: 'Plan actual',
+        planCapacityHint: 'Capacidad usada de tu plan',
+        voiceLeader: 'Voz lider',
+        registeredUses: (count) => `${count} usos registrados`,
+        leaderNoData: 'Todavia sin suficiente uso',
+        accountAge: 'Antiguedad',
+        accountAgeValue: (days) => `${days} dias`,
+        accountAgeHint: 'Tiempo de vida de tu cuenta',
+        messagesUnit: 'mensajes',
+        clonedVoices: 'Voces clonadas'
+      }
+    : {
+        loadError: 'Error loading statistics',
+        serverError: 'Error connecting to server',
+        back: 'Back',
+        title: 'Stream Performance',
+        loading: 'Loading statistics...',
+        panelError: 'Could not load dashboard',
+        retry: 'Retry',
+        refresh: 'Refresh',
+        overview: 'Overview',
+        heroTitle: 'A clear snapshot of your voice operation.',
+        heroSubtitle: 'Track your key usage metrics: token balance, monthly activity, consumption and voice performance for faster decisions.',
+        tokensAvailable: 'Available tokens',
+        usageHint: (pct) => `${pct}% of your current quota still available`,
+        monthMessages: 'Monthly messages',
+        avgPerActiveDay: (avg) => `${avg} average per active day`,
+        hoursSaved: 'Hours saved',
+        hoursSavedHint: 'Time recovered this month thanks to automated reading',
+        planBalance: 'Plan balance',
+        readyTokens: 'tokens ready to use',
+        available: 'available',
+        baseCapacity: 'base capacity',
+        monthPulse: 'Monthly pulse',
+        monthPulseSubtitle: 'Your stream activity in voice reading and token usage',
+        processedMessages: 'Processed messages',
+        processedMessagesHint: 'Messages that entered the system this month',
+        tokensUsed: 'Tokens used',
+        avgTokensPerMessage: (avg) => `${avg} tokens per message on average`,
+        charsSynth: 'Characters synthesized',
+        charsSynthHint: 'Total text converted to speech this month',
+        monthChange: 'Change vs last month',
+        monthChangeHint: 'Activity comparison against previous month',
+        bestRecentDay: 'Best recent day',
+        noData: 'No data',
+        activeDays: 'Active days',
+        last30Days: 'in the last 30 days',
+        voicesUsed: 'Voices used',
+        monthVariety: 'real variety this month',
+        trendNoData: 'Not enough daily history yet to draw a trend.',
+        streamBenefits: 'Stream benefits',
+        streamBenefitsSubtitle: 'Indicators to measure return and operational load',
+        estimatedSavings: 'Estimated monthly savings',
+        estimatedSavingsHint: 'Estimate based on reading time you no longer do manually',
+        usefulValue: 'Most useful value for you',
+        usefulValueText: 'If you keep this pace, the system will continue reducing operational load in chat and voice reading.',
+        totalHistory: 'All-time history',
+        totalMessages: 'total messages',
+        recoveredHours: 'recovered hours',
+        topVoices: 'Most used voices',
+        topVoicesSubtitle: 'Real usage based on logs',
+        unnamed: 'Unnamed',
+        uses: 'uses',
+        topVoicesNoData: 'There is not enough usage yet to display a voice ranking.',
+        account: 'Your account',
+        accountSubtitle: 'Key data for operations and growth',
+        currentPlan: 'Current plan',
+        planCapacityHint: 'Plan capacity currently used',
+        voiceLeader: 'Top voice',
+        registeredUses: (count) => `${count} recorded uses`,
+        leaderNoData: 'Not enough usage yet',
+        accountAge: 'Account age',
+        accountAgeValue: (days) => `${days} days`,
+        accountAgeHint: 'Lifetime of your account',
+        messagesUnit: 'messages',
+        clonedVoices: 'Cloned voices'
+      }
+
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -131,11 +270,11 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
       if (data.success) {
         setStats(data)
       } else {
-        setError(data.error || 'Error cargando estadísticas')
+        setError(data.error || copy.loadError)
       }
     } catch (err) {
       console.error('[Stats] Error:', err)
-      setError('Error conectando con el servidor')
+      setError(copy.serverError)
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -166,8 +305,8 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
       const date = new Date(`${item.date}T00:00:00`)
       return {
         ...item,
-        label: date.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric' }),
-        shortLabel: date.toLocaleDateString('es-MX', { weekday: 'short' }).slice(0, 3)
+        label: date.toLocaleDateString(locale, { weekday: 'long', day: 'numeric' }),
+        shortLabel: date.toLocaleDateString(locale, { weekday: 'short' }).slice(0, 3)
       }
     })
 
@@ -203,7 +342,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
       plan_info,
       all_time
     }
-  }, [stats])
+  }, [stats, locale])
 
   if (loading) {
     return (
@@ -213,10 +352,10 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
         }`}>
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <button onClick={onGoStudio} className={`flex items-center gap-2 ${darkMode ? 'text-cyan-300' : 'text-indigo-600'}`}>
-              <ArrowLeft className="w-5 h-5" /> Volver
+              <ArrowLeft className="w-5 h-5" /> {copy.back}
             </button>
             <h1 className="text-2xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-              Rendimiento del Stream
+              {copy.title}
             </h1>
             <div className="w-20" />
           </div>
@@ -224,7 +363,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
         <div className="min-h-screen pt-24 flex items-center justify-center">
           <div className={`flex items-center gap-3 text-lg ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
             <Loader2 className="w-6 h-6 animate-spin" />
-            Cargando estadísticas...
+            {copy.loading}
           </div>
         </div>
       </div>
@@ -239,10 +378,10 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
         }`}>
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <button onClick={onGoStudio} className={`flex items-center gap-2 ${darkMode ? 'text-cyan-300' : 'text-indigo-600'}`}>
-              <ArrowLeft className="w-5 h-5" /> Volver
+              <ArrowLeft className="w-5 h-5" /> {copy.back}
             </button>
             <h1 className="text-2xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-              Rendimiento del Stream
+              {copy.title}
             </h1>
             <div className="w-20" />
           </div>
@@ -251,7 +390,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
           <div className={`max-w-xl rounded-3xl border p-8 text-center ${
             darkMode ? 'border-red-400/20 bg-red-500/10 text-red-300' : 'border-red-200 bg-red-50 text-red-700'
           }`}>
-            <p className="text-lg font-bold">No pude cargar el panel</p>
+            <p className="text-lg font-bold">{copy.panelError}</p>
             <p className="mt-2 text-sm opacity-80">{error}</p>
             <button
               onClick={() => loadStats()}
@@ -260,7 +399,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
               }`}
             >
               <RefreshCw className="w-4 h-4" />
-              Reintentar
+              {copy.retry}
             </button>
           </div>
         </div>
@@ -272,7 +411,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
 
   const { current_month, benefits, plan_info, all_time, last7, bestDay, activeDays, avgMessagesPerActiveDay, avgTokensPerMessage, usagePercent, voiceLeader, growth } = derived
   const bestDayLabel = bestDay
-    ? new Date(`${bestDay.date}T00:00:00`).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })
+    ? new Date(`${bestDay.date}T00:00:00`).toLocaleDateString(locale, { day: 'numeric', month: 'short' })
     : 'N/A'
 
   return (
@@ -291,10 +430,10 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
               darkMode ? 'text-cyan-300 hover:text-cyan-200' : 'text-indigo-600 hover:text-indigo-700'
             }`}
           >
-            <ArrowLeft className="w-5 h-5" /> Volver
+            <ArrowLeft className="w-5 h-5" /> {copy.back}
           </button>
           <h1 className="text-2xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-            Rendimiento del Stream
+            {copy.title}
           </h1>
           <button
             onClick={() => loadStats(true)}
@@ -303,7 +442,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
             }`}
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Actualizar
+            {copy.refresh}
           </button>
         </div>
       </nav>
@@ -320,38 +459,38 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
                 darkMode ? 'bg-cyan-500/10 text-cyan-300' : 'bg-cyan-50 text-cyan-700'
               }`}>
                 <Sparkles className="w-4 h-4" />
-                Vista general
+                {copy.overview}
               </div>
               <h2 className={`mt-4 text-3xl md:text-5xl font-black leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                Resumen real de tu operación de voz.
+                {copy.heroTitle}
               </h2>
               <p className={`mt-4 max-w-2xl text-sm md:text-base leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                Aquí ves métricas clave de uso: saldo de tokens, actividad del mes, consumo y rendimiento por voz para tomar decisiones rápidas.
+                {copy.heroSubtitle}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
                 <StatTile
                   darkMode={darkMode}
                   icon={Wallet}
-                  label="Tokens disponibles"
+                  label={copy.tokensAvailable}
                   value={`${formatCompact(plan_info.tokens_balance)} / ${formatCompact(plan_info.token_limit)}`}
-                  hint={`${usagePercent}% del cupo actual todavía disponible`}
+                  hint={copy.usageHint(usagePercent)}
                   tone="cyan"
                 />
                 <StatTile
                   darkMode={darkMode}
                   icon={MessageSquare}
-                  label="Mensajes del mes"
+                  label={copy.monthMessages}
                   value={formatCompact(current_month.messages_count)}
-                  hint={`${avgMessagesPerActiveDay} promedio por día activo`}
+                  hint={copy.avgPerActiveDay(avgMessagesPerActiveDay)}
                   tone="purple"
                 />
                 <StatTile
                   darkMode={darkMode}
                   icon={Clock3}
-                  label="Horas ahorradas"
+                  label={copy.hoursSaved}
                   value={benefits.hours_saved.toFixed(1)}
-                  hint="Tiempo recuperado este mes gracias a lectura automatizada"
+                  hint={copy.hoursSavedHint}
                   tone="emerald"
                 />
               </div>
@@ -361,7 +500,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
               darkMode ? 'border-white/10 bg-white/[0.03]' : 'border-white bg-white/80'
             }`}>
               <p className={`text-xs uppercase tracking-[0.2em] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                Saldo del plan
+                {copy.planBalance}
               </p>
               <div className="mt-4 flex items-end justify-between gap-4">
                 <div>
@@ -369,7 +508,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
                     {formatCompact(plan_info.tokens_balance)}
                   </p>
                   <p className={`mt-1 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    tokens listos para usar
+                    {copy.readyTokens}
                   </p>
                 </div>
                 <div className={`text-right ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
@@ -384,8 +523,8 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
                 />
               </div>
               <div className={`mt-3 flex items-center justify-between text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                <span>{formatCompact(plan_info.tokens_balance)} disponibles</span>
-                <span>{formatCompact(plan_info.token_limit)} de capacidad base</span>
+                <span>{formatCompact(plan_info.tokens_balance)} {copy.available}</span>
+                <span>{formatCompact(plan_info.token_limit)} {copy.baseCapacity}</span>
               </div>
             </div>
           </div>
@@ -394,79 +533,79 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
         <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-6">
           <SectionCard
             darkMode={darkMode}
-            title="Pulso del mes"
-            subtitle="Actividad de tu stream en lectura de voz y consumo"
+            title={copy.monthPulse}
+            subtitle={copy.monthPulseSubtitle}
           >
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
               <StatTile
                 darkMode={darkMode}
                 icon={BarChart3}
-                label="Mensajes procesados"
+                label={copy.processedMessages}
                 value={formatCompact(current_month.messages_count)}
-                hint="Mensajes que entraron al sistema este mes"
+                hint={copy.processedMessagesHint}
                 tone="cyan"
               />
               <StatTile
                 darkMode={darkMode}
                 icon={Zap}
-                label="Tokens usados"
+                label={copy.tokensUsed}
                 value={formatCompact(current_month.tokens_used)}
-                hint={`${avgTokensPerMessage} tokens por mensaje en promedio`}
+                hint={copy.avgTokensPerMessage(avgTokensPerMessage)}
                 tone="purple"
               />
               <StatTile
                 darkMode={darkMode}
                 icon={Mic2}
-                label="Caracteres sintetizados"
+                label={copy.charsSynth}
                 value={formatCompact(current_month.characters_synthesized)}
-                hint="Texto total convertido en voz este mes"
+                hint={copy.charsSynthHint}
                 tone="amber"
               />
               <StatTile
                 darkMode={darkMode}
                 icon={TrendingUp}
-                label="Cambio vs mes pasado"
+                label={copy.monthChange}
                 value={`${growth > 0 ? '+' : ''}${growth.toFixed(1)}%`}
-                hint="Comparación de actividad frente al mes anterior"
+                hint={copy.monthChangeHint}
                 tone={growth >= 0 ? 'emerald' : 'purple'}
               />
             </div>
 
             {last7.length > 0 ? (
               <>
-                <TinyBarChart darkMode={darkMode} values={last7} />
+                <TinyBarChart darkMode={darkMode} values={last7} tooltipUnit={copy.messagesUnit} />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
                   <div className={`rounded-2xl p-4 ${darkMode ? 'bg-white/[0.03]' : 'bg-gray-50'}`}>
                     <p className={`text-xs uppercase tracking-[0.18em] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      Mejor día reciente
+                      {copy.bestRecentDay}
                     </p>
                     <p className={`mt-2 text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {bestDayLabel}
                     </p>
                     <p className={`mt-1 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {bestDay ? `${formatCompact(bestDay.messages)} mensajes` : 'Sin datos'}
+                      {bestDay ? `${formatCompact(bestDay.messages)} ${copy.messagesUnit}` : copy.noData}
                     </p>
                   </div>
                   <div className={`rounded-2xl p-4 ${darkMode ? 'bg-white/[0.03]' : 'bg-gray-50'}`}>
                     <p className={`text-xs uppercase tracking-[0.18em] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      Días activos
+                      {copy.activeDays}
                     </p>
                     <p className={`mt-2 text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {activeDays}
                     </p>
                     <p className={`mt-1 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      de los últimos 30 días
+                      {copy.last30Days}
                     </p>
                   </div>
                   <div className={`rounded-2xl p-4 ${darkMode ? 'bg-white/[0.03]' : 'bg-gray-50'}`}>
                     <p className={`text-xs uppercase tracking-[0.18em] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      Voces usadas
+                      {copy.voicesUsed}
                     </p>
                     <p className={`mt-2 text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {current_month.unique_voices_used}
                     </p>
                     <p className={`mt-1 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      variedad real este mes
+                      {copy.monthVariety}
                     </p>
                   </div>
                 </div>
@@ -475,49 +614,49 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
               <div className={`rounded-2xl border border-dashed p-6 text-sm ${
                 darkMode ? 'border-white/10 text-gray-400' : 'border-gray-200 text-gray-500'
               }`}>
-                Aún no hay suficiente historial diario para dibujar tendencia.
+                {copy.trendNoData}
               </div>
             )}
           </SectionCard>
 
           <SectionCard
             darkMode={darkMode}
-            title="Beneficios para el stream"
-            subtitle="Indicadores para medir retorno y carga operativa"
+            title={copy.streamBenefits}
+            subtitle={copy.streamBenefitsSubtitle}
           >
             <div className="space-y-4">
               <StatTile
                 darkMode={darkMode}
                 icon={DollarSign}
-                label="Ahorro estimado del mes"
+                label={copy.estimatedSavings}
                 value={formatMoney(benefits.money_saved_usd)}
-                hint="Estimación basada en tiempo de lectura que ya no haces manualmente"
+                hint={copy.estimatedSavingsHint}
                 tone="emerald"
               />
               <div className={`rounded-2xl p-4 ${darkMode ? 'bg-white/[0.03]' : 'bg-gray-50'}`}>
                 <p className={`text-xs uppercase tracking-[0.18em] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                  Valor más útil para ti
+                  {copy.usefulValue}
                 </p>
                 <p className={`mt-2 text-base leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                  Si mantienes este ritmo, el sistema seguirá reduciendo carga operativa en chat y lectura de voz.
+                  {copy.usefulValueText}
                 </p>
               </div>
               <div className={`rounded-2xl p-4 ${darkMode ? 'bg-white/[0.03]' : 'bg-gray-50'}`}>
                 <p className={`text-xs uppercase tracking-[0.18em] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                  Historial total
+                  {copy.totalHistory}
                 </p>
                 <div className="grid grid-cols-2 gap-4 mt-3">
                   <div>
                     <p className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {formatCompact(all_time.total_messages)}
                     </p>
-                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>mensajes totales</p>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{copy.totalMessages}</p>
                   </div>
                   <div>
                     <p className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       {all_time.total_hours_saved.toFixed(1)}
                     </p>
-                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>horas recuperadas</p>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{copy.recoveredHours}</p>
                   </div>
                 </div>
               </div>
@@ -528,8 +667,8 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
         <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-6">
           <SectionCard
             darkMode={darkMode}
-            title="Voces más usadas"
-            subtitle="Uso real según logs"
+            title={copy.topVoices}
+            subtitle={copy.topVoicesSubtitle}
           >
             {stats.top_voices?.length ? (
               <div className="space-y-3">
@@ -542,10 +681,10 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
                   >
                     <div>
                       <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        {voice.voice_name || 'Sin nombre'}
+                        {voice.voice_name || copy.unnamed}
                       </p>
                       <p className={`mt-1 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        {formatCompact(voice.count)} usos · {formatCompact(voice.tokens_used)} tokens
+                        {formatCompact(voice.count)} {copy.uses} � {formatCompact(voice.tokens_used)} tokens
                       </p>
                     </div>
                     <div className={`text-right ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
@@ -558,47 +697,47 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
               <div className={`rounded-2xl border border-dashed p-6 text-sm ${
                 darkMode ? 'border-white/10 text-gray-400' : 'border-gray-200 text-gray-500'
               }`}>
-                Todavía no hay suficientes usos registrados para mostrar ranking de voces.
+                {copy.topVoicesNoData}
               </div>
             )}
           </SectionCard>
 
           <SectionCard
             darkMode={darkMode}
-            title="Tu cuenta"
-            subtitle="Datos clave para operación y crecimiento"
+            title={copy.account}
+            subtitle={copy.accountSubtitle}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <StatTile
                 darkMode={darkMode}
                 icon={Wallet}
-                label="Plan actual"
+                label={copy.currentPlan}
                 value={String(plan_info.current_plan || 'free').toUpperCase()}
-                hint={`${formatCompact(plan_info.tokens_balance)} tokens disponibles`}
+                hint={`${formatCompact(plan_info.tokens_balance)} ${copy.available} tokens`}
                 tone="cyan"
               />
               <StatTile
                 darkMode={darkMode}
                 icon={Mic2}
-                label="Voces clonadas"
+                label={copy.clonedVoices}
                 value={`${formatCompact(plan_info.voice_clones_used)} / ${formatCompact(plan_info.voice_clone_limit)}`}
-                hint="Capacidad usada de tu plan"
+                hint={copy.planCapacityHint}
                 tone="purple"
               />
               <StatTile
                 darkMode={darkMode}
                 icon={Sparkles}
-                label="Voz líder"
+                label={copy.voiceLeader}
                 value={voiceLeader?.voice_name || 'N/A'}
-                hint={voiceLeader ? `${formatCompact(voiceLeader.count)} usos registrados` : 'Todavía sin suficiente uso'}
+                hint={voiceLeader ? copy.registeredUses(formatCompact(voiceLeader.count)) : copy.leaderNoData}
                 tone="amber"
               />
               <StatTile
                 darkMode={darkMode}
                 icon={Clock3}
-                label="Antigüedad"
-                value={`${formatCompact(all_time.account_age_days)} días`}
-                hint="Tiempo de vida de tu cuenta"
+                label={copy.accountAge}
+                value={copy.accountAgeValue(formatCompact(all_time.account_age_days))}
+                hint={copy.accountAgeHint}
                 tone="emerald"
               />
             </div>
@@ -608,4 +747,3 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
     </div>
   )
 }
-

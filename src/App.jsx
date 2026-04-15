@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StripePayment } from './components/StripePayment'
 import { SynthesisStudio } from './components/SynthesisStudio'
@@ -323,7 +323,8 @@ function AnimatedMetric({ value, className = '', animateOnView = false }) {
 }
 
 export function App() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isSpanish = String(i18n.resolvedLanguage || i18n.language || '').toLowerCase().startsWith('es')
   const [currentPage, setCurrentPage] = useState(() => {
     const params = window.location.search
     if (params.includes('preview=admin')) return 'admin'
@@ -671,7 +672,7 @@ export function App() {
             setCurrentPage('auth')
             setConfig(buildDefaultConfig())
             setTimeout(() => {
-              alert('⚠️ Tu sesión fue iniciada en otro dispositivo. Has sido desconectado.')
+              alert(isSpanish ? '⚠️ Tu sesión fue iniciada en otro dispositivo. Has sido desconectado.' : '⚠️ Your session was started on another device. You have been logged out.')
             }, 100)
           } else if (
             sessionStorage.getItem('sv-token') &&
@@ -686,7 +687,7 @@ export function App() {
             setCurrentPage('auth')
             setConfig(buildDefaultConfig())
             setTimeout(() => {
-              alert('Tu sesión expiró o quedó inválida. Inicia sesión de nuevo.')
+              alert(isSpanish ? 'Tu sesión expiró o quedó inválida. Inicia sesión de nuevo.' : 'Your session expired or became invalid. Please sign in again.')
             }, 100)
           }
         } catch (_) {}
@@ -741,7 +742,7 @@ export function App() {
       type: 'plan',
       planId: planMapping[plan.name] || plan.name.toLowerCase(),
       billingCycle,
-      label: `${plan.name} ${billingCycle === 'annual' ? 'Anual' : 'Mensual'}`,
+      label: `${plan.name} ${billingCycle === 'annual' ? (isSpanish ? 'Anual' : 'Annual') : (isSpanish ? 'Mensual' : 'Monthly')}`,
       price: billingCycle === 'monthly' ? Number(plan.price).toFixed(2) : Number(plan.price).toFixed(2),
     })
     setIsPaymentOpen(true)
@@ -1052,7 +1053,10 @@ export function App() {
 
           {/* Success Cases Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {t('landing.successCases.items', { returnObjects: true }).map((caseItem, idx) => (
+            {t('landing.successCases.items', { returnObjects: true }).map((caseItem, idx) => {
+              const fallbackSuccessImages = ['/images/web1.png', '/images/web2.png', '/images/web3.png']
+              const imageSrc = caseItem?.img || fallbackSuccessImages[idx % fallbackSuccessImages.length]
+              return (
               <div
                 key={idx}
                 className={`rounded-xl overflow-hidden border transition-all duration-300 hover:shadow-xl hover:-translate-y-2 ${
@@ -1078,10 +1082,13 @@ export function App() {
                 {/* Image */}
                 <div className="h-48 overflow-hidden bg-gray-300">
                   <img
-                    src={caseItem.img}
+                    src={imageSrc}
                     alt={caseItem.creator}
                     className="w-full h-full object-cover"
                     loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.src = '/images/streamvoicer6.png'
+                    }}
                   />
                 </div>
 
@@ -1098,7 +1105,7 @@ export function App() {
                   </p>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
 
           <div className="mt-32 mb-0">
@@ -1384,18 +1391,18 @@ export function App() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <h4 className="font-bold mb-4">Stream Voicer</h4>
-              <p className="text-sm text-gray-400">La mejor solución para leer chats en vivo</p>
+              <p className="text-sm text-gray-400">{isSpanish ? 'La mejor solución para leer chats en vivo' : 'The best solution to read live chats'}</p>
             </div>
             <div>
               <h4 className="font-bold mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><button onClick={() => setShowTerms(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">{t('landing.footer.terms')}</button></li>
                 <li><button onClick={() => setShowPrivacy(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">{t('landing.footer.privacy')}</button></li>
-                <li><button onClick={() => setShowCookies(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Cookies</button></li>
+                <li><button onClick={() => setShowCookies(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">{isSpanish ? 'Cookies' : 'Cookies'}</button></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Soporte</h4>
+              <h4 className="font-bold mb-4">{isSpanish ? 'Soporte' : 'Support'}</h4>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><button onClick={() => setShowContact(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">{t('landing.footer.contact')}</button></li>
               </ul>
@@ -1421,44 +1428,44 @@ export function App() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
           <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Términos de Servicio</h2>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{isSpanish ? 'Términos de Servicio' : 'Terms of Service'}</h2>
               <button onClick={() => setShowTerms(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
             </div>
             <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. Aceptación de Términos</h3>
-                <p>Al usar Stream Voicer, aceptas estos términos y condiciones. Si no estás de acuerdo, no uses el servicio.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? '1. Aceptación de Términos' : '1. Acceptance of Terms'}</h3>
+                <p>{isSpanish ? 'Al usar Stream Voicer, aceptas estos términos y condiciones. Si no estás de acuerdo, no uses el servicio.' : 'By using Stream Voicer, you agree to these terms and conditions. If you do not agree, do not use the service.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. Descripción del Servicio</h3>
-                <p>Stream Voicer es una plataforma de síntesis de voz (TTS) para streamers. Proporciona características para leer mensajes en vivo usando inteligencia artificial.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? '2. Descripción del Servicio' : '2. Service Description'}</h3>
+                <p>{isSpanish ? 'Stream Voicer es una plataforma de síntesis de voz (TTS) para streamers. Proporciona características para leer mensajes en vivo usando inteligencia artificial.' : 'Stream Voicer is a text-to-speech (TTS) platform for streamers. It provides features to read live messages using artificial intelligence.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Uso Permitido</h3>
-                <p>Debes usar Stream Voicer solo para propósitos legales y éticos. Se prohíbe:</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? '3. Uso Permitido' : '3. Permitted Use'}</h3>
+                <p>{isSpanish ? 'Debes usar Stream Voicer solo para propósitos legales y éticos. Se prohíbe:' : 'You must use Stream Voicer only for legal and ethical purposes. The following is prohibited:'}</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li>Contenido ofensivo, discriminatorio o ilegal</li>
-                  <li>Intentos de piratería o acceso no autorizado</li>
-                  <li>Spam o abuso del servicio</li>
-                  <li>Violación de derechos de terceros</li>
+                  <li>{isSpanish ? 'Contenido ofensivo, discriminatorio o ilegal' : 'Offensive, discriminatory, or illegal content'}</li>
+                  <li>{isSpanish ? 'Intentos de piratería o acceso no autorizado' : 'Hacking attempts or unauthorized access'}</li>
+                  <li>{isSpanish ? 'Spam o abuso del servicio' : 'Spam or service abuse'}</li>
+                  <li>{isSpanish ? 'Violación de derechos de terceros' : 'Violation of third-party rights'}</li>
                 </ul>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Suscripciones, Pagos y Reembolsos</h3>
-                <p>Los upgrades se aplican de inmediato con ajuste proporcional según tiempo restante y tiempo total del ciclo (calculado con timestamps exactos). Los downgrades se aplican en el siguiente ciclo de facturación. Puedes cancelar en cualquier momento y conservarás acceso hasta el final del período actual. No hay reembolsos por uso parcial del período.</p>
-                <p className="mt-2"><strong>Paquetes de tokens:</strong> Los paquetes de tokens son productos digitales de consumo inmediato. Una vez procesada la compra, no aplican reembolsos ni devoluciones de ningún tipo, independientemente del uso realizado. Al completar la compra, el usuario acepta expresamente esta política.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? '4. Suscripciones, Pagos y Reembolsos' : '4. Subscriptions, Payments, and Refunds'}</h3>
+                <p>{isSpanish ? 'Los upgrades se aplican de inmediato con ajuste proporcional según tiempo restante y tiempo total del ciclo (calculado con timestamps exactos). Los downgrades se aplican en el siguiente ciclo de facturación. Puedes cancelar en cualquier momento y conservarás acceso hasta el final del período actual. No hay reembolsos por uso parcial del período.' : 'Upgrades are applied immediately with a proportional adjustment based on remaining time and total cycle time (calculated with exact timestamps). Downgrades are applied in the next billing cycle. You can cancel at any time and keep access until the end of the current period. No refunds are issued for partial period use.'}</p>
+                <p className="mt-2"><strong>{isSpanish ? 'Paquetes de tokens:' : 'Token packages:'}</strong> {isSpanish ? 'Los paquetes de tokens son productos digitales de consumo inmediato. Una vez procesada la compra, no aplican reembolsos ni devoluciones de ningún tipo, independientemente del uso realizado. Al completar la compra, el usuario acepta expresamente esta política.' : 'Token packages are digital products for immediate consumption. Once a purchase is processed, no refunds or returns apply under any circumstance, regardless of usage. By completing the purchase, the user explicitly accepts this policy.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Limitaciones de Responsabilidad</h3>
-                <p>Stream Voicer se proporciona "tal cual". No garantizamos disponibilidad continua. No somos responsables por daños indirectos.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? '5. Limitaciones de Responsabilidad' : '5. Liability Limitations'}</h3>
+                <p>{isSpanish ? 'Stream Voicer se proporciona "tal cual". No garantizamos disponibilidad continua. No somos responsables por daños indirectos.' : 'Stream Voicer is provided "as is". We do not guarantee continuous availability. We are not responsible for indirect damages.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en los Términos</h3>
-                <p>Nos reservamos el derecho de modificar estos términos. Te notificaremos de cambios significativos.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? '6. Cambios en los Términos' : '6. Changes to the Terms'}</h3>
+                <p>{isSpanish ? 'Nos reservamos el derecho de modificar estos términos. Te notificaremos de cambios significativos.' : 'We reserve the right to modify these terms. We will notify you of significant changes.'}</p>
               </section>
             </div>
             <button onClick={() => setShowTerms(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
-              Cerrar
+              {isSpanish ? 'Cerrar' : 'Close'}
             </button>
           </div>
         </div>
@@ -1469,47 +1476,47 @@ export function App() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
           <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Política de Privacidad</h2>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{isSpanish ? 'Política de Privacidad' : 'Privacy Policy'}</h2>
               <button onClick={() => setShowPrivacy(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
             </div>
             <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. Información que Recolectamos</h3>
-                <p>Recolectamos información que voluntariamente proporcionas, como nombre, email, y datos de suscripción.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? '1. Información que Recolectamos' : '1. Information We Collect'}</h3>
+                <p>{isSpanish ? 'Recolectamos información que voluntariamente proporcionas, como nombre, email, y datos de suscripción.' : 'We collect information you voluntarily provide, such as name, email, and subscription details.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. Cómo Usamos Tu Información</h3>
-                <p>Usamos tu información para:</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? '2. Cómo Usamos Tu Información' : '2. How We Use Your Information'}</h3>
+                <p>{isSpanish ? 'Usamos tu información para:' : 'We use your information to:'}</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li>Proporcionar y mejorar nuestros servicios</li>
-                  <li>Procesar pagos y suscripciones</li>
-                  <li>Enviarte actualizaciones importantes</li>
-                  <li>Personalizar tu experiencia</li>
+                  <li>{isSpanish ? 'Proporcionar y mejorar nuestros servicios' : 'Provide and improve our services'}</li>
+                  <li>{isSpanish ? 'Procesar pagos y suscripciones' : 'Process payments and subscriptions'}</li>
+                  <li>{isSpanish ? 'Enviarte actualizaciones importantes' : 'Send you important updates'}</li>
+                  <li>{isSpanish ? 'Personalizar tu experiencia' : 'Personalize your experience'}</li>
                 </ul>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Seguridad de Datos</h3>
-                <p>Implementamos medidas de seguridad estándar para proteger tu información. Sin embargo, no podemos garantizar seguridad absoluta.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? '3. Seguridad de Datos' : '3. Data Security'}</h3>
+                <p>{isSpanish ? 'Implementamos medidas de seguridad estándar para proteger tu información. Sin embargo, no podemos garantizar seguridad absoluta.' : 'We implement standard security measures to protect your information. However, we cannot guarantee absolute security.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Cookies y Tecnologías Similares</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? '4. Cookies y Tecnologías Similares' : '4. Cookies and Similar Technologies'}</h3>
                 <p>{t('cookies.shortText')}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Derechos del Usuario</h3>
-                <p>Tienes derecho a acceder, modificar o eliminar tu información personal. Contacta al correo de soporte para solicitar estos derechos.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? '5. Derechos del Usuario' : '5. User Rights'}</h3>
+                <p>{isSpanish ? 'Tienes derecho a acceder, modificar o eliminar tu información personal. Contacta al correo de soporte para solicitar estos derechos.' : 'You have the right to access, modify, or delete your personal information. Contact support email to request these rights.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en la Política</h3>
-                <p>Nos reservamos el derecho de actualizar esta política. Los cambios serán notificados en esta página.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? '6. Cambios en la Política' : '6. Policy Changes'}</h3>
+                <p>{isSpanish ? 'Nos reservamos el derecho de actualizar esta política. Los cambios serán notificados en esta página.' : 'We reserve the right to update this policy. Changes will be notified on this page.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>7. Contacto</h3>
-                <p>Para preguntas sobre privacidad, contáctanos a: soporte@streamvoicer.com</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? '7. Contacto' : '7. Contact'}</h3>
+                <p>{isSpanish ? 'Para preguntas sobre privacidad, contáctanos a: soporte@streamvoicer.com' : 'For privacy questions, contact us at: soporte@streamvoicer.com'}</p>
               </section>
             </div>
             <button onClick={() => setShowPrivacy(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
-              Cerrar
+              {isSpanish ? 'Cerrar' : 'Close'}
             </button>
           </div>
         </div>
@@ -1520,18 +1527,18 @@ export function App() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4">
           <div className={`rounded-2xl p-8 max-w-md w-full ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Contacto</h2>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{isSpanish ? 'Contacto' : 'Contact'}</h2>
               <button onClick={() => setShowContact(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
             </div>
             <div className={`space-y-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              <p>¿Tienes preguntas o necesitas ayuda? Nos encantaría escucharte.</p>
+              <p>{isSpanish ? '¿Tienes preguntas o necesitas ayuda? Nos encantaría escucharte.' : 'Do you have questions or need help? We would love to hear from you.'}</p>
               <div className="bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl p-4 text-center">
-                <p className="text-white text-sm mb-2 font-bold">Envíanos un correo a:</p>
+                <p className="text-white text-sm mb-2 font-bold">{isSpanish ? 'Envíanos un correo a:' : 'Send us an email at:'}</p>
                 <a href="mailto:soporte@streamvoicer.com" className="text-white text-lg font-black hover:opacity-80 transition">
                   soporte@streamvoicer.com
                 </a>
               </div>
-              <p className="text-sm">Responderemos tu mensaje lo antes posible. Esperamos tu contacto.</p>
+              <p className="text-sm">{isSpanish ? 'Responderemos tu mensaje lo antes posible. Esperamos tu contacto.' : 'We will reply as soon as possible. We look forward to hearing from you.'}</p>
             </div>
             <button onClick={() => setShowContact(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
               Cerrar
@@ -1547,7 +1554,7 @@ export function App() {
           <div className={`rounded-2xl w-full max-w-4xl my-8 flex flex-col ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`} style={{maxHeight: 'calc(100vh - 64px)'}}>
             {/* Header */}
             <div className={`flex justify-between items-center p-8 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Política de Cookies</h2>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{isSpanish ? 'Política de Cookies' : 'Cookie Policy'}</h2>
               <button onClick={() => setShowCookies(false)} className="text-2xl opacity-50 hover:opacity-100 font-bold">×</button>
             </div>
 
@@ -1558,43 +1565,43 @@ export function App() {
                 <p>{t('cookies.whatAreText')}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Tipos de Cookies que Usamos</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? 'Tipos de Cookies que Usamos' : 'Types of Cookies We Use'}</h3>
                 <ul className="list-disc pl-5 space-y-2">
-                  <li><strong>Cookies Esenciales:</strong> Necesarias para el funcionamiento básico del sitio (autenticación, seguridad)</li>
-                  <li><strong>Cookies de Rendimiento:</strong> Nos ayudan a entender cómo usas el sitio y mejorarlo</li>
-                  <li><strong>Cookies de Análisis:</strong> Rastrean cómo interactúas con Stream Voicer para optimizar la experiencia</li>
-                  <li><strong>Cookies de Publicidad:</strong> Permiten mostrar anuncios relevantes según tus intereses</li>
+                  <li><strong>{isSpanish ? 'Cookies Esenciales:' : 'Essential Cookies:'}</strong> {isSpanish ? 'Necesarias para el funcionamiento básico del sitio (autenticación, seguridad)' : 'Required for basic site functionality (authentication, security)'}</li>
+                  <li><strong>{isSpanish ? 'Cookies de Rendimiento:' : 'Performance Cookies:'}</strong> {isSpanish ? 'Nos ayudan a entender cómo usas el sitio y mejorarlo' : 'Help us understand how you use the site and improve it'}</li>
+                  <li><strong>{isSpanish ? 'Cookies de Análisis:' : 'Analytics Cookies:'}</strong> {isSpanish ? 'Rastrean cómo interactúas con Stream Voicer para optimizar la experiencia' : 'Track how you interact with Stream Voicer to optimize the experience'}</li>
+                  <li><strong>{isSpanish ? 'Cookies de Publicidad:' : 'Advertising Cookies:'}</strong> {isSpanish ? 'Permiten mostrar anuncios relevantes según tus intereses' : 'Allow relevant ads based on your interests'}</li>
                 </ul>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Cómo Usamos las Cookies?</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? '¿Cómo Usamos las Cookies?' : 'How We Use Cookies'}</h3>
                 <p>{t('cookies.weUse')}</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li>Mantener tu sesión iniciada</li>
-                  <li>Recordar tus preferencias de idioma y tema</li>
-                  <li>Analizar el tráfico del sitio con Google Analytics</li>
-                  <li>Personalizar contenido según tu actividad</li>
-                  <li>Prevenir fraude y mejorar la seguridad</li>
+                  <li>{isSpanish ? 'Mantener tu sesión iniciada' : 'Keep your session active'}</li>
+                  <li>{isSpanish ? 'Recordar tus preferencias de idioma y tema' : 'Remember your language and theme preferences'}</li>
+                  <li>{isSpanish ? 'Analizar el tráfico del sitio con Google Analytics' : 'Analyze site traffic with Google Analytics'}</li>
+                  <li>{isSpanish ? 'Personalizar contenido según tu actividad' : 'Personalize content based on your activity'}</li>
+                  <li>{isSpanish ? 'Prevenir fraude y mejorar la seguridad' : 'Prevent fraud and improve security'}</li>
                 </ul>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Control de Cookies</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? 'Control de Cookies' : 'Cookie Control'}</h3>
                 <p>{t('cookies.control')}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cookies de Terceros</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? 'Cookies de Terceros' : 'Third-Party Cookies'}</h3>
                 <p>{t('cookies.thirdParty')}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cambios en la Política</h3>
-                <p>Nos reservamos el derecho de actualizar esta política en cualquier momento. Te notificaremos de cambios significativos.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isSpanish ? 'Cambios en la Política' : 'Policy Changes'}</h3>
+                <p>{isSpanish ? 'Nos reservamos el derecho de actualizar esta política en cualquier momento. Te notificaremos de cambios significativos.' : 'We reserve the right to update this policy at any time. We will notify you of significant changes.'}</p>
               </section>
             </div>
 
             {/* Footer con botón */}
             <div className={`p-8 border-t ${darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gray-50'}`}>
               <button onClick={() => setShowCookies(false)} className="w-full py-3 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-cyan-400/50 transition-all">
-                ✅ Cerrar
+                {isSpanish ? '✅ Cerrar' : '✅ Close'}
               </button>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { Check, X, Mic2, Loader } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
@@ -12,6 +13,8 @@ export default function ActionConfirmation({
   onCancel,
   darkMode = true
 }) {
+  const { i18n } = useTranslation()
+  const isSpanish = String(i18n?.resolvedLanguage || i18n?.language || 'en').toLowerCase().startsWith('es')
   const [confirmMethod, setConfirmMethod] = useState('visual') // 'visual', 'voice', 'shortcut'
   const [isListeningForVoice, setIsListeningForVoice] = useState(false)
   const mediaRecorderRef = useRef(null)
@@ -20,11 +23,11 @@ export default function ActionConfirmation({
   if (!isOpen) return null
 
   const actionLabel = {
-    ban: `Bloquear a ${targetUsername}`,
-    mute: `Silenciar a ${targetUsername}`,
-    kick: `Expulsar a ${targetUsername}`,
-    timeout: `Timeout a ${targetUsername}`,
-    clear: `Limpiar mensajes de ${targetUsername}`
+    ban: isSpanish ? `Bloquear a ${targetUsername}` : `Ban ${targetUsername}`,
+    mute: isSpanish ? `Silenciar a ${targetUsername}` : `Mute ${targetUsername}`,
+    kick: isSpanish ? `Expulsar a ${targetUsername}` : `Kick ${targetUsername}`,
+    timeout: isSpanish ? `Timeout a ${targetUsername}` : `Timeout ${targetUsername}`,
+    clear: isSpanish ? `Limpiar mensajes de ${targetUsername}` : `Clear ${targetUsername} messages`
   }[action]
 
   const handleVisualConfirm = async () => {
@@ -111,7 +114,7 @@ export default function ActionConfirmation({
         autoFocus
       >
         <h2 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-          ⚠️ Confirmar acción
+          {isSpanish ? '⚠️ Confirmar acción' : '⚠️ Confirm action'}
         </h2>
 
         <div className={`p-4 rounded-lg mb-4 ${darkMode ? 'bg-yellow-900/30 border border-yellow-700' : 'bg-yellow-100 border border-yellow-300'}`}>
@@ -120,7 +123,7 @@ export default function ActionConfirmation({
           </p>
           {reason && (
             <p className={`text-sm mt-2 ${darkMode ? 'text-yellow-200' : 'text-yellow-700'}`}>
-              Razón: {reason}
+              {isSpanish ? 'Razón' : 'Reason'}: {reason}
             </p>
           )}
         </div>
@@ -146,7 +149,7 @@ export default function ActionConfirmation({
                 onChange={(e) => setConfirmMethod(e.target.value)}
                 className="w-4 h-4"
               />
-              <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>Voz</span>
+              <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{isSpanish ? 'Voz' : 'Voice'}</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer flex-1">
               <input
@@ -162,7 +165,7 @@ export default function ActionConfirmation({
 
           {confirmMethod === 'shortcut' && (
             <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Ctrl+Y = Sí | Ctrl+N = No
+              {isSpanish ? 'Ctrl+Y = Sí | Ctrl+N = No' : 'Ctrl+Y = Yes | Ctrl+N = No'}
             </p>
           )}
 
@@ -177,7 +180,7 @@ export default function ActionConfirmation({
               }`}
             >
               <Mic2 className="w-4 h-4" />
-              {isListeningForVoice ? 'Escuchando...' : 'Grabar "sí"'}
+              {isListeningForVoice ? (isSpanish ? 'Escuchando...' : 'Listening...') : (isSpanish ? 'Grabar "sí"' : 'Record "yes"')}
             </button>
           )}
         </div>
@@ -192,12 +195,12 @@ export default function ActionConfirmation({
             {isExecuting ? (
               <>
                 <Loader className="w-4 h-4 animate-spin" />
-                Ejecutando...
+                {isSpanish ? 'Ejecutando...' : 'Running...'}
               </>
             ) : (
               <>
                 <Check className="w-4 h-4" />
-                Ejecutar
+                {isSpanish ? 'Ejecutar' : 'Run'}
               </>
             )}
           </button>
@@ -207,7 +210,7 @@ export default function ActionConfirmation({
             className="flex-1 px-4 py-3 rounded-lg font-semibold bg-gray-600 hover:bg-gray-700 disabled:bg-gray-600 text-white flex items-center justify-center gap-2"
           >
             <X className="w-4 h-4" />
-            Cancelar
+            {isSpanish ? 'Cancelar' : 'Cancel'}
           </button>
         </div>
       </div>
