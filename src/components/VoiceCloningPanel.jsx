@@ -905,14 +905,25 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                   {/* Voice name & language */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className={darkMode ? "block text-sm font-medium text-gray-300 mb-1" : "block text-sm font-medium text-gray-700 mb-1"}>Nombre de la voz</label>
+                      <label className={`block text-sm font-medium mb-1 ${!studioPro.voiceName ? 'text-red-400' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Nombre de la voz {!studioPro.voiceName && <span className="font-bold">← REQUERIDO</span>}
+                      </label>
                       <input
                         type="text"
                         value={studioPro.voiceName}
                         onChange={(e) => setStudioPro(prev => ({ ...prev, voiceName: e.target.value }))}
-                        placeholder="Mi voz Studio Pro"
-                        className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-400" : "w-full bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 text-sm focus:outline-none focus:border-orange-400"}
+                        placeholder="Ej: Mi voz clonada"
+                        className={`w-full rounded px-3 py-2 text-sm focus:outline-none transition ${
+                          !studioPro.voiceName
+                            ? 'border-2 border-red-500 bg-red-500/10 text-white placeholder-red-400 focus:border-red-400'
+                            : darkMode
+                              ? 'bg-[#0f0f23] border border-cyan-400/30 text-white focus:border-cyan-400'
+                              : 'bg-white border border-gray-300 text-gray-900 focus:border-orange-400'
+                        }`}
                       />
+                      {!studioPro.voiceName && (
+                        <p className="text-red-400 text-xs mt-1">⚠️ Pon un nombre a tu voz antes de continuar</p>
+                      )}
                     </div>
                     <div>
                       <label className={darkMode ? "block text-sm font-medium text-gray-300 mb-1" : "block text-sm font-medium text-gray-700 mb-1"}>Idioma</label>
@@ -934,9 +945,19 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
                   {/* Extract button */}
                   <button
-                    onClick={handleStudioProExtract}
-                    disabled={studioPro.processing || !studioPro.voiceName || studioPro.endMs - studioPro.startMs < 1000}
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+                    onClick={() => {
+                      if (!studioPro.voiceName.trim()) {
+                        setError('⚠️ Primero ponle un nombre a tu voz (campo "Nombre de la voz")')
+                        return
+                      }
+                      handleStudioProExtract()
+                    }}
+                    disabled={studioPro.processing}
+                    className={`w-full font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2 ${
+                      !studioPro.voiceName.trim()
+                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white'
+                    }`}
                   >
                     {studioPro.processing ? (
                       <>
@@ -946,7 +967,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                     ) : (
                       <>
                         <Zap className="w-5 h-5" />
-                        Usar este clip
+                        {studioPro.voiceName.trim() ? 'Usar este clip' : 'Pon un nombre primero ↑'}
                       </>
                     )}
                   </button>
