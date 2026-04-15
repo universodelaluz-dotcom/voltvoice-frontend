@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Edit2, Bot, Lock } from 'lucide-react'
+import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Edit2, Bot, Lock, Play, Square } from 'lucide-react'
 import AIRoleplayWorkshop from './AIRoleplayWorkshop'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
@@ -13,6 +13,15 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     const interval = setInterval(sync, 500)
     return () => clearInterval(interval)
   }, [])
+
+  // Keep ref in sync with state for drag handlers
+  useEffect(() => {
+    studioProRef.current = {
+      startMs: studioPro.startMs,
+      endMs: studioPro.endMs,
+      duration: studioPro.duration
+    }
+  }, [studioPro.startMs, studioPro.endMs, studioPro.duration])
 
   // Clone section
   const [voiceName, setVoiceName] = useState('')
@@ -37,6 +46,12 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   const testAudioRef = useRef(null)
   const testRequestRef = useRef(0)
   const testingVoiceRef = useRef(false)
+
+  // Studio Pro timeline drag refs
+  const timelineRef = useRef(null)
+  const dragRef = useRef(null) // { handle: 'start'|'end', initX, initStartMs, initEndMs }
+  const studioProRef = useRef({ startMs: 0, endMs: 0, duration: 0 })
+  const [studioProPreview, setStudioProPreview] = useState({ loading: false, audioUrl: null })
 
   // Studio Pro section
   const [studioPro, setStudioPro] = useState({
@@ -248,6 +263,69 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       setAudioFile(file)
       setError(null)
     }
+  }
+
+  // Studio Pro: preview selected clip
+  const handleStudioProPreview = async () => {
+    if (!studioPro.fileId) return
+    setStudioProPreview({ loading: true, audioUrl: null })
+    try {
+      const token = localStorage.getItem('sv-token')
+      const res = await fetch(`${API_URL}/api/inworld/preview-clip`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ fileId: studioPro.fileId, startMs: studioPro.startMs, endMs: studioPro.endMs })
+      })
+      const data = await res.json()
+      if (res.ok && data.audio) {
+        setStudioProPreview({ loading: false, audioUrl: data.audio })
+      } else {
+        setError(data.error || 'Error cargando preview')
+        setStudioProPreview({ loading: false, audioUrl: null })
+      }
+    } catch (err) {
+      setError(`Error: ${err.message}`)
+      setStudioProPreview({ loading: false, audioUrl: null })
+    }
+  }
+
+  // Studio Pro timeline drag handlers
+  const handleTimelineDragStart = (e, handle) => {
+    e.preventDefault()
+    const { startMs, endMs, duration } = studioProRef.current
+    dragRef.current = { handle, initX: e.clientX, initStartMs: startMs, initEndMs: endMs }
+
+    const onMove = (ev) => {
+      if (!dragRef.current || !timelineRef.current) return
+      const rect = timelineRef.current.getBoundingClientRect()
+      const dxRatio = (ev.clientX - dragRef.current.initX) / rect.width
+      const dMs = dxRatio * duration
+
+      if (dragRef.current.handle === 'start') {
+        const newStart = Math.max(0, Math.min(dragRef.current.initStartMs + dMs, dragRef.current.initEndMs - 500))
+        setStudioPro(prev => ({ ...prev, startMs: Math.floor(newStart) }))
+        setStudioProPreview({ loading: false, audioUrl: null })
+      } else {
+        const newEnd = Math.max(dragRef.current.initEndMs > 500 ? dragRef.current.initStartMs + 500 : 500, Math.min(dragRef.current.initEndMs + dMs, duration))
+        setStudioPro(prev => ({ ...prev, endMs: Math.floor(newEnd) }))
+        setStudioProPreview({ loading: false, audioUrl: null })
+      }
+    }
+
+    const onUp = () => {
+      dragRef.current = null
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      window.removeEventListener('touchmove', onMoveTouch)
+      window.removeEventListener('touchend', onUp)
+    }
+
+    const onMoveTouch = (ev) => onMove(ev.touches[0])
+
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    window.addEventListener('touchmove', onMoveTouch, { passive: false })
+    window.addEventListener('touchend', onUp)
   }
 
   // Studio Pro handlers
@@ -824,65 +902,118 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
               <div className={darkMode ? "bg-gray-800/40 border border-cyan-400/20 rounded-lg p-4" : "bg-gray-50 border border-orange-200 rounded-lg p-4"}>
                 <h3 className={`font-semibold mb-4 ${darkMode ? 'text-cyan-300' : 'text-orange-700'}`}>Paso 2: Selecciona tu clip (5-15 segundos recomendado)</h3>
 
-                {/* Timeline Bar */}
+                {/* Timeline Bar — YouTube-style trimmer */}
                 <div className="space-y-3">
                   <div className={darkMode ? "bg-gray-900/60 border border-gray-700 rounded-lg p-3" : "bg-white border border-gray-200 rounded-lg p-3"}>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Línea de tiempo</p>
-                      <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>Duración: {(studioPro.duration / 1000).toFixed(1)}s</p>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className={`text-sm font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Línea de tiempo</p>
+                      <p className={`text-xs font-mono ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total: {(studioPro.duration / 1000).toFixed(1)}s</p>
                     </div>
 
-                    {/* Timeline visual */}
-                    <div className={darkMode ? "bg-gray-800 rounded-full h-2 mb-3 relative cursor-pointer group" : "bg-gray-200 rounded-full h-2 mb-3 relative cursor-pointer group"}
-                      onClick={(e) => {
-                        const rect = e.currentTarget.getBoundingClientRect()
-                        const percent = (e.clientX - rect.left) / rect.width
-                        const ms = Math.max(0, Math.min(percent * studioPro.duration, studioPro.duration - 1000))
-                        setStudioPro(prev => ({ ...prev, startMs: Math.floor(ms), endMs: Math.floor(ms + 10000) }))
-                      }}
-                    >
-                      {/* Selected range highlight */}
+                    {/* Timeline trimmer */}
+                    <div className="relative select-none" style={{ height: '48px' }}>
+                      {/* Full track background */}
                       <div
-                        className="absolute h-full bg-gradient-to-r from-orange-500 to-orange-600 rounded-full"
-                        style={{
-                          left: `${(studioPro.startMs / studioPro.duration) * 100}%`,
-                          right: `${100 - (studioPro.endMs / studioPro.duration) * 100}%`
+                        ref={timelineRef}
+                        className={`absolute top-1/2 -translate-y-1/2 w-full rounded-full overflow-hidden ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}
+                        style={{ height: '12px' }}
+                        onClick={(e) => {
+                          if (dragRef.current) return
+                          const rect = e.currentTarget.getBoundingClientRect()
+                          const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+                          const clickMs = pct * studioPro.duration
+                          const clipLen = Math.min(10000, studioPro.duration - clickMs)
+                          setStudioPro(prev => ({ ...prev, startMs: Math.floor(clickMs), endMs: Math.floor(clickMs + clipLen) }))
+                          setStudioProPreview({ loading: false, audioUrl: null })
                         }}
-                      />
+                      >
+                        {/* Dark overlay left of selection */}
+                        <div
+                          className={`absolute top-0 left-0 h-full ${darkMode ? 'bg-gray-900/70' : 'bg-gray-400/50'}`}
+                          style={{ width: `${(studioPro.startMs / studioPro.duration) * 100}%` }}
+                        />
+                        {/* Selected region */}
+                        <div
+                          className="absolute top-0 h-full bg-gradient-to-r from-orange-500 to-orange-400"
+                          style={{
+                            left: `${(studioPro.startMs / studioPro.duration) * 100}%`,
+                            width: `${((studioPro.endMs - studioPro.startMs) / studioPro.duration) * 100}%`
+                          }}
+                        />
+                        {/* Dark overlay right of selection */}
+                        <div
+                          className={`absolute top-0 right-0 h-full ${darkMode ? 'bg-gray-900/70' : 'bg-gray-400/50'}`}
+                          style={{ width: `${((studioPro.duration - studioPro.endMs) / studioPro.duration) * 100}%` }}
+                        />
+                      </div>
+
+                      {/* Left handle (start) */}
+                      <div
+                        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 cursor-col-resize"
+                        style={{ left: `${(studioPro.startMs / studioPro.duration) * 100}%` }}
+                        onMouseDown={(e) => handleTimelineDragStart(e, 'start')}
+                        onTouchStart={(e) => handleTimelineDragStart(e.touches[0], 'start')}
+                      >
+                        <div className="w-5 h-8 rounded-sm bg-orange-500 border-2 border-white shadow-lg flex items-center justify-center">
+                          <div className="flex flex-col gap-0.5">
+                            <div className="w-0.5 h-3 bg-white/80 rounded" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right handle (end) */}
+                      <div
+                        className="absolute top-1/2 -translate-y-1/2 translate-x-1/2 z-10 cursor-col-resize"
+                        style={{ right: `${((studioPro.duration - studioPro.endMs) / studioPro.duration) * 100}%` }}
+                        onMouseDown={(e) => handleTimelineDragStart(e, 'end')}
+                        onTouchStart={(e) => handleTimelineDragStart(e.touches[0], 'end')}
+                      >
+                        <div className="w-5 h-8 rounded-sm bg-orange-500 border-2 border-white shadow-lg flex items-center justify-center">
+                          <div className="flex flex-col gap-0.5">
+                            <div className="w-0.5 h-3 bg-white/80 rounded" />
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Time inputs */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className={`block text-xs font-medium mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Inicio (s)</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max={studioPro.duration / 1000 - 1}
-                          step="0.1"
-                          value={(studioPro.startMs / 1000).toFixed(1)}
-                          onChange={(e) => {
-                            const ms = Math.max(0, parseFloat(e.target.value) * 1000)
-                            setStudioPro(prev => ({ ...prev, startMs: Math.floor(ms) }))
-                          }}
-                          className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-cyan-400" : "w-full bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 text-sm focus:outline-none focus:border-orange-400"}
+                    {/* Time labels */}
+                    <div className="flex items-center justify-between mt-2 px-1">
+                      <span className={`text-xs font-mono font-semibold ${darkMode ? 'text-orange-300' : 'text-orange-600'}`}>
+                        ▶ {(studioPro.startMs / 1000).toFixed(2)}s
+                      </span>
+                      <span className={`text-xs font-mono font-semibold ${darkMode ? 'text-orange-300' : 'text-orange-600'}`}>
+                        ⏹ {(studioPro.endMs / 1000).toFixed(2)}s
+                      </span>
+                    </div>
+
+                    {/* Preview button + audio player */}
+                    <div className="mt-3">
+                      <button
+                        onClick={handleStudioProPreview}
+                        disabled={studioProPreview.loading}
+                        className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg font-semibold text-sm transition ${
+                          studioProPreview.loading
+                            ? 'bg-gray-600 text-gray-400 cursor-wait'
+                            : darkMode
+                              ? 'bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 hover:bg-cyan-500/30'
+                              : 'bg-orange-50 border border-orange-300 text-orange-700 hover:bg-orange-100'
+                        }`}
+                      >
+                        {studioProPreview.loading ? (
+                          <><Loader className="w-4 h-4 animate-spin" /> Cargando preview...</>
+                        ) : (
+                          <><Play className="w-4 h-4" /> Escuchar clip seleccionado</>
+                        )}
+                      </button>
+                      {studioProPreview.audioUrl && (
+                        <audio
+                          key={studioProPreview.audioUrl}
+                          controls
+                          autoPlay
+                          className="w-full mt-2 h-9"
+                          src={studioProPreview.audioUrl}
                         />
-                      </div>
-                      <div>
-                        <label className={`block text-xs font-medium mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Fin (s)</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max={studioPro.duration / 1000}
-                          step="0.1"
-                          value={(studioPro.endMs / 1000).toFixed(1)}
-                          onChange={(e) => {
-                            const ms = Math.min(studioPro.duration, parseFloat(e.target.value) * 1000)
-                            setStudioPro(prev => ({ ...prev, endMs: Math.floor(ms) }))
-                          }}
-                          className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-cyan-400" : "w-full bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 text-sm focus:outline-none focus:border-orange-400"}
-                        />
-                      </div>
+                      )}
                     </div>
                   </div>
 
