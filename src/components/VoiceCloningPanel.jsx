@@ -629,18 +629,23 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
   // Renderiza la sección "Probar Voz" filtrada
   const renderTestVoice = (voices) => (
-    voices.length > 0 && (
       <div className={darkMode ? 'bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6' : 'bg-white border border-indigo-200 rounded-lg p-6 shadow-sm'}>
         <div className="flex items-center gap-3 mb-4">
           <Mic2 className="w-6 h-6 text-cyan-400" />
           <h2 className={darkMode ? 'text-xl font-bold text-white' : 'text-xl font-bold text-gray-900'}>Probar Voz</h2>
         </div>
         <div className="space-y-4">
+          {voices.length === 0 && (
+            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Aun no tienes voces clonadas para probar.
+            </p>
+          )}
           <div>
             <label className={darkMode ? 'block text-sm font-medium text-cyan-300 mb-2' : 'block text-sm font-medium text-indigo-600 mb-2'}>Selecciona una voz</label>
             <select
               value={testVoiceId || ''}
               onChange={(e) => setTestVoiceId(e.target.value)}
+              disabled={voices.length === 0}
               className={darkMode ? 'w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400' : 'w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500'}
             >
               <option value="">-- Elige una voz --</option>
@@ -655,6 +660,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
               value={testText}
               onChange={(e) => setTestText(e.target.value)}
               placeholder="Asi suena tu voz elegida"
+              disabled={voices.length === 0}
               className={darkMode ? 'w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 min-h-20' : 'w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 min-h-20'}
             />
             <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -663,7 +669,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           </div>
           <button
             onClick={handleTestVoice}
-            disabled={testingVoice || !testVoiceId || !testText.trim()}
+            disabled={testingVoice || voices.length === 0 || !testVoiceId || !testText.trim()}
             className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
           >
             {testingVoice ? <><Loader className="w-5 h-5 animate-spin" />Generando audio...</> : <><Mic2 className="w-5 h-5" />Probar voz</>}
@@ -685,12 +691,12 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           )}
         </div>
       </div>
-    )
   )
 
   // Feature access control
   const userPlan = String(user?.plan || 'free').toLowerCase()
   const isFreeUser = userPlan === 'free'
+  const canUseAIAssistant = user?.role === 'admin' || ['pro', 'premium', 'elite', 'on_demand'].includes(userPlan)
   const canUseExtractorPro = user?.role === 'admin' || ['creator', 'pro'].includes(userPlan)
 
   return (
@@ -738,10 +744,11 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
               : darkMode
                 ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
                 : 'text-gray-700 hover:text-gray-900 hover:bg-white'
-          }`}
+          } ${!canUseAIAssistant ? 'opacity-70' : ''}`}
         >
           <Bot className="inline w-4 h-4 mr-2" />
           Asistente IA
+          {!canUseAIAssistant && <Lock className="inline w-3.5 h-3.5 ml-2" />}
         </button>
       </div>
 
@@ -1200,11 +1207,22 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
       {/* Asistente IA — Primero Taller, luego Probar Voz */}
       {activeTab === 'ai-assistant' && (
-        <div className="space-y-6">
-          {/* 1. Taller de Asistentes de IA Roleplay */}
-          <AIRoleplayWorkshop darkMode={darkMode} config={config || {}} updateConfig={updateConfig || (() => {})} user={user} />
-          {/* 2. Probar Voz */}
-          {renderTestVoice(userVoices)}
+        <div className="relative">
+          <div className={`space-y-6 ${!canUseAIAssistant ? 'opacity-70 pointer-events-none select-none' : ''}`}>
+            {/* 1. Taller de Asistentes de IA Roleplay */}
+            <AIRoleplayWorkshop darkMode={darkMode} config={config || {}} updateConfig={updateConfig || (() => {})} user={user} />
+            {/* 2. Probar Voz */}
+            {renderTestVoice(userVoices)}
+          </div>
+          {!canUseAIAssistant && (
+            <div className="absolute inset-0 rounded-lg backdrop-blur-[1px] bg-black/20 flex items-center justify-center p-4">
+              <div className={`${darkMode ? 'bg-gray-900/90 border border-cyan-400/40 text-cyan-200' : 'bg-white/95 border border-cyan-300 text-cyan-700'} px-4 py-3 rounded-lg text-center text-sm font-semibold max-w-sm`}>
+                Asistente IA bloqueado en este plan.
+                <br />
+                Disponible solo en plan Pro.
+              </div>
+            </div>
+          )}
         </div>
       )}
 

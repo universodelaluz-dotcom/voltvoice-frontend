@@ -507,18 +507,18 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
           </button>
           {onGoVoiceCloning && (() => {
             const userPlan = user?.plan || 'free'
-            const isFreeUser = userPlan === 'free'
+            const isVoiceWorkshopBlocked = ['free', 'creator'].includes(String(userPlan).toLowerCase())
 
-            if (isFreeUser) {
+            if (isVoiceWorkshopBlocked) {
               return (
                 <button
-                  onClick={onGoVoiceCloning}
+                  onClick={() => {}}
                   className={`relative flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
                     darkMode
-                      ? 'bg-gradient-to-r from-purple-600/70 to-pink-600/70 text-gray-200 hover:from-purple-600/90 hover:to-pink-600/90 hover:text-white'
-                      : 'bg-gradient-to-r from-slate-600 to-slate-700 text-gray-200 hover:from-slate-700 hover:to-slate-800 hover:text-white'
+                      ? 'bg-gradient-to-r from-purple-600/70 to-pink-600/70 text-gray-200 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-slate-600 to-slate-700 text-gray-200 cursor-not-allowed'
                   }`}
-                  title="Clic para explorar - Bloqueado para plan FREE"
+                  title={`Clic para explorar - Bloqueado para plan ${String(userPlan).toUpperCase()}`}
                 >
                   <Mic2 className="w-5 h-5" />
                   <span>Taller de Voces</span>
