@@ -14,15 +14,6 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     return () => clearInterval(interval)
   }, [])
 
-  // Keep ref in sync with state for drag handlers
-  useEffect(() => {
-    studioProRef.current = {
-      startMs: studioPro.startMs,
-      endMs: studioPro.endMs,
-      duration: studioPro.duration
-    }
-  }, [studioPro.startMs, studioPro.endMs, studioPro.duration])
-
   // Clone section
   const [voiceName, setVoiceName] = useState('')
   const [voiceLanguage, setVoiceLanguage] = useState('es-ES')
@@ -65,6 +56,15 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     uploading: false,
     processing: false
   })
+
+  // Keep ref in sync with studioPro state for drag handlers (must be AFTER studioPro declaration)
+  useEffect(() => {
+    studioProRef.current = {
+      startMs: studioPro.startMs,
+      endMs: studioPro.endMs,
+      duration: studioPro.duration
+    }
+  }, [studioPro.startMs, studioPro.endMs, studioPro.duration])
 
   const languageOptions = [
     { code: 'es-ES', label: 'Voz en Español' },
