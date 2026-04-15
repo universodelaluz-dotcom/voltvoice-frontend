@@ -640,7 +640,13 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
             </div>
 
             {hasInsufficientTokens && (
-              <p className="text-sm text-yellow-400 text-center bg-yellow-500/10 p-3 rounded border border-yellow-500/30">
+              <p
+                className={`text-sm text-center p-3 rounded border ${
+                  darkMode
+                    ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
+                    : 'text-amber-800 bg-amber-100 border-amber-300'
+                }`}
+              >
                 No tienes suficientes tokens. Necesitas {estimatedTokens} pero solo tienes {tokens}.
               </p>
             )}

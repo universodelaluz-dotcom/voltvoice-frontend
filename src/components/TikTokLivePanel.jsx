@@ -343,6 +343,14 @@ const PLATFORM_HELP_FAQ = [
     a: 'Entra a Voice Workshop, sube una muestra de voz, genera la voz, pruébala y asígnala al uso que quieras.'
   },
   {
+    q: '¿Cuántas voces clonadas puedo eliminar por día?',
+    a: 'En plan Start puedes eliminar hasta 3 voces por día. En Creator y Pro, hasta 6 por día.'
+  },
+  {
+    q: '¿Cómo subir un audio ideal para clonar voz?',
+    a: 'Usa una voz clara, sin ruido ni música de fondo. Recomendado: 10 a 15 segundos. Entre mejor calidad del audio, mejor resultado del clonado.'
+  },
+  {
     q: 'Asistente de IA: ¿para qué sirve?',
     a: 'Utiliza el contexto reciente del chat para responder preguntas breves con la personalidad y voz que configures.'
   },

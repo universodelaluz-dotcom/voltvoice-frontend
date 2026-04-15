@@ -39,7 +39,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   const testRequestRef = useRef(0)
   const testingVoiceRef = useRef(false)
 
-  // Studio Pro timeline drag refs
+  // Extractor Pro timeline drag refs
   const timelineRef = useRef(null)
   const dragRef = useRef(null) // { handle: 'start'|'end', initX, initStartMs, initEndMs }
   const studioProRef = useRef({ startMs: 0, endMs: 0, duration: 0 })
@@ -47,7 +47,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   const [shouldAutoPlayStudioPreview, setShouldAutoPlayStudioPreview] = useState(false)
   const studioPreviewAudioRef = useRef(null)
 
-  // Studio Pro section
+  // Extractor Pro section
   const [studioPro, setStudioPro] = useState({
     file: null,
     fileId: null,
@@ -59,6 +59,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     uploading: false,
     processing: false
   })
+  const [extractorUsageNotice, setExtractorUsageNotice] = useState(null)
 
   // Keep ref in sync with studioPro state for drag handlers (must be AFTER studioPro declaration)
   useEffect(() => {
@@ -285,7 +286,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     }
   }
 
-  // Studio Pro: preview selected clip
+  // Extractor Pro: preview selected clip
   const handleStudioProPreview = async () => {
     if (!studioPro.fileId) return
     setStudioProPreview({ loading: true, audioUrl: null })
@@ -310,7 +311,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     }
   }
 
-  // Studio Pro timeline drag handlers
+  // Extractor Pro timeline drag handlers
   const handleTimelineDragStart = (e, handle) => {
     e.preventDefault()
     const { startMs, endMs, duration } = studioProRef.current
@@ -349,7 +350,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     window.addEventListener('touchend', onUp)
   }
 
-  // Studio Pro handlers
+  // Extractor Pro handlers
   const handleStudioProFileChange = (e) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -456,6 +457,12 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       const data = await res.json()
 
       if (res.ok && data.success) {
+        const remaining = Number(data?.extractorProUsage?.remaining)
+        if (remaining === 2) {
+          setExtractorUsageNotice('Te quedan 2 usos por hoy, se renueva cada 24 hrs.')
+        } else {
+          setExtractorUsageNotice(null)
+        }
         setMessage(`✅ ¡Voz "${studioPro.voiceName}" clonada exitosamente!`)
         setStudioPro({
           file: null,
@@ -682,8 +689,9 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   )
 
   // Feature access control
-  const userPlan = user?.plan || 'free'
+  const userPlan = String(user?.plan || 'free').toLowerCase()
   const isFreeUser = userPlan === 'free'
+  const canUseExtractorPro = user?.role === 'admin' || ['creator', 'pro'].includes(userPlan)
 
   return (
     <div className={`relative space-y-6 ${isFreeUser ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -704,23 +712,22 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           <Mic2 className="inline w-4 h-4 mr-2" />
           Clonar Voz
         </button>
-        {(user?.role === 'admin' || ['creator', 'pro'].includes((user?.plan || 'free').toLowerCase())) && (
-          <button
-            onClick={() => handleTabChange('studio-pro')}
-            className={`flex-1 min-w-32 px-6 py-3 rounded-md font-semibold transition-all ${
-              activeTab === 'studio-pro'
-                ? darkMode
-                  ? 'bg-gradient-to-r from-orange-500 to-pink-600 text-white shadow-lg'
-                  : 'bg-gradient-to-r from-orange-500 to-pink-600 text-white shadow-md'
-                : darkMode
-                  ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
-                  : 'text-gray-700 hover:text-gray-900 hover:bg-white'
-            }`}
-          >
-            <Zap className="inline w-4 h-4 mr-2" />
-            Studio Pro
-          </button>
-        )}
+        <button
+          onClick={() => handleTabChange('studio-pro')}
+          className={`flex-1 min-w-32 px-6 py-3 rounded-md font-semibold transition-all ${
+            activeTab === 'studio-pro'
+              ? darkMode
+                ? 'bg-gradient-to-r from-orange-500 to-pink-600 text-white shadow-lg'
+                : 'bg-gradient-to-r from-orange-500 to-pink-600 text-white shadow-md'
+              : darkMode
+                ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                : 'text-gray-700 hover:text-gray-900 hover:bg-white'
+          } ${!canUseExtractorPro ? 'opacity-70' : ''}`}
+        >
+          <Zap className="inline w-4 h-4 mr-2" />
+          Extractor Pro
+          {!canUseExtractorPro && <Lock className="inline w-3.5 h-3.5 ml-2" />}
+        </button>
         <button
           onClick={() => handleTabChange('ai-assistant')}
           className={`flex-1 min-w-32 px-6 py-3 rounded-md font-semibold transition-all ${
@@ -862,14 +869,19 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         </>
       )}
 
-      {/* Studio Pro — Extract audio from video/long audio */}
+      {/* Extractor Pro — Extract audio from video/long audio */}
       {activeTab === 'studio-pro' && (
-        <div className={darkMode ? "bg-[#1a1a2e] border border-orange-400/30 rounded-lg p-6" : "bg-white border border-orange-200 rounded-lg p-6 shadow-sm"}>
+        <div className={`relative ${darkMode ? "bg-[#1a1a2e] border border-orange-400/30 rounded-lg p-6" : "bg-white border border-orange-200 rounded-lg p-6 shadow-sm"} ${!canUseExtractorPro ? 'opacity-80' : ''}`}>
           <div className="flex items-center gap-3 mb-4">
             <Zap className="w-6 h-6 text-orange-400" />
-            <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Studio Pro</h2>
+            <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Extractor Pro</h2>
             <span className={`ml-auto text-xs font-semibold px-2 py-1 rounded-full ${darkMode ? 'bg-orange-500/20 text-orange-300' : 'bg-orange-50 text-orange-600'}`}>PRO</span>
           </div>
+          {extractorUsageNotice && (
+            <p className={`mb-3 text-xs ${darkMode ? 'text-cyan-300/90' : 'text-cyan-700'}`}>
+              {extractorUsageNotice}
+            </p>
+          )}
 
           <div className="space-y-6">
             {/* Step 1: File Upload */}
@@ -1153,9 +1165,21 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
               </div>
             )}
 
-            {/* Voces creadas con Studio Pro */}
+            {/* Probar Voz en Extractor Pro */}
+            {renderTestVoice(clonedVoices)}
+
+            {/* Voces creadas con Extractor Pro */}
             {renderVoiceList(clonedVoices)}
           </div>
+          {!canUseExtractorPro && (
+            <div className="absolute inset-0 rounded-lg backdrop-blur-[1px] bg-black/20 flex items-center justify-center p-4">
+              <div className={`${darkMode ? 'bg-gray-900/90 border border-orange-400/40 text-orange-200' : 'bg-white/95 border border-orange-300 text-orange-700'} px-4 py-3 rounded-lg text-center text-sm font-semibold max-w-sm`}>
+                Extractor Pro visible en modo bloqueado.
+                <br />
+                Disponible desde plan Creator y Pro.
+              </div>
+            </div>
+          )}
 
           {/* Messages */}
           {message && (
@@ -1220,5 +1244,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     </div>
   )
 }
+
+
 
 

@@ -28,7 +28,7 @@ const monthlyPlans = [
     cta: 'Adquirir START',
     popular: false,
     voices: [
-      '1 voz personalizada por IA (editable)',
+      '1 voz personalizada por IA (reutilizable)',
       '1 voz natural premium',
       '1 voz esencial (ilimitada)',
       '200,000 caracteres (~tokens)',
@@ -49,7 +49,7 @@ const monthlyPlans = [
     cta: 'Adquirir CREATOR',
     popular: true,
     voices: [
-      '2 voces personalizadas por IA (editables)',
+      '2 voces personalizadas por IA (reutilizables)',
       '2 voces naturales premium',
       '1 voz esencial (ilimitada)',
       '500,000 caracteres (~tokens)',
@@ -70,7 +70,7 @@ const monthlyPlans = [
     cta: 'Adquirir PRO',
     popular: false,
     voices: [
-      '5 voces personalizadas por IA (editables)',
+      '5 voces personalizadas por IA (reutilizables)',
       '4 voces naturales premium',
       '1 voz esencial (ilimitada)',
       '800,000 caracteres (~tokens)',
@@ -93,7 +93,7 @@ const annualPlans = [
     saving: 'Ahorra ~$25 USD',
     planName: 'START',
     benefits: [
-      '1 voz personalizada por IA (editable)',
+      '1 voz personalizada por IA (reutilizable)',
       '1 voz natural premium',
       '1 voz esencial (ilimitada)',
       '200,000 caracteres (~tokens)',
@@ -111,7 +111,7 @@ const annualPlans = [
     hot: true,
     planName: 'CREATOR',
     benefits: [
-      '2 voces personalizadas por IA (editables)',
+      '2 voces personalizadas por IA (reutilizables)',
       '2 voces naturales premium',
       '1 voz esencial (ilimitada)',
       '500,000 caracteres (~tokens)',
@@ -129,7 +129,7 @@ const annualPlans = [
     fast: true,
     planName: 'PRO',
     benefits: [
-      '5 voces personalizadas por IA (editables)',
+      '5 voces personalizadas por IA (reutilizables)',
       '4 voces naturales premium',
       '1 voz esencial (ilimitada)',
       '800,000 caracteres (~tokens)',
