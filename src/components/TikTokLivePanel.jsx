@@ -191,7 +191,12 @@ const hiddenDefaultProfanityWords = [
   'puta',
   'putos',
   'putas',
-  'puñetas'
+  'puñetas',
+  'turba',
+  'turbar',
+  'turbate',
+  'turbado',
+  'asturbarste'
 ]
 
 const parseProfanityWords = (rawWords) => {
