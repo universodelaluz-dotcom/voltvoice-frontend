@@ -389,6 +389,9 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   const [presetStatus, setPresetStatus] = useState('')
   const [showProfanityEditor, setShowProfanityEditor] = useState(false)
   const [showModerationList, setShowModerationList] = useState(false)
+  const [showUserVoiceAssignments, setShowUserVoiceAssignments] = useState(false)
+  const [newAssignmentUsername, setNewAssignmentUsername] = useState('')
+  const [newAssignmentVoiceId, setNewAssignmentVoiceId] = useState('')
   const moderationList = normalizeModerationList(config?.sessionModerationList)
   const quickBasicChecks = {
     skipRepeated: true,
@@ -469,6 +472,34 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   const botAssistantMaxResponseChars = Number.isFinite(Number(config?.botAssistantMaxResponseChars))
     ? Math.min(500, Math.max(50, Math.round(Number(config.botAssistantMaxResponseChars))))
     : 250
+
+  // Funciones para voces personalizadas por usuario
+  const userVoiceAssignments = config?.userVoiceAssignments || []
+
+  const addUserVoiceAssignment = () => {
+    if (!newAssignmentUsername.trim() || !newAssignmentVoiceId) return
+
+    // Normalizar usuario: aceptar con o sin @ y guardar sin @
+    let username = newAssignmentUsername.trim().toLowerCase().replace(/^@+/, '')
+    const existing = userVoiceAssignments.filter(a => a.username !== username)
+    const updated = [...existing, { username, voiceId: newAssignmentVoiceId }].slice(0, 50)
+
+    updateConfig('userVoiceAssignments', updated)
+    setNewAssignmentUsername('')
+    setNewAssignmentVoiceId('')
+  }
+
+  const removeUserVoiceAssignment = (username) => {
+    const updated = userVoiceAssignments.filter(a => a.username !== username)
+    updateConfig('userVoiceAssignments', updated)
+  }
+
+  const updateUserVoiceAssignment = (username, newVoiceId) => {
+    const updated = userVoiceAssignments.map(a =>
+      a.username === username ? { ...a, voiceId: newVoiceId } : a
+    )
+    updateConfig('userVoiceAssignments', updated)
+  }
 
   const presetKeys = ['configPreset1', 'configPreset2', 'configPreset3']
 
@@ -1041,6 +1072,106 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 )}
               </div>
 
+              {/* Voces personalizadas por usuario */}
+              <div className={`relative mb-2 rounded-xl px-4 py-3 border transition-colors ${
+                darkMode
+                  ? showUserVoiceAssignments
+                    ? 'bg-cyan-500/10 border-cyan-400/40'
+                    : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
+                  : showUserVoiceAssignments
+                    ? 'bg-slate-100 border-slate-400 shadow-sm'
+                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
+              }`}>
+                <button onClick={() => setShowUserVoiceAssignments(!showUserVoiceAssignments)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+                  <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                    showUserVoiceAssignments ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
+                  }`}>
+                    {showUserVoiceAssignments && <Check className="w-4 h-4 text-white" />}
+                  </div>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${showUserVoiceAssignments ? 'font-semibold' : 'font-medium'}`}>Voces personalizadas por usuario<Hint text="Asigna voces específicas a usuarios individuales" darkMode={darkMode} /></span>
+                  {userVoiceAssignments.length > 0 && <span className={`ml-auto text-xs font-semibold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{userVoiceAssignments.length}</span>}
+                </button>
+                {showUserVoiceAssignments && (
+                  <div className="mt-4 ml-0 space-y-3">
+                    {/* Agregar nuevo usuario */}
+                    <div className="space-y-2 p-3 rounded-lg bg-opacity-50" style={{backgroundColor: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)'}}>
+                      <p className={`text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Agregar usuario:</p>
+                      <div className="flex gap-2 flex-col">
+                        <input
+                          type="text"
+                          placeholder="Usuario con @ (ej: @karlitaaviles10, no el nick)"
+                          value={newAssignmentUsername}
+                          onChange={(e) => setNewAssignmentUsername(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && addUserVoiceAssignment()}
+                          className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                            darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                          }`}
+                        />
+                        <select
+                          value={newAssignmentVoiceId}
+                          onChange={(e) => setNewAssignmentVoiceId(e.target.value)}
+                          className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                            darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                          }`}
+                        >
+                          <option value="">Selecciona una voz</option>
+                          {premiumVoiceOptions.map(v => (
+                            <option key={v.id} value={v.id}>{v.name}</option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={addUserVoiceAssignment}
+                          disabled={!newAssignmentUsername.trim() || !newAssignmentVoiceId}
+                          className={`w-full px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
+                            !newAssignmentUsername.trim() || !newAssignmentVoiceId
+                              ? darkMode ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                              : darkMode ? 'bg-cyan-600 hover:bg-cyan-500 text-white' : 'bg-cyan-500 hover:bg-cyan-600 text-white'
+                          }`}
+                        >
+                          + Agregar
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Lista de usuarios asignados */}
+                    {userVoiceAssignments.length > 0 ? (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {userVoiceAssignments.map((assignment) => (
+                          <div key={assignment.username} className={`flex items-center justify-between p-2 rounded-lg border ${
+                            darkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-gray-50 border-gray-200'
+                          }`}>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{assignment.username}</p>
+                              <select
+                                value={assignment.voiceId}
+                                onChange={(e) => updateUserVoiceAssignment(assignment.username, e.target.value)}
+                                className={`w-full mt-1 px-2 py-1 text-xs rounded border ${
+                                  darkMode ? 'bg-gray-700 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                                }`}
+                              >
+                                {premiumVoiceOptions.map(v => (
+                                  <option key={v.id} value={v.id}>{v.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <button
+                              onClick={() => removeUserVoiceAssignment(assignment.username)}
+                              className={`ml-2 px-2 py-1 text-xs rounded font-medium transition-colors ${
+                                darkMode ? 'bg-red-900/30 hover:bg-red-900/50 text-red-400' : 'bg-red-100 hover:bg-red-200 text-red-600'
+                              }`}
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className={`text-xs italic text-center py-4 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Sin asignaciones personalizadas</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* LEFT COLUMN - BLOQUE INDEPENDIENTE DE NOTIFICACIONES */}
               <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-rose-400/25' : 'bg-white border-slate-200'}`}>
                 <div className={`relative ${isFeatureBlocked('notifications', userPlan) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
@@ -1142,7 +1273,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   <div className={`relative ${isFeatureBlocked('excessiveEmojis', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
                     {isFeatureBlocked('excessiveEmojis', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
                     <CheckWithInput
-                      label="Ignorar emojis excesivos del chat a cantidad mAxima permitida:"
+                      label="Ignorar emojis excesivos del chat a cantidad máxima permitida:"
                       checked={config.ignoreExcessiveEmojis}
                       onToggle={() => updateConfig('ignoreExcessiveEmojis', !config.ignoreExcessiveEmojis)}
                       value={config.maxEmojisAllowed}
@@ -1157,14 +1288,14 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   <div className={`relative ${isFeatureBlocked('minMessageLength', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
                     {isFeatureBlocked('minMessageLength', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
                     <CheckWithInput
-                      label="Ignorar mensajes muy cortos (mAnimo de caracteres)"
+                      label="Ignorar mensajes muy cortos (mínimo de caracteres)"
                       checked={config.minMessageLengthEnabled}
                       onToggle={() => updateConfig('minMessageLengthEnabled', !config.minMessageLengthEnabled)}
                       value={config.minMessageLength}
                       onValueChange={(v) => updateConfig('minMessageLength', v)}
                       placeholder="3"
                       darkMode={darkMode}
-                      hint="Ignora mensajes con menos caracteres del mAnimo"
+                      hint="Ignora mensajes con menos caracteres del mínimo"
                     />
                   </div>
 

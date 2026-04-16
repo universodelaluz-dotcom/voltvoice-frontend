@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X, Users, Clock3, TrendingUp, Filter, Trophy, Sparkles, BookOpen } from 'lucide-react'
+import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X, Users, Clock3, TrendingUp, Filter, Trophy, Sparkles, BookOpen, Copy, CheckCircle } from 'lucide-react'
 import chatStore from '../services/chatStore.js'
 import { useTranslation } from 'react-i18next'
 
@@ -480,6 +480,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const [waitingStatus, setWaitingStatus] = useState('')
   const [messages, setMessages] = useState([])
   const [error, setError] = useState(null)
+  const [copiedUsername, setCopiedUsername] = useState(null)
   const [stats, setStats] = useState({ count: 0, uptime: 0 })
   const connectedAtRef = useRef(null)
   const [donors, setDonors] = useState(new Set())
@@ -1783,6 +1784,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     const isDonorEligible = item.isDonor || donors.has(username) || donors.has(normalizedItemUsername)
     const isQuestionEligible = item.isQuestion || isQuestion(item.sourceText || item.rawText || item.text || '')
 
+    // PRIORIDAD 0: Voz personalizada por usuario (MÁXIMA PRIORIDAD)
+    if (c.userVoiceAssignments && c.userVoiceAssignments.length > 0) {
+      // Normalizar username: quitar @ si lo tiene para comparación
+      const normalizedUsername = username.toLowerCase().replace(/^@+/, '')
+      const userAssignment = c.userVoiceAssignments.find(a => a.username.toLowerCase() === normalizedUsername)
+      if (userAssignment) {
+        console.log(`[Voice Priority] User custom voice used for "${username}": "${userAssignment.voiceId}"`)
+        return userAssignment.voiceId
+      }
+    }
+
     // Prioridad 1: Notificaciones
     if (c.notifVoiceEnabled && item.isNotification) {
       const voice = c.notifVoiceId || 'Lupita'
@@ -2002,13 +2014,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
       // Voz congelada al encolar: evita cambios por prioridad al reproducir.
       const voiceId = item.voiceId || (c.generalVoiceId || 'es-ES')
+      const currentGlobalVoice = c.generalVoiceId || 'es-ES'
 
       try {
         const isLocalVoice = voiceId === 'es-ES' || voiceId === 'en-US'
 
-        // Si cambió la voz, hacer lo MISMO que pausa/resume: limpiar TODO y reanudar
-        if (lastVoiceIdRef.current !== voiceId) {
-          lastVoiceIdRef.current = voiceId
+        // Si cambió la voz GLOBAL del usuario (no por-mensaje), vaciar cola
+        // Esto evita vaciar cuando está randomizando (cada mensaje tiene voiceId diferente congelada)
+        if (lastVoiceIdRef.current !== currentGlobalVoice) {
+          lastVoiceIdRef.current = currentGlobalVoice
           markPlayingMessagesAsDone() // Marcar como hechos
           speakQueueRef.current = [] // VACIAR COLA como pausa
           isProcessingRef.current = false
@@ -2715,6 +2729,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     }
   }
 
+  const copyUsernameToClipboard = (username) => {
+    // Copiar con @ al inicio
+    const usernameWithAt = username.startsWith('@') ? username : `@${username}`
+    navigator.clipboard.writeText(usernameWithAt).then(() => {
+      setCopiedUsername(username)
+      setTimeout(() => setCopiedUsername(null), 2000)
+    }).catch(err => console.error('Error copiando:', err))
+  }
+
   return (
     <div className={`relative overflow-visible ${darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6 mb-6" : "bg-white border border-indigo-200 rounded-lg p-6 mb-6 shadow-sm"}`}>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -2981,9 +3004,26 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                       key={getMessageRenderKey(msg, idx)}
                       className={darkMode ? "border-l border-cyan-500/30 pl-3 py-2 rounded-r" : "border-l border-indigo-300 pl-3 py-2 rounded-r"}
                     >
-                      <p className="font-semibold" style={{ color: chatNickColor, fontSize: `${chatFontSize}px` }}>
-                              {getNickOverrideValue(nickOverrides, msg.user) || msg.nickname || msg.user}
-                      </p>
+                      <div className="flex items-center gap-2 group">
+                        <p className="font-semibold" style={{ color: chatNickColor, fontSize: `${chatFontSize}px` }}>
+                          {getNickOverrideValue(nickOverrides, msg.user) || msg.nickname || msg.user}
+                        </p>
+                        <button
+                          onClick={() => copyUsernameToClipboard(msg.user)}
+                          className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded ${
+                            copiedUsername === msg.user
+                              ? darkMode ? 'text-green-400' : 'text-green-600'
+                              : darkMode ? 'text-gray-500 hover:text-cyan-400' : 'text-gray-400 hover:text-cyan-600'
+                          }`}
+                          title="Copiar usuario"
+                        >
+                          {copiedUsername === msg.user ? (
+                            <CheckCircle className="w-4 h-4" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
                       <p style={{ color: chatMsgColor, fontSize: `${chatFontSize}px` }}>{msg.text}</p>
                     </div>
                   ))
@@ -3192,10 +3232,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                   <div className="flex items-center justify-between">
                     {editingNick === msg.id ? (
                       <div className="flex flex-col gap-0.5">
-                        <input
-                          autoFocus
-                          value={editingValue}
-                          onChange={(e) => setEditingValue(e.target.value)}
+                        <div className="flex items-center gap-2">
+                          <input
+                            autoFocus
+                            value={editingValue}
+                            onChange={(e) => setEditingValue(e.target.value)}
                           onKeyDown={async (e) => {
                             if (e.key === 'Enter') {
                               const nextNick = editingValue.trim()
@@ -3235,7 +3276,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                           className={`text-sm font-semibold px-1 py-0 rounded outline-none w-32 ${
                             darkMode ? 'bg-gray-700 text-cyan-300 border border-cyan-500/50' : 'bg-white text-cyan-600 border border-cyan-300'
                           }`}
-                        />
+                          />
+                          <button
+                            onClick={() => copyUsernameToClipboard(msg.user)}
+                            className={`text-sm font-medium whitespace-nowrap cursor-pointer transition-colors ${
+                              copiedUsername === msg.user
+                                ? darkMode ? 'text-green-400' : 'text-green-600'
+                                : darkMode ? 'text-gray-400 hover:text-cyan-400' : 'text-gray-500 hover:text-cyan-600'
+                            }`}
+                            title="Click para copiar usuario"
+                          >
+                            (@{msg.user})
+                          </button>
+                        </div>
                         <span className={`text-[10px] leading-none ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                           Vacio + Enter = nick original
                         </span>
@@ -3304,6 +3357,21 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                             {getNickOverrideValue(nickOverrides, msg.user) || msg.nickname || msg.user}
                           {badgeLabel && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded" style={{ backgroundColor: hlColor || '#666', color: '#fff' }}>{badgeLabel}</span>}
                         </p>
+                        <button
+                          onClick={() => copyUsernameToClipboard(msg.user)}
+                          className={`opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded flex-shrink-0 ${
+                            copiedUsername === msg.user
+                              ? darkMode ? 'text-green-400' : 'text-green-600'
+                              : darkMode ? 'text-gray-500 hover:text-cyan-400' : 'text-gray-400 hover:text-cyan-600'
+                          }`}
+                          title="Copiar usuario"
+                        >
+                          {copiedUsername === msg.user ? (
+                            <CheckCircle className="w-3.5 h-3.5" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
                       </div>
                     )}
                     {msg.status === 'playing' && (

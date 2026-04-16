@@ -5,6 +5,14 @@ import { useTranslation } from 'react-i18next'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
+// Convertir milisegundos a formato MM:SS
+const formatTimeMinutesSeconds = (ms) => {
+  const totalSeconds = Math.floor(ms / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
 export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, config, updateConfig, user }) {
   const { t } = useTranslation()
   const planKey = String(user?.plan || 'free').toLowerCase()
@@ -975,7 +983,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                   <div className={darkMode ? "bg-gray-900/60 border border-gray-700 rounded-lg p-3" : "bg-white border border-gray-200 rounded-lg p-3"}>
                     <div className="flex items-center justify-between mb-3">
                       <p className={`text-sm font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Línea de tiempo</p>
-                      <p className={`text-xs font-mono ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total: {(studioPro.duration / 1000).toFixed(1)}s</p>
+                      <p className={`text-sm font-mono font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total: {formatTimeMinutesSeconds(studioPro.duration)}</p>
                     </div>
 
                     {/* Timeline trimmer */}
@@ -1046,11 +1054,11 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
                     {/* Time labels */}
                     <div className="flex items-center justify-between mt-2 px-1">
-                      <span className={`text-xs font-mono font-semibold ${darkMode ? 'text-orange-300' : 'text-orange-600'}`}>
-                        ▶ {(studioPro.startMs / 1000).toFixed(2)}s
+                      <span className={`text-sm font-mono font-bold ${darkMode ? 'text-orange-300' : 'text-orange-700'}`}>
+                        ▶ {formatTimeMinutesSeconds(studioPro.startMs)}
                       </span>
-                      <span className={`text-xs font-mono font-semibold ${darkMode ? 'text-orange-300' : 'text-orange-600'}`}>
-                        ⏹ {(studioPro.endMs / 1000).toFixed(2)}s
+                      <span className={`text-sm font-mono font-bold ${darkMode ? 'text-orange-300' : 'text-orange-700'}`}>
+                        ⏹ {formatTimeMinutesSeconds(studioPro.endMs)}
                       </span>
                     </div>
 
