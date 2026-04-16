@@ -108,7 +108,30 @@
       "Bash(mv Pricing.tsx.tmp Pricing.tsx)",
       "Bash(powershell -NoProfile -Command ':*)",
       "Bash(grep -n \"const ws = new WebSocket\\\\|useEffect.*\\(\\).*{$\" \"C:\\\\Nueva carpeta\\\\VOLTVOICE CON SERVER M25\\\\VOLTVOICE\\\\frontend\\\\src\\\\components\\\\TikTokLivePanel.jsx\")",
-      "Bash(ls -la \"C:\\\\Nueva carpeta\\\\VOLTVOICE CON SERVER M25\\\\VOLTVOICE\\\\frontend\\\\.env\"*)"
+      "Bash(ls -la \"C:\\\\Nueva carpeta\\\\VOLTVOICE CON SERVER M25\\\\VOLTVOICE\\\\frontend\\\\.env\"*)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -r \"JWT_SECRET\\\\|API_KEY\\\\|password\\\\|secret\" \"C:\\\\Nueva carpeta\\\\VOLTVOICE CON SERVER M25\\\\VOLTVOICE/backend\" --include=\"*.js\" ! -path \"*/node_modules/*\")",
+      "Bash(powershell -Command ':*)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(Object.keys\\(p.dependencies\\)\\)\\)\")",
+      "Bash(node -e \"require\\('C:/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE/frontend/src/locales/es.json'\\); console.log\\('es.json OK'\\)\")",
+      "Bash(node -e \"require\\('C:/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE/frontend/src/locales/en.json'\\); console.log\\('en.json OK'\\)\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); try{JSON.parse\\(fs.readFileSync\\('src/locales/es.json','utf8'\\)\\); console.log\\('es.json: VALID'\\)}catch\\(e\\){console.log\\('es.json ERROR:',e.message\\)}; try{JSON.parse\\(fs.readFileSync\\('src/locales/en.json','utf8'\\)\\); console.log\\('en.json: VALID'\\)}catch\\(e\\){console.log\\('en.json ERROR:',e.message\\)}\")",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('src/locales/es.json','utf8'\\)\\); console.log\\('es.json valid'\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('src/locales/en.json','utf8'\\)\\); console.log\\('en.json valid'\\)\")",
+      "Bash(node -e \"const es=JSON.parse\\(require\\('fs'\\).readFileSync\\('src/locales/es.json','utf8'\\)\\); const en=JSON.parse\\(require\\('fs'\\).readFileSync\\('src/locales/en.json','utf8'\\)\\); console.log\\('es.json valid'\\); console.log\\('en.json valid'\\); console.log\\('es annual start name:', es.pricing.annual.start.name\\); console.log\\('en annual start name:', en.pricing.annual.start.name\\); console.log\\('es cookies title:', es.cookies.title\\); console.log\\('en cookies title:', en.cookies.title\\); console.log\\('es bot.selectOne:', es.bot.selectOne\\); console.log\\('en bot.selectOne:', en.bot.selectOne\\); console.log\\('es freeHours:', es.pricing.comparison.values.freeHours\\); console.log\\('en freeHours:', en.pricing.comparison.values.freeHours\\);\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); try{JSON.parse\\(fs.readFileSync\\('src/locales/es.json','utf8'\\)\\); console.log\\('es.json: OK'\\)}catch\\(e\\){console.log\\('es.json ERROR:',e.message\\)}; try{JSON.parse\\(fs.readFileSync\\('src/locales/en.json','utf8'\\)\\); console.log\\('en.json: OK'\\)}catch\\(e\\){console.log\\('en.json ERROR:',e.message\\)}\")",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('C:/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE/frontend/src/locales/es.json','utf8'\\)\\); console.log\\('es.json valid'\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('C:/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE/frontend/src/locales/en.json','utf8'\\)\\); console.log\\('en.json valid'\\)\")",
+      "Bash(bash /tmp/audit.sh)",
+      "Bash(mkdir -p \"TIRAR ESTO\")",
+      "Bash([ -d \"_deploy_backend_main\" ])",
+      "Bash(mv \"_deploy_backend_main\" \"TIRAR ESTO/\")",
+      "Bash(mv BOT_SETUP_GUIDE.md \"TIRAR ESTO/\")",
+      "Bash(mv LANDING_PAGE_DELIVERY.md \"TIRAR ESTO/\")",
+      "Bash(curl -s \"https://cdn.jsdelivr.net/npm/streamdeck@latest/dist/streamdeck.min.js\" -o \"C:/Nueva carpeta/VOLTVOICE CON SERVER M25/streamvoicer-plugin/lib/streamdeck-min.js\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/elgatosf/streamdeck-javascript-sdk/main/dist/streamdeck.min.js\" -o \"C:/Nueva carpeta/VOLTVOICE CON SERVER M25/streamvoicer-plugin/lib/streamdeck-min.js\")",
+      "Bash(pnpm install:*)",
+      "Bash(curl -s \"https://unpkg.com/elgato-stream-deck@latest/dist/streamdeck.min.js\")"
     ]
   }
 }
