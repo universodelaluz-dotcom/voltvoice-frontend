@@ -1829,11 +1829,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     if (c.variedVoicesEnabled && c.variedVoicesSelected && c.variedVoicesSelected.length > 0) {
       const validVoices = c.variedVoicesSelected.filter(v => v && typeof v === 'string' && v.trim())
       if (validVoices.length > 0) {
-        const randomVoice = validVoices[Math.floor(Math.random() * validVoices.length)]
-        console.log('[Voice Debug] Varied voices mode:', {
-          selectedVoices: c.variedVoicesSelected,
-          validVoices: validVoices,
-          chosenVoice: randomVoice
+        const randomIndex = Math.floor(Math.random() * validVoices.length)
+        const randomVoice = validVoices[randomIndex]
+        console.log(`[Voice Debug] Selected voice #${randomIndex + 1}/${validVoices.length}: "${randomVoice}"`, {
+          allSelected: c.variedVoicesSelected,
+          afterFiltering: validVoices
         })
         return randomVoice
       } else {
