@@ -343,8 +343,7 @@ export function App() {
   const [user, setUser] = useState(null)
   const [authToken, setAuthToken] = useState(null)
   const [tokens, setTokens] = useState(100)
-  const isLocalDevBypass = import.meta.env.DEV && typeof window !== 'undefined' &&
-    ['localhost', '127.0.0.1'].includes(window.location.hostname)
+  const isLocalDevBypass = false // Desactivado para requerir login en local
   const canOpenStudioWithoutAuth = Boolean(user) || isLocalDevBypass
 
   // Currency detection state

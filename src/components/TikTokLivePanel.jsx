@@ -481,6 +481,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const [nickOverrides, setNickOverrides] = useState({})
   const [editingNick, setEditingNick] = useState(null)
   const [editingValue, setEditingValue] = useState('')
+  const [showNicksPanel, setShowNicksPanel] = useState(false)
+  const [editingNickInTable, setEditingNickInTable] = useState(null)
+  const [editingNickValueInTable, setEditingNickValueInTable] = useState('')
   const [bannedUsers, setBannedUsers] = useState(new Set())
   const [volume, setVolume] = useState(Number(config.chatVolume ?? 0.8))
   const [isPaused, setIsPaused] = useState(config.chatPaused ?? false)
@@ -670,6 +673,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const isProcessingRef = useRef(false)
   const lastMessageRef = useRef({}) // { username: lastText }
   const currentAudioRef = useRef(null)
+  const nextPreGeneratedRef = useRef({}) // { itemId, audioUrl } para guardar audio pre-generado
+  const isPreGeneratingRef = useRef(false)
+  const lastVoiceIdRef = useRef(null) // Rastrear cambios de voz sin re-render
+  const preGenIdRef = useRef(0) // ID para invalidar pre-generados antiguos
   const disconnectedRef = useRef(false)
   const isWaitingForLiveRef = useRef(false)
   const chatContainerRef = useRef(null)
@@ -682,7 +689,6 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const activePlaybackResolveRef = useRef(null)
   const resumeRequestedDuringSuppressionRef = useRef(false)
   const autoScrollPinnedRef = useRef(true) // Auto-scroll to keep new messages visible
-  const pendingScrollRef = useRef(null) // Prevent multiple scrolls from stacking
   const liveRetryTimerRef = useRef(null)
   const recentIncomingTimestampsRef = useRef([])
   const recentPlaybackDurationsRef = useRef([])
@@ -706,27 +712,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
   const isAudioSuppressed = () => isPttSuppressedRef.current || isInteractionSuppressedRef.current
 
-  // Auto-scroll suave: solo scroll al fondo si el usuario está cerca del fondo
-  // FIX: Usar throttling para evitar scroll agresivo cuando llegan muchos mensajes rapidísimo
+  // Auto-scroll: SIEMPRE scroll al fondo para mostrar mensajes más recientes en chat en vivo
+  // Sin requestAnimationFrame para evitar reflow que mueve la página entera
   useEffect(() => {
     if (!chatContainerRef.current) return
     const container = chatContainerRef.current
-
-    // Solo auto-scroll si el usuario está cerca del bottom del chat
-    // Pero NO si el usuario está scrolleando manualmente (autoScrollPinnedRef sería false)
-    if (autoScrollPinnedRef.current) {
-      // Cancelar scroll anterior si uno está pendiente
-      if (pendingScrollRef.current) {
-        cancelAnimationFrame(pendingScrollRef.current)
-      }
-
-      // Usar requestAnimationFrame para evitar múltiples scrolls en el mismo frame
-      pendingScrollRef.current = requestAnimationFrame(() => {
-        if (!autoScrollPinnedRef.current) return // User scrolled away, cancel
-        container.scrollTop = container.scrollHeight
-        pendingScrollRef.current = null
-      })
-    }
+    // Scroll DIRECTO sin delays para evitar que se mueva la página
+    container.scrollTop = container.scrollHeight
   }, [messages])
 
   useEffect(() => {
@@ -760,6 +752,16 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     isProcessingRef.current = false
     processQueue()
   }, [isPaused])
+  // Si cambia la voz, solo detener audio actual - NO borrar cola
+  useEffect(() => {
+    if (!isConnected) return
+    const currentVoice = config.generalVoiceId || 'es-ES'
+    if (lastVoiceIdRef.current !== currentVoice) {
+      console.log(`[Voice Change] ${lastVoiceIdRef.current} → ${currentVoice}`)
+      lastVoiceIdRef.current = currentVoice
+      stopPlaybackNow() // Solo detener audio actual, para que reanude con nueva voz
+    }
+  }, [config.generalVoiceId, isConnected])
   useEffect(() => { volumeRef.current = volume }, [volume])
   useEffect(() => { bannedRef.current = bannedUsers; chatStore.syncBannedUsers(bannedUsers) }, [bannedUsers])
   useEffect(() => { nickOverridesRef.current = nickOverrides; chatStore.syncNickOverrides(nickOverrides) }, [nickOverrides])
@@ -1011,6 +1013,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       }
 
       if (action === 'resume') {
+        // Limpiar cola de mensajes pausados (no reproducir atrasados)
+        speakQueueRef.current = []
         if (isAudioSuppressed()) {
           resumeRequestedDuringSuppressionRef.current = true
         }
@@ -1379,20 +1383,32 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           const onlyModerators = isEnabledFlag(c.onlyModerators)
           const onlySubscribers = isEnabledFlag(c.onlySubscribers)
           const onlyCommunityMembers = isEnabledFlag(c.onlyCommunityMembers)
-          const roleFiltersActive = onlyDonors || onlyModerators || onlySubscribers || onlyCommunityMembers
-          if (roleFiltersActive) {
-            const passRoleFilter =
-              (onlyDonors && isKnownDonor) ||
-              (onlyModerators && msg.isModerator) ||
-              (onlySubscribers && (msg.isSubscriber || false)) ||
-              (onlyCommunityMembers && msg.isCommunityMember)
-            if (!passRoleFilter) { markFilteredMessage(); return }
-          }
-
-          // Filtro: solo preguntas — AND independiente encima de los roles
-          // Ejemplo: donor + preguntas = lee donadores QUE ADEMÁS hagan preguntas
           const onlyQuestions = isEnabledFlag(c.onlyQuestions)
-          if (onlyQuestions && !isQuestion(msg.text)) { markFilteredMessage(); return }
+
+          const roleFiltersActive = onlyDonors || onlyModerators || onlySubscribers || onlyCommunityMembers
+          const isQuestionMsg = isQuestion(msg.text)
+
+          // Calcula si pasa filtro de rol: cumple CUALQUIERA de los roles activos (OR lógico)
+          const passRoleFilter =
+            (onlyDonors && isKnownDonor) ||
+            (onlyModerators && msg.isModerator) ||
+            (onlySubscribers && (msg.isSubscriber || false)) ||
+            (onlyCommunityMembers && msg.isCommunityMember)
+
+          // LÓGICA DE FILTRADO COMBINADO (OR entre grupos):
+          // Si AMBAS restricciones están activas: pasa si cumple rol O es pregunta
+          // Si SOLO rol está activo: pasa si cumple rol
+          // Si SOLO preguntas está activo: pasa si es pregunta
+          if (roleFiltersActive && onlyQuestions) {
+            // Ambas activas: pasa si cumple rol O es pregunta
+            if (!passRoleFilter && !isQuestionMsg) { markFilteredMessage(); return }
+          } else if (roleFiltersActive) {
+            // Solo filtros de rol: pasa si cumple alguno
+            if (!passRoleFilter) { markFilteredMessage(); return }
+          } else if (onlyQuestions) {
+            // Solo filtro de preguntas: pasa si es pregunta
+            if (!isQuestionMsg) { markFilteredMessage(); return }
+          }
           const profanityFilterEnabled = isEnabledFlag(c.profanityFilterEnabled)
           if (profanityFilterEnabled) {
             const profanityWords = parseProfanityWords(c.profanityWords)
@@ -1912,27 +1928,47 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       try {
         const isLocalVoice = voiceId === 'es-ES' || voiceId === 'en-US'
 
+        // Si cambió la voz, hacer lo MISMO que pausa/resume: limpiar TODO y reanudar
+        if (lastVoiceIdRef.current !== voiceId) {
+          lastVoiceIdRef.current = voiceId
+          markPlayingMessagesAsDone() // Marcar como hechos
+          speakQueueRef.current = [] // VACIAR COLA como pausa
+          isProcessingRef.current = false
+          stopPlaybackNow() // Detener audio actual
+          break // Reiniciar desde el principio
+        }
+
         if (isLocalVoice) {
           const authToken = getAuthToken()
           let backendAudio = null
           let backendLimitReached = false
-          try {
-            const response = await fetch(`${API_URL}/api/tts/say`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
-              },
-              body: JSON.stringify({
-                text,
-                voice: voiceId
-              })
-            })
 
-            const data = await response.json().catch(() => ({}))
-            if (response.ok && data?.audio) {
-              backendAudio = data.audio
-            } else if (data?.code === 'FREE_LOCAL_VOICE_DAILY_LIMIT_REACHED') {
+          // Si ya está pre-generado Y es de la generación actual, usarlo
+          if (
+            nextPreGeneratedRef.current?.itemId === item.id &&
+            nextPreGeneratedRef.current?.audioUrl &&
+            nextPreGeneratedRef.current?.genId === preGenIdRef.current
+          ) {
+            backendAudio = nextPreGeneratedRef.current.audioUrl
+            nextPreGeneratedRef.current = {}
+          } else {
+            try {
+              const response = await fetch(`${API_URL}/api/tts/say`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+                },
+                body: JSON.stringify({
+                  text,
+                  voice: voiceId
+                })
+              })
+
+              const data = await response.json().catch(() => ({}))
+              if (response.ok && data?.audio) {
+                backendAudio = data.audio
+              } else if (data?.code === 'FREE_LOCAL_VOICE_DAILY_LIMIT_REACHED') {
               backendLimitReached = true
               const resetInSeconds = Number(data?.details?.resetInSeconds || 0)
               const waitMinutes = Math.max(1, Math.ceil(resetInSeconds / 60))
@@ -1946,8 +1982,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 window.alert(popupMessage)
               }
             }
-          } catch (backendErr) {
-            console.warn('[TikTok] Local backend TTS fallback:', backendErr?.message || backendErr)
+            } catch (backendErr) {
+              console.warn('[TikTok] Local backend TTS fallback:', backendErr?.message || backendErr)
+            }
           }
 
           if (backendAudio) {
@@ -2010,6 +2047,50 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 activePlaybackResolveRef.current = null
                 resolve()
               })
+
+              // Pre-generar siguiente en background (para TODAS las voces: Google TTS, Inworld, clonadas)
+              if (!isPreGeneratingRef.current && speakQueueRef.current.length > 0) {
+                isPreGeneratingRef.current = true
+                const nextItem = speakQueueRef.current[0]
+                const nextVoiceId = nextItem.voiceId || (configRef.current.generalVoiceId || 'es-ES')
+                const isNextLocalVoice = nextVoiceId === 'es-ES' || nextVoiceId === 'en-US'
+                const authToken = getAuthToken()
+
+                const preGenerateFunc = isNextLocalVoice
+                  ? // Google TTS
+                    () => fetch(`${API_URL}/api/tts/say`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+                      },
+                      body: JSON.stringify({ text: nextItem.text, voice: nextVoiceId })
+                    })
+                  : // Inworld/clonadas
+                    () => fetch(`${API_URL}/api/tiktok/message`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+                      },
+                      body: JSON.stringify({
+                        username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
+                        messageUsername: nextItem.username,
+                        messageText: nextItem.text,
+                        voiceId: nextVoiceId
+                      })
+                    })
+
+                preGenerateFunc()
+                  .then(r => r.json())
+                  .then(data => {
+                    if (data?.audio) {
+                      nextPreGeneratedRef.current = { itemId: nextItem.id, audioUrl: data.audio, voiceId: nextVoiceId, genId: preGenIdRef.current }
+                    }
+                  })
+                  .catch(() => {})
+                  .finally(() => { isPreGeneratingRef.current = false })
+              }
             })
             continue
           }
@@ -2079,21 +2160,36 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         } else {
         // Voz Inworld/clonada — llamada al backend
         const authToken = getAuthToken()
-        const response = await fetch(`${API_URL}/api/tiktok/message`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
-          },
-          body: JSON.stringify({
-            username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
-            messageUsername: username,
-            messageText: text,
-            voiceId
-          })
-        })
+        let data = null
+        let response = null
 
-        const data = await response.json()
+        // Revisar si ya está pre-generado Y es de la generación actual
+        if (
+          nextPreGeneratedRef.current?.itemId === item.id &&
+          nextPreGeneratedRef.current?.audioUrl &&
+          nextPreGeneratedRef.current?.genId === preGenIdRef.current
+        ) {
+          console.log('[Pre-gen] ✓ Usando pre-generado para', item.username)
+          data = { audio: nextPreGeneratedRef.current.audioUrl }
+          nextPreGeneratedRef.current = {}
+        } else {
+          // No hay pre-generado, hacer request directo
+          console.log('[Pre-gen] ✗ Generando nuevo para', item.username)
+          response = await fetch(`${API_URL}/api/tiktok/message`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+            },
+            body: JSON.stringify({
+              username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
+              messageUsername: username,
+              messageText: text,
+              voiceId
+            })
+          })
+          data = await response.json()
+        }
 
         if (isPausedRef.current || disconnectedRef.current || isAudioSuppressed()) {
           continue
@@ -2104,7 +2200,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           || data?.fallback
           || data?.fallbackReason === 'token_insufficient'
           || data?.error === 'token_insufficient'
-          || response.status === 402
+          || response?.status === 402
         )
 
         if (shouldUseBrowserLocalFallback) {
@@ -2226,6 +2322,40 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                   msg.id === item.id ? { ...msg, status: 'done' } : msg
                 )
               )
+
+              // Pre-generar siguiente mensaje para Inworld/clonadas (eliminar delays)
+              if (!isPreGeneratingRef.current && speakQueueRef.current.length > 0) {
+                isPreGeneratingRef.current = true
+                const nextItem = speakQueueRef.current[0]
+                const nextVoiceId = nextItem.voiceId || (configRef.current.generalVoiceId || 'es-ES')
+                const authToken = getAuthToken()
+                console.log('[Pre-gen] Iniciando para', nextItem.username)
+
+                fetch(`${API_URL}/api/tiktok/message`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+                  },
+                  body: JSON.stringify({
+                    username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
+                    messageUsername: nextItem.username,
+                    messageText: nextItem.text,
+                    voiceId: nextVoiceId
+                  })
+                })
+                  .then(r => r.json())
+                  .then(data => {
+                    if (data?.audio) {
+                      nextPreGeneratedRef.current = { itemId: nextItem.id, audioUrl: data.audio, voiceId: nextVoiceId, genId: preGenIdRef.current }
+                      console.log('[Pre-gen] ✓ Completado para', nextItem.username)
+                    }
+                  })
+                  .catch(() => {})
+                  .finally(() => { isPreGeneratingRef.current = false })
+              }
+
+              // Resolver sin delay - si la pre-generación se demora, el sistema espera en el siguiente mensaje
               resolve()
             }
             audio.onerror = () => {
@@ -2317,24 +2447,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   }
 
   const keepReadMessageVisible = ({ force = false } = {}) => {
-    // Cancelar scroll anterior si uno está pendiente
-    if (pendingScrollRef.current) {
-      cancelAnimationFrame(pendingScrollRef.current)
+    // Scroll DIRECTO sin requestAnimationFrame para evitar reflow que mueve la página
+    const container = chatContainerRef.current
+    if (!container) return
+
+    if (force) {
+      autoScrollPinnedRef.current = true
     }
 
-    pendingScrollRef.current = requestAnimationFrame(() => {
-      const container = chatContainerRef.current
-      if (!container) return
-
-      if (force) {
-        autoScrollPinnedRef.current = true
-      }
-
-      if (force || autoScrollPinnedRef.current) {
-        container.scrollTop = container.scrollHeight
-      }
-      pendingScrollRef.current = null
-    })
+    if (force || autoScrollPinnedRef.current) {
+      container.scrollTop = container.scrollHeight
+    }
   }
 
   const resetSessionTracking = () => {
@@ -2939,8 +3062,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               <div className="flex-1">
                 <div
                   ref={chatContainerRef}
-                  style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain' }}
-                  className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-96 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-96 overflow-y-auto space-y-2"}
+                  style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain', height: 'calc(100vh - 450px)', maxHeight: '600px' }}
+                  className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 overflow-y-auto space-y-2"}
                 >
                   {messages.length === 0 ? (
                     <div className="text-center text-gray-400 py-8">
@@ -2998,14 +3121,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                           onKeyDown={async (e) => {
                             if (e.key === 'Enter') {
                               const nextNick = editingValue.trim()
+                              const normalizedUsername = normalizeTikTokUsername(msg.user)
                               if (nextNick) {
-                                await apiNicks.set(msg.user, nextNick)
-                                setNickOverrides(prev => ({ ...prev, [msg.user]: nextNick }))
+                                await apiNicks.set(normalizedUsername, nextNick)
+                                setNickOverrides(prev => ({ ...prev, [normalizedUsername]: nextNick }))
                               } else {
-                                await apiNicks.remove(msg.user)
+                                await apiNicks.remove(normalizedUsername)
                                 setNickOverrides(prev => {
                                   const next = { ...prev }
-                                  getBanCandidateKeys(msg.user).forEach((key) => delete next[key])
+                                  getBanCandidateKeys(normalizedUsername).forEach((key) => delete next[key])
                                   return next
                                 })
                               }
@@ -3015,15 +3139,16 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                           }}
                           onBlur={async () => {
                             const nextNick = editingValue.trim()
+                            const normalizedUsername = normalizeTikTokUsername(msg.user)
                             if (nextNick) {
-                              await apiNicks.set(msg.user, nextNick)
-                              setNickOverrides(prev => ({ ...prev, [msg.user]: nextNick }))
+                              await apiNicks.set(normalizedUsername, nextNick)
+                              setNickOverrides(prev => ({ ...prev, [normalizedUsername]: nextNick }))
                             } else {
                               // Si queda vacío, remover del override
-                              await apiNicks.remove(msg.user)
+                              await apiNicks.remove(normalizedUsername)
                               setNickOverrides(prev => {
                                 const next = { ...prev }
-                                getBanCandidateKeys(msg.user).forEach((key) => delete next[key])
+                                getBanCandidateKeys(normalizedUsername).forEach((key) => delete next[key])
                                 return next
                               })
                             }
@@ -3278,6 +3403,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 title="Tamaño y colores del chat"
               >
                 <span style={{ fontSize: '13px' }}>Aa</span>
+              </button>
+              <button
+                onClick={() => setShowNicksPanel(!showNicksPanel)}
+                className={`h-10 w-[104px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-1 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
+                  showNicksPanel
+                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 shadow-sm'
+                    : darkMode
+                      ? 'border-white/10 bg-slate-800 text-slate-200 hover:bg-slate-700'
+                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
+                }`}
+                title="Ver y editar nicks guardados"
+              >
+                Nicks
               </button>
             </div>
             <div className={`h-12 w-full max-w-[520px] rounded-lg border px-2 flex items-center gap-2 ${
@@ -3547,6 +3685,110 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 )}
               </div>
 
+            </div>
+          )}
+
+          {/* Panel de Nicks Guardados */}
+          {showNicksPanel && (
+            <div className={`rounded-lg border p-3 space-y-3 ${
+              darkMode ? 'bg-gray-900/80 border-cyan-500/30' : 'bg-cyan-50 border-cyan-200'
+            }`}>
+              <div className="flex items-center justify-between">
+                <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/80' : 'text-cyan-600'}`}>
+                  Nicks Guardados
+                </span>
+                <button onClick={() => setShowNicksPanel(false)} className="text-gray-400 hover:text-gray-200"><X className="w-3.5 h-3.5" /></button>
+              </div>
+
+              {/* Tabla de nicks */}
+              <div className="overflow-x-auto">
+                {Object.entries(nickOverrides).length === 0 ? (
+                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Sin nicks guardados</p>
+                ) : (
+                  <table className={`w-full text-xs ${darkMode ? 'border-gray-700' : 'border-cyan-200'}`}>
+                    <thead>
+                      <tr className={`border-b ${darkMode ? 'border-gray-700' : 'border-cyan-200'}`}>
+                        <th className="text-left px-2 py-2 font-semibold">Usuario</th>
+                        <th className="text-left px-2 py-2 font-semibold">Nick</th>
+                        <th className="text-center px-2 py-2 font-semibold">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(nickOverrides).map(([username, nickname]) => (
+                        <tr key={username} className={`border-b ${darkMode ? 'border-gray-700/50 hover:bg-gray-800/30' : 'border-cyan-100 hover:bg-cyan-100/50'} transition-colors`}>
+                          <td className={`px-2 py-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{username}</td>
+                          <td className={`px-2 py-2 font-semibold ${darkMode ? 'text-cyan-300' : 'text-cyan-600'}`}>
+                            {editingNickInTable === username ? (
+                              <input
+                                autoFocus
+                                type="text"
+                                value={editingNickValueInTable}
+                                onChange={(e) => setEditingNickValueInTable(e.target.value)}
+                                onKeyDown={async (e) => {
+                                  if (e.key === 'Enter') {
+                                    const newNick = editingNickValueInTable.trim()
+                                    if (newNick) {
+                                      await apiNicks.set(username, newNick)
+                                      setNickOverrides(prev => ({ ...prev, [username]: newNick }))
+                                    }
+                                    setEditingNickInTable(null)
+                                  }
+                                  if (e.key === 'Escape') setEditingNickInTable(null)
+                                }}
+                                onBlur={async () => {
+                                  const newNick = editingNickValueInTable.trim()
+                                  if (newNick) {
+                                    await apiNicks.set(username, newNick)
+                                    setNickOverrides(prev => ({ ...prev, [username]: newNick }))
+                                  }
+                                  setEditingNickInTable(null)
+                                }}
+                                className={`text-xs px-2 py-1 rounded border outline-none w-32 ${
+                                  darkMode ? 'bg-gray-700 text-cyan-300 border-cyan-500/50' : 'bg-white text-cyan-600 border-cyan-300'
+                                }`}
+                              />
+                            ) : (
+                              nickname
+                            )}
+                          </td>
+                          <td className="px-2 py-2 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => {
+                                  setEditingNickInTable(username)
+                                  setEditingNickValueInTable(nickname)
+                                }}
+                                className={`p-1 rounded transition-colors ${darkMode ? 'hover:bg-gray-700 text-cyan-400' : 'hover:bg-cyan-200 text-cyan-600'}`}
+                                title="Editar nick"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  await apiNicks.remove(username)
+                                  setNickOverrides(prev => {
+                                    const next = { ...prev }
+                                    delete next[username]
+                                    return next
+                                  })
+                                }}
+                                className={`p-1 rounded transition-colors ${darkMode ? 'hover:bg-red-900/30 text-red-400' : 'hover:bg-red-100 text-red-600'}`}
+                                title="Borrar nick"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             </div>
           )}
 

@@ -51,6 +51,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
           client_id: GOOGLE_CLIENT_ID,
           callback: handleGoogleResponse,
           auto_select: false,
+          use_fedcm_for_prompt: false,
         })
         googleInitDoneRef.current = true
       }
