@@ -1763,6 +1763,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     return false
   }
 
+  // Voice selection priority (in order):
+  // 1. Notification voice (if enabled)
+  // 2. Moderator voice (if enabled)
+  // 3. Donor voice (if enabled)
+  // 4. Subscriber voice (if enabled)
+  // 5. Community member voice (if enabled)
+  // 6. Question voice (if enabled)
+  // 7. Varied voices mode random selection (if enabled)
+  // 8. General voice (default)
+  //
+  // NOTE: If "Modo voces variadas" is enabled but you only hear 2 of 3 selected voices,
+  // one might be assigned to a priority category (e.g., Notification, Donor). Disable
+  // those priority voices or use different voice IDs to fix this.
   const resolveVoiceIdAtEnqueue = (item) => {
     const c = configRef.current || {}
     const username = item.username
