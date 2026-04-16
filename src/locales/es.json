@@ -83,9 +83,9 @@
       "titleHighlight": "nuestros creadores",
       "subtitle": "Números que hablan por sí solos",
       "items": [
-        { "metric": "+150%", "label": "De 50K → 125K seguidores en 3 meses", "creator": "🎮 Alex Gaming", "category": "Gaming Live", "description": "Chat activo en vivo gracias a voces que reaccionan en tiempo real." },
-        { "metric": "+2,500", "label": "Comentarios por LIVE", "creator": "🎮 Max JuanGamingPro", "category": "Gaming Live", "description": "El chat cobra vida con voces y se vuelve parte del show." },
-        { "metric": "+85%", "label": "Aumento en donaciones", "creator": "😂 Carlos Comedy", "category": "Comedia Live", "description": "Las voces en vivo hacen el stream más divertido y participativo." }
+        { "metric": "+150%", "label": "De 50K → 125K seguidores en 3 meses", "creator": "🎮 Alex Gaming", "category": "Gaming Live", "description": "Chat activo en vivo gracias a voces que reaccionan en tiempo real.", "img": "https://voltvoice-frontend.vercel.app/images/web1.png" },
+        { "metric": "+2,500", "label": "Comentarios por LIVE", "creator": "🎮 Max JuanGamingPro", "category": "Gaming Live", "description": "El chat cobra vida con voces y se vuelve parte del show.", "img": "https://voltvoice-frontend.vercel.app/images/web%207.png" },
+        { "metric": "+85%", "label": "Aumento en donaciones", "creator": "😂 Carlos Comedy", "category": "Comedia Live", "description": "Las voces en vivo hacen el stream más divertido y participativo.", "img": "https://voltvoice-frontend.vercel.app/images/web3.png" }
       ]
     },
     "metrics": [
