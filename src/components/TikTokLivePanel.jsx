@@ -153,16 +153,30 @@ const getNickOverrideValue = (nickMap = {}, username = '') => {
   const normalized = normalizeTikTokUsername(raw).toLowerCase()
   return nickMap[raw] || nickMap[raw.toLowerCase()] || nickMap[normalized] || nickMap[`@${normalized}`] || ''
 }
-const getThemeChatNickColor = (config = {}, darkMode = true) => (
-  darkMode
-    ? (config.chatNickColorDark || config.chatNickColor || '#22d3ee')
-    : (config.chatNickColorLight || '#0f766e')
-)
-const getThemeChatMsgColor = (config = {}, darkMode = true) => (
-  darkMode
-    ? (config.chatMsgColorDark || config.chatMsgColor || '#d1d5db')
-    : (config.chatMsgColorLight || '#1f2937')
-)
+const getThemeChatNickColor = (config = {}, darkMode = true) => {
+  if (darkMode) {
+    return config.chatNickColorDark || config.chatNickColor || '#22d3ee'
+  }
+  // En modo light: validar que el color tenga suficiente contraste
+  const lightColor = config.chatNickColorLight || '#0f766e'
+  // Si es blanco o muy claro, cambiar a un color oscuro
+  if (/^#?[fF]{5,6}$|^#?[fF]{6}[0-9a-fA-F]{0,2}$/.test(lightColor) || lightColor.toLowerCase() === '#fff' || lightColor.toLowerCase() === '#ffffff') {
+    return '#0f766e'
+  }
+  return lightColor
+}
+const getThemeChatMsgColor = (config = {}, darkMode = true) => {
+  if (darkMode) {
+    return config.chatMsgColorDark || config.chatMsgColor || '#d1d5db'
+  }
+  // En modo light: validar que el color tenga suficiente contraste
+  const lightColor = config.chatMsgColorLight || '#1f2937'
+  // Si es blanco o casi blanco, cambiar a gris oscuro
+  if (/^#?[fF]{5,6}$|^#?[fF]{6}[0-9a-fA-F]{0,2}$/.test(lightColor) || lightColor.toLowerCase() === '#fff' || lightColor.toLowerCase() === '#ffffff') {
+    return '#1f2937'
+  }
+  return lightColor
+}
 
 const pruneRecentTimestamps = (timestamps, windowMs = 60000) => {
   const cutoff = Date.now() - windowMs
