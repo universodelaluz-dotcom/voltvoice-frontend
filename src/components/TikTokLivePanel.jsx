@@ -183,6 +183,11 @@ const normalizeMessageForMatching = (text = '') => String(text || '')
   .trim()
 
 const hiddenDefaultProfanityWords = [
+  '+turba',
+  '+turbar',
+  '+turbate',
+  '+turbado',
+  '+asturbarste',
   'pendejas',
   'pendejos',
   'pendeja',
@@ -191,12 +196,7 @@ const hiddenDefaultProfanityWords = [
   'puta',
   'putos',
   'putas',
-  'puñetas',
-  'turba',
-  'turbar',
-  'turbate',
-  'turbado',
-  'asturbarste'
+  'puñetas'
 ]
 
 const parseProfanityWords = (rawWords) => {
@@ -1770,13 +1770,64 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     const isDonorEligible = item.isDonor || donors.has(username) || donors.has(normalizedItemUsername)
     const isQuestionEligible = item.isQuestion || isQuestion(item.sourceText || item.rawText || item.text || '')
 
-    // Primera coincidencia al llegar: la voz queda fija para este item.
-    if (c.notifVoiceEnabled && item.isNotification) return c.notifVoiceId || 'Lupita'
-    if (c.modVoiceEnabled && item.isModerator) return c.modVoiceId || 'Lupita'
-    if (c.donorVoiceEnabled && isDonorEligible) return c.donorVoiceId || 'Diego'
-    if (c.subscriberVoiceEnabled && item.isSubscriber) return c.subscriberVoiceId || 'Lupita'
-    if (c.communityMemberVoiceEnabled && item.isCommunityMember) return c.communityMemberVoiceId || 'Lupita'
-    if (c.questionVoiceEnabled && isQuestionEligible) return c.questionVoiceId || 'Lupita'
+    // Prioridad 1: Notificaciones
+    if (c.notifVoiceEnabled && item.isNotification) {
+      const voice = c.notifVoiceId || 'Lupita'
+      if (c.variedVoicesEnabled) console.log('[Voice Priority] Notification priority used:', voice)
+      return voice
+    }
+
+    // Prioridad 2: Moderadores
+    if (c.modVoiceEnabled && item.isModerator) {
+      const voice = c.modVoiceId || 'Lupita'
+      if (c.variedVoicesEnabled) console.log('[Voice Priority] Moderator priority used:', voice)
+      return voice
+    }
+
+    // Prioridad 3: Donantes
+    if (c.donorVoiceEnabled && isDonorEligible) {
+      const voice = c.donorVoiceId || 'Diego'
+      if (c.variedVoicesEnabled) console.log('[Voice Priority] Donor priority used:', voice)
+      return voice
+    }
+
+    // Prioridad 4: Suscriptores
+    if (c.subscriberVoiceEnabled && item.isSubscriber) {
+      const voice = c.subscriberVoiceId || 'Lupita'
+      if (c.variedVoicesEnabled) console.log('[Voice Priority] Subscriber priority used:', voice)
+      return voice
+    }
+
+    // Prioridad 5: Miembros de comunidad
+    if (c.communityMemberVoiceEnabled && item.isCommunityMember) {
+      const voice = c.communityMemberVoiceId || 'Lupita'
+      if (c.variedVoicesEnabled) console.log('[Voice Priority] Community member priority used:', voice)
+      return voice
+    }
+
+    // Prioridad 6: Preguntas
+    if (c.questionVoiceEnabled && isQuestionEligible) {
+      const voice = c.questionVoiceId || 'Lupita'
+      if (c.variedVoicesEnabled) console.log('[Voice Priority] Question priority used:', voice)
+      return voice
+    }
+
+    // Modo voces variadas: si está enabled y hay voces seleccionadas, randomiza
+    if (c.variedVoicesEnabled && c.variedVoicesSelected && c.variedVoicesSelected.length > 0) {
+      const validVoices = c.variedVoicesSelected.filter(v => v && typeof v === 'string' && v.trim())
+      if (validVoices.length > 0) {
+        const randomVoice = validVoices[Math.floor(Math.random() * validVoices.length)]
+        console.log('[Voice Debug] Varied voices mode:', {
+          selectedVoices: c.variedVoicesSelected,
+          validVoices: validVoices,
+          chosenVoice: randomVoice
+        })
+        return randomVoice
+      } else {
+        console.warn('[Voice Debug] variedVoicesEnabled but NO valid voices after filtering:', c.variedVoicesSelected)
+      }
+    }
+
     return c.generalVoiceId || 'es-ES'
   }
 
@@ -1810,7 +1861,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         return
       }
       if (shouldHardDropSmartMessage(item, metrics)) {
-        console.log('[TikTok] Smart chat descartó mensaje por filtros duros adaptativos')
+        console.log('[TikTok] Smart chat descartó mensaje por filtros duros adaptativos', {
+          username: item.username,
+          text: (item.rawText || item.text).substring(0, 50),
+          pressure: metrics.pressure.toFixed(2),
+          queueDepth: metrics.queueDepth
+        })
         markFilteredMessage()
         return
       }
@@ -1820,7 +1876,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
       item.smartScore = scoreSmartMessage(item, metrics)
       if (item.smartScore < threshold) {
-        console.log(`[TikTok] Smart chat descartó mensaje (score ${item.smartScore.toFixed(2)} < ${threshold.toFixed(2)})`)
+        console.log(`[TikTok] Smart chat descartó mensaje (score ${item.smartScore.toFixed(2)} < ${threshold.toFixed(2)})`, {
+          username: item.username,
+          text: (item.rawText || item.text).substring(0, 50),
+          pressure: metrics.pressure.toFixed(2)
+        })
         markFilteredMessage()
         return
       }
@@ -3106,7 +3166,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 <div
                   key={getMessageRenderKey(msg, idx)}
                   style={{ fontSize: `${chatFontSize}px`, ...(hlColor ? { backgroundColor: `${hlColor}40`, borderLeftColor: hlColor, borderLeftWidth: '4px' } : {}) }}
-                  className={`pl-3 py-2 rounded-r relative ${
+                  className={`pl-3 py-2 rounded-r relative transition-colors duration-300 ${
                     msg.status === 'playing'
                       ? darkMode
                         ? 'border-l-2 border-cyan-400 bg-cyan-500/10'

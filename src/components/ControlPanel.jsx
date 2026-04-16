@@ -988,6 +988,52 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               </div>
               </div>
 
+              {/* Modo Voces Variadas - FUERA DE VOCES BLOQUEADAS */}
+              <div className={`relative mb-2 rounded-xl px-4 py-3 border transition-colors ${
+                darkMode
+                  ? config.variedVoicesEnabled
+                    ? 'bg-cyan-500/10 border-cyan-400/40'
+                    : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
+                  : config.variedVoicesEnabled
+                    ? 'bg-slate-100 border-slate-400 shadow-sm'
+                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
+              }`}>
+                <button onClick={() => updateConfig('variedVoicesEnabled', !config.variedVoicesEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+                  <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                    config.variedVoicesEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
+                  }`}>
+                    {config.variedVoicesEnabled && <Check className="w-4 h-4 text-white" />}
+                  </div>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.variedVoicesEnabled ? 'font-semibold' : 'font-medium'}`}>Modo voces variadas<Hint text="Randomiza las voces reproducidas en el chat" darkMode={darkMode} /></span>
+                </button>
+                {config.variedVoicesEnabled && (
+                  <div className="mt-4 ml-0 space-y-2">
+                    <p className={`text-xs font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Selecciona las voces a usar:</p>
+                    <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 rounded-lg bg-opacity-50" style={{backgroundColor: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)'}}>
+                      {premiumVoiceOptions.map(voice => (
+                        <label key={voice.id} className="flex items-center gap-2 cursor-pointer p-1.5 rounded hover:bg-opacity-50 transition-colors" style={{backgroundColor: config.variedVoicesSelected?.includes(voice.id) ? (darkMode ? 'rgba(6,182,212,0.15)' : 'rgba(6,182,212,0.1)') : 'transparent'}}>
+                          <input
+                            type="checkbox"
+                            checked={config.variedVoicesSelected?.includes(voice.id) || false}
+                            onChange={(e) => {
+                              const newSelected = e.target.checked
+                                ? [...(config.variedVoicesSelected || []), voice.id]
+                                : (config.variedVoicesSelected || []).filter(v => v !== voice.id)
+                              updateConfig('variedVoicesSelected', newSelected)
+                            }}
+                            className="w-4 h-4 rounded cursor-pointer"
+                          />
+                          <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{voice.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {(!config.variedVoicesSelected || config.variedVoicesSelected.length === 0) && (
+                      <p className={`text-xs italic ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Selecciona al menos una voz</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* LEFT COLUMN - BLOQUE INDEPENDIENTE DE NOTIFICACIONES */}
               <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-rose-400/25' : 'bg-white border-slate-200'}`}>
                 <div className={`relative ${isFeatureBlocked('notifications', userPlan) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>

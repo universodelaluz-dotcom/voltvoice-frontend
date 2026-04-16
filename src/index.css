@@ -360,3 +360,8 @@ body {
 .orbit-avatar-slow {
   animation: orbit-slow 30s linear infinite;
 }
+
+/* Smooth theme transition - prevent flicker when switching dark mode */
+* {
+  @apply transition-colors duration-300;
+}

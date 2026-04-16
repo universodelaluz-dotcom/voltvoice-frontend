@@ -111,6 +111,8 @@ const DEFAULT_CONFIG = {
     communityMembers: { enabled: false, color: '#22c55e' },
     topFans: { enabled: false, color: '#06b6d4' },
   },
+  variedVoicesEnabled: false,
+  variedVoicesSelected: [],
   configUpdatedAt: 0,
 }
 
