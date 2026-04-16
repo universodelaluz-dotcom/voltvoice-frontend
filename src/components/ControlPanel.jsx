@@ -1030,6 +1030,13 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     {(!config.variedVoicesSelected || config.variedVoicesSelected.length === 0) && (
                       <p className={`text-xs italic ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Selecciona al menos una voz</p>
                     )}
+                    {config.variedVoicesSelected && config.variedVoicesSelected.length > 0 && (
+                      <div className={`text-xs p-2 rounded mt-2 ${darkMode ? 'bg-cyan-900/20 text-cyan-300 border border-cyan-500/20' : 'bg-cyan-50/50 text-cyan-700 border border-cyan-200'}`}>
+                        <p className="font-mono text-[11px] break-words">
+                          {config.variedVoicesSelected.map((v, i) => `${i + 1}. ${v || '(vacío)'}`).join(' | ')}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
