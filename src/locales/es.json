@@ -41,12 +41,12 @@
       "title": "Lo que dicen nuestros",
       "titleHighlight": "creadores",
       "items": [
-        { "name": "@alexgamertok", "type": "TikTok Creator Gaming", "benefit": "🟢 Tu stream nunca se queda muerto", "text": "Antes si me callaba 30 segundos el Live se moría solo. Con Stream Voicer el chat tiene vida propia: los viewers leen, comentan y se quedan aunque yo esté enfocado en el juego." },
-        { "name": "@sofiaart", "type": "TikTok Creator Art", "benefit": "💬 Tu chat trabaja por ti", "text": "No tengo que estar leyendo comentarios todo el tiempo. Stream Voicer los procesa, destaca los mejores y mantiene la conversación fluida. Yo solo me concentro en crear contenido y el chat se cuida solo." },
-        { "name": "@carlosmusica.live", "type": "TikTok Creator Música", "benefit": "⚡ Más interacción sin más esfuerzo", "text": "Mis Lives ahora tienen 3x más engagement sin que yo haga nada diferente. La gente comenta más porque sabe que sus mensajes van a ser valorados. Es increíble cuánta interacción genera sin esfuerzo extra." },
-        { "name": "@dianabeauty_tk", "type": "TikTok Creator Belleza", "benefit": "🎯 Convierte mensajes en participación", "text": "Cada comentario que llega se convierte en una participación real. Ya no es solo \"jeje\" abajo, ahora los comentarios generan conversación. Mi comunidad se siente escuchada y eso atrae más personas al Live." },
-        { "name": "@javierstreamer22", "type": "TikTok Creator Competitivo", "benefit": "⭐ Destaca a tus seguidores y donadores", "text": "El sistema automáticamente reconoce a mis followers y donadores. No tengo que perder tiempo dándoles shout-outs manuales. Ellos se sienten valorados naturalmente y eso me genera más donaciones y suscripciones." },
-        { "name": "@mariacomedy_tk", "type": "TikTok Creator Comedia", "benefit": "🚀 Haz tu stream dinámico sin hablar más", "text": "Mi Live es mucho más dinámico y entretenido sin que tenga que estar hablando todo el tiempo para mantener atención. El chat está tan activo y valorado que la gente viene por la comunidad, no solo por mí." }
+        { "name": "@alexgamertok", "type": "TikTok Creator Gaming", "benefit": "🟢 Tu stream nunca se queda muerto", "text": "Antes si me callaba 30 segundos el Live se moría solo. Con Stream Voicer el chat tiene vida propia: los viewers leen, comentan y se quedan aunque yo esté enfocado en el juego.", "stars": 5 },
+        { "name": "@sofiaart", "type": "TikTok Creator Art", "benefit": "💬 Tu chat trabaja por ti", "text": "No tengo que estar leyendo comentarios todo el tiempo. Stream Voicer los procesa, destaca los mejores y mantiene la conversación fluida. Yo solo me concentro en crear contenido y el chat se cuida solo.", "stars": 5 },
+        { "name": "@carlosmusica.live", "type": "TikTok Creator Música", "benefit": "⚡ Más interacción sin más esfuerzo", "text": "Mis Lives ahora tienen 3x más engagement sin que yo haga nada diferente. La gente comenta más porque sabe que sus mensajes van a ser valorados. Es increíble cuánta interacción genera sin esfuerzo extra.", "stars": 5 },
+        { "name": "@dianabeauty_tk", "type": "TikTok Creator Belleza", "benefit": "🎯 Convierte mensajes en participación", "text": "Cada comentario que llega se convierte en una participación real. Ya no es solo \"jeje\" abajo, ahora los comentarios generan conversación. Mi comunidad se siente escuchada y eso atrae más personas al Live.", "stars": 5 },
+        { "name": "@javierstreamer22", "type": "TikTok Creator Competitivo", "benefit": "⭐ Destaca a tus seguidores y donadores", "text": "El sistema automáticamente reconoce a mis followers y donadores. No tengo que perder tiempo dándoles shout-outs manuales. Ellos se sienten valorados naturalmente y eso me genera más donaciones y suscripciones.", "stars": 5 },
+        { "name": "@mariacomedy_tk", "type": "TikTok Creator Comedia", "benefit": "🚀 Haz tu stream dinámico sin hablar más", "text": "Mi Live es mucho más dinámico y entretenido sin que tenga que estar hablando todo el tiempo para mantener atención. El chat está tan activo y valorado que la gente viene por la comunidad, no solo por mí.", "stars": 5 }
       ]
     },
     "pricing": {
@@ -332,7 +332,7 @@
       "filters": "Filtros"
     },
     "panel": {
-      "title": "TikTok LIVE en Tiempo Real",
+      "title": "Tiktok Live Chat",
       "sessionTab": "Sesion",
       "helpBtn": "AYUDA",
       "disconnected": "DESCONECTADO",

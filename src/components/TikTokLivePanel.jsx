@@ -2753,51 +2753,53 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   }
 
   return (
-    <div className={`relative overflow-visible ${darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6 mb-6" : "bg-white border border-indigo-200 rounded-lg p-6 mb-6 shadow-sm"}`}>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+    <div className={`relative overflow-visible ${darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg px-4 py-3 mb-3" : "bg-white border border-indigo-200 rounded-lg px-4 py-3 mb-3 shadow-sm"}`}>
+      <div className="flex items-center justify-between gap-4 mb-3">
         <div className="flex items-center gap-3 min-w-0">
-          <MessageCircle className="w-6 h-6 text-cyan-300" />
-          <h2 className={darkMode ? "text-xl font-bold text-white truncate" : "text-xl font-bold text-gray-900 truncate"}>{t('tiktok.panel.title')}</h2>
+          <div className={`p-2 rounded-xl ${darkMode ? 'bg-cyan-500/15 border border-cyan-400/25' : 'bg-cyan-50 border border-cyan-200'}`}>
+            <MessageCircle className="w-5 h-5 text-cyan-400" />
+          </div>
+          <div>
+            <h2 className={`text-lg font-black tracking-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t('tiktok.panel.title')}</h2>
+            <p className={`text-[11px] font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Stream Voicer</p>
+          </div>
         </div>
-        <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
+        <div className={`flex items-stretch rounded-xl border overflow-hidden h-12 ${darkMode ? 'border-white/10' : 'border-slate-300'}`}>
           <button
             type="button"
             onClick={() => setShowHelpGuide(true)}
-            className={darkMode
-              ? "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-400/35 bg-cyan-500/10 text-cyan-100 hover:bg-cyan-500/20 transition-all"
-              : "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-300 bg-cyan-50 text-cyan-800 hover:bg-cyan-100 transition-all"}
+            className={`flex items-center gap-2 px-6 text-sm font-bold border-r transition-all ${darkMode
+              ? 'border-white/10 bg-slate-800 text-cyan-300 hover:bg-cyan-500/20'
+              : 'border-slate-300 bg-white text-cyan-700 hover:bg-cyan-50'}`}
             title="Guía detallada de uso"
           >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span className={darkMode ? "text-[10px] uppercase tracking-[0.16em] text-cyan-300/90" : "text-[10px] uppercase tracking-[0.16em] text-cyan-700"}>{t('tiktok.panel.helpBtn')}</span>
+            <BookOpen className="w-4 h-4" />
+            {t('tiktok.panel.helpBtn')}
           </button>
           {sessionTikTokHandle && (
-            <div className={darkMode
-              ? "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-400/35 bg-cyan-500/10 text-cyan-100 shadow-[0_0_0_1px_rgba(34,211,238,0.12)]"
-              : "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-300 bg-cyan-50 text-cyan-800 shadow-sm"}
-            >
-              <span className={darkMode ? "text-[10px] uppercase tracking-[0.16em] text-cyan-300/85" : "text-[10px] uppercase tracking-[0.16em] text-cyan-600"}>{t('tiktok.panel.sessionTab')}</span>
-              <span className="text-xs font-semibold">{sessionTikTokHandle}</span>
+            <div className={`flex items-center gap-2 px-6 border-r text-sm ${darkMode
+              ? 'border-white/10 bg-slate-800 text-slate-300'
+              : 'border-slate-300 bg-white text-slate-700'}`}>
+              <span className={`text-[11px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{t('tiktok.panel.sessionTab')}</span>
+              <span className={`font-black ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{sessionTikTokHandle}</span>
             </div>
           )}
-          <span
-            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all ${
-              isConnected
-                ? (darkMode
-                    ? 'bg-gradient-to-r from-rose-500/30 via-red-500/35 to-orange-500/30 border border-red-400/65 text-red-100 shadow-[0_0_22px_rgba(248,113,113,0.45)]'
-                    : 'bg-gradient-to-r from-red-500 to-rose-500 border border-red-600 text-white shadow-md')
-                : isWaitingForLive
-                  ? 'bg-red-500/15 border border-red-500/60 text-red-300 animate-pulse'
-                  : (darkMode ? 'bg-gray-700/50 border border-gray-600/50 text-gray-300' : 'bg-slate-200 border border-slate-300 text-slate-700')
-            }`}
-          >
+          <span className={`flex items-center gap-2.5 px-6 text-sm font-black tracking-widest uppercase transition-all ${
+            isConnected
+              ? (darkMode
+                  ? 'bg-rose-900/60 text-rose-300'
+                  : 'bg-rose-800 text-rose-100')
+              : isWaitingForLive
+                ? 'bg-slate-700/40 text-slate-400 animate-pulse'
+                : (darkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500')
+          }`}>
             {isConnected ? (
               <>
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-80 animate-ping" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-300" />
                 </span>
-                <span className="animate-pulse">EN VIVO</span>
+                EN VIVO
               </>
             ) : isWaitingForLive ? t('tiktok.panel.waitingLive') : t('tiktok.panel.disconnected')}
           </span>
@@ -3048,7 +3050,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           </div>
         </form>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2">
 
           {/* Barra compacta de conexión — visible solo cuando no está conectado */}
           {!isConnected && (
@@ -3082,108 +3084,83 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             </form>
           )}
 
-          <div className="flex items-center justify-between">
-              <div className="grid grid-cols-3 gap-3 flex-1 mr-4">
-                <div className={darkMode ? "bg-cyan-500/10 border border-cyan-500/30 rounded p-2" : "bg-slate-100 border border-slate-300 rounded p-2"}>
-                  <p className="text-xs text-gray-400">{t('tiktok.stats.comments')}</p>
-                  <p className={darkMode ? "text-lg font-bold text-cyan-300" : "text-lg font-bold text-slate-800"}>{stats.count}</p>
-                </div>
-                <div className={darkMode ? "bg-emerald-500/10 border border-emerald-500/30 rounded p-2" : "bg-slate-100 border border-slate-300 rounded p-2"}>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs text-gray-400">{t('tiktok.stats.msgsMin')}</p>
-                    <span
-                      className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide"
-                      style={{ color: chatIntensity.color }}
-                    >
-                      <span
-                        className="inline-block w-2 h-2 rounded-full"
-                        style={{ backgroundColor: chatIntensity.color }}
-                      />
-                      {chatIntensity.label}
-                    </span>
-                  </div>
-                  <p className={darkMode ? "text-lg font-bold text-emerald-300" : "text-lg font-bold text-slate-800"}>{messagesPerMinute}</p>
-                </div>
-                <div className={darkMode ? "bg-purple-500/10 border border-purple-500/30 rounded p-2" : "bg-slate-100 border border-slate-300 rounded p-2"}>
-                  <p className="text-xs text-gray-400">{t('tiktok.stats.time')}</p>
-                  <p className={darkMode ? "text-lg font-bold text-purple-300" : "text-lg font-bold text-slate-800"}>
-                  {stats.uptime < 60
-                    ? `${stats.uptime}s`
-                    : `${Math.floor(stats.uptime / 60)}m ${stats.uptime % 60}s`}
-                </p>
+          <div className={`w-full flex items-stretch rounded-xl border overflow-hidden ${darkMode ? 'border-white/10 bg-slate-900/30' : 'border-slate-200 bg-white'}`}>
+            {/* Comentarios */}
+            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-4 py-2 border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}`}>
+              <div className="flex items-center gap-2">
+                <MessageCircle className={`w-3.5 h-3.5 ${darkMode ? 'text-cyan-400/60' : 'text-cyan-500/60'}`} />
+                <span className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/60' : 'text-cyan-600/70'}`}>{t('tiktok.stats.comments')}</span>
               </div>
+              <p className={`text-xl font-black tabular-nums leading-none ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{stats.count}</p>
             </div>
-            <div className="flex items-center gap-2">
+            {/* Msgs/min */}
+            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-4 py-2 border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className={`w-3.5 h-3.5 ${darkMode ? 'text-emerald-400/60' : 'text-emerald-500/60'}`} />
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-emerald-400/60' : 'text-emerald-600/70'}`}>{t('tiktok.stats.msgsMin')}</span>
+                </div>
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ color: chatIntensity.color, backgroundColor: chatIntensity.color + '20' }}>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: chatIntensity.color }} />
+                  {chatIntensity.label}
+                </span>
+              </div>
+              <p className={`text-xl font-black tabular-nums leading-none ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>{messagesPerMinute}</p>
+            </div>
+            {/* Tiempo */}
+            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-5 py-3 ${isConnected ? `border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}` : ''}`}>
+              <div className="flex items-center gap-2">
+                <Clock3 className={`w-3.5 h-3.5 ${darkMode ? 'text-purple-400/60' : 'text-purple-500/60'}`} />
+                <span className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-purple-400/60' : 'text-purple-600/70'}`}>{t('tiktok.stats.time')}</span>
+              </div>
+              <p className={`text-xl font-black tabular-nums leading-none ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>
+                {stats.uptime < 60 ? `${stats.uptime}s` : `${Math.floor(stats.uptime / 60)}m ${stats.uptime % 60}s`}
+              </p>
+            </div>
+            {/* Desconectar */}
+            {isConnected && (
               <button
-                onClick={() => setMobilePreviewEnabled(prev => !prev)}
-                style={{ display: 'none' }}
-                className={`px-3 py-2 rounded-lg transition flex items-center gap-2 text-xs font-semibold whitespace-nowrap ${
-                  mobilePreviewEnabled
-                    ? 'bg-cyan-500/25 border border-cyan-400/60 text-cyan-200'
-                    : 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20'
-                }`}
-                title="Mostrar/Ocultar preview móvil"
+                onClick={handleDisconnect}
+                className={`flex flex-col items-center justify-center gap-1.5 px-8 font-bold text-sm transition-all group ${darkMode
+                  ? 'bg-rose-900/40 hover:bg-rose-900/60 text-rose-300 hover:text-rose-200'
+                  : 'bg-rose-800 hover:bg-rose-900 text-rose-100'}`}
               >
-                <MessageCircle className="w-4 h-4" />
-                {mobilePreviewEnabled ? 'Móvil ON' : 'Móvil OFF'}
+                <Square className="w-5 h-5 transition-transform group-hover:scale-110" />
+                <span className="text-[11px] font-bold uppercase tracking-widest">{t('tiktok.connect.disconnect')}</span>
               </button>
-              {false && (
-                <button
-                  onClick={() => setMobilePreviewMuted(prev => !prev)}
-                  className={`px-3 py-2 rounded-lg transition flex items-center gap-2 text-xs font-semibold whitespace-nowrap ${
-                    mobilePreviewMuted
-                      ? 'bg-amber-500/20 border border-amber-400/60 text-amber-200'
-                      : 'bg-emerald-500/15 border border-emerald-400/60 text-emerald-200'
-                  }`}
-                  title="Silenciar/activar audio del preview móvil"
-                >
-                  {mobilePreviewMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                  {mobilePreviewMuted ? 'Mute' : 'Audio'}
-                </button>
-              )}
-              {isConnected && (
-                <button
-                  onClick={handleDisconnect}
-                  className={darkMode
-                    ? "bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-300 px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap"
-                    : "bg-slate-700 hover:bg-slate-600 border border-slate-600 text-white px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap"}
-                >
-                  <Square className="w-4 h-4" />
-                  {t('tiktok.connect.disconnect')}
-                </button>
-              )}
-            </div>
+            )}
           </div>
 
-            <div className="space-y-3">
-              <div className={darkMode ? "bg-cyan-500/10 border border-cyan-400/30 rounded-lg p-4 h-[172px] overflow-hidden" : "bg-cyan-50 border border-cyan-200 rounded-lg p-4 h-[172px] overflow-hidden"}>
+          {/* Flex: chat izq + controles der */}
+          <div className="flex gap-3 items-start">
+          <div className="flex-1 min-w-0">
+
+            <div className="space-y-2">
+              <div className={darkMode ? "bg-cyan-500/10 border border-cyan-400/30 rounded-lg px-3 py-2 h-[72px] overflow-hidden" : "bg-cyan-50 border border-cyan-200 rounded-lg px-3 py-2 h-[72px] overflow-hidden"}>
                 {currentReadingMessage ? (
-                <div className="space-y-2 h-full flex flex-col">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className={darkMode ? "text-[11px] uppercase tracking-[0.2em] text-cyan-300 font-semibold" : "text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold"}>
-                      {t('tiktok.panel.messageInProgress')}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400" />
-                      <Volume2 className="w-4 h-4 text-cyan-400" />
-                    </span>
-                  </div>
-                    <p className="font-semibold leading-tight shrink-0" style={{ color: chatNickColor, fontSize: `${chatFontSize}px` }}>
-                      {getNickOverrideValue(nickOverrides, currentReadingMessage.user) || currentReadingMessage.nickname || currentReadingMessage.user}
-                    </p>
-                    <p
-                      className="font-medium overflow-y-auto pr-1 leading-snug"
-                      style={{ color: chatMsgColor, fontSize: `${chatFontSize}px` }}
-                    >
-                      {currentReadingMessage.text}
+                  <div className="h-full flex flex-col justify-between">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/70' : 'text-cyan-600/70'}`}>
+                        {t('tiktok.panel.messageInProgress')}
+                      </span>
+                      <span className="flex items-center gap-1 shrink-0">
+                        <span className="inline-flex rounded-full h-2 w-2 bg-cyan-400 animate-pulse" />
+                        <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
+                      </span>
+                    </div>
+                    <p className="text-sm leading-snug line-clamp-2">
+                      <span className="font-bold mr-1" style={{ color: chatNickColor }}>
+                        {getNickOverrideValue(nickOverrides, currentReadingMessage.user) || currentReadingMessage.nickname || currentReadingMessage.user}:
+                      </span>
+                      <span style={{ color: chatMsgColor }}>{currentReadingMessage.text}</span>
                     </p>
                   </div>
                 ) : (
-                  <div className="h-full flex flex-col justify-center overflow-hidden">
-                  <span className={darkMode ? "text-[11px] uppercase tracking-[0.2em] text-cyan-300 font-semibold mb-2" : "text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-2"}>
-                    {t('tiktok.panel.messageInProgress')}
-                  </span>
-                    <p className="overflow-y-auto pr-1 leading-snug" style={{ color: chatMsgColor, fontSize: `${chatFontSize}px` }}>
+                  <div className="h-full flex flex-col justify-between">
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/70' : 'text-cyan-600/70'}`}>
+                      {t('tiktok.panel.messageInProgress')}
+                    </span>
+                    <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                       {t('tiktok.panel.messageHint')}
                     </p>
                   </div>
@@ -3194,8 +3171,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               <div className="flex-1">
                 <div
                   ref={chatContainerRef}
-                  style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain', height: 'calc(100vh - 450px)', maxHeight: '600px' }}
-                  className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 overflow-y-auto space-y-2"}
+                  style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain', height: 'calc(100vh - 380px)', minHeight: '300px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-3 overflow-y-auto space-y-1" : "bg-gray-50 border border-indigo-200 rounded-lg p-3 overflow-y-auto space-y-1"}
                 >
                   {messages.length === 0 ? (
                     <div className="text-center text-gray-400 py-8">
@@ -3233,7 +3210,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 <div
                   key={getMessageRenderKey(msg, idx)}
                   style={{ fontSize: `${chatFontSize}px`, ...(hlColor ? { backgroundColor: `${hlColor}40`, borderLeftColor: hlColor, borderLeftWidth: '4px' } : {}) }}
-                  className={`pl-3 py-2 rounded-r relative transition-colors duration-300 ${
+                  className={`pl-3 py-1 rounded-r relative transition-colors duration-300 ${
                     msg.status === 'playing'
                       ? darkMode
                         ? 'border-l-2 border-cyan-400 bg-cyan-500/10'
@@ -3470,234 +3447,155 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               )}
             </div>
           </div>
+          </div>{/* fin col izq */}
 
-          {/* Controles */}
-          <div className={`flex flex-col gap-3 rounded-xl border px-3 py-3 md:flex-row md:items-stretch md:justify-between ${
-            darkMode
-              ? 'border-white/10 bg-white/[0.03] shadow-[0_10px_35px_rgba(0,0,0,0.18)]'
-              : 'border-slate-200 bg-white/85 shadow-[0_10px_30px_rgba(148,163,184,0.18)]'
+          {/* Controles - columna derecha vertical */}
+          <div className={`flex flex-col rounded-lg border overflow-hidden w-40 shrink-0 ${
+            darkMode ? 'border-white/10 bg-slate-900/40' : 'border-slate-300 bg-slate-100'
           }`}>
-            <div className={`flex flex-wrap lg:flex-nowrap gap-1.5 p-1.5 rounded-lg border h-12 items-center ${
-              darkMode ? 'bg-slate-900/40 border-white/10' : 'bg-slate-100 border-slate-300'
-            }`}>
-              <button
-                onClick={handlePause}
-                className={`h-10 w-[120px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
-                  isPaused
-                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 hover:border-slate-600 shadow-sm'
-                    : darkMode
-                      ? 'border-white/10 bg-slate-800 text-slate-100 hover:bg-slate-700'
-                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
-                }`}
-                title={isPaused ? t('tiktok.controls.resumeTitle') : t('tiktok.controls.pauseTitle')}
-              >
-                {isPaused
-                  ? <><Play className="w-3.5 h-3.5" /> {t('tiktok.controls.resume')}</>
-                  : <><Pause className="w-3.5 h-3.5" /> {t('tiktok.controls.pause')}</>
-                }
-              </button>
-              <button
-                onClick={handleRefresh}
-                className={`h-10 w-[120px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
-                  darkMode
-                    ? 'border-cyan-400/30 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25'
-                    : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
-                }`}
-                title="Saltar cola y continuar desde el próximo mensaje"
-              >
-                <RotateCcw className="w-3.5 h-3.5" /> {t('tiktok.controls.refresh')}
-              </button>
-              <button
-                onClick={() => {
-                  if (isFreePlan) return
-                  setSmartChatEnabled((prev) => !prev)
-                }}
-                disabled={isFreePlan}
-                className={`group h-10 w-[120px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
-                  smartChatEnabled
-                    ? 'border-slate-700 bg-gradient-to-r from-slate-700 to-slate-900 text-white hover:from-slate-600 hover:to-slate-800 shadow-sm'
-                    : darkMode
-                      ? 'border-fuchsia-400/25 bg-fuchsia-500/12 text-fuchsia-100 hover:bg-fuchsia-500/18'
-                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
-                } ${isFreePlan ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={isFreePlan ? 'Disponible en planes de pago' : 'Activa el filtro inteligente para eliminar spam y basura'}
-              >
-                <span className="relative flex h-3 w-3 items-center justify-center">
-                  <span className={`absolute inline-flex h-full w-full rounded-full ${
-                    smartChatEnabled ? 'bg-emerald-400/70' : 'bg-transparent'
-                  }`} />
-                  <span className={`relative inline-flex h-2.5 w-2.5 rounded-full border ${
-                    smartChatEnabled
-                      ? 'border-emerald-200 bg-emerald-400 shadow-[0_0_12px_rgba(74,222,128,0.9)]'
-                      : darkMode
-                        ? 'border-fuchsia-200/30 bg-fuchsia-200/20'
-                        : 'border-slate-400 bg-slate-300'
-                  }`} />
-                </span>
-                <MessageCircle className="w-3.5 h-3.5" />
-                <span>{t('tiktok.controls.aiFilter')}</span>
-              </button>
-              <button
-                onClick={() => setShowHighlightPanel(!showHighlightPanel)}
-                className={`h-10 w-[120px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
-                  showHighlightPanel || highlightMode
-                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 shadow-sm'
-                    : darkMode
-                      ? 'border-amber-400/25 bg-amber-500/12 text-amber-100 hover:bg-amber-500/18'
-                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
-                }`}
-                title={t('tiktok.controls.highlightTitle')}
-              >
-                <Highlighter className="w-3.5 h-3.5" /> {t('tiktok.controls.highlight')}
-              </button>
-              {/* Botón para abrir panel de estilo del chat */}
-              <button
-                onClick={() => setShowFontPanel(!showFontPanel)}
-                className={`h-10 w-[104px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-1 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
-                  showFontPanel
-                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 shadow-sm'
-                    : darkMode
-                      ? 'border-white/10 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
-                }`}
-                title="Tamaño y colores del chat"
-              >
-                <span style={{ fontSize: '13px' }}>Aa</span>
-              </button>
-              <button
-                onClick={() => setShowNicksPanel(!showNicksPanel)}
-                className={`h-10 w-[104px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-1 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
-                  showNicksPanel
-                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 shadow-sm'
-                    : darkMode
-                      ? 'border-white/10 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
-                }`}
-                title="Ver y editar nicks guardados"
-              >
-                Nicks
-              </button>
-            </div>
-            <div className={`h-12 w-full max-w-[520px] rounded-lg border px-2 flex items-center gap-2 ${
-              darkMode ? 'bg-black/20 border-white/5' : 'bg-white border-slate-300'
-            }`}>
-              <div className={`h-10 flex-1 min-w-0 rounded-md px-2 border grid grid-cols-[16px_28px_1fr_52px] items-center gap-2 ${
-                darkMode ? 'bg-slate-900/60 border-slate-700/70' : 'bg-white border-slate-300'
-              }`}>
-                <button
-                  onClick={() => setVolume(v => v > 0 ? 0 : 0.8)}
-                  className={`rounded p-1 transition-all ${darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100'}`}
-                  title={volume === 0 ? 'Activar audio' : 'Silenciar audio'}
-                >
-                  {volume === 0
-                    ? <VolumeX className="w-3.5 h-3.5 text-red-400" />
-                    : <Volume2 className="w-3.5 h-3.5 text-emerald-500" />
-                  }
-                </button>
-                <span className={`text-[10px] font-semibold uppercase tracking-wide ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>{t('tiktok.controls.vol')}</span>
-                <input
-                  type="range" min="0" max="1" step="0.01" value={volume}
-                  onChange={(e) => setVolume(parseFloat(e.target.value))}
-                  className="pro-slider pro-slider-volume w-full cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to right, #10b981 ${volume * 100}%, ${darkMode ? '#334155' : '#d1d5db'} ${volume * 100}%)`
-                  }}
-                />
-                <span className={`w-[52px] text-[12px] font-bold text-right tabular-nums ${
-                  darkMode ? 'text-slate-100' : 'text-slate-800'
-                }`}>
-                  {Math.round(volume * 100)}%
-                </span>
+            {/* Pausar / Reanudar */}
+            <button
+              onClick={handlePause}
+              className={`flex items-center gap-2 px-3 py-2.5 text-xs font-bold border-b transition-all w-full ${
+                isPaused
+                  ? 'bg-slate-700 text-white hover:bg-slate-600'
+                  : darkMode ? 'bg-slate-800 text-slate-100 hover:bg-slate-700 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
+              }`}
+              title={isPaused ? t('tiktok.controls.resumeTitle') : t('tiktok.controls.pauseTitle')}
+            >
+              {isPaused ? <><Play className="w-4 h-4 shrink-0" />{t('tiktok.controls.resume')}</> : <><Pause className="w-4 h-4 shrink-0" />{t('tiktok.controls.pause')}</>}
+            </button>
+            {/* Refrescar */}
+            <button
+              onClick={handleRefresh}
+              className={`flex items-center gap-2 px-3 py-2.5 text-xs font-bold border-b transition-all w-full ${
+                darkMode ? 'bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
+              }`}
+              title="Saltar cola y continuar desde el próximo mensaje"
+            >
+              <RotateCcw className="w-4 h-4 shrink-0" />{t('tiktok.controls.refresh')}
+            </button>
+            {/* Filtro IA */}
+            <button
+              onClick={() => { if (isFreePlan) return; setSmartChatEnabled(prev => !prev) }}
+              disabled={isFreePlan}
+              className={`flex items-center gap-2 px-3 py-2.5 text-xs font-bold border-b transition-all w-full ${
+                smartChatEnabled ? 'bg-slate-700 text-white hover:bg-slate-600'
+                  : darkMode ? 'bg-fuchsia-500/12 text-fuchsia-100 hover:bg-fuchsia-500/20 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
+              } ${isFreePlan ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={isFreePlan ? 'Disponible en planes de pago' : 'Activa el filtro inteligente para eliminar spam y basura'}
+            >
+              <span className={`inline-flex w-2 h-2 rounded-full shrink-0 border ${
+                smartChatEnabled ? 'bg-emerald-400 border-emerald-200 shadow-[0_0_8px_rgba(74,222,128,0.9)]' : darkMode ? 'bg-fuchsia-200/20 border-fuchsia-200/30' : 'bg-slate-300 border-slate-400'
+              }`} />
+              <MessageCircle className="w-4 h-4 shrink-0" />{t('tiktok.controls.aiFilter')}
+            </button>
+            {/* Remarcar */}
+            <button
+              onClick={() => setShowHighlightPanel(!showHighlightPanel)}
+              className={`flex items-center gap-2 px-3 py-2.5 text-xs font-bold border-b transition-all w-full ${
+                showHighlightPanel || highlightMode ? 'bg-slate-700 text-white hover:bg-slate-600'
+                  : darkMode ? 'bg-amber-500/12 text-amber-100 hover:bg-amber-500/20 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
+              }`}
+              title={t('tiktok.controls.highlightTitle')}
+            >
+              <Highlighter className="w-4 h-4 shrink-0" />{t('tiktok.controls.highlight')}
+            </button>
+            {/* Estilo */}
+            <button
+              onClick={() => setShowFontPanel(!showFontPanel)}
+              className={`flex items-center gap-3 px-3 py-2.5 text-xs font-bold border-b transition-all w-full ${
+                showFontPanel ? 'bg-slate-700 text-white hover:bg-slate-600'
+                  : darkMode ? 'bg-slate-800 text-slate-200 hover:bg-slate-700 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
+              }`}
+              title="Tamaño y colores del chat"
+            >
+              <span className="text-base font-black shrink-0 w-4 text-center leading-none">Aa</span>
+              <span>Estilo</span>
+            </button>
+            {/* Nicks */}
+            <button
+              onClick={() => setShowNicksPanel(!showNicksPanel)}
+              className={`flex items-center gap-3 px-3 py-2.5 text-xs font-bold border-b transition-all w-full ${
+                showNicksPanel ? 'bg-slate-700 text-white hover:bg-slate-600'
+                  : darkMode ? 'bg-slate-800 text-slate-200 hover:bg-slate-700 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
+              }`}
+              title="Ver y editar nicks guardados"
+            >
+              <Users className="w-4 h-4 shrink-0" />
+              <span>Nicks</span>
+            </button>
+            {/* VOL */}
+            <div className={`px-4 py-3.5 border-b ${darkMode ? 'border-white/10' : 'border-slate-300'}`}>
+              <span className={`text-[11px] font-bold uppercase tracking-wider block mb-2 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>VOL</span>
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => setVolume(v => Math.max(0, v - 0.05))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-emerald-400' : 'bg-slate-200 hover:bg-slate-300 text-emerald-600'}`}>−</button>
+                <span className={`flex-1 text-sm font-bold text-center tabular-nums ${darkMode ? 'text-white' : 'text-slate-900'}`}>{Math.round(volume * 100)}%</span>
+                <button onClick={() => setVolume(v => Math.min(1, v + 0.05))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-emerald-400' : 'bg-slate-200 hover:bg-slate-300 text-emerald-600'}`}>+</button>
               </div>
-              <div className={`h-10 flex-1 min-w-0 rounded-md px-2 border grid grid-cols-[28px_1fr_52px] items-center gap-2 ${
-                darkMode ? 'bg-slate-900/60 border-slate-700/70' : 'bg-white border-slate-300'
-              }`}>
-                <span className={`text-[10px] font-semibold uppercase tracking-wide ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>{t('tiktok.controls.vel')}</span>
-                <input
-                  type="range" min="0.5" max="2" step="0.1" value={Number(config.audioSpeed || 1)}
-                  onChange={(e) => updateConfig && updateConfig('audioSpeed', parseFloat(e.target.value))}
-                  className="pro-slider pro-slider-speed w-full cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to right, #2563eb ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%, ${darkMode ? '#334155' : '#d1d5db'} ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%)`
-                  }}
-                />
-                <span className={`w-[52px] text-[12px] font-bold text-right tabular-nums ${
-                  darkMode ? 'text-slate-100' : 'text-slate-800'
-                }`}>
-                  {Number(config.audioSpeed || 1).toFixed(1)}x
-                </span>
+            </div>
+            {/* VEL */}
+            <div className={`px-4 py-3.5 ${darkMode ? '' : ''}`}>
+              <span className={`text-[11px] font-bold uppercase tracking-wider block mb-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>VEL</span>
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => updateConfig && updateConfig('audioSpeed', Math.max(0.5, Number(config.audioSpeed || 1) - 0.1))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-blue-400' : 'bg-slate-200 hover:bg-slate-300 text-blue-600'}`}>−</button>
+                <span className={`flex-1 text-sm font-bold text-center tabular-nums ${darkMode ? 'text-white' : 'text-slate-900'}`}>{Number(config.audioSpeed || 1).toFixed(1)}x</span>
+                <button onClick={() => updateConfig && updateConfig('audioSpeed', Math.min(2, Number(config.audioSpeed || 1) + 0.1))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-blue-400' : 'bg-slate-200 hover:bg-slate-300 text-blue-600'}`}>+</button>
               </div>
             </div>
           </div>
+          {/* Panel lateral derecho — aparece a la derecha de controles sin scroll */}
+          {(showFontPanel || showHighlightPanel || showNicksPanel) && (
+            <div className={`w-64 shrink-0 rounded-lg border ${
+              darkMode ? 'bg-gray-900/90 border-white/10' : 'bg-white border-slate-200 shadow-md'
+            }`}>
 
           {/* Panel Estilo del Chat */}
           {showFontPanel && (
-            <div className={`rounded-lg border p-3 space-y-3 ${
-              darkMode ? 'bg-gray-900/80 border-cyan-500/30' : 'bg-slate-50 border-slate-300'
-            }`}>
+            <div className="p-3 space-y-3">
+              {/* Header */}
               <div className="flex items-center justify-between">
-                <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/80' : 'text-slate-700'}`}>
-                  Estilo del Chat
-                </span>
-                <button onClick={() => setShowFontPanel(false)} className="text-gray-400 hover:text-gray-200"><X className="w-3.5 h-3.5" /></button>
+                <span className={`text-[11px] font-black uppercase tracking-widest ${darkMode ? 'text-cyan-400' : 'text-slate-600'}`}>Estilo del Chat</span>
+                <button onClick={() => setShowFontPanel(false)} className={`p-1 rounded transition-colors ${darkMode ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}`}><X className="w-3.5 h-3.5" /></button>
               </div>
 
-              {/* Tamaño de letra */}
-              <div className="flex items-center gap-2">
-                <span className={`text-xs font-medium w-20 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Tamaño</span>
-                <button
-                  onClick={() => setChatFontSize(s => Math.max(10, s - 1))}
-                  className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-colors ${
-                    darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
-                  }`}
-                >A-</button>
-                <span className={`text-xs font-mono min-w-[28px] text-center font-bold ${darkMode ? 'text-cyan-400' : 'text-slate-700'}`}>{chatFontSize}px</span>
-                <button
-                  onClick={() => setChatFontSize(s => Math.min(24, s + 1))}
-                  className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-colors ${
-                    darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
-                  }`}
-                >A+</button>
+              {/* Tamaño */}
+              <div className={`flex items-stretch rounded-lg border overflow-hidden ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
+                <button onClick={() => setChatFontSize(s => Math.max(10, s - 1))} className={`flex-1 py-2 text-xs font-bold border-r transition-colors ${darkMode ? 'border-white/10 bg-slate-800 hover:bg-slate-700 text-slate-200' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`}>A−</button>
+                <span className={`px-3 flex items-center text-xs font-black tabular-nums ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`}>{chatFontSize}px</span>
+                <button onClick={() => setChatFontSize(s => Math.min(24, s + 1))} className={`flex-1 py-2 text-xs font-bold border-l transition-colors ${darkMode ? 'border-white/10 bg-slate-800 hover:bg-slate-700 text-slate-200' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`}>A+</button>
               </div>
 
-              {/* Color de Nick */}
-              <div className="flex items-center gap-2">
-                <span className={`text-xs font-medium w-20 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Nick</span>
-                <div className="flex gap-1.5">
-                  {['#000000', '#22d3ee', '#a855f7', '#f59e0b', '#ef4444', '#22c55e', '#3b82f6', '#ec4899', '#f97316', '#ffffff'].map(c => (
-                    <button
-                      key={c}
-                      onClick={() => setChatNickColor(c)}
-                      className={`w-5 h-5 rounded-full transition-transform ${
-                        chatNickColor === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-110'
-                      }`}
-                      style={{ backgroundColor: c, border: (c === '#ffffff' || c === '#000000') ? '1px solid #666' : 'none' }}
+              {/* Color Nick */}
+              <div>
+                <p className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Nick</p>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {['#22d3ee','#a855f7','#f59e0b','#ef4444','#22c55e','#3b82f6','#ec4899','#f97316','#ffffff','#94a3b8'].map(c => (
+                    <button key={c} onClick={() => setChatNickColor(c)}
+                      className={`h-7 rounded-md transition-all ${chatNickColor === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-105'}`}
+                      style={{ backgroundColor: c }}
                     />
                   ))}
                 </div>
               </div>
 
-              {/* Color de Mensaje */}
-              <div className="flex items-center gap-2">
-                <span className={`text-xs font-medium w-20 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Mensaje</span>
-                <div className="flex gap-1.5">
-                  {['#000000', '#d1d5db', '#ffffff', '#22d3ee', '#a855f7', '#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#94a3b8'].map(c => (
-                    <button
-                      key={c}
-                      onClick={() => setChatMsgColor(c)}
-                      className={`w-5 h-5 rounded-full transition-transform ${
-                        chatMsgColor === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-110'
-                      }`}
-                      style={{ backgroundColor: c, border: (c === '#ffffff' || c === '#000000') ? '1px solid #666' : 'none' }}
+              {/* Color Mensaje */}
+              <div>
+                <p className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Mensaje</p>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {['#ffffff','#d1d5db','#94a3b8','#22d3ee','#a855f7','#f59e0b','#22c55e','#3b82f6','#ec4899','#f97316'].map(c => (
+                    <button key={c} onClick={() => setChatMsgColor(c)}
+                      className={`h-7 rounded-md transition-all ${chatMsgColor === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-105'}`}
+                      style={{ backgroundColor: c }}
                     />
                   ))}
                 </div>
               </div>
 
               {/* Preview */}
-              <div className={`rounded p-2 text-xs ${darkMode ? 'bg-gray-800/80' : 'bg-white'}`} style={{ fontSize: `${chatFontSize}px` }}>
-                <span style={{ color: chatNickColor }} className="font-semibold">NickDeEjemplo:</span>
-                <span style={{ color: chatMsgColor }} className="ml-1">Este es un mensaje de prueba</span>
+              <div className={`rounded-lg p-2.5 border ${darkMode ? 'bg-[#0f0f23] border-white/10' : 'bg-slate-50 border-slate-200'}`} style={{ fontSize: `${chatFontSize}px` }}>
+                <span style={{ color: chatNickColor }} className="font-bold">NickEjemplo: </span>
+                <span style={{ color: chatMsgColor }}>Hola, mensaje de prueba!</span>
               </div>
             </div>
           )}
@@ -3951,6 +3849,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               </div>
             </div>
           )}
+
+            </div>
+          )}{/* fin panel lateral derecho */}
+          </div>{/* fin flex layout controles */}
 
         </div>
       )}
