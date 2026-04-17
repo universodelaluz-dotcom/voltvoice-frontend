@@ -600,13 +600,17 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   return (
     <div className={`control-panel-remaster ${darkMode ? "min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white" : "min-h-screen bg-gradient-to-b from-slate-100 via-white to-slate-100 text-slate-800"}`}>
       {/* Header */}
-      <nav className={`fixed top-0 w-full backdrop-blur-md z-50 transition-colors duration-300 ${darkMode ? 'bg-slate-950/80 border-b border-cyan-500/20' : 'bg-white/85 border-b border-slate-200 shadow-sm'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <button onClick={onClose} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <ArrowLeft className="w-5 h-5" />
-            <span className="text-base">Volver</span>
+      <nav className={`fixed top-0 w-full backdrop-blur-md z-50 transition-colors duration-300 ${darkMode ? 'bg-slate-950/80 border-b-2 border-cyan-500/30' : 'bg-white/85 border-b-2 border-slate-200 shadow-sm'}`}>
+        <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
+          <button onClick={onClose} className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-bold transition-all hover:-translate-x-0.5 ${
+            darkMode
+              ? 'border-white/10 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:border-white/20'
+              : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100 shadow-sm'
+          }`}>
+            <ArrowLeft className="w-4 h-4" />
+            Volver
           </button>
-          <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500">
+          <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500 pb-1">
             {t('control.title')}
           </h1>
           <div className="w-20"></div>
@@ -614,7 +618,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
       </nav>
 
       {/* Content */}
-      <div className="pt-28 pb-20 px-4 sm:px-6">
+      <div className="pt-32 pb-20 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           {/* PRESETS - BLOQUEADO EN PLAN FREE */}
           <div className={`relative mb-4 rounded-2xl border p-4 ${
@@ -1246,7 +1250,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                             : 'text-slate-700 border-slate-300 hover:bg-white'
                         }`}
                       >
-                        {showProfanityEditor ? 'Ocultar lista' : 'Mostrar lista de palabras'}
+                        {showProfanityEditor ? 'Ocultar lista' : 'Agregar otras propias'}
                       </button>
                       {showProfanityEditor && (
                         <div className="mt-2">
@@ -1481,29 +1485,24 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     </div>
                   </div>
 
-                  <div className={`mb-2 rounded-xl px-4 py-3 border ${
+                  <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border mb-2 ${
                     darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
                   }`}>
-                    <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
-                      Tamaño aproximado de caracteres por mensaje de respuesta
+                    <label className={`text-xs font-semibold whitespace-nowrap ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
+                      Largo de respuesta
                     </label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="number"
-                        min="50"
-                        max="500"
-                        step="10"
-                        value={botAssistantMaxResponseChars}
-                        onChange={(e) => updateConfig('botAssistantMaxResponseChars', Math.min(500, Math.max(50, Number(e.target.value) || 250)))}
-                        className={`w-28 px-2 py-1.5 text-sm rounded-lg border ${
-                          darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
-                        }`}
-                      />
-                      <span className={`text-xs ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>máximo 500</span>
-                    </div>
-                    <p className={`mt-2 text-xs ${darkMode ? 'text-cyan-200/80' : 'text-slate-600'}`}>
-                      Recomendado: 250 caracteres (valor por defecto). Este límite se aplica internamente al prompt del asistente.
-                    </p>
+                    <input
+                      type="number"
+                      min="50"
+                      max="500"
+                      step="10"
+                      value={botAssistantMaxResponseChars}
+                      onChange={(e) => updateConfig('botAssistantMaxResponseChars', Math.min(500, Math.max(50, Number(e.target.value) || 250)))}
+                      className={`w-20 px-2 py-1 text-sm rounded-lg border ${
+                        darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                      }`}
+                    />
+                    <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-slate-400'}`}>50–500 chars</span>
                   </div>
 
                   {/* === SHORTCUT PUSH-TO-TALK === */}

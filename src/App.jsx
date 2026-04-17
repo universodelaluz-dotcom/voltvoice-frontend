@@ -929,17 +929,17 @@ export function App() {
   return (
     <div className={"min-h-screen overflow-hidden transition-colors duration-300 " + (darkMode ? "bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-gray-900") + ""}>
       {/* Botones Esquina Superior */}
-      <div className="fixed top-4 left-4 z-40 flex items-center gap-3">
+      <div className={`fixed top-4 left-4 z-40 flex items-stretch rounded-xl border overflow-hidden h-11 ${darkMode ? 'border-white/10' : 'border-slate-300 shadow-sm'}`}>
         <button
           onClick={() => setDarkMode(!darkMode)}
           title={darkMode ? t('common.lightMode') : t('common.darkMode')}
-          className={"p-2 rounded-lg transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-yellow-400" : "bg-white/90 hover:bg-white text-gray-700 shadow-md")}
+          className={`flex items-center justify-center px-4 border-r transition-all ${darkMode ? 'border-white/10 bg-slate-800 hover:bg-slate-700' : 'border-slate-300 bg-white hover:bg-slate-100'}`}
         >
-          {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          {darkMode ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
         </button>
         <button
           onClick={() => canOpenStudioWithoutAuth ? setCurrentPage('studio') : setCurrentPage('auth')}
-          className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all text-sm"
+          className={`flex items-center px-5 text-sm font-bold transition-all ${user?.role === 'admin' ? 'border-r' : ''} ${darkMode ? 'border-white/10 bg-slate-800 text-cyan-300 hover:bg-slate-700' : 'border-slate-300 bg-white text-cyan-700 hover:bg-slate-100'}`}
         >
           Studio
         </button>
@@ -947,28 +947,30 @@ export function App() {
           <button
             onClick={() => setCurrentPage('admin')}
             title="Panel Admin"
-            className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/30 transition-all"
+            className={`flex items-center justify-center px-4 transition-all ${darkMode ? 'bg-red-900/40 hover:bg-red-900/60 text-red-400' : 'bg-red-50 hover:bg-red-100 text-red-500'}`}
           >
             <Shield className="w-4 h-4" />
           </button>
         )}
       </div>
-      <div className="fixed top-4 right-4 z-40 flex items-center gap-3">
+      <div className="fixed top-4 right-4 z-40">
         {user ? (
-          <>
-            <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user.email}</span>
+          <div className={`flex items-stretch rounded-xl border overflow-hidden h-11 ${darkMode ? 'border-white/10' : 'border-slate-300 shadow-sm'}`}>
+            <span className={`flex items-center px-4 border-r text-sm font-medium ${darkMode ? 'border-white/10 bg-slate-800 text-slate-300' : 'border-slate-300 bg-white text-slate-600'}`}>
+              {user.email}
+            </span>
             <button
               onClick={handleLogout}
-              className={"p-2 rounded-lg transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-red-400" : "bg-white/90 hover:bg-white text-red-500 shadow-md")}
               title={t('common.logout')}
+              className={`flex items-center justify-center px-4 transition-all ${darkMode ? 'bg-slate-800 hover:bg-red-900/40 text-red-400' : 'bg-white hover:bg-red-50 text-red-500'}`}
             >
               <LogOut className="w-4 h-4" />
             </button>
-          </>
+          </div>
         ) : (
           <button
             onClick={() => canOpenStudioWithoutAuth ? setCurrentPage('studio') : setCurrentPage('auth')}
-            className={"px-4 py-2 rounded-lg font-semibold text-sm transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-white border border-white/20" : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm")}
+            className={`h-11 px-5 rounded-xl border text-sm font-bold transition-all ${darkMode ? 'border-white/10 bg-slate-800 text-white hover:bg-slate-700' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100 shadow-sm'}`}
           >
             {canOpenStudioWithoutAuth ? t('landing.enterStudio') : t('auth.login.title')}
           </button>

@@ -420,7 +420,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
     <div className={`${darkMode ? "min-h-screen bg-gradient-to-br from-[#0a0a1a] via-[#111827] to-[#0f172a] text-white" : "min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 text-gray-900"}`}>
       {/* Header */}
       <div className={`${darkMode ? "border-b border-cyan-400/30 backdrop-blur-md sticky top-0 z-50 bg-[#0a0a1a]/90" : "border-b border-indigo-200 backdrop-blur-sm sticky top-0 z-50 bg-white/90 shadow-sm"}`}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-[1100px] mx-auto px-8 py-4 flex items-center justify-between">
           <button
             onClick={onGoHome}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
@@ -430,41 +430,41 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
               {user && <p className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>{user.email}</p>}
             </div>
           </button>
-          <div className="flex items-center gap-4">
-            <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-              darkMode
-                ? (isStreamActive ? 'bg-red-500/20 border border-red-500/50' : 'bg-gray-700/50 border border-gray-600/50')
-                : (isStreamActive ? 'bg-slate-700 border border-slate-600 text-white' : 'bg-slate-200 border border-slate-300 text-slate-700')
+          <div className={`flex items-stretch rounded-xl border overflow-hidden h-11 ${darkMode ? 'border-white/10' : 'border-slate-300'}`}>
+            {/* Estado */}
+            <div className={`flex items-center gap-2 px-5 border-r text-sm font-bold ${
+              darkMode ? 'border-white/10 bg-slate-800 text-slate-300' : 'border-slate-300 bg-white text-slate-600'
             }`}>
-              <div className={`w-2 h-2 rounded-full ${
-                isStreamActive ? (darkMode ? 'bg-red-500 animate-pulse' : 'bg-red-300') : 'bg-gray-500'
-              }`}></div>
-              <span className="text-xs font-semibold">{isStreamActive ? t('studio.status.live') : t('studio.status.inactive')}</span>
+              <div className={`w-2 h-2 rounded-full shrink-0 ${isStreamActive ? 'bg-red-500 animate-pulse' : 'bg-slate-500'}`} />
+              {isStreamActive ? t('studio.status.live') : t('studio.status.inactive')}
             </div>
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-              darkMode
-                ? 'bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30'
-                : 'bg-slate-700 border border-slate-600 shadow-sm'
+            {/* Tokens */}
+            <div className={`flex items-center gap-2 px-5 border-r text-sm font-bold ${
+              darkMode ? 'border-white/10 bg-slate-800' : 'border-slate-300 bg-white'
             }`}>
-              <Zap className={`w-4 h-4 ${darkMode ? 'text-cyan-300' : 'text-slate-200'}`} />
-              <span className={`text-sm font-bold ${darkMode ? 'text-cyan-300' : 'text-slate-100'}`}>{tokens} tokens</span>
+              <Zap className={`w-4 h-4 shrink-0 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`} />
+              <span className={darkMode ? 'text-cyan-300' : 'text-cyan-700'}>{tokens} tokens</span>
             </div>
+            {/* Tema */}
             <button
               onClick={toggleTheme}
-              className={darkMode ? "p-2 rounded-lg bg-gray-800 border border-cyan-500/30 hover:bg-gray-700 transition-colors" : "p-2 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 transition-colors shadow-sm"}
+              className={`flex items-center justify-center px-4 border-r transition-all ${
+                darkMode ? 'border-white/10 bg-slate-800 hover:bg-slate-700' : 'border-slate-300 bg-white hover:bg-slate-100'
+              }`}
               title={darkMode ? t('common.lightMode') : t('common.darkMode')}
             >
-              {darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
+              {darkMode ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
             </button>
+            {/* Admin */}
             {user?.role === 'admin' && onGoAdmin && (
               <button
                 onClick={onGoAdmin}
                 title="Panel Admin"
-                className={darkMode
-                  ? "p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/30 transition-all"
-                  : "p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 border border-red-300 transition-all shadow-sm"}
+                className={`flex items-center justify-center px-4 transition-all ${
+                  darkMode ? 'bg-red-900/40 hover:bg-red-900/60 text-red-400' : 'bg-red-50 hover:bg-red-100 text-red-500'
+                }`}
               >
-                <Shield className="w-5 h-5" />
+                <Shield className="w-4 h-4" />
               </button>
             )}
           </div>
@@ -472,7 +472,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 pt-8 pb-56 lg:pb-72">
+      <div className="max-w-[1100px] mx-auto px-8 pt-6 pb-10">
         {announcements.length > 0 && (
           <div className="mb-4 space-y-2">
             {announcements.slice(0, 3).map((notice) => {
@@ -491,77 +491,48 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
             })}
           </div>
         )}
+        <div className="space-y-4">
         {/* TikTok Live Section */}
         <TikTokLivePanel config={config} updateConfig={updateConfig} configReady={configReady} user={user} darkModeOverride={darkMode} />
 
-        {/* Botones principales: Configuracion, Taller de Voces, Estadisticas */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        {/* Nav buttons - fila debajo del panel */}
+        <div className={`flex items-stretch rounded-xl border overflow-hidden ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
           <button
             onClick={onGoControlPanel}
-            className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
-              darkMode
-                ? 'bg-gradient-to-r from-[#1a1a2e] to-[#16213e] border border-cyan-400/30 hover:border-cyan-300 hover:shadow-lg hover:shadow-cyan-500/20 text-cyan-300'
-                : 'bg-gradient-to-r from-slate-700 to-slate-800 border border-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-sm'
+            className={`flex-1 flex items-center justify-center gap-2 py-4 font-bold text-sm transition-all border-r ${
+              darkMode ? 'border-white/10 bg-[#1a1a2e] text-cyan-300 hover:bg-[#1e1e38]' : 'border-slate-200 bg-white text-indigo-700 hover:bg-indigo-50'
             }`}
           >
-            <Settings className="w-5 h-5" />
-            <span>{t('studio.nav.config')}</span>
+            <Settings className="w-5 h-5" />{t('studio.nav.config')}
           </button>
           {onGoVoiceCloning && (() => {
-            const userPlan = user?.plan || 'free'
-            const isVoiceWorkshopBlocked = String(userPlan).toLowerCase() === 'free'
-
-            if (isVoiceWorkshopBlocked) {
-              return (
-                <button
-                  onClick={onGoVoiceCloning}
-                  className={`relative flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
-                    darkMode
-                      ? 'bg-gradient-to-r from-purple-600/70 to-pink-600/70 text-gray-200 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-slate-600 to-slate-700 text-gray-200 cursor-not-allowed'
-                  }`}
-                  title={`Clic para explorar - Bloqueado para plan ${String(userPlan).toUpperCase()}`}
-                >
-                  <Mic2 className="w-5 h-5" />
-                  <span>{t('studio.nav.voiceWorkshop')}</span>
-                  <Lock className="w-4 h-4 ml-auto" />
-                </button>
-              )
-            }
-
+            const blocked = String(user?.plan || 'free').toLowerCase() === 'free'
             return (
               <button
                 onClick={onGoVoiceCloning}
-                className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
-                  darkMode
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white hover:shadow-lg hover:shadow-purple-500/30'
-                    : 'bg-gradient-to-r from-slate-700 to-slate-800 border border-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-sm'
+                className={`flex-1 flex items-center justify-center gap-2 py-4 font-bold text-sm transition-all border-r ${blocked ? 'opacity-70' : ''} ${
+                  darkMode ? 'border-white/10 bg-gradient-to-r from-purple-700/60 to-pink-700/60 text-white hover:from-purple-600/80 hover:to-pink-600/80' : 'border-slate-200 bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500'
                 }`}
               >
-                <Mic2 className="w-5 h-5" />
-                <span>Taller de Voces</span>
+                <Mic2 className="w-5 h-5" />{t('studio.nav.voiceWorkshop')}{blocked && <Lock className="w-4 h-4 ml-1 opacity-70" />}
               </button>
             )
           })()}
           {onGoStatistics && (
             <button
               onClick={onGoStatistics}
-              className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
-                darkMode
-                  ? 'bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-400/40 hover:border-cyan-300 hover:shadow-lg hover:shadow-cyan-500/30 text-cyan-300'
-                  : 'bg-gradient-to-r from-slate-700 to-slate-800 border border-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-sm'
+              className={`flex-1 flex items-center justify-center gap-2 py-4 font-bold text-sm transition-all ${
+                darkMode ? 'bg-[#1a1a2e] text-cyan-300 hover:bg-[#1e1e38]' : 'bg-white text-indigo-700 hover:bg-indigo-50'
               }`}
             >
-              <BarChart3 className="w-5 h-5" />
-              <span>{t('studio.nav.stats')}</span>
+              <BarChart3 className="w-5 h-5" />{t('studio.nav.stats')}
             </button>
           )}
         </div>
 
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Center Column - Synthesis */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-3">
             {/* Voice Selection */}
             <div className={`${darkMode ? "space-y-2 bg-[#1a1a2e] border border-cyan-400/25 rounded-lg p-4" : "space-y-2 bg-white border border-indigo-200 rounded-lg p-4 shadow-sm"}`}>
               <label className="text-sm font-semibold text-cyan-300 uppercase tracking-wide">
@@ -655,7 +626,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
           </div>
 
           {/* Right Column - Stats & Audio */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-3">
             {/* Audio Player - with Visualizer */}
             <div className="space-y-2">
               <AudioVisualizer
@@ -713,6 +684,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
 
           </div>
         </div>
+        </div>{/* fin space-y-4 */}
       </div>
       <audio ref={audioRef} src={audioUrl || ''} className="hidden" />
     </div>
