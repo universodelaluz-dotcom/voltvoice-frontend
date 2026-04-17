@@ -5,14 +5,6 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" }
   ],
-  "redirects": [
-    {
-      "source": "/(.*)",
-      "has": [{ "type": "host", "value": "www.streamvoicer.com" }],
-      "destination": "https://streamvoicer.com/$1",
-      "permanent": true
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",
