@@ -2754,54 +2754,54 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
   return (
     <div className={`relative overflow-visible ${darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg px-4 py-3 mb-3" : "bg-white border border-indigo-200 rounded-lg px-4 py-3 mb-3 shadow-sm"}`}>
-      <div className="flex items-center justify-between gap-4 mb-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className={`p-2 rounded-xl ${darkMode ? 'bg-cyan-500/15 border border-cyan-400/25' : 'bg-cyan-50 border border-cyan-200'}`}>
-            <MessageCircle className="w-5 h-5 text-cyan-400" />
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className={`p-1.5 sm:p-2 rounded-xl shrink-0 ${darkMode ? 'bg-cyan-500/15 border border-cyan-400/25' : 'bg-cyan-50 border border-cyan-200'}`}>
+            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
           </div>
-          <div>
-            <h2 className={`text-lg font-black tracking-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t('tiktok.panel.title')}</h2>
-            <p className={`text-[11px] font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Stream Voicer</p>
+          <div className="min-w-0">
+            <h2 className={`text-xs sm:text-lg font-black tracking-tight leading-tight whitespace-nowrap ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t('tiktok.panel.title')}</h2>
+            <p className={`text-[10px] sm:text-[11px] font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Stream Voicer</p>
           </div>
         </div>
-        <div className={`flex items-stretch rounded-xl border overflow-hidden h-12 ${darkMode ? 'border-white/10' : 'border-slate-300'}`}>
+        <div className={`flex items-stretch rounded-xl border overflow-hidden h-9 sm:h-12 shrink-0 ${darkMode ? 'border-white/10' : 'border-slate-300'}`}>
           <button
             type="button"
             onClick={() => setShowHelpGuide(true)}
-            className={`flex items-center gap-2 px-6 text-sm font-bold border-r transition-all ${darkMode
+            className={`flex items-center gap-1.5 px-3 sm:px-6 text-xs sm:text-sm font-bold border-r transition-all ${darkMode
               ? 'border-white/10 bg-slate-800 text-cyan-300 hover:bg-cyan-500/20'
               : 'border-slate-300 bg-white text-cyan-700 hover:bg-cyan-50'}`}
             title="Guía detallada de uso"
           >
-            <BookOpen className="w-4 h-4" />
-            {t('tiktok.panel.helpBtn')}
+            <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="hidden xs:inline">{t('tiktok.panel.helpBtn')}</span>
           </button>
           {sessionTikTokHandle && (
-            <div className={`flex items-center gap-2 px-6 border-r text-sm ${darkMode
+            <div className={`hidden sm:flex items-center gap-2 px-4 border-r text-sm ${darkMode
               ? 'border-white/10 bg-slate-800 text-slate-300'
               : 'border-slate-300 bg-white text-slate-700'}`}>
               <span className={`text-[11px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{t('tiktok.panel.sessionTab')}</span>
               <span className={`font-black ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{sessionTikTokHandle}</span>
             </div>
           )}
-          <span className={`flex items-center gap-2.5 px-6 text-sm font-black tracking-widest uppercase transition-all ${
+          <span className={`flex items-center gap-1 px-2 sm:px-6 text-[9px] sm:text-sm font-black tracking-wide sm:tracking-widest uppercase transition-all ${
             isConnected
-              ? (darkMode
-                  ? 'bg-rose-900/60 text-rose-300'
-                  : 'bg-rose-800 text-rose-100')
+              ? (darkMode ? 'bg-rose-900/60 text-rose-300' : 'bg-rose-800 text-rose-100')
               : isWaitingForLive
                 ? 'bg-slate-700/40 text-slate-400 animate-pulse'
                 : (darkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500')
           }`}>
             {isConnected ? (
               <>
-                <span className="relative flex h-2.5 w-2.5">
+                <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-300" />
+                  <span className="relative inline-flex h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-red-300" />
                 </span>
-                EN VIVO
+                <span className="hidden xs:inline">EN VIVO</span>
               </>
-            ) : isWaitingForLive ? t('tiktok.panel.waitingLive') : t('tiktok.panel.disconnected')}
+            ) : isWaitingForLive
+              ? <span className="hidden xs:inline">{t('tiktok.panel.waitingLive')}</span>
+              : <span>{t('tiktok.panel.disconnected')}</span>}
           </span>
         </div>
       </div>
@@ -2940,26 +2940,24 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       )}
 
       {!showConnectedView ? (
-        <form onSubmit={handleConnectSubmit} className="space-y-4">
-          <div className="flex gap-2">
+        <form onSubmit={handleConnectSubmit} className="space-y-3">
+          <div className="flex gap-2 h-10">
             <input
               type="text"
               value={tiktokUser}
               onChange={(e) => setTiktokUser(e.target.value)}
-              placeholder="Usuario de TikTok (con @ o sin @)"
-              className={darkMode ? "flex-1 bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400" : "flex-1 bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
+              placeholder="Usuario de TikTok (ej: @mic)"
+              style={{ padding: '7px 12px', fontSize: '13px' }}
+              className={darkMode ? "flex-1 min-w-0 bg-[#0f0f23] border border-cyan-400/30 rounded-lg text-white focus:outline-none focus:border-cyan-400" : "flex-1 min-w-0 bg-gray-50 border border-indigo-300 rounded-lg text-gray-900 focus:outline-none focus:border-indigo-500"}
               disabled={isConnecting || isWaitingForLive}
             />
             <button
               type="submit"
               disabled={isConnecting || isWaitingForLive || !tiktokUser}
-              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold px-6 rounded-lg transition flex items-center justify-center gap-2"
+              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-lg transition flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap"
+              style={{ padding: '7px 12px', fontSize: '13px' }}
             >
-              {isConnecting ? (
-                <Loader className="w-5 h-5 animate-spin" />
-              ) : (
-                <Play className="w-5 h-5" />
-              )}
+              {isConnecting ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
               {isConnecting ? t('tiktok.connect.connecting') : t('tiktok.connect.btn')}
             </button>
             {isWaitingForLive && (
@@ -3067,9 +3065,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 <button
                   type="submit"
                   disabled={isConnecting || isWaitingForLive || !tiktokUser}
-                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg text-sm transition flex items-center gap-2 whitespace-nowrap"
+                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 disabled:opacity-50 text-white font-semibold rounded-lg transition flex items-center gap-1.5 whitespace-nowrap shrink-0"
+                  style={{ padding: '6px 10px', fontSize: '12px' }}
                 >
-                  {isConnecting ? <Loader className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                  {isConnecting ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
                   {isConnecting ? t('tiktok.connect.connecting') : t('tiktok.connect.btn')}
                 </button>
                 {isWaitingForLive && (
@@ -3086,34 +3085,35 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
           <div className={`w-full flex items-stretch rounded-xl border overflow-hidden ${darkMode ? 'border-white/10 bg-slate-900/30' : 'border-slate-200 bg-white'}`}>
             {/* Comentarios */}
-            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-4 py-2 border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}`}>
-              <div className="flex items-center gap-2">
-                <MessageCircle className={`w-3.5 h-3.5 ${darkMode ? 'text-cyan-400/60' : 'text-cyan-500/60'}`} />
-                <span className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/60' : 'text-cyan-600/70'}`}>{t('tiktok.stats.comments')}</span>
+            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-2 sm:px-4 py-2 border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}`}>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <MessageCircle className={`w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 ${darkMode ? 'text-cyan-400/60' : 'text-cyan-500/60'}`} />
+                <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-cyan-400/60' : 'text-cyan-600/70'}`}>{t('tiktok.stats.comments')}</span>
               </div>
-              <p className={`text-xl font-black tabular-nums leading-none ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{stats.count}</p>
+              <p className={`text-lg sm:text-xl font-black tabular-nums leading-none ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{stats.count}</p>
             </div>
             {/* Msgs/min */}
-            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-4 py-2 border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className={`w-3.5 h-3.5 ${darkMode ? 'text-emerald-400/60' : 'text-emerald-500/60'}`} />
-                  <span className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-emerald-400/60' : 'text-emerald-600/70'}`}>{t('tiktok.stats.msgsMin')}</span>
+            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-2 sm:px-4 py-2 border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}`}>
+              <div className="flex items-center justify-between gap-1">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <TrendingUp className={`w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 ${darkMode ? 'text-emerald-400/60' : 'text-emerald-500/60'}`} />
+                  <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-emerald-400/60' : 'text-emerald-600/70'}`}>{t('tiktok.stats.msgsMin')}</span>
                 </div>
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ color: chatIntensity.color, backgroundColor: chatIntensity.color + '20' }}>
+                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ color: chatIntensity.color, backgroundColor: chatIntensity.color + '20' }}>
                   <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: chatIntensity.color }} />
                   {chatIntensity.label}
                 </span>
+                <span className="inline-flex sm:hidden w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: chatIntensity.color }} />
               </div>
-              <p className={`text-xl font-black tabular-nums leading-none ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>{messagesPerMinute}</p>
+              <p className={`text-lg sm:text-xl font-black tabular-nums leading-none ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>{messagesPerMinute}</p>
             </div>
             {/* Tiempo */}
-            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-5 py-3 ${isConnected ? `border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}` : ''}`}>
-              <div className="flex items-center gap-2">
-                <Clock3 className={`w-3.5 h-3.5 ${darkMode ? 'text-purple-400/60' : 'text-purple-500/60'}`} />
-                <span className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-purple-400/60' : 'text-purple-600/70'}`}>{t('tiktok.stats.time')}</span>
+            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-2 sm:px-5 py-2 sm:py-3 ${isConnected ? `border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}` : ''}`}>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Clock3 className={`w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 ${darkMode ? 'text-purple-400/60' : 'text-purple-500/60'}`} />
+                <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-purple-400/60' : 'text-purple-600/70'}`}>{t('tiktok.stats.time')}</span>
               </div>
-              <p className={`text-xl font-black tabular-nums leading-none ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>
+              <p className={`text-lg sm:text-xl font-black tabular-nums leading-none ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>
                 {stats.uptime < 60 ? `${stats.uptime}s` : `${Math.floor(stats.uptime / 60)}m ${stats.uptime % 60}s`}
               </p>
             </div>
@@ -3121,19 +3121,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             {isConnected && (
               <button
                 onClick={handleDisconnect}
-                className={`flex flex-col items-center justify-center gap-1.5 px-8 font-bold text-sm transition-all group ${darkMode
+                className={`flex flex-col items-center justify-center gap-1 sm:gap-1.5 px-3 sm:px-8 font-bold text-sm transition-all group ${darkMode
                   ? 'bg-rose-900/40 hover:bg-rose-900/60 text-rose-300 hover:text-rose-200'
                   : 'bg-rose-800 hover:bg-rose-900 text-rose-100'}`}
               >
-                <Square className="w-5 h-5 transition-transform group-hover:scale-110" />
-                <span className="text-[11px] font-bold uppercase tracking-widest">{t('tiktok.connect.disconnect')}</span>
+                <Square className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:scale-110" />
+                <span className="text-[9px] sm:text-[11px] font-bold uppercase tracking-wide">{t('tiktok.connect.disconnect')}</span>
               </button>
             )}
           </div>
 
-          {/* Flex: chat izq + controles der */}
-          <div className="flex gap-3 items-start">
-          <div className="flex-1 min-w-0">
+          {/* Flex: chat izq + controles der — en móvil apilados verticalmente */}
+          <div className="flex flex-col sm:flex-row gap-3 items-start">
+          <div className="flex-1 min-w-0 w-full">
 
             <div className="space-y-2">
               <div className={darkMode ? "bg-cyan-500/10 border border-cyan-400/30 rounded-lg px-3 py-2 h-[72px] overflow-hidden" : "bg-cyan-50 border border-cyan-200 rounded-lg px-3 py-2 h-[72px] overflow-hidden"}>
@@ -3171,7 +3171,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               <div className="flex-1">
                 <div
                   ref={chatContainerRef}
-                  style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain', height: 'calc(100vh - 380px)', minHeight: '300px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain', height: 'clamp(220px, 35vh, calc(100vh - 380px))', minHeight: '220px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                   className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-3 overflow-y-auto space-y-1" : "bg-gray-50 border border-indigo-200 rounded-lg p-3 overflow-y-auto space-y-1"}
                 >
                   {messages.length === 0 ? (
@@ -3449,8 +3449,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           </div>
           </div>{/* fin col izq */}
 
-          {/* Controles - columna derecha vertical */}
-          <div className={`flex flex-col rounded-lg border overflow-hidden w-40 shrink-0 ${
+          {/* Controles - columna derecha en desktop, grid 3 cols en móvil */}
+          <div className={`grid grid-cols-3 sm:flex sm:flex-col rounded-lg border overflow-hidden w-full sm:w-40 sm:shrink-0 ${
             darkMode ? 'border-white/10 bg-slate-900/40' : 'border-slate-300 bg-slate-100'
           }`}>
             {/* Pausar / Reanudar */}
@@ -3526,7 +3526,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               <span>Nicks</span>
             </button>
             {/* VOL */}
-            <div className={`px-4 py-3.5 border-b ${darkMode ? 'border-white/10' : 'border-slate-300'}`}>
+            <div className={`col-span-3 px-4 py-3 border-b ${darkMode ? 'border-white/10' : 'border-slate-300'}`}>
               <span className={`text-[11px] font-bold uppercase tracking-wider block mb-2 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>VOL</span>
               <div className="flex items-center gap-1.5">
                 <button onClick={() => setVolume(v => Math.max(0, v - 0.05))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-emerald-400' : 'bg-slate-200 hover:bg-slate-300 text-emerald-600'}`}>−</button>
@@ -3535,7 +3535,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               </div>
             </div>
             {/* VEL */}
-            <div className={`px-4 py-3.5 ${darkMode ? '' : ''}`}>
+            <div className={`col-span-3 px-4 py-3`}>
               <span className={`text-[11px] font-bold uppercase tracking-wider block mb-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>VEL</span>
               <div className="flex items-center gap-1.5">
                 <button onClick={() => updateConfig && updateConfig('audioSpeed', Math.max(0.5, Number(config.audioSpeed || 1) - 0.1))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-blue-400' : 'bg-slate-200 hover:bg-slate-300 text-blue-600'}`}>−</button>
@@ -3544,9 +3544,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               </div>
             </div>
           </div>
-          {/* Panel lateral derecho — aparece a la derecha de controles sin scroll */}
+          {/* Panel lateral derecho — a la derecha en desktop, abajo en móvil */}
           {(showFontPanel || showHighlightPanel || showNicksPanel) && (
-            <div className={`w-64 shrink-0 rounded-lg border ${
+            <div className={`w-full sm:w-64 sm:shrink-0 rounded-lg border ${
               darkMode ? 'bg-gray-900/90 border-white/10' : 'bg-white border-slate-200 shadow-md'
             }`}>
 

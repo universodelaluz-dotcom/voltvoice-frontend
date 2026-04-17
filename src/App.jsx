@@ -1618,15 +1618,15 @@ export function App() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
                 {/* Texto */}
                 <div className="md:col-span-2">
-                  <h3 className={`text-2xl font-black mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {t('cookies.title')}
+                  <h3 className={`text-lg font-bold tracking-wide mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    🍪 {t('cookies.title')}
                   </h3>
-                  <p className={`text-base mb-3 leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                  <p className={`text-sm mb-3 leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     {t('cookies.text')}
                   </p>
                   <button
                     onClick={() => setShowCookies(true)}
-                    className="text-cyan-400 hover:text-cyan-300 font-bold underline text-base"
+                    className="text-cyan-400 hover:text-cyan-300 text-sm font-medium underline underline-offset-2"
                   >
                     {t('cookies.details')}
                   </button>
@@ -1639,7 +1639,7 @@ export function App() {
                       setCookieConsent(true)
                       localStorage.setItem('cookieConsent', 'true')
                     }}
-                    className="px-8 py-4 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-black text-lg rounded-lg hover:shadow-lg hover:shadow-cyan-400/60 transition-all whitespace-nowrap"
+                    className="px-7 py-3 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-semibold text-sm rounded-lg hover:opacity-90 hover:shadow-lg hover:shadow-cyan-400/40 transition-all whitespace-nowrap"
                   >
                     {t('cookies.acceptAll')}
                   </button>
@@ -1648,10 +1648,10 @@ export function App() {
                       setCookieConsent(true)
                       localStorage.setItem('cookieConsent', 'true')
                     }}
-                    className={`px-8 py-4 rounded-lg font-bold text-lg whitespace-nowrap transition-all border-2 ${
+                    className={`px-7 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all border ${
                       darkMode
-                        ? 'bg-gray-800 text-gray-200 hover:bg-gray-700 border-gray-600'
-                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-300'
+                        ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-600'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-300'
                     }`}
                   >
                     {t('cookies.reject')}
