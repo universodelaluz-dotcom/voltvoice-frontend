@@ -1,131 +1,120 @@
-﻿import { useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
-const monthlyPlans = [
+const getMonthlyPlans = (t) => [
+  {
+    icon: '⭐',
+    name: 'FREE',
+    price: 0,
+    description: t('pricing.plans.free.description'),
+    cta: t('pricing.plans.free.cta'),
+    popular: false,
+    voices: t('pricing.plans.free.voices', { returnObjects: true }),
+    stream: t('pricing.plans.free.stream'),
+    compatibility: t('pricing.plans.free.compatibility', { returnObjects: true }),
+    extension: t('pricing.plans.free.extension'),
+  },
   {
     icon: '🟢',
     name: 'START',
     price: 6.99,
-    description: 'Ideal para streams ligeros',
-    cta: 'Adquirir START',
+    description: t('pricing.plans.start.description'),
+    cta: t('pricing.plans.start.cta'),
     popular: false,
-    voices: [
-      '1 voz clonada por IA (editable)',
-      '1 voz natural premium',
-      '1 voz básica (ilimitada)',
-      '200,000 caracteres (~tokens)',
-    ],
-    stream: 'En uso de voz premium rinde aprox 2-4 horas de stream activo',
-    compatibility: [
-      'filtrado inteligente',
-      'lectura selectiva (preguntas, donadores, etc.)',
-      'control de mensajes',
-    ],
-    extension: 'Permite extender la duración optimizando tu chat',
+    voices: t('pricing.plans.start.voices', { returnObjects: true }),
+    stream: t('pricing.plans.start.stream'),
+    compatibility: t('pricing.plans.start.compatibility', { returnObjects: true }),
+    extension: t('pricing.plans.start.extension'),
   },
   {
     icon: '🔵',
     name: 'CREATOR',
     price: 12.99,
-    description: 'Ideal para streams activos',
-    cta: 'Adquirir CREATOR',
+    description: t('pricing.plans.creator.description'),
+    cta: t('pricing.plans.creator.cta'),
     popular: true,
-    voices: [
-      '2 voces clonadas por IA (editables)',
-      '2 voces naturales premium',
-      '1 voz básica (ilimitada)',
-      '500,000 caracteres (~tokens)',
-    ],
-    stream: 'Rinde aprox 5-8 horas de stream activo',
-    compatibility: [
-      'lectura inteligente del chat',
-      'voces dinámicas por tipo de usuario',
-      'control avanzado de mensajes',
-    ],
-    extension: 'Mejor rendimiento y eficiencia en el uso de tokens',
+    voices: t('pricing.plans.creator.voices', { returnObjects: true }),
+    stream: t('pricing.plans.creator.stream'),
+    compatibility: t('pricing.plans.creator.compatibility', { returnObjects: true }),
+    extension: t('pricing.plans.creator.extension'),
   },
   {
     icon: '🔥',
     name: 'PRO',
     price: 17.99,
-    description: 'Ideal para interacción constante',
-    cta: 'Adquirir PRO',
+    description: t('pricing.plans.pro.description'),
+    cta: t('pricing.plans.pro.cta'),
     popular: false,
-    voices: [
-      '5 voces clonadas por IA (editables)',
-      '4 voces naturales premium',
-      '1 voz básica (ilimitada)',
-      '800,000 caracteres (~tokens)',
-    ],
-    stream: 'Rinde aprox 10-15 horas de stream activo',
-    compatibility: [
-      'sistema completo de filtrado',
-      'control total del chat',
-      'optimización máxima del consumo',
-    ],
-    experience: 'Experiencia completa con IA',
+    voices: t('pricing.plans.pro.voices', { returnObjects: true }),
+    stream: t('pricing.plans.pro.stream'),
+    compatibility: t('pricing.plans.pro.compatibility', { returnObjects: true }),
+    experience: t('pricing.plans.pro.experience'),
   },
 ]
 
-const annualPlans = [
+const getAnnualPlans = (t) => [
   {
     icon: '🟢',
-    name: 'START ANUAL',
+    name: t('pricing.annual.start.name'),
     price: 59,
-    saving: 'Ahorra ~$25 USD',
+    saving: t('pricing.annual.start.saving'),
     planName: 'START',
-    benefits: [
-      '1 voz clonada por IA (editable)',
-      '1 voz natural premium',
-      '1 voz básica (ilimitada)',
-      '200,000 caracteres (~tokens)',
-      'Rinde aprox 2-4 horas de stream activo',
-      'filtrado inteligente',
-      'lectura selectiva (preguntas, donadores, etc.)',
-      'control de mensajes',
-    ],
+    benefits: t('pricing.annual.start.benefits', { returnObjects: true }),
   },
   {
     icon: '🔵',
-    name: 'CREATOR ANUAL',
+    name: t('pricing.annual.creator.name'),
     price: 109,
-    saving: 'Ahorra ~$46 USD',
+    saving: t('pricing.annual.creator.saving'),
     hot: true,
     planName: 'CREATOR',
-    benefits: [
-      '2 voces clonadas por IA (editables)',
-      '2 voces naturales premium',
-      '1 voz básica (ilimitada)',
-      '500,000 caracteres (~tokens)',
-      'Rinde aprox 5-8 horas de stream activo',
-      'lectura inteligente del chat',
-      'voces dinámicas por tipo de usuario',
-      'control avanzado de mensajes',
-    ],
+    benefits: t('pricing.annual.creator.benefits', { returnObjects: true }),
   },
   {
     icon: '🔥',
-    name: 'PRO ANUAL',
+    name: t('pricing.annual.pro.name'),
     price: 149,
-    saving: 'Ahorra ~$67 USD',
+    saving: t('pricing.annual.pro.saving'),
     fast: true,
     planName: 'PRO',
-    benefits: [
-      '5 voces clonadas por IA (editables)',
-      '4 voces naturales premium',
-      '1 voz básica (ilimitada)',
-      '800,000 caracteres (~tokens)',
-      'Rinde aprox 10-15 horas de stream activo',
-      'Experiencia completa con IA',
-      'sistema completo de filtrado',
-      'control total del chat',
-      'optimización máxima del consumo',
-    ],
+    benefits: t('pricing.annual.pro.benefits', { returnObjects: true }),
   },
 ]
 
 export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
+  const { t } = useTranslation()
   const [billingCycle, setBillingCycle] = useState('monthly')
+  const [usdMxn, setUsdMxn] = useState(17)
+
+  useEffect(() => {
+    let active = true
+
+    const loadRate = async () => {
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/USD')
+        const data = await res.json()
+        const nextRate = Number(data?.rates?.MXN)
+        if (active && Number.isFinite(nextRate) && nextRate > 0) {
+          setUsdMxn(nextRate)
+        }
+      } catch {
+        // fallback
+      }
+    }
+
+    loadRate()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const formatMxnApprox = (usdPrice) =>
+    new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN',
+      maximumFractionDigits: 0,
+    }).format(usdPrice * usdMxn)
 
   return (
     <div>
@@ -140,7 +129,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   : darkMode ? 'text-gray-400' : 'text-gray-600'
               }`}
             >
-              Mensual
+              {t('pricing.toggle.monthly')}
             </button>
             <button
               onClick={() => setBillingCycle('annual')}
@@ -150,7 +139,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   : darkMode ? 'text-gray-400' : 'text-gray-600'
               }`}
             >
-              Anual
+              {t('pricing.toggle.annual')}
             </button>
           </div>
         </div>
@@ -160,15 +149,15 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
         <>
           <div className="text-center mb-8">
             <p className={`text-sm font-bold tracking-wider ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
-              💰 PAQUETES COMPLETOS
+              {t('pricing.header')}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {monthlyPlans.map((plan) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {getMonthlyPlans(t).map((plan) => (
               <div
                 key={plan.name}
-                className={`rounded-lg p-8 transition-all duration-300 ${
+                className={`rounded-lg p-8 transition-all duration-300 flex flex-col ${
                   plan.popular
                     ? darkMode
                       ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-cyan-400 shadow-2xl shadow-cyan-400/30 scale-105'
@@ -181,7 +170,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                 {plan.popular && (
                   <div className="mb-3">
                     <span className="inline-block text-xs font-black tracking-wider px-3 py-1 rounded-full bg-gradient-to-r from-orange-400 to-pink-500 text-white">
-                      🔥 MÁS POPULAR
+                      {t('pricing.popular')}
                     </span>
                   </div>
                 )}
@@ -190,7 +179,10 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
                     ${plan.price.toFixed(2)}
                   </span>
-                  <span className={`ml-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>USD</span>
+                  <span className={`ml-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('pricing.perMonth')}</span>
+                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {t('payment.approxMxn', { mxn: formatMxnApprox(plan.price) })}
+                  </p>
                 </div>
 
                 <p className={`text-sm mb-5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>⚡ {plan.description}</p>
@@ -209,7 +201,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   <p className={`text-sm mb-2 font-semibold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>🧠 {plan.experience}</p>
                 )}
 
-                <p className={`text-sm font-bold mt-4 mb-2 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>🛠️ Compatible con:</p>
+                <p className={`text-sm font-bold mt-4 mb-2 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>🛠️ {t('pricing.compatible')}</p>
                 <div className="space-y-2 mb-4">
                   {plan.compatibility.map((line, idx) => (
                     <div key={idx} className="flex items-start gap-2">
@@ -223,16 +215,40 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   <p className={`text-sm mb-6 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>👉 {plan.extension}</p>
                 )}
 
-                <button
-                  onClick={() => onPlanAction?.(plan, { billingCycle: 'monthly' })}
-                  className={`w-full py-3 rounded-lg font-bold transition-all ${
-                    plan.popular
-                      ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white hover:shadow-lg hover:shadow-cyan-400/50'
-                      : 'border border-cyan-400 text-cyan-400 hover:bg-cyan-400/10'
-                  }`}
-                >
-                  {plan.cta}
-                </button>
+                {plan.popular ? (
+                  <div className="relative mt-auto">
+                    {/* Ping ring exterior */}
+                    <span className="absolute -inset-1 rounded-xl pointer-events-none animate-ping opacity-50 bg-gradient-to-r from-cyan-400/40 to-purple-500/40" />
+                    <button
+                      onClick={() => onPlanAction?.(plan, { billingCycle: 'monthly' })}
+                      className="relative z-10 w-full py-4 rounded-xl font-black text-base text-white bg-gradient-to-r from-cyan-400 to-purple-500 animate-pulse hover:from-cyan-300 hover:to-purple-400 transition-all shadow-xl shadow-cyan-500/40 hover:shadow-cyan-400/60 hover:scale-[1.02] flex items-center justify-center gap-2"
+                    >
+                      🚀 {plan.cta}
+                    </button>
+                    {/* Punto naranja esquina */}
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none z-20" />
+                  </div>
+                ) : (
+                  <div className="relative mt-auto">
+                    <span className={`absolute -inset-0.5 rounded-xl blur-sm animate-pulse pointer-events-none opacity-40 ${
+                      plan.name === 'FREE' ? 'bg-gradient-to-r from-gray-400 to-gray-500' :
+                      plan.name === 'START' ? 'bg-gradient-to-r from-emerald-400 to-green-500' :
+                      'bg-gradient-to-r from-orange-400 to-red-500'
+                    }`} />
+                    <button
+                      onClick={() => onPlanAction?.(plan, { billingCycle: 'monthly' })}
+                      className={`relative w-full py-3.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] hover:opacity-90 flex items-center justify-center gap-2 shadow-lg ${
+                        plan.name === 'FREE'
+                          ? 'bg-gradient-to-r from-gray-500 to-gray-600 shadow-gray-500/30'
+                          : plan.name === 'START'
+                          ? 'bg-gradient-to-r from-emerald-400 to-green-500 shadow-emerald-500/30'
+                          : 'bg-gradient-to-r from-orange-400 to-red-500 shadow-orange-500/30'
+                      }`}
+                    >
+                      {plan.name === 'FREE' ? '⭐' : plan.name === 'START' ? '🟢' : '⚡'} {plan.cta}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -243,17 +259,17 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
         <>
           <div className="text-center mb-8">
             <p className={`text-sm font-bold tracking-wider ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
-              💎 PLANES ANUALES
+              💎 {t('pricing.toggle.annual')}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {annualPlans.map((plan) => (
-              <div key={plan.name} className={`rounded-lg p-8 ${darkMode ? 'bg-gradient-to-br from-gray-800/70 to-gray-900/70 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-                {(plan.hot || plan.fast) && (
+            {getAnnualPlans(t).map((plan) => (
+              <div key={plan.name} className={`rounded-lg p-8 flex flex-col ${darkMode ? 'bg-gradient-to-br from-gray-800/70 to-gray-900/70 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+                {plan.hot && (
                   <div className="mb-3">
                     <span className="inline-block text-xs font-black tracking-wider px-3 py-1 rounded-full bg-gradient-to-r from-orange-400 to-pink-500 text-white">
-                      🔥 MÁS POPULAR
+                      {t('pricing.popular')}
                     </span>
                   </div>
                 )}
@@ -261,7 +277,13 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                 <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2">
                   ${plan.price}
                 </p>
-                <p className={darkMode ? 'text-gray-300 mb-1' : 'text-gray-700 mb-1'}>USD / año</p>
+                <p className={darkMode ? 'text-gray-300 mb-1' : 'text-gray-700 mb-1'}>{t('pricing.perYear')}</p>
+                <p className={darkMode ? 'text-[11px] font-bold text-cyan-300 mb-1' : 'text-[11px] font-bold text-cyan-700 mb-1'}>
+                  {t('pricing.approxMonth', { price: (plan.price / 12).toFixed(2) })}
+                </p>
+                <p className={`text-xs ${darkMode ? 'text-gray-400 mb-1' : 'text-gray-500 mb-1'}`}>
+                  {t('payment.approxMxn', { mxn: formatMxnApprox(plan.price) })}
+                </p>
                 <p className="text-sm text-green-400">({plan.saving})</p>
                 <div className="space-y-2 mt-4 mb-4">
                   {plan.benefits.map((benefit, idx) => (
@@ -271,23 +293,48 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                     </div>
                   ))}
                 </div>
-                <button
-                  onClick={() => onPlanAction?.({ name: plan.planName || plan.name.replace(' ANUAL', ''), price: plan.price }, { billingCycle: 'annual' })}
-                  className="w-full mt-6 py-3 rounded-lg font-bold border border-cyan-400 text-cyan-400 hover:bg-cyan-400/10 transition-all"
-                >
-                  Comprar {plan.name}
-                </button>
+                {plan.hot ? (
+                  <div className="relative mt-6">
+                    <span className="absolute -inset-1 rounded-xl pointer-events-none animate-ping opacity-50 bg-gradient-to-r from-cyan-400/40 to-purple-500/40" />
+                    <button
+                      onClick={() => onPlanAction?.({ name: plan.planName || plan.name.replace(' ANUAL', ''), price: plan.price }, { billingCycle: 'annual' })}
+                      className="relative z-10 w-full py-4 rounded-xl font-black text-base text-white bg-gradient-to-r from-cyan-400 to-purple-500 animate-pulse hover:from-cyan-300 hover:to-purple-400 transition-all shadow-xl shadow-cyan-500/40 hover:scale-[1.02] flex items-center justify-center gap-2"
+                    >
+                      🚀 {t('pricing.annual.buyPlan', { name: plan.name })}
+                    </button>
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none z-20" />
+                  </div>
+                ) : (
+                  <div className="relative mt-6">
+                    <span className={`absolute -inset-0.5 rounded-xl blur-sm animate-pulse pointer-events-none opacity-40 ${
+                      plan.planName === 'START' ? 'bg-gradient-to-r from-emerald-400 to-green-500' : 'bg-gradient-to-r from-orange-400 to-red-500'
+                    }`} />
+                    <button
+                      onClick={() => onPlanAction?.({ name: plan.planName || plan.name.replace(' ANUAL', '').replace(' ANNUAL', ''), price: plan.price }, { billingCycle: 'annual' })}
+                      className={`relative w-full py-3.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] hover:opacity-90 flex items-center justify-center gap-2 shadow-lg ${
+                        plan.planName === 'START'
+                          ? 'bg-gradient-to-r from-emerald-400 to-green-500 shadow-emerald-500/30'
+                          : 'bg-gradient-to-r from-orange-400 to-red-500 shadow-orange-500/30'
+                      }`}
+                    >
+                      {plan.planName === 'START' ? '🟢' : '⚡'} {t('pricing.annual.buyPlan', { name: plan.name })}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
 
           <div className="mt-8 text-center">
-            <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>🧠 NOTA</p>
+            <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t('pricing.note')}</p>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              El consumo depende de la actividad del chat y la configuración.
+              {t('pricing.noteText1')}
             </p>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Puedes extender la duración usando filtros inteligentes y lectura selectiva.
+              {t('pricing.noteText2')}
+            </p>
+            <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+              {t('pricing.noteRef')}
             </p>
           </div>
         </>
@@ -295,3 +342,5 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
     </div>
   )
 }
+
+

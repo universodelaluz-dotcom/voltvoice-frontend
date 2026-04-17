@@ -1,18 +1,23 @@
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Edit2, CheckCircle, AlertCircle, Loader } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
-const BASE_VOICES = [
-  { id: 'es-ES', name: 'Voz Básica Español (ilimitada)' },
-  { id: 'en-US', name: 'Voz Básica Inglés (ilimitada)' },
-  { id: 'Diego',  name: 'Voz natural de Luis - Premium' },
-  { id: 'Lupita', name: 'Voz natural de Sofia - Premium' },
-  { id: 'Miguel', name: 'Voz natural de Gustavo - Premium' },
-  { id: 'Rafael', name: 'Voz natural de Leonel - Premium' },
-]
+const getBaseVoices = (plan = 'free') => {
+  const suffix = String(plan || 'free').toLowerCase() === 'free' ? '' : ' (ilimitada)'
+  return [
+    { id: 'es-ES', name: `Voz Básica Espanol${suffix}` },
+    { id: 'en-US', name: `Voz Básica Ingles${suffix}` },
+    { id: 'Diego',  name: 'Voz natural de Luis - Premium' },
+    { id: 'Lupita', name: 'Voz natural de Sofia - Premium' },
+    { id: 'Miguel', name: 'Voz natural de Gustavo - Premium' },
+    { id: 'Rafael', name: 'Voz natural de Leonel - Premium' },
+  ]
+}
 
 export default function AIRoleplayWorkshop({ darkMode = true }) {
+  const { t } = useTranslation()
   const [characters, setCharacters] = useState([])
   const [loadingCharacters, setLoadingCharacters] = useState(true)
   const [message, setMessage] = useState(null)
@@ -37,6 +42,14 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
 
   // Available voices
   const [userVoices, setUserVoices] = useState([])
+  const currentPlan = (() => {
+    try {
+      return String(JSON.parse(localStorage.getItem('sv-user') || '{}')?.plan || 'free').toLowerCase()
+    } catch {
+      return 'free'
+    }
+  })()
+  const baseVoices = getBaseVoices(currentPlan)
 
   // Cargar personajes al montar
   useEffect(() => {
@@ -45,7 +58,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
   }, [])
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     return {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -54,7 +67,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
 
   const loadCharacters = async () => {
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       if (!token) { setLoadingCharacters(false); return }
 
       const res = await fetch(`${API_URL}/api/bot/characters`, {
@@ -75,7 +88,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
 
   const loadUserVoices = async () => {
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       if (!token) return
 
       const res = await fetch(`${API_URL}/api/settings/voices`, {
@@ -95,7 +108,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
     e.preventDefault()
 
     if (!name.trim() || !systemPrompt.trim()) {
-      setError('Nombre y prompt del sistema son requeridos')
+      setError(t('aiWorkshop.form.nameRequired'))
       return
     }
 
@@ -119,7 +132,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
       const data = await res.json()
 
       if (data.success) {
-        setMessage(`Personaje "${name}" creado exitosamente`)
+        setMessage(t('aiWorkshop.messages.created', { name }))
         setName('')
         setDescription('')
         setSystemPrompt('')
@@ -148,7 +161,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
 
   const handleSaveEdit = async () => {
     if (!editName.trim() || !editSystemPrompt.trim()) {
-      setError('Nombre y prompt del sistema son requeridos')
+      setError(t('aiWorkshop.form.nameRequired'))
       return
     }
 
@@ -170,7 +183,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
       const data = await res.json()
 
       if (data.success) {
-        setMessage(`Personaje actualizado`)
+        setMessage(t('aiWorkshop.messages.updated'))
         setEditingId(null)
         loadCharacters()
         setTimeout(() => setMessage(null), 3000)
@@ -185,10 +198,10 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
   }
 
   const handleDeleteCharacter = async (id, charName) => {
-    if (!confirm(`¿Eliminar el personaje "${charName}"?`)) return
+    if (!confirm(`${t('aiWorkshop.messages.deleted', { name: charName })}?`)) return
 
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       const res = await fetch(`${API_URL}/api/bot/characters/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -197,7 +210,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
       const data = await res.json()
 
       if (data.success) {
-        setMessage(`Personaje "${charName}" eliminado`)
+        setMessage(t('aiWorkshop.messages.deleted', { name: charName }))
         loadCharacters()
         setTimeout(() => setMessage(null), 3000)
       } else {
@@ -213,7 +226,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-          🎭 Taller de Asistentes de IA Roleplay
+          {t('aiWorkshop.title')}
         </h2>
         {!showCreateForm && (
           <button
@@ -221,7 +234,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
             className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
-            Nuevo Personaje
+            {t('aiWorkshop.newChar')}
           </button>
         )}
       </div>
@@ -245,7 +258,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
       {showCreateForm && (
         <div className={`p-6 rounded-lg border-2 ${darkMode ? 'bg-gray-800/50 border-purple-500/50' : 'bg-white border-purple-300'}`}>
           <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-            Crear Nuevo Personaje
+            {t('aiWorkshop.form.title')}
           </h3>
 
           <form onSubmit={handleCreateCharacter} className="space-y-4">
@@ -253,21 +266,21 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nombre del personaje (ej: Batman, Detective, etc.)"
+              placeholder={t('aiWorkshop.form.name')}
               className={`w-full px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'} border`}
             />
 
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descripción (opcional)"
+              placeholder={t('aiWorkshop.form.description')}
               className={`w-full px-4 py-2 rounded-lg resize-none h-16 ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'} border`}
             />
 
             <textarea
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
-              placeholder="System prompt (cómo debe actuar el personaje)..."
+              placeholder={t('aiWorkshop.form.prompt')}
               className={`w-full px-4 py-2 rounded-lg resize-none h-24 ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'} border`}
             />
 
@@ -276,14 +289,14 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
               onChange={(e) => setVoiceId(e.target.value)}
               className={`w-full px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'} border`}
             >
-              <option value="">Sin voz asignada (usar default)</option>
-              <optgroup label="Voces base">
-                {BASE_VOICES.map(v => (
+              <option value="">{t('aiWorkshop.form.noVoice')}</option>
+              <optgroup label={t('aiWorkshop.form.baseVoices')}>
+                {baseVoices.map(v => (
                   <option key={v.id} value={v.id}>{v.name}</option>
                 ))}
               </optgroup>
               {userVoices.length > 0 && (
-                <optgroup label="Mis voces clonadas">
+                <optgroup label={t('aiWorkshop.form.customVoices')}>
                   {userVoices.map(voice => (
                     <option key={voice.id} value={voice.voice_id}>
                       {voice.voice_name}
@@ -302,10 +315,10 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
                 {loading ? (
                   <>
                     <Loader className="w-5 h-5 animate-spin" />
-                    Creando...
+                    {t('aiWorkshop.form.creating')}
                   </>
                 ) : (
-                  'Crear Personaje'
+                  t('aiWorkshop.form.create')
                 )}
               </button>
               <button
@@ -319,7 +332,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
                 }}
                 className={`flex-1 px-4 py-3 rounded-lg font-semibold ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-900'}`}
               >
-                Cancelar
+                {t('aiWorkshop.form.cancel')}
               </button>
             </div>
           </form>
@@ -334,7 +347,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
       ) : characters.length === 0 ? (
         <div className={`p-8 rounded-lg text-center ${darkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-gray-100 border border-gray-300'}`}>
           <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
-            No hay personajes creados aún. ¡Crea tu primer personaje!
+            {t('aiWorkshop.empty')}
           </p>
         </div>
       ) : (
@@ -363,14 +376,14 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
                     onChange={(e) => setEditVoiceId(e.target.value)}
                     className={`w-full px-3 py-2 rounded text-sm ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-gray-100 text-gray-900 border-gray-300'} border`}
                   >
-                    <option value="">Sin voz asignada (usar default)</option>
-                    <optgroup label="Voces base">
-                      {BASE_VOICES.map(v => (
+                    <option value="">{t('aiWorkshop.form.noVoice')}</option>
+                    <optgroup label={t('aiWorkshop.form.baseVoices')}>
+                      {baseVoices.map(v => (
                         <option key={v.id} value={v.id}>{v.name}</option>
                       ))}
                     </optgroup>
                     {userVoices.length > 0 && (
-                      <optgroup label="Mis voces clonadas">
+                      <optgroup label={t('aiWorkshop.form.customVoices')}>
                         {userVoices.map(voice => (
                           <option key={voice.id} value={voice.voice_id}>
                             {voice.voice_name}
@@ -385,13 +398,13 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
                       disabled={editSaving}
                       className="flex-1 px-3 py-2 rounded text-sm bg-green-600 hover:bg-green-700 text-white font-semibold"
                     >
-                      {editSaving ? 'Guardando...' : 'Guardar'}
+                      {editSaving ? t('aiWorkshop.form.saving') : t('aiWorkshop.form.save')}
                     </button>
                     <button
                       onClick={() => setEditingId(null)}
                       className="flex-1 px-3 py-2 rounded text-sm bg-gray-600 hover:bg-gray-700 text-white"
                     >
-                      Cancelar
+                      {t('aiWorkshop.form.cancel')}
                     </button>
                   </div>
                 </div>
@@ -438,3 +451,5 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
     </div>
   )
 }
+
+

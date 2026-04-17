@@ -1,8 +1,37 @@
 import { useState, useEffect, useRef } from 'react'
-import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X, Users, Clock3, TrendingUp, Filter, Trophy, Sparkles } from 'lucide-react'
+import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X, Users, Clock3, TrendingUp, Filter, Trophy, Sparkles, BookOpen, Copy, CheckCircle } from 'lucide-react'
 import chatStore from '../services/chatStore.js'
+import { useTranslation } from 'react-i18next'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const FREE_LOCAL_VOICE_DAILY_LIMIT_MS = 2 * 60 * 60 * 1000
+const FREE_LOCAL_VOICE_USAGE_KEY = 'voltvoice_free_local_voice_usage_v1'
+
+const readFreeLocalVoiceUsage = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(FREE_LOCAL_VOICE_USAGE_KEY) || '{}')
+    const now = Date.now()
+    const windowStart = Number(parsed.windowStart) || now
+    const usedMs = Math.max(0, Number(parsed.usedMs) || 0)
+    if ((now - windowStart) >= 24 * 60 * 60 * 1000) {
+      return { windowStart: now, usedMs: 0 }
+    }
+    return { windowStart, usedMs }
+  } catch {
+    return { windowStart: Date.now(), usedMs: 0 }
+  }
+}
+
+const writeFreeLocalVoiceUsage = (usage) => {
+  try {
+    localStorage.setItem(FREE_LOCAL_VOICE_USAGE_KEY, JSON.stringify({
+      windowStart: Number(usage?.windowStart) || Date.now(),
+      usedMs: Math.max(0, Number(usage?.usedMs) || 0)
+    }))
+  } catch {
+    // ignore storage failures
+  }
+}
 
 const isQuestion = (text) => {
   const trimmed = text.trim().toLowerCase()
@@ -85,6 +114,15 @@ const expandUnicodeEmojiForSpeech = (text = '') => String(text || '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const getMessageRenderKey = (msg, idx = 0) => {
+  if (msg?.id) return String(msg.id)
+  if (msg?.clientKey) return String(msg.clientKey)
+  const ts = Number(msg?.timestamp) || 0
+  const user = String(msg?.user || 'anon')
+  const text = String(msg?.text || '').slice(0, 40)
+  return `${ts}-${user}-${text}-${idx}`
+}
+
 const isPriorityUser = (meta = {}) => Boolean(
   meta.isDonor
   || meta.isModerator
@@ -101,7 +139,7 @@ const hasTrivialSmartChatContent = (text = '') => {
   return false
 }
 
-const normalizeTikTokUsername = (value) => String(value || '').trim().replace(/^@+/, '')
+const normalizeTikTokUsername = (value) => String(value || '').trim().replace(/^@+/, '').toLowerCase()
 const isEnabledFlag = (value) => value === true || value === 'true' || value === 1 || value === '1'
 const getBanCandidateKeys = (value) => {
   const raw = String(value || '').trim()
@@ -110,16 +148,35 @@ const getBanCandidateKeys = (value) => {
   return [...new Set([raw, rawLower, normalized, normalized ? `@${normalized}` : ''].filter(Boolean))]
 }
 const isUserBannedBySet = (bannedSet, username) => getBanCandidateKeys(username).some((key) => bannedSet.has(key))
-const getThemeChatNickColor = (config = {}, darkMode = true) => (
-  darkMode
-    ? (config.chatNickColorDark || config.chatNickColor || '#22d3ee')
-    : (config.chatNickColorLight || '#0f766e')
-)
-const getThemeChatMsgColor = (config = {}, darkMode = true) => (
-  darkMode
-    ? (config.chatMsgColorDark || config.chatMsgColor || '#d1d5db')
-    : (config.chatMsgColorLight || '#1f2937')
-)
+const getNickOverrideValue = (nickMap = {}, username = '') => {
+  const raw = String(username || '').trim()
+  const normalized = normalizeTikTokUsername(raw).toLowerCase()
+  return nickMap[raw] || nickMap[raw.toLowerCase()] || nickMap[normalized] || nickMap[`@${normalized}`] || ''
+}
+const getThemeChatNickColor = (config = {}, darkMode = true) => {
+  if (darkMode) {
+    return config.chatNickColorDark || config.chatNickColor || '#22d3ee'
+  }
+  // En modo light: validar que el color tenga suficiente contraste
+  const lightColor = config.chatNickColorLight || '#0f766e'
+  // Si es blanco o muy claro, cambiar a un color oscuro
+  if (/^#?[fF]{5,6}$|^#?[fF]{6}[0-9a-fA-F]{0,2}$/.test(lightColor) || lightColor.toLowerCase() === '#fff' || lightColor.toLowerCase() === '#ffffff') {
+    return '#0f766e'
+  }
+  return lightColor
+}
+const getThemeChatMsgColor = (config = {}, darkMode = true) => {
+  if (darkMode) {
+    return config.chatMsgColorDark || config.chatMsgColor || '#d1d5db'
+  }
+  // En modo light: validar que el color tenga suficiente contraste
+  const lightColor = config.chatMsgColorLight || '#1f2937'
+  // Si es blanco o casi blanco, cambiar a gris oscuro
+  if (/^#?[fF]{5,6}$|^#?[fF]{6}[0-9a-fA-F]{0,2}$/.test(lightColor) || lightColor.toLowerCase() === '#fff' || lightColor.toLowerCase() === '#ffffff') {
+    return '#1f2937'
+  }
+  return lightColor
+}
 
 const pruneRecentTimestamps = (timestamps, windowMs = 60000) => {
   const cutoff = Date.now() - windowMs
@@ -139,13 +196,33 @@ const normalizeMessageForMatching = (text = '') => String(text || '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const hiddenDefaultProfanityWords = [
+  '+turba',
+  '+turbar',
+  '+turbate',
+  '+turbado',
+  '+asturbarste',
+  'pendejas',
+  'pendejos',
+  'pendeja',
+  'pendejo',
+  'puto',
+  'puta',
+  'putos',
+  'putas',
+  'puñetas'
+]
+
 const parseProfanityWords = (rawWords) => {
   const raw = String(rawWords || '')
-  if (!raw.trim()) return []
-  return raw
+  const customWords = raw
     .split(/[\n,;]+/g)
     .map((word) => normalizeMessageForMatching(word))
     .filter(Boolean)
+  const merged = [...hiddenDefaultProfanityWords, ...customWords]
+    .map((word) => normalizeMessageForMatching(word))
+    .filter(Boolean)
+  return [...new Set(merged)]
 }
 
 const containsProfanity = (text = '', words = []) => {
@@ -190,7 +267,7 @@ const extractKeywords = (text = '') => {
 }
 
 // Obtener token del localStorage
-const getAuthToken = () => localStorage.getItem('sv-token') || ''
+const getAuthToken = () => sessionStorage.getItem('sv-token') || ''
 
 const defaultHighlightRules = {
   moderators: { enabled: false, color: '#a855f7' },
@@ -200,6 +277,67 @@ const defaultHighlightRules = {
   communityMembers: { enabled: false, color: '#22c55e' },
   topFans: { enabled: false, color: '#06b6d4' },
 }
+
+const normalizeHighlightRules = (value) => {
+  const raw = value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+  const out = { ...defaultHighlightRules }
+  Object.keys(defaultHighlightRules).forEach((key) => {
+    const current = raw[key] && typeof raw[key] === 'object' ? raw[key] : {}
+    out[key] = {
+      enabled: Boolean(current.enabled),
+      color: String(current.color || defaultHighlightRules[key].color)
+    }
+  })
+  return out
+}
+
+const deepEqual = (a, b) => {
+  try {
+    return JSON.stringify(a) === JSON.stringify(b)
+  } catch {
+    return false
+  }
+}
+
+const normalizeModerationList = (value) => {
+  if (!Array.isArray(value)) return []
+  const seen = new Set()
+  const normalized = []
+  for (const item of value) {
+    const username = normalizeTikTokUsername(item?.username).toLowerCase()
+    if (!username || seen.has(username)) continue
+    seen.add(username)
+    normalized.push({
+      username,
+      reason: String(item?.reason || 'Baneado o silenciado'),
+      source: String(item?.source || 'unknown'),
+      addedAt: item?.addedAt || new Date().toISOString()
+    })
+  }
+  return normalized.slice(0, 500)
+}
+
+const upsertModerationEntry = (list, username, data = {}) => {
+  const normalizedUsername = normalizeTikTokUsername(username).toLowerCase()
+  if (!normalizedUsername) return list
+  const withoutCurrent = list.filter((item) => item.username !== normalizedUsername)
+  return normalizeModerationList([
+    {
+      username: normalizedUsername,
+      reason: data.reason || 'Baneado o silenciado',
+      source: data.source || 'unknown',
+      addedAt: data.addedAt || new Date().toISOString()
+    },
+    ...withoutCurrent
+  ])
+}
+
+const removeModerationEntry = (list, username) => {
+  const normalizedUsername = normalizeTikTokUsername(username).toLowerCase()
+  if (!normalizedUsername) return list
+  return list.filter((item) => item.username !== normalizedUsername)
+}
+
 
 function AnimatedCount({ value, duration = 900, decimals = 0, suffix = '' }) {
   const [displayValue, setDisplayValue] = useState(0)
@@ -293,13 +431,14 @@ const apiNicks = {
 
   async set(username, newNickname) {
     try {
+      const normalizedUsername = normalizeTikTokUsername(username)
       const res = await fetch(`${API_URL}/api/nicks`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, newNickname })
+        body: JSON.stringify({ username: normalizedUsername, newNickname })
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       return await res.json()
@@ -311,7 +450,8 @@ const apiNicks = {
 
   async remove(username) {
     try {
-      const res = await fetch(`${API_URL}/api/nicks/${username}`, {
+      const normalizedUsername = normalizeTikTokUsername(username)
+      const res = await fetch(`${API_URL}/api/nicks/${normalizedUsername}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${getAuthToken()}` }
       })
@@ -324,15 +464,27 @@ const apiNicks = {
   }
 }
 
-export default function TikTokLivePanel({ config = {}, updateConfig }) {
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
+export default function TikTokLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride }) {
+  const { t } = useTranslation()
+
+  const PLATFORM_HELP_FAQ = t('tiktok.faq.questions', { returnObjects: true })
+
+  const [darkMode, setDarkMode] = useState(() =>
+    typeof darkModeOverride === 'boolean'
+      ? darkModeOverride
+      : localStorage.getItem('voltvoice-theme') !== 'light'
+  )
 
   useEffect(() => {
+    if (typeof darkModeOverride === 'boolean') {
+      setDarkMode(darkModeOverride)
+      return
+    }
     const sync = () => setDarkMode(localStorage.getItem('voltvoice-theme') !== 'light')
     sync()
-    const interval = setInterval(sync, 500)
-    return () => clearInterval(interval)
-  }, [])
+    window.addEventListener('storage', sync)
+    return () => window.removeEventListener('storage', sync)
+  }, [darkModeOverride])
 
   const [tiktokUser, setTiktokUser] = useState(config.lastTiktokUser || '')
   const [connectedTikTokUser, setConnectedTikTokUser] = useState(() => normalizeTikTokUsername(config.lastTiktokUser || ''))
@@ -342,75 +494,139 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const [waitingStatus, setWaitingStatus] = useState('')
   const [messages, setMessages] = useState([])
   const [error, setError] = useState(null)
+  const [copiedUsername, setCopiedUsername] = useState(null)
   const [stats, setStats] = useState({ count: 0, uptime: 0 })
   const connectedAtRef = useRef(null)
   const [donors, setDonors] = useState(new Set())
   const [nickOverrides, setNickOverrides] = useState({})
   const [editingNick, setEditingNick] = useState(null)
   const [editingValue, setEditingValue] = useState('')
+  const [showNicksPanel, setShowNicksPanel] = useState(false)
+  const [editingNickInTable, setEditingNickInTable] = useState(null)
+  const [editingNickValueInTable, setEditingNickValueInTable] = useState('')
   const [bannedUsers, setBannedUsers] = useState(new Set())
-  const [volume, setVolume] = useState(0.8)
+  const [volume, setVolume] = useState(Number(config.chatVolume ?? 0.8))
   const [isPaused, setIsPaused] = useState(config.chatPaused ?? false)
-  const [highlightedUsers, setHighlightedUsers] = useState({})
+  const [highlightedUsers, setHighlightedUsers] = useState(() => {
+    const raw = config.highlightedUsers
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+    return raw
+  })
   const [highlightMode, setHighlightMode] = useState(false)
-  const [selectedColor, setSelectedColor] = useState('#06b6d4')
+  const [selectedColor, setSelectedColor] = useState(config.highlightSelectedColor || '#06b6d4')
   const [showHighlightPanel, setShowHighlightPanel] = useState(false)
+  const [sessionModerationList, setSessionModerationList] = useState(() => normalizeModerationList(config.sessionModerationList))
   const [chatFontSize, setChatFontSize] = useState(config.chatFontSize || 14)
   const [chatNickColor, setChatNickColor] = useState(() => getThemeChatNickColor(config, localStorage.getItem('voltvoice-theme') !== 'light'))
   const [chatMsgColor, setChatMsgColor] = useState(() => getThemeChatMsgColor(config, localStorage.getItem('voltvoice-theme') !== 'light'))
   const [showFontPanel, setShowFontPanel] = useState(false)
   const [smartChatEnabled, setSmartChatEnabled] = useState(config.smartChatEnabled || false)
+  const currentPlan = String(user?.plan || 'free').toLowerCase()
+  const isFreePlan = currentPlan === 'free'
+  const freeLocalUsageRef = useRef(readFreeLocalVoiceUsage())
+  const localLimitPopupAtRef = useRef(0)
   const [mobilePreviewEnabled, setMobilePreviewEnabled] = useState(config.mobilePreviewEnabled || false)
   const [mobilePreviewMuted, setMobilePreviewMuted] = useState(config.mobilePreviewMuted ?? true)
   const [showSessionSummary, setShowSessionSummary] = useState(false)
   const [sessionSummary, setSessionSummary] = useState(null)
-  const [highlightRules, setHighlightRules] = useState({
-    ...defaultHighlightRules,
-    ...(config.highlightRules || {})
-  })
+  const [showHelpGuide, setShowHelpGuide] = useState(false)
+  const [helpSearch, setHelpSearch] = useState('')
+  const [showSupportForm, setShowSupportForm] = useState(false)
+  const [supportMsg, setSupportMsg] = useState('')
+  const [supportSending, setSupportSending] = useState(false)
+  const [supportDone, setSupportDone] = useState(false)
+  const [supportError, setSupportError] = useState(null)
+  const [highlightRules, setHighlightRules] = useState(() => normalizeHighlightRules(config.highlightRules))
+  const canPersistConfig = Boolean(updateConfig) && Boolean(configReady)
+  const [canWriteConfig, setCanWriteConfig] = useState(false)
+  const canWriteConfigNow = canPersistConfig && canWriteConfig
+
+  useEffect(() => {
+    if (!configReady) {
+      setCanWriteConfig(false)
+      return
+    }
+    // Bloqueo breve únicamente al hidratar, luego habilitar guardado continuo.
+    setCanWriteConfig(false)
+    const id = setTimeout(() => setCanWriteConfig(true), 600)
+    return () => clearTimeout(id)
+  }, [configReady, user?.id])
+
+  const syncSessionModerationList = (updater) => {
+    setSessionModerationList((prev) => {
+      const next = normalizeModerationList(typeof updater === 'function' ? updater(prev) : updater)
+      if (canWriteConfigNow) {
+        updateConfig('sessionModerationList', next)
+      }
+      return next
+    })
+  }
 
   // Sincronizar cambios de estilo y remarcar al config del usuario (auto-save)
   useEffect(() => {
-    if (updateConfig) {
+    if (canWriteConfigNow) {
       updateConfig('chatFontSize', chatFontSize)
     }
-  }, [chatFontSize])
+  }, [chatFontSize, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    if (updateConfig) {
+    if (canWriteConfigNow) {
       updateConfig(darkMode ? 'chatNickColorDark' : 'chatNickColorLight', chatNickColor)
     }
-  }, [chatNickColor, darkMode])
+  }, [chatNickColor, darkMode, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    if (updateConfig) {
+    if (canWriteConfigNow) {
       updateConfig(darkMode ? 'chatMsgColorDark' : 'chatMsgColorLight', chatMsgColor)
     }
-  }, [chatMsgColor, darkMode])
+  }, [chatMsgColor, darkMode, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    if (updateConfig) {
+    if (canWriteConfigNow) {
       updateConfig('smartChatEnabled', smartChatEnabled)
     }
-  }, [smartChatEnabled])
+  }, [smartChatEnabled, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    if (updateConfig) {
+    if (canWriteConfigNow) {
+      updateConfig('chatVolume', Number.isFinite(volume) ? volume : 0.8)
+    }
+  }, [volume, canWriteConfigNow, updateConfig])
+  useEffect(() => {
+    if (canWriteConfigNow) {
+      const current = (config.highlightedUsers && typeof config.highlightedUsers === 'object' && !Array.isArray(config.highlightedUsers))
+        ? config.highlightedUsers
+        : {}
+      if (!deepEqual(current, highlightedUsers)) {
+        updateConfig('highlightedUsers', highlightedUsers)
+      }
+    }
+  }, [highlightedUsers, config.highlightedUsers, canWriteConfigNow, updateConfig])
+  useEffect(() => {
+    if (canWriteConfigNow) {
+      updateConfig('highlightSelectedColor', selectedColor)
+    }
+  }, [selectedColor, canWriteConfigNow, updateConfig])
+  useEffect(() => {
+    if (canWriteConfigNow) {
       updateConfig('mobilePreviewEnabled', mobilePreviewEnabled)
     }
-  }, [mobilePreviewEnabled])
+  }, [mobilePreviewEnabled, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    if (updateConfig) {
+    if (canWriteConfigNow) {
       updateConfig('mobilePreviewMuted', mobilePreviewMuted)
     }
-  }, [mobilePreviewMuted])
+  }, [mobilePreviewMuted, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    if (updateConfig) {
-      updateConfig('highlightRules', highlightRules)
+    if (canWriteConfigNow) {
+      const current = normalizeHighlightRules(config.highlightRules)
+      if (!deepEqual(current, highlightRules)) {
+        updateConfig('highlightRules', highlightRules)
+      }
     }
-  }, [highlightRules])
+  }, [highlightRules, config.highlightRules, canWriteConfigNow, updateConfig])
   useEffect(() => {
-    setHighlightRules(prev => ({
-      ...defaultHighlightRules,
-      ...(config.highlightRules || {}),
-      ...prev
-    }))
+    setSessionModerationList(normalizeModerationList(config.sessionModerationList))
+  }, [config.sessionModerationList])
+  useEffect(() => {
+    const nextRules = normalizeHighlightRules(config.highlightRules)
+    setHighlightRules((prev) => (deepEqual(prev, nextRules) ? prev : nextRules))
   }, [config.highlightRules])
   useEffect(() => {
     setChatFontSize(config.chatFontSize || 14)
@@ -418,6 +634,28 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   useEffect(() => {
     setSmartChatEnabled(config.smartChatEnabled || false)
   }, [config.smartChatEnabled])
+  useEffect(() => {
+    const nextVolume = Number(config.chatVolume)
+    if (!Number.isFinite(nextVolume)) return
+    setVolume(Math.max(0, Math.min(1, nextVolume)))
+  }, [config.chatVolume])
+  useEffect(() => {
+    const raw = config.highlightedUsers
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      setHighlightedUsers((prev) => (Object.keys(prev || {}).length === 0 ? prev : {}))
+      return
+    }
+    setHighlightedUsers((prev) => (deepEqual(prev, raw) ? prev : raw))
+  }, [config.highlightedUsers])
+  useEffect(() => {
+    setSelectedColor(config.highlightSelectedColor || '#06b6d4')
+  }, [config.highlightSelectedColor])
+  useEffect(() => {
+    if (isFreePlan && smartChatEnabled) {
+      setSmartChatEnabled(false)
+      if (canWriteConfigNow) updateConfig('smartChatEnabled', false)
+    }
+  }, [isFreePlan, smartChatEnabled, canWriteConfigNow, updateConfig])
   useEffect(() => {
     setMobilePreviewEnabled(config.mobilePreviewEnabled || false)
   }, [config.mobilePreviewEnabled])
@@ -433,22 +671,34 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   useEffect(() => {
     setChatMsgColor(getThemeChatMsgColor(config, darkMode))
   }, [config.chatMsgColor, config.chatMsgColorDark, config.chatMsgColorLight, darkMode])
+  // Removed auto-restore of last user to allow clearing the input field
+  // Users can manually enter a username without it being auto-filled
   useEffect(() => {
-    const savedLastUser = config.lastTiktokUser || ''
-    if (!isConnected && normalizeTikTokUsername(savedLastUser) !== normalizeTikTokUsername(tiktokUser)) {
-      setTiktokUser(savedLastUser)
-    }
-  }, [config.lastTiktokUser, isConnected])
+    if (!canWriteConfigNow) return
+    const normalized = normalizeTikTokUsername(tiktokUser)
+    updateConfig('lastTiktokUser', normalized || String(tiktokUser || '').trim())
+  }, [tiktokUser, canWriteConfigNow, updateConfig])
   const isPausedRef = useRef(false)
   const isPttSuppressedRef = useRef(false)
   const isInteractionSuppressedRef = useRef(false)
   const wsRef = useRef(null)
   const statusIntervalRef = useRef(null)
+  const wsHeartbeatIntervalRef = useRef(null)
+  const wsWatchdogIntervalRef = useRef(null)
+  const wsReconnectTimeoutRef = useRef(null)
+  const wsReconnectAttemptRef = useRef(0)
+  const wsLastMessageAtRef = useRef(0)
+  const manualWsCloseRef = useRef(false)
   const speakQueueRef = useRef([])
   const isProcessingRef = useRef(false)
   const lastMessageRef = useRef({}) // { username: lastText }
   const currentAudioRef = useRef(null)
+  const nextPreGeneratedRef = useRef({}) // { itemId, audioUrl } para guardar audio pre-generado
+  const isPreGeneratingRef = useRef(false)
+  const lastVoiceIdRef = useRef(null) // Rastrear cambios de voz sin re-render
+  const preGenIdRef = useRef(0) // ID para invalidar pre-generados antiguos
   const disconnectedRef = useRef(false)
+  const isWaitingForLiveRef = useRef(false)
   const chatContainerRef = useRef(null)
   const bannedRef = useRef(new Set())
   const nickOverridesRef = useRef({})
@@ -459,7 +709,6 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const activePlaybackResolveRef = useRef(null)
   const resumeRequestedDuringSuppressionRef = useRef(false)
   const autoScrollPinnedRef = useRef(true) // Auto-scroll to keep new messages visible
-  const pendingScrollRef = useRef(null) // Prevent multiple scrolls from stacking
   const liveRetryTimerRef = useRef(null)
   const recentIncomingTimestampsRef = useRef([])
   const recentPlaybackDurationsRef = useRef([])
@@ -467,6 +716,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const userLastSpokenAtRef = useRef({})
   const recentTopicKeywordsRef = useRef([])
   const recentNormalizedMessagesRef = useRef([])
+  const messageIdCounterRef = useRef(0)
   const sessionReceivedCountRef = useRef(0)
   const sessionReadCountRef = useRef(0)
   const sessionFilteredCountRef = useRef(0)
@@ -482,27 +732,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
   const isAudioSuppressed = () => isPttSuppressedRef.current || isInteractionSuppressedRef.current
 
-  // Auto-scroll suave: solo scroll al fondo si el usuario está cerca del fondo
-  // FIX: Usar throttling para evitar scroll agresivo cuando llegan muchos mensajes rapidísimo
+  // Auto-scroll: SIEMPRE scroll al fondo para mostrar mensajes más recientes en chat en vivo
+  // Sin requestAnimationFrame para evitar reflow que mueve la página entera
   useEffect(() => {
     if (!chatContainerRef.current) return
     const container = chatContainerRef.current
-
-    // Solo auto-scroll si el usuario está cerca del bottom del chat
-    // Pero NO si el usuario está scrolleando manualmente (autoScrollPinnedRef sería false)
-    if (autoScrollPinnedRef.current) {
-      // Cancelar scroll anterior si uno está pendiente
-      if (pendingScrollRef.current) {
-        cancelAnimationFrame(pendingScrollRef.current)
-      }
-
-      // Usar requestAnimationFrame para evitar múltiples scrolls en el mismo frame
-      pendingScrollRef.current = requestAnimationFrame(() => {
-        if (!autoScrollPinnedRef.current) return // User scrolled away, cancel
-        container.scrollTop = container.scrollHeight
-        pendingScrollRef.current = null
-      })
-    }
+    // Scroll DIRECTO sin delays para evitar que se mueva la página
+    container.scrollTop = container.scrollHeight
   }, [messages])
 
   useEffect(() => {
@@ -536,6 +772,16 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     isProcessingRef.current = false
     processQueue()
   }, [isPaused])
+  // Si cambia la voz, solo detener audio actual - NO borrar cola
+  useEffect(() => {
+    if (!isConnected) return
+    const currentVoice = config.generalVoiceId || 'es-ES'
+    if (lastVoiceIdRef.current !== currentVoice) {
+      console.log(`[Voice Change] ${lastVoiceIdRef.current} → ${currentVoice}`)
+      lastVoiceIdRef.current = currentVoice
+      stopPlaybackNow() // Solo detener audio actual, para que reanude con nueva voz
+    }
+  }, [config.generalVoiceId, isConnected])
   useEffect(() => { volumeRef.current = volume }, [volume])
   useEffect(() => { bannedRef.current = bannedUsers; chatStore.syncBannedUsers(bannedUsers) }, [bannedUsers])
   useEffect(() => { nickOverridesRef.current = nickOverrides; chatStore.syncNickOverrides(nickOverrides) }, [nickOverrides])
@@ -545,6 +791,18 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     return () => {
       if (liveRetryTimerRef.current) {
         clearTimeout(liveRetryTimerRef.current)
+      }
+      if (wsHeartbeatIntervalRef.current) {
+        clearInterval(wsHeartbeatIntervalRef.current)
+        wsHeartbeatIntervalRef.current = null
+      }
+      if (wsWatchdogIntervalRef.current) {
+        clearInterval(wsWatchdogIntervalRef.current)
+        wsWatchdogIntervalRef.current = null
+      }
+      if (wsReconnectTimeoutRef.current) {
+        clearTimeout(wsReconnectTimeoutRef.current)
+        wsReconnectTimeoutRef.current = null
       }
     }
   }, [])
@@ -626,7 +884,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
     liveRetryTimerRef.current = setTimeout(async () => {
       liveRetryTimerRef.current = null
-      if (disconnectedRef.current || !isWaitingForLive) return
+      // CRITICAL: Use ref instead of closure to check current waiting state
+      if (disconnectedRef.current || !isWaitingForLiveRef.current) {
+        console.log('[TikTok] Retry cancelled - disconnected:', disconnectedRef.current, 'waiting:', isWaitingForLiveRef.current)
+        return
+      }
+      console.log('[TikTok] Retry firing - checking if still waiting...')
       setWaitingStatus('Reintentando conexion al live...')
       const result = await connectToTikTok(username, { fromAutoRetry: true })
       if (result.notLive && !result.cancelled) {
@@ -635,6 +898,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       }
     }, 10000)
   }
+
+  // CRITICAL: Keep isWaitingForLiveRef in sync with state for scheduleLiveRetry callback
+  useEffect(() => {
+    isWaitingForLiveRef.current = isWaitingForLive
+    console.log('[TikTok] isWaitingForLive updated:', isWaitingForLive)
+  }, [isWaitingForLive])
 
   useEffect(() => {
     const handlePttAudioState = (event) => {
@@ -764,6 +1033,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       }
 
       if (action === 'resume') {
+        // Limpiar cola de mensajes pausados (no reproducir atrasados)
+        speakQueueRef.current = []
         if (isAudioSuppressed()) {
           resumeRequestedDuringSuppressionRef.current = true
         }
@@ -781,15 +1052,92 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   useEffect(() => {
     if (!isConnected || !connectedTikTokUser) return
 
+    let isCleaningUp = false
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const wsURL = `${protocol}//${API_URL.replace(/^https?:\/\//, '')}/api/tiktok/ws`
 
     console.log('[TikTok] Conectando WebSocket a:', wsURL)
 
+    const clearWsTimers = () => {
+      if (wsHeartbeatIntervalRef.current) {
+        clearInterval(wsHeartbeatIntervalRef.current)
+        wsHeartbeatIntervalRef.current = null
+      }
+      if (wsWatchdogIntervalRef.current) {
+        clearInterval(wsWatchdogIntervalRef.current)
+        wsWatchdogIntervalRef.current = null
+      }
+      if (wsReconnectTimeoutRef.current) {
+        clearTimeout(wsReconnectTimeoutRef.current)
+        wsReconnectTimeoutRef.current = null
+      }
+    }
+
+    const scheduleWsReconnect = (reason = 'unknown') => {
+      if (manualWsCloseRef.current || disconnectedRef.current || !isConnected || !connectedTikTokUser) {
+        return
+      }
+      if (wsReconnectTimeoutRef.current) return
+
+      wsReconnectAttemptRef.current += 1
+      const attempt = wsReconnectAttemptRef.current
+      const delay = Math.min(30000, 1000 * Math.pow(2, Math.max(0, attempt - 1)))
+      console.warn(`[TikTok] WebSocket caido (${reason}). Reintentando en ${delay}ms (intento ${attempt})`)
+      setError(`Se perdio conexion con el chat. Reintentando (${attempt})...`)
+
+      wsReconnectTimeoutRef.current = setTimeout(() => {
+        wsReconnectTimeoutRef.current = null
+        if (manualWsCloseRef.current || disconnectedRef.current || !isConnected || !connectedTikTokUser) {
+          return
+        }
+        console.log('[TikTok] Reintentando socket...')
+        setIsConnected(false)
+        setTimeout(() => {
+          if (!manualWsCloseRef.current && !disconnectedRef.current && connectedTikTokUser) {
+            setIsConnected(true)
+          }
+        }, 120)
+      }, delay)
+    }
+
+    const startWsHeartbeat = () => {
+      if (wsHeartbeatIntervalRef.current) clearInterval(wsHeartbeatIntervalRef.current)
+      if (wsWatchdogIntervalRef.current) clearInterval(wsWatchdogIntervalRef.current)
+
+      wsHeartbeatIntervalRef.current = setInterval(() => {
+        const currentWs = wsRef.current
+        if (!currentWs || currentWs.readyState !== WebSocket.OPEN) return
+        try {
+          currentWs.send(JSON.stringify({ type: 'ping', ts: Date.now() }))
+        } catch (err) {
+          console.warn('[TikTok] Error enviando ping:', err?.message || err)
+        }
+      }, 20000)
+
+      wsWatchdogIntervalRef.current = setInterval(() => {
+        const currentWs = wsRef.current
+        if (!currentWs || currentWs.readyState !== WebSocket.OPEN) return
+        const silenceMs = Date.now() - wsLastMessageAtRef.current
+        if (silenceMs > 70000) {
+          console.warn('[TikTok] Watchdog: socket en silencio, forzando reconexion...')
+          try {
+            currentWs.close(4000, 'watchdog-timeout')
+          } catch (err) {
+            console.warn('[TikTok] Error cerrando socket watchdog:', err?.message || err)
+          }
+        }
+      }, 10000)
+    }
+
+    manualWsCloseRef.current = false
     const ws = new WebSocket(wsURL)
 
     ws.onopen = async () => {
       console.log('[TikTok] WebSocket conectado')
+      wsReconnectAttemptRef.current = 0
+      wsLastMessageAtRef.current = Date.now()
+      setError(null)
+      startWsHeartbeat()
       ws.send(JSON.stringify({ type: 'subscribe', username: connectedTikTokUser }))
 
       // Cargar bans y nicks desde BD
@@ -799,8 +1147,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       const bannedSet = new Set(
         bans.flatMap((b) => getBanCandidateKeys(b.banned_username))
       )
+      const moderationFromDb = bans
+        .map((b) => ({
+          username: normalizeTikTokUsername(b.banned_username).toLowerCase(),
+          reason: b.reason || 'Baneado o silenciado',
+          source: b.banned_by || 'database',
+          addedAt: b.banned_at || new Date().toISOString()
+        }))
+        .filter((item) => item.username)
       setBannedUsers(bannedSet)
       setNickOverrides(nicks)
+      syncSessionModerationList(moderationFromDb)
 
       // Sync to chatStore for bot access
       chatStore.syncBannedUsers(bannedSet)
@@ -813,6 +1170,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           getBanCandidateKeys(username).forEach((key) => next.add(key))
           return next
         })
+        syncSessionModerationList((prev) => upsertModerationEntry(prev, username, {
+          reason: 'Baneado o silenciado por bot',
+          source: 'bot'
+        }))
       })
       chatStore.registerAction('onUnban', (username) => {
         setBannedUsers((prev) => {
@@ -820,6 +1181,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           getBanCandidateKeys(username).forEach((key) => next.delete(key))
           return next
         })
+        syncSessionModerationList((prev) => removeModerationEntry(prev, username))
       })
       chatStore.registerAction('onHighlight', (username, color) => {
         setHighlightedUsers(prev => ({ ...prev, [username]: color }))
@@ -834,8 +1196,22 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
     ws.onmessage = async (event) => {
       try {
+        wsLastMessageAtRef.current = Date.now()
         const data = JSON.parse(event.data)
         const c = configRef.current
+
+        if (data.type === 'pong') return
+
+        if (data.type === 'stream_disconnected' || (data.type === 'message' && data.data?.type === 'stream_disconnected')) {
+          setError('El live se desconecto. Reconectando chat...')
+          try {
+            ws.close(4001, 'stream-disconnected')
+          } catch (err) {
+            console.warn('[TikTok] Error cerrando socket por stream_disconnected:', err?.message || err)
+            scheduleWsReconnect('stream_disconnected')
+          }
+          return
+        }
 
         // Si está pausado, ignorar todo excepto el ping de subscribed/status
         if (isPausedRef.current && data.type !== 'subscribed' && data.type !== 'status') return
@@ -966,15 +1342,21 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           const isBanned = isUserBannedBySet(bannedRef.current, msg.username)
 
           // Siempre mostrar el mensaje en el chat visual
+          const messageId = String(
+            msg.id
+            || `${Date.now()}-${messageIdCounterRef.current++}-${normalizeTikTokUsername(msg.username)}`
+          )
+
           setMessages((prev) => ([
             ...prev,
             {
-              id: msg.id,
+              id: messageId,
+              clientKey: messageId,
               user: msg.username,
               nickname: msg.nickname || msg.username,
               text: msg.text,
               status: 'received',
-              timestamp: new Date(),
+              timestamp: Date.now(),
               isDonor: isKnownDonor,
               isModerator: msg.isModerator || false,
               isSubscriber: msg.isSubscriber || false,
@@ -1021,20 +1403,32 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           const onlyModerators = isEnabledFlag(c.onlyModerators)
           const onlySubscribers = isEnabledFlag(c.onlySubscribers)
           const onlyCommunityMembers = isEnabledFlag(c.onlyCommunityMembers)
-          const roleFiltersActive = onlyDonors || onlyModerators || onlySubscribers || onlyCommunityMembers
-          if (roleFiltersActive) {
-            const passRoleFilter =
-              (onlyDonors && isKnownDonor) ||
-              (onlyModerators && msg.isModerator) ||
-              (onlySubscribers && (msg.isSubscriber || false)) ||
-              (onlyCommunityMembers && msg.isCommunityMember)
-            if (!passRoleFilter) { markFilteredMessage(); return }
-          }
-
-          // Filtro: solo preguntas — AND independiente encima de los roles
-          // Ejemplo: donor + preguntas = lee donadores QUE ADEMÁS hagan preguntas
           const onlyQuestions = isEnabledFlag(c.onlyQuestions)
-          if (onlyQuestions && !isQuestion(msg.text)) { markFilteredMessage(); return }
+
+          const roleFiltersActive = onlyDonors || onlyModerators || onlySubscribers || onlyCommunityMembers
+          const isQuestionMsg = isQuestion(msg.text)
+
+          // Calcula si pasa filtro de rol: cumple CUALQUIERA de los roles activos (OR lógico)
+          const passRoleFilter =
+            (onlyDonors && isKnownDonor) ||
+            (onlyModerators && msg.isModerator) ||
+            (onlySubscribers && (msg.isSubscriber || false)) ||
+            (onlyCommunityMembers && msg.isCommunityMember)
+
+          // LÓGICA DE FILTRADO COMBINADO (OR entre grupos):
+          // Si AMBAS restricciones están activas: pasa si cumple rol O es pregunta
+          // Si SOLO rol está activo: pasa si cumple rol
+          // Si SOLO preguntas está activo: pasa si es pregunta
+          if (roleFiltersActive && onlyQuestions) {
+            // Ambas activas: pasa si cumple rol O es pregunta
+            if (!passRoleFilter && !isQuestionMsg) { markFilteredMessage(); return }
+          } else if (roleFiltersActive) {
+            // Solo filtros de rol: pasa si cumple alguno
+            if (!passRoleFilter) { markFilteredMessage(); return }
+          } else if (onlyQuestions) {
+            // Solo filtro de preguntas: pasa si es pregunta
+            if (!isQuestionMsg) { markFilteredMessage(); return }
+          }
           const profanityFilterEnabled = isEnabledFlag(c.profanityFilterEnabled)
           if (profanityFilterEnabled) {
             const profanityWords = parseProfanityWords(c.profanityWords)
@@ -1127,10 +1521,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           }
 
           // Construir texto final (usar nickname para lectura, no el username técnico)
-          let displayName = nickOverridesRef.current[msg.username] || msg.nickname || msg.username
+          const overrideName = getNickOverrideValue(nickOverridesRef.current, msg.username)
+          let displayName = overrideName || msg.nickname || msg.username
 
           // Si está activado, eliminar emojis y caracteres especiales del nickname
-          if ((c.onlyPlainNicks || smartChatActive) && !nickOverridesRef.current[msg.username]) {
+          if ((c.onlyPlainNicks || smartChatActive) && !overrideName) {
             displayName = getPlainNick(displayName)
           }
 
@@ -1157,22 +1552,27 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
     ws.onerror = (error) => {
       console.error('[TikTok] WebSocket error:', error)
-      setError('Error en conexión WebSocket')
     }
 
-    ws.onclose = () => {
-      console.log('[TikTok] WebSocket cerrado')
-      setIsConnected(false)
-      setConnectedTikTokUser('')
+    ws.onclose = (event) => {
+      console.log('[TikTok] WebSocket cerrado', event?.code, event?.reason || '')
+      clearWsTimers()
+      if (isCleaningUp || manualWsCloseRef.current || disconnectedRef.current || !isConnected || !connectedTikTokUser) {
+        return
+      }
+      scheduleWsReconnect(`close_${event?.code || 'unknown'}`)
     }
 
     wsRef.current = ws
 
     return () => {
+      isCleaningUp = true
+      clearWsTimers()
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: 'unsubscribe' }))
         wsRef.current.close()
       }
+      wsRef.current = null
     }
   }, [isConnected, connectedTikTokUser])
 
@@ -1193,6 +1593,34 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     const chars = String(text || '').trim().length
     const base = Math.max(1.8, chars / 18)
     return base / normalizedSpeed
+  }
+
+  const consumeFreeLocalVoiceBudget = (estimatedDurationMs = 0) => {
+    if (!isFreePlan) return { allowed: true }
+
+    const now = Date.now()
+    let usage = readFreeLocalVoiceUsage()
+    const projected = usage.usedMs + Math.max(1, Math.round(Number(estimatedDurationMs) || 0))
+
+    if (projected > FREE_LOCAL_VOICE_DAILY_LIMIT_MS) {
+      const resetInMs = Math.max(1, (24 * 60 * 60 * 1000) - (now - usage.windowStart))
+      const hours = Math.floor(resetInMs / 3600000)
+      const minutes = Math.ceil((resetInMs % 3600000) / 60000)
+      const waitLabel = hours > 0 ? `${hours}h ${Math.max(0, minutes)}m` : `${Math.max(1, minutes)} min`
+      const popupMessage = `Llegaste al límite diario de 2 horas de voces locales en plan FREE. Se restablece en aproximadamente ${waitLabel}.`
+
+      setError(popupMessage)
+      if ((now - localLimitPopupAtRef.current) > 5000) {
+        localLimitPopupAtRef.current = now
+        window.alert(popupMessage)
+      }
+      return { allowed: false, resetInMs }
+    }
+
+    usage = { ...usage, usedMs: projected }
+    freeLocalUsageRef.current = usage
+    writeFreeLocalVoiceUsage(usage)
+    return { allowed: true, remainingMs: Math.max(0, FREE_LOCAL_VOICE_DAILY_LIMIT_MS - usage.usedMs) }
   }
 
   const getSmartMetrics = () => {
@@ -1350,6 +1778,19 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     return false
   }
 
+  // Voice selection priority (in order):
+  // 1. Notification voice (if enabled)
+  // 2. Moderator voice (if enabled)
+  // 3. Donor voice (if enabled)
+  // 4. Subscriber voice (if enabled)
+  // 5. Community member voice (if enabled)
+  // 6. Question voice (if enabled)
+  // 7. Varied voices mode random selection (if enabled)
+  // 8. General voice (default)
+  //
+  // NOTE: If "Modo voces variadas" is enabled but you only hear 2 of 3 selected voices,
+  // one might be assigned to a priority category (e.g., Notification, Donor). Disable
+  // those priority voices or use different voice IDs to fix this.
   const resolveVoiceIdAtEnqueue = (item) => {
     const c = configRef.current || {}
     const username = item.username
@@ -1357,13 +1798,75 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     const isDonorEligible = item.isDonor || donors.has(username) || donors.has(normalizedItemUsername)
     const isQuestionEligible = item.isQuestion || isQuestion(item.sourceText || item.rawText || item.text || '')
 
-    // Primera coincidencia al llegar: la voz queda fija para este item.
-    if (c.notifVoiceEnabled && item.isNotification) return c.notifVoiceId || 'Lupita'
-    if (c.modVoiceEnabled && item.isModerator) return c.modVoiceId || 'Lupita'
-    if (c.donorVoiceEnabled && isDonorEligible) return c.donorVoiceId || 'Diego'
-    if (c.subscriberVoiceEnabled && item.isSubscriber) return c.subscriberVoiceId || 'Lupita'
-    if (c.communityMemberVoiceEnabled && item.isCommunityMember) return c.communityMemberVoiceId || 'Lupita'
-    if (c.questionVoiceEnabled && isQuestionEligible) return c.questionVoiceId || 'Lupita'
+    // PRIORIDAD 0: Voz personalizada por usuario (MÁXIMA PRIORIDAD)
+    if (c.userVoiceAssignments && c.userVoiceAssignments.length > 0) {
+      // Normalizar username: quitar @ si lo tiene para comparación
+      const normalizedUsername = username.toLowerCase().replace(/^@+/, '')
+      const userAssignment = c.userVoiceAssignments.find(a => a.username.toLowerCase() === normalizedUsername)
+      if (userAssignment) {
+        console.log(`[Voice Priority] User custom voice used for "${username}": "${userAssignment.voiceId}"`)
+        return userAssignment.voiceId
+      }
+    }
+
+    // Prioridad 1: Notificaciones
+    if (c.notifVoiceEnabled && item.isNotification) {
+      const voice = c.notifVoiceId || 'Lupita'
+      if (c.variedVoicesEnabled) console.log('[Voice Priority] Notification priority used:', voice)
+      return voice
+    }
+
+    // Prioridad 2: Moderadores
+    if (c.modVoiceEnabled && item.isModerator) {
+      const voice = c.modVoiceId || 'Lupita'
+      if (c.variedVoicesEnabled) console.log('[Voice Priority] Moderator priority used:', voice)
+      return voice
+    }
+
+    // Prioridad 3: Donantes
+    if (c.donorVoiceEnabled && isDonorEligible) {
+      const voice = c.donorVoiceId || 'Diego'
+      if (c.variedVoicesEnabled) console.log('[Voice Priority] Donor priority used:', voice)
+      return voice
+    }
+
+    // Prioridad 4: Suscriptores
+    if (c.subscriberVoiceEnabled && item.isSubscriber) {
+      const voice = c.subscriberVoiceId || 'Lupita'
+      if (c.variedVoicesEnabled) console.log('[Voice Priority] Subscriber priority used:', voice)
+      return voice
+    }
+
+    // Prioridad 5: Miembros de comunidad
+    if (c.communityMemberVoiceEnabled && item.isCommunityMember) {
+      const voice = c.communityMemberVoiceId || 'Lupita'
+      if (c.variedVoicesEnabled) console.log('[Voice Priority] Community member priority used:', voice)
+      return voice
+    }
+
+    // Prioridad 6: Preguntas
+    if (c.questionVoiceEnabled && isQuestionEligible) {
+      const voice = c.questionVoiceId || 'Lupita'
+      if (c.variedVoicesEnabled) console.log('[Voice Priority] Question priority used:', voice)
+      return voice
+    }
+
+    // Modo voces variadas: si está enabled y hay voces seleccionadas, randomiza
+    if (c.variedVoicesEnabled && c.variedVoicesSelected && c.variedVoicesSelected.length > 0) {
+      const validVoices = c.variedVoicesSelected.filter(v => v && typeof v === 'string' && v.trim())
+      if (validVoices.length > 0) {
+        const randomIndex = Math.floor(Math.random() * validVoices.length)
+        const randomVoice = validVoices[randomIndex]
+        console.log(`[Voice Debug] Selected voice #${randomIndex + 1}/${validVoices.length}: "${randomVoice}"`, {
+          allSelected: c.variedVoicesSelected,
+          afterFiltering: validVoices
+        })
+        return randomVoice
+      } else {
+        console.warn('[Voice Debug] variedVoicesEnabled but NO valid voices after filtering:', c.variedVoicesSelected)
+      }
+    }
+
     return c.generalVoiceId || 'es-ES'
   }
 
@@ -1397,7 +1900,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         return
       }
       if (shouldHardDropSmartMessage(item, metrics)) {
-        console.log('[TikTok] Smart chat descartó mensaje por filtros duros adaptativos')
+        console.log('[TikTok] Smart chat descartó mensaje por filtros duros adaptativos', {
+          username: item.username,
+          text: (item.rawText || item.text).substring(0, 50),
+          pressure: metrics.pressure.toFixed(2),
+          queueDepth: metrics.queueDepth
+        })
         markFilteredMessage()
         return
       }
@@ -1407,7 +1915,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
       item.smartScore = scoreSmartMessage(item, metrics)
       if (item.smartScore < threshold) {
-        console.log(`[TikTok] Smart chat descartó mensaje (score ${item.smartScore.toFixed(2)} < ${threshold.toFixed(2)})`)
+        console.log(`[TikTok] Smart chat descartó mensaje (score ${item.smartScore.toFixed(2)} < ${threshold.toFixed(2)})`, {
+          username: item.username,
+          text: (item.rawText || item.text).substring(0, 50),
+          pressure: metrics.pressure.toFixed(2)
+        })
         markFilteredMessage()
         return
       }
@@ -1516,12 +2028,194 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
 
       // Voz congelada al encolar: evita cambios por prioridad al reproducir.
       const voiceId = item.voiceId || (c.generalVoiceId || 'es-ES')
+      const currentGlobalVoice = c.generalVoiceId || 'es-ES'
 
       try {
         const isLocalVoice = voiceId === 'es-ES' || voiceId === 'en-US'
 
+        // Si cambió la voz GLOBAL del usuario (no por-mensaje), vaciar cola
+        // Esto evita vaciar cuando está randomizando (cada mensaje tiene voiceId diferente congelada)
+        if (lastVoiceIdRef.current !== currentGlobalVoice) {
+          lastVoiceIdRef.current = currentGlobalVoice
+          markPlayingMessagesAsDone() // Marcar como hechos
+          speakQueueRef.current = [] // VACIAR COLA como pausa
+          isProcessingRef.current = false
+          stopPlaybackNow() // Detener audio actual
+          break // Reiniciar desde el principio
+        }
+
         if (isLocalVoice) {
-          // Voz local — Web Speech API, sin backend, sin costo
+          const authToken = getAuthToken()
+          let backendAudio = null
+          let backendLimitReached = false
+
+          // Si ya está pre-generado Y es de la generación actual, usarlo
+          if (
+            nextPreGeneratedRef.current?.itemId === item.id &&
+            nextPreGeneratedRef.current?.audioUrl &&
+            nextPreGeneratedRef.current?.genId === preGenIdRef.current
+          ) {
+            backendAudio = nextPreGeneratedRef.current.audioUrl
+            nextPreGeneratedRef.current = {}
+          } else {
+            try {
+              const response = await fetch(`${API_URL}/api/tts/say`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+                },
+                body: JSON.stringify({
+                  text,
+                  voice: voiceId
+                })
+              })
+
+              const data = await response.json().catch(() => ({}))
+              if (response.ok && data?.audio) {
+                backendAudio = data.audio
+              } else if (data?.code === 'FREE_LOCAL_VOICE_DAILY_LIMIT_REACHED') {
+              backendLimitReached = true
+              const resetInSeconds = Number(data?.details?.resetInSeconds || 0)
+              const waitMinutes = Math.max(1, Math.ceil(resetInSeconds / 60))
+              const waitLabel = waitMinutes >= 60
+                ? `${Math.floor(waitMinutes / 60)}h ${waitMinutes % 60}m`
+                : `${waitMinutes} min`
+              const popupMessage = `Llegaste al límite diario de 2 horas de voces locales en plan FREE. Se restablece en aproximadamente ${waitLabel}.`
+              setError(popupMessage)
+              if ((Date.now() - localLimitPopupAtRef.current) > 5000) {
+                localLimitPopupAtRef.current = Date.now()
+                window.alert(popupMessage)
+              }
+            }
+            } catch (backendErr) {
+              console.warn('[TikTok] Local backend TTS fallback:', backendErr?.message || backendErr)
+            }
+          }
+
+          if (backendAudio) {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === item.id ? { ...msg, status: 'playing' } : msg
+              )
+            )
+
+            await new Promise((resolve) => {
+              if (disconnectedRef.current) { resolve(); return }
+              activePlaybackResolveRef.current = resolve
+              const audio = new Audio(backendAudio)
+              currentAudioRef.current = audio
+              audio.playbackRate = c.audioSpeed || 1.0
+              audio.volume = volumeRef.current
+              audio.onended = () => {
+                currentAudioRef.current = null
+                activePlaybackResolveRef.current = null
+                const duration = Number(audio.duration)
+                const effectiveDuration = Number.isFinite(duration) && duration > 0
+                  ? duration
+                  : (item.estimatedSpeakSeconds || estimateSpeakSeconds(item.rawText || item.text, c.audioSpeed || 1.0))
+                recentPlaybackDurationsRef.current = [...recentPlaybackDurationsRef.current, effectiveDuration].slice(-20)
+                sessionReadCountRef.current += 1
+                userLastSpokenAtRef.current[item.username] = Date.now()
+                const spokenKeywords = extractKeywords(item.rawText || item.text)
+                if (spokenKeywords.length) {
+                  recentTopicKeywordsRef.current = [...spokenKeywords, ...recentTopicKeywordsRef.current]
+                    .slice(0, 24)
+                }
+                const normalizedSpoken = normalizeMessageForMatching(item.rawText || item.text)
+                if (normalizedSpoken) {
+                  recentNormalizedMessagesRef.current = [
+                    ...recentNormalizedMessagesRef.current,
+                    { text: normalizedSpoken, timestamp: Date.now() }
+                  ].filter((entry) => entry.timestamp >= Date.now() - 180000).slice(-80)
+                }
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === item.id ? { ...msg, status: 'done' } : msg
+                  )
+                )
+                resolve()
+              }
+              audio.onerror = () => {
+                currentAudioRef.current = null
+                activePlaybackResolveRef.current = null
+                resolve()
+              }
+              if (isAudioSuppressed()) {
+                audio.pause()
+                currentAudioRef.current = null
+                activePlaybackResolveRef.current = null
+                resolve()
+                return
+              }
+              audio.play().catch(() => {
+                currentAudioRef.current = null
+                activePlaybackResolveRef.current = null
+                resolve()
+              })
+
+              // Pre-generar siguiente en background (para TODAS las voces: Google TTS, Inworld, clonadas)
+              if (!isPreGeneratingRef.current && speakQueueRef.current.length > 0) {
+                isPreGeneratingRef.current = true
+                const nextItem = speakQueueRef.current[0]
+                const nextVoiceId = nextItem.voiceId || (configRef.current.generalVoiceId || 'es-ES')
+                const isNextLocalVoice = nextVoiceId === 'es-ES' || nextVoiceId === 'en-US'
+                const authToken = getAuthToken()
+
+                const preGenerateFunc = isNextLocalVoice
+                  ? // Google TTS
+                    () => fetch(`${API_URL}/api/tts/say`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+                      },
+                      body: JSON.stringify({ text: nextItem.text, voice: nextVoiceId })
+                    })
+                  : // Inworld/clonadas
+                    () => fetch(`${API_URL}/api/tiktok/message`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+                      },
+                      body: JSON.stringify({
+                        username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
+                        messageUsername: nextItem.username,
+                        messageText: nextItem.text,
+                        voiceId: nextVoiceId
+                      })
+                    })
+
+                preGenerateFunc()
+                  .then(r => r.json())
+                  .then(data => {
+                    if (data?.audio) {
+                      nextPreGeneratedRef.current = { itemId: nextItem.id, audioUrl: data.audio, voiceId: nextVoiceId, genId: preGenIdRef.current }
+                    }
+                  })
+                  .catch(() => {})
+                  .finally(() => { isPreGeneratingRef.current = false })
+              }
+            })
+            continue
+          }
+
+          if (backendLimitReached) {
+            setMessages((prev) => prev.map((msg) => msg.id === item.id ? { ...msg, status: 'skipped' } : msg))
+            continue
+          }
+
+          // Fallback final: Web Speech API local si backend no responde.
+          const estimatedDurationMs = Math.round(
+            (item.estimatedSpeakSeconds || estimateSpeakSeconds(item.rawText || item.text, c.audioSpeed || 1.0)) * 1000
+          )
+          const budget = consumeFreeLocalVoiceBudget(estimatedDurationMs)
+          if (!budget.allowed) {
+            setMessages((prev) => prev.map((msg) => msg.id === item.id ? { ...msg, status: 'skipped' } : msg))
+            continue
+          }
+
           setMessages((prev) => prev.map((msg) => msg.id === item.id ? { ...msg, status: 'playing' } : msg))
           const lang = voiceId === 'en-US' ? 'en-US' : 'es-ES'
           await new Promise((resolve) => {
@@ -1571,20 +2265,124 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           })
         } else {
         // Voz Inworld/clonada — llamada al backend
-        const response = await fetch(`${API_URL}/api/tiktok/message`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
-            messageUsername: username,
-            messageText: text,
-            voiceId
-          })
-        })
+        const authToken = getAuthToken()
+        let data = null
+        let response = null
 
-        const data = await response.json()
+        // Revisar si ya está pre-generado Y es de la generación actual
+        if (
+          nextPreGeneratedRef.current?.itemId === item.id &&
+          nextPreGeneratedRef.current?.audioUrl &&
+          nextPreGeneratedRef.current?.genId === preGenIdRef.current
+        ) {
+          console.log('[Pre-gen] ✓ Usando pre-generado para', item.username)
+          data = { audio: nextPreGeneratedRef.current.audioUrl }
+          nextPreGeneratedRef.current = {}
+        } else {
+          // No hay pre-generado, hacer request directo
+          console.log('[Pre-gen] ✗ Generando nuevo para', item.username)
+          response = await fetch(`${API_URL}/api/tiktok/message`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+            },
+            body: JSON.stringify({
+              username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
+              messageUsername: username,
+              messageText: text,
+              voiceId
+            })
+          })
+          data = await response.json()
+        }
 
         if (isPausedRef.current || disconnectedRef.current || isAudioSuppressed()) {
+          continue
+        }
+
+        const shouldUseBrowserLocalFallback = Boolean(
+          data?.useLocalVoice
+          || data?.fallback
+          || data?.fallbackReason === 'token_insufficient'
+          || data?.error === 'token_insufficient'
+          || response?.status === 402
+        )
+
+        if (shouldUseBrowserLocalFallback) {
+          const fallbackVoiceId = (data?.fallbackVoiceId === 'en-US' || data?.fallbackVoiceId === 'es-ES')
+            ? data.fallbackVoiceId
+            : 'es-ES'
+          const fallbackLang = fallbackVoiceId === 'en-US' ? 'en-US' : 'es-ES'
+
+          const estimatedDurationMs = Math.round(
+            (item.estimatedSpeakSeconds || estimateSpeakSeconds(item.rawText || item.text, c.audioSpeed || 1.0)) * 1000
+          )
+          const budget = consumeFreeLocalVoiceBudget(estimatedDurationMs)
+          if (!budget.allowed) {
+            setMessages((prev) => prev.map((msg) => msg.id === item.id ? { ...msg, status: 'skipped' } : msg))
+            continue
+          }
+
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === item.id ? { ...msg, status: 'playing' } : msg
+            )
+          )
+
+          await new Promise((resolve) => {
+            if (disconnectedRef.current) { resolve(); return }
+            activePlaybackResolveRef.current = resolve
+            const utterance = new SpeechSynthesisUtterance(text)
+            utterance.lang = fallbackLang
+            utterance.rate = c.audioSpeed || 1.0
+            utterance.pitch = 1.0
+            utterance.volume = volumeRef.current
+
+            const availableVoices = window.speechSynthesis.getVoices()
+            const matchVoice =
+              availableVoices.find(v => v.lang === fallbackLang) ||
+              availableVoices.find(v => v.lang.startsWith(fallbackLang.split('-')[0])) ||
+              availableVoices[0]
+            if (matchVoice) utterance.voice = matchVoice
+
+            utterance.onend = () => {
+              const estimatedDuration = estimateSpeakSeconds(item.rawText || item.text, c.audioSpeed || 1.0)
+              recentPlaybackDurationsRef.current = [...recentPlaybackDurationsRef.current, estimatedDuration].slice(-20)
+              sessionReadCountRef.current += 1
+              userLastSpokenAtRef.current[item.username] = Date.now()
+              const spokenKeywords = extractKeywords(item.rawText || item.text)
+              if (spokenKeywords.length) {
+                recentTopicKeywordsRef.current = [...spokenKeywords, ...recentTopicKeywordsRef.current].slice(0, 24)
+              }
+              const normalizedSpoken = normalizeMessageForMatching(item.rawText || item.text)
+              if (normalizedSpoken) {
+                recentNormalizedMessagesRef.current = [
+                  ...recentNormalizedMessagesRef.current,
+                  { text: normalizedSpoken, timestamp: Date.now() }
+                ].filter((entry) => entry.timestamp >= Date.now() - 180000).slice(-80)
+              }
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === item.id ? { ...msg, status: 'done' } : msg
+                )
+              )
+              activePlaybackResolveRef.current = null
+              resolve()
+            }
+            utterance.onerror = () => {
+              activePlaybackResolveRef.current = null
+              resolve()
+            }
+
+            if (isAudioSuppressed()) {
+              activePlaybackResolveRef.current = null
+              resolve()
+              return
+            }
+            window.speechSynthesis.cancel()
+            window.speechSynthesis.speak(utterance)
+          })
           continue
         }
 
@@ -1630,6 +2428,40 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   msg.id === item.id ? { ...msg, status: 'done' } : msg
                 )
               )
+
+              // Pre-generar siguiente mensaje para Inworld/clonadas (eliminar delays)
+              if (!isPreGeneratingRef.current && speakQueueRef.current.length > 0) {
+                isPreGeneratingRef.current = true
+                const nextItem = speakQueueRef.current[0]
+                const nextVoiceId = nextItem.voiceId || (configRef.current.generalVoiceId || 'es-ES')
+                const authToken = getAuthToken()
+                console.log('[Pre-gen] Iniciando para', nextItem.username)
+
+                fetch(`${API_URL}/api/tiktok/message`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+                  },
+                  body: JSON.stringify({
+                    username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
+                    messageUsername: nextItem.username,
+                    messageText: nextItem.text,
+                    voiceId: nextVoiceId
+                  })
+                })
+                  .then(r => r.json())
+                  .then(data => {
+                    if (data?.audio) {
+                      nextPreGeneratedRef.current = { itemId: nextItem.id, audioUrl: data.audio, voiceId: nextVoiceId, genId: preGenIdRef.current }
+                      console.log('[Pre-gen] ✓ Completado para', nextItem.username)
+                    }
+                  })
+                  .catch(() => {})
+                  .finally(() => { isPreGeneratingRef.current = false })
+              }
+
+              // Resolver sin delay - si la pre-generación se demora, el sistema espera en el siguiente mensaje
               resolve()
             }
             audio.onerror = () => {
@@ -1664,10 +2496,14 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   const handleConnect = async (e) => {
     e.preventDefault()
 
-    if (!tiktokUser.trim()) {
+    const cleanUsername = normalizeTikTokUsername(tiktokUser)
+    if (!cleanUsername) {
       setError('Ingresa un usuario de TikTok válido')
       return
     }
+
+    // Sync input to normalized value silently
+    if (tiktokUser !== cleanUsername) setTiktokUser(cleanUsername)
 
     setIsConnecting(true)
     setError(null)
@@ -1676,7 +2512,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       const response = await fetch(`${API_URL}/api/tiktok/connect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: tiktokUser.trim() })
+        body: JSON.stringify({ username: cleanUsername })
       })
 
       const data = await response.json()
@@ -1687,8 +2523,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         setStats({ count: 0, uptime: 0 })
         setIsConnected(true)
         setMessages([])
-        // Guardar último usuario conectado
-        if (updateConfig) updateConfig('lastTiktokUser', tiktokUser.trim())
+        // Guardar último usuario conectado (normalizado)
+        if (updateConfig) updateConfig('lastTiktokUser', cleanUsername)
       } else {
         setError(data.error || 'Error conectando a TikTok')
       }
@@ -1717,24 +2553,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
   }
 
   const keepReadMessageVisible = ({ force = false } = {}) => {
-    // Cancelar scroll anterior si uno está pendiente
-    if (pendingScrollRef.current) {
-      cancelAnimationFrame(pendingScrollRef.current)
+    // Scroll DIRECTO sin requestAnimationFrame para evitar reflow que mueve la página
+    const container = chatContainerRef.current
+    if (!container) return
+
+    if (force) {
+      autoScrollPinnedRef.current = true
     }
 
-    pendingScrollRef.current = requestAnimationFrame(() => {
-      const container = chatContainerRef.current
-      if (!container) return
-
-      if (force) {
-        autoScrollPinnedRef.current = true
-      }
-
-      if (force || autoScrollPinnedRef.current) {
-        container.scrollTop = container.scrollHeight
-      }
-      pendingScrollRef.current = null
-    })
+    if (force || autoScrollPinnedRef.current) {
+      container.scrollTop = container.scrollHeight
+    }
   }
 
   const resetSessionTracking = () => {
@@ -1785,9 +2614,37 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     sessionFilteredCountRef.current += 1
   }
 
+  const sendSupportMessage = async () => {
+    if (!supportMsg.trim() || supportSending) return
+    setSupportSending(true)
+    setSupportError(null)
+    try {
+      const res = await fetch(`${API_URL}/api/support/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAuthToken()}` },
+        body: JSON.stringify({ message: supportMsg.trim() })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Error al enviar')
+      setSupportDone(true)
+      setSupportMsg('')
+    } catch (e) {
+      setSupportError(e.message || 'Error al enviar el mensaje')
+    } finally {
+      setSupportSending(false)
+    }
+  }
+
   const currentReadingMessage = messages.find((msg) => msg.status === 'playing') || null
-  const showConnectedView = isConnected || showSessionSummary
+  const showConnectedView = true // siempre visible
   const mobilePreviewUsername = normalizeTikTokUsername(connectedTikTokUser || tiktokUser || config.lastTiktokUser || '')
+  const normalizedHelpSearch = String(helpSearch || '').trim().toLowerCase()
+  const visibleHelpFaq = PLATFORM_HELP_FAQ.filter((item) => {
+    if (!normalizedHelpSearch) return true
+    return `${item.q} ${item.a}`.toLowerCase().includes(normalizedHelpSearch)
+  })
+  const sessionTikTokUsername = normalizeTikTokUsername(connectedTikTokUser || tiktokUser || config.lastTiktokUser || '')
+  const sessionTikTokHandle = sessionTikTokUsername ? `@${sessionTikTokUsername}` : ''
   const mobilePreviewLiveUrl = mobilePreviewUsername ? `https://www.tiktok.com/@${mobilePreviewUsername}/live` : ''
   const mobilePreviewFrameUrl = ''
   const oneMinuteAgo = Date.now() - 60000
@@ -1801,10 +2658,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
       ? { color: '#f59e0b', label: 'Medio' }
       : { color: '#22c55e', label: 'Leve' }
   const summaryTone = sessionSummary?.peakMessagesPerMinute >= 35
-    ? 'Sesion explosiva'
+    ? t('tiktok.panel.sessionExplosive')
     : sessionSummary?.peakMessagesPerMinute >= 15
-      ? 'Sesion activa'
-      : 'Sesion fluida'
+      ? t('tiktok.panel.sessionActive')
+      : t('tiktok.panel.sessionChill')
 
   const stopPlaybackNow = () => {
     if (activePlaybackResolveRef.current) {
@@ -1858,8 +2715,23 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
         body: JSON.stringify({ username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser) })
       })
 
+      manualWsCloseRef.current = true
+      if (wsReconnectTimeoutRef.current) {
+        clearTimeout(wsReconnectTimeoutRef.current)
+        wsReconnectTimeoutRef.current = null
+      }
+      if (wsHeartbeatIntervalRef.current) {
+        clearInterval(wsHeartbeatIntervalRef.current)
+        wsHeartbeatIntervalRef.current = null
+      }
+      if (wsWatchdogIntervalRef.current) {
+        clearInterval(wsWatchdogIntervalRef.current)
+        wsWatchdogIntervalRef.current = null
+      }
+
       if (wsRef.current) {
         wsRef.current.close()
+        wsRef.current = null
       }
 
       setSessionSummary(buildSessionSummary())
@@ -1871,48 +2743,222 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     }
   }
 
+  const copyUsernameToClipboard = (username) => {
+    // Copiar con @ al inicio
+    const usernameWithAt = username.startsWith('@') ? username : `@${username}`
+    navigator.clipboard.writeText(usernameWithAt).then(() => {
+      setCopiedUsername(username)
+      setTimeout(() => setCopiedUsername(null), 2000)
+    }).catch(err => console.error('Error copiando:', err))
+  }
+
   return (
-    <div className={`relative overflow-visible ${darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6 mb-6" : "bg-white border border-indigo-200 rounded-lg p-6 mb-6 shadow-sm"}`}>
-      <div className="flex items-center gap-3 mb-4">
-        <MessageCircle className="w-6 h-6 text-cyan-300" />
-        <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>TikTok LIVE en Tiempo Real</h2>
-        <span
-          className={`ml-auto px-3 py-1 rounded-full text-xs font-semibold ${
+    <div className={`relative overflow-visible ${darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg px-4 py-3 mb-3" : "bg-white border border-indigo-200 rounded-lg px-4 py-3 mb-3 shadow-sm"}`}>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className={`p-1.5 sm:p-2 rounded-xl shrink-0 ${darkMode ? 'bg-cyan-500/15 border border-cyan-400/25' : 'bg-cyan-50 border border-cyan-200'}`}>
+            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+          </div>
+          <div className="min-w-0">
+            <h2 className={`text-xs sm:text-lg font-black tracking-tight leading-tight whitespace-nowrap ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t('tiktok.panel.title')}</h2>
+            <p className={`text-[10px] sm:text-[11px] font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Stream Voicer</p>
+          </div>
+        </div>
+        <div className={`flex items-stretch rounded-xl border overflow-hidden h-9 sm:h-12 shrink-0 ${darkMode ? 'border-white/10' : 'border-slate-300'}`}>
+          <button
+            type="button"
+            onClick={() => setShowHelpGuide(true)}
+            className={`flex items-center gap-1.5 px-3 sm:px-6 text-xs sm:text-sm font-bold border-r transition-all ${darkMode
+              ? 'border-white/10 bg-slate-800 text-cyan-300 hover:bg-cyan-500/20'
+              : 'border-slate-300 bg-white text-cyan-700 hover:bg-cyan-50'}`}
+            title="Guía detallada de uso"
+          >
+            <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="hidden xs:inline">{t('tiktok.panel.helpBtn')}</span>
+          </button>
+          {sessionTikTokHandle && (
+            <div className={`hidden sm:flex items-center gap-2 px-4 border-r text-sm ${darkMode
+              ? 'border-white/10 bg-slate-800 text-slate-300'
+              : 'border-slate-300 bg-white text-slate-700'}`}>
+              <span className={`text-[11px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{t('tiktok.panel.sessionTab')}</span>
+              <span className={`font-black ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{sessionTikTokHandle}</span>
+            </div>
+          )}
+          <span className={`flex items-center gap-1 px-2 sm:px-6 text-[9px] sm:text-sm font-black tracking-wide sm:tracking-widest uppercase transition-all ${
             isConnected
-              ? (darkMode
-                  ? 'bg-green-500/20 border border-green-500/50 text-green-300'
-                  : 'bg-slate-700 border border-slate-600 text-white')
+              ? (darkMode ? 'bg-rose-900/60 text-rose-300' : 'bg-rose-800 text-rose-100')
               : isWaitingForLive
-                ? 'bg-red-500/15 border border-red-500/60 text-red-300 animate-pulse'
-                : (darkMode ? 'bg-gray-700/50 border border-gray-600/50 text-gray-300' : 'bg-slate-200 border border-slate-300 text-slate-700')
-          }`}
-        >
-          {isConnected ? '🔴 EN VIVO' : isWaitingForLive ? 'ESPERANDO LIVE' : 'DESCONECTADO'}
-        </span>
+                ? 'bg-slate-700/40 text-slate-400 animate-pulse'
+                : (darkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500')
+          }`}>
+            {isConnected ? (
+              <>
+                <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping" />
+                  <span className="relative inline-flex h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-red-300" />
+                </span>
+                <span className="hidden xs:inline">EN VIVO</span>
+              </>
+            ) : isWaitingForLive
+              ? <span className="hidden xs:inline">{t('tiktok.panel.waitingLive')}</span>
+              : <span>{t('tiktok.panel.disconnected')}</span>}
+          </span>
+        </div>
       </div>
 
+      {showHelpGuide && (
+        <div className="fixed inset-0 z-[220]">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/55"
+            onClick={() => setShowHelpGuide(false)}
+            aria-label="Cerrar guía"
+          />
+          <div className={`absolute top-0 right-0 h-full w-full max-w-xl overflow-y-auto p-5 sm:p-6 border-l shadow-2xl ${
+            darkMode ? 'bg-[#0f1022] border-cyan-400/30 text-gray-100' : 'bg-white border-indigo-200 text-gray-900'
+          }`}>
+            <div className="flex items-center justify-between gap-3 mb-5">
+              <div>
+                <h3 className={darkMode ? "text-xl font-black text-white" : "text-xl font-black text-gray-900"}>
+                  {t('tiktok.faq.title')}
+                </h3>
+                <p className={darkMode ? "text-sm text-cyan-200/80" : "text-sm text-cyan-700"}>
+                  {t('landing.faq.subtitle')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowHelpGuide(false)}
+                className={darkMode
+                  ? "p-2 rounded-lg border border-cyan-400/30 bg-cyan-500/10 hover:bg-cyan-500/20 transition-all"
+                  : "p-2 rounded-lg border border-cyan-300 bg-cyan-50 hover:bg-cyan-100 transition-all"}
+                aria-label="Cerrar guía"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-sm leading-relaxed">
+              <div className={darkMode ? "rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-3" : "rounded-xl border border-cyan-200 bg-cyan-50 p-3"}>
+                <input
+                  type="text"
+                  value={helpSearch}
+                  onChange={(e) => setHelpSearch(e.target.value)}
+                  placeholder={t('tiktok.panel.searchPlaceholder')}
+                  className={darkMode
+                    ? "w-full bg-[#0b1327] border border-cyan-400/30 rounded-lg px-3 py-2 text-sm text-white placeholder:text-cyan-200/55 focus:outline-none focus:border-cyan-300"
+                    : "w-full bg-white border border-cyan-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-cyan-700/60 focus:outline-none focus:border-cyan-500"}
+                />
+              </div>
+
+              {visibleHelpFaq.map((item, idx) => (
+                <div
+                  key={item.q}
+                  className={darkMode ? "rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-4" : "rounded-xl border border-cyan-200 bg-cyan-50 p-4"}
+                >
+                  <p className={darkMode ? "font-semibold text-cyan-100 mb-1.5" : "font-semibold text-cyan-900 mb-1.5"}>
+                    {idx + 1}. {item.q}
+                  </p>
+                  <p className={darkMode ? "text-gray-200" : "text-gray-700"}>
+                    {item.a}
+                  </p>
+                </div>
+              ))}
+              {!visibleHelpFaq.length && (
+                <div className={darkMode ? "rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-4 text-gray-200" : "rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-gray-700"}>
+                  No encontré resultados para esa búsqueda. Prueba con palabras como: voz, tokens, silenciar, nick, filtros.
+                </div>
+              )}
+
+              {/* ── Contactar Soporte ── */}
+              <div className={`mt-4 rounded-xl border p-4 ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
+                {currentPlan === 'free' ? (
+                  <div className="text-center py-2">
+                    <span className="text-2xl block mb-2">🔒</span>
+                    <p className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Soporte directo disponible para planes de pago</p>
+                    <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Actualiza tu plan para contactarnos directamente</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">✉️</span>
+                        <div>
+                          <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{t('tiktok.support.title')}</p>
+                          <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('tiktok.support.response')}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => { setShowSupportForm(f => !f); setSupportDone(false); setSupportError(null) }}
+                        className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition ${darkMode ? 'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30' : 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200'}`}
+                      >
+                        {showSupportForm ? t('common.cancel') : t('tiktok.support.sendBtn')}
+                      </button>
+                    </div>
+
+                    {showSupportForm && (
+                      supportDone ? (
+                        <div className={`text-center py-4 rounded-xl ${darkMode ? 'bg-green-500/10 border border-green-500/30' : 'bg-green-50 border border-green-200'}`}>
+                          <span className="text-3xl block mb-2">✅</span>
+                          <p className={`text-sm font-bold ${darkMode ? 'text-green-300' : 'text-green-700'}`}>¡Mensaje enviado!</p>
+                          <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Te responderemos a tu correo en 24–48 horas.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <textarea
+                            value={supportMsg}
+                            onChange={e => setSupportMsg(e.target.value.slice(0, 500))}
+                            rows={4}
+                            placeholder={t('tiktok.support.placeholder')}
+                            className={`w-full rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 ${darkMode
+                              ? 'bg-[#0b1327] border border-cyan-400/30 text-white placeholder:text-gray-500 focus:ring-cyan-500/40'
+                              : 'bg-white border border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-cyan-400/40'}`}
+                          />
+                          <div className="flex items-center justify-between">
+                            <span className={`text-xs ${supportMsg.length >= 450 ? 'text-orange-400' : darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                              {t('tiktok.support.charCount', { count: supportMsg.length })}
+                            </span>
+                            {supportError && <span className="text-xs text-red-400">{supportError}</span>}
+                          </div>
+                          <button
+                            onClick={sendSupportMessage}
+                            disabled={!supportMsg.trim() || supportSending}
+                            className="w-full py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-cyan-500 to-blue-500 disabled:opacity-40 hover:opacity-90 transition flex items-center justify-center gap-2"
+                          >
+                            {supportSending ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin inline-block" /> {t('tiktok.support.sending')}</> : t('tiktok.support.submit')}
+                          </button>
+                        </div>
+                      )
+                    )}
+                  </>
+                )}
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
       {!showConnectedView ? (
-        <form onSubmit={handleConnectSubmit} className="space-y-4">
-          <div className="flex gap-2">
+        <form onSubmit={handleConnectSubmit} className="space-y-3">
+          <div className="flex gap-2 h-10">
             <input
               type="text"
               value={tiktokUser}
               onChange={(e) => setTiktokUser(e.target.value)}
-              placeholder="Usuario de TikTok (con @ o sin @)"
-              className={darkMode ? "flex-1 bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400" : "flex-1 bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
+              placeholder="Usuario de TikTok (ej: @mic)"
+              style={{ padding: '7px 12px', fontSize: '13px' }}
+              className={darkMode ? "flex-1 min-w-0 bg-[#0f0f23] border border-cyan-400/30 rounded-lg text-white focus:outline-none focus:border-cyan-400" : "flex-1 min-w-0 bg-gray-50 border border-indigo-300 rounded-lg text-gray-900 focus:outline-none focus:border-indigo-500"}
               disabled={isConnecting || isWaitingForLive}
             />
             <button
               type="submit"
               disabled={isConnecting || isWaitingForLive || !tiktokUser}
-              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold px-6 rounded-lg transition flex items-center justify-center gap-2"
+              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-lg transition flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap"
+              style={{ padding: '7px 12px', fontSize: '13px' }}
             >
-              {isConnecting ? (
-                <Loader className="w-5 h-5 animate-spin" />
-              ) : (
-                <Play className="w-5 h-5" />
-              )}
-              {isConnecting ? 'Conectando...' : 'Conectar'}
+              {isConnecting ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+              {isConnecting ? t('tiktok.connect.connecting') : t('tiktok.connect.btn')}
             </button>
             {isWaitingForLive && (
               <button
@@ -1969,12 +3015,29 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 ) : (
                   messages.slice(-12).map((msg, idx) => (
                     <div
-                      key={msg.id || `${msg.user}-${idx}-${msg.text}`}
+                      key={getMessageRenderKey(msg, idx)}
                       className={darkMode ? "border-l border-cyan-500/30 pl-3 py-2 rounded-r" : "border-l border-indigo-300 pl-3 py-2 rounded-r"}
                     >
-                      <p className="font-semibold" style={{ color: chatNickColor, fontSize: `${chatFontSize}px` }}>
-                        {nickOverrides[msg.user] || msg.nickname || msg.user}
-                      </p>
+                      <div className="flex items-center gap-2 group">
+                        <p className="font-semibold" style={{ color: chatNickColor, fontSize: `${chatFontSize}px` }}>
+                          {getNickOverrideValue(nickOverrides, msg.user) || msg.nickname || msg.user}
+                        </p>
+                        <button
+                          onClick={() => copyUsernameToClipboard(msg.user)}
+                          className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded ${
+                            copiedUsername === msg.user
+                              ? darkMode ? 'text-green-400' : 'text-green-600'
+                              : darkMode ? 'text-gray-500 hover:text-cyan-400' : 'text-gray-400 hover:text-cyan-600'
+                          }`}
+                          title="Copiar usuario"
+                        >
+                          {copiedUsername === msg.user ? (
+                            <CheckCircle className="w-4 h-4" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
                       <p style={{ color: chatMsgColor, fontSize: `${chatFontSize}px` }}>{msg.text}</p>
                     </div>
                   ))
@@ -1985,108 +3048,120 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
           </div>
         </form>
       ) : (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-              <div className="grid grid-cols-3 gap-3 flex-1 mr-4">
-                <div className={darkMode ? "bg-cyan-500/10 border border-cyan-500/30 rounded p-2" : "bg-slate-100 border border-slate-300 rounded p-2"}>
-                  <p className="text-xs text-gray-400">Comentarios</p>
-                  <p className={darkMode ? "text-lg font-bold text-cyan-300" : "text-lg font-bold text-slate-800"}>{stats.count}</p>
-                </div>
-                <div className={darkMode ? "bg-emerald-500/10 border border-emerald-500/30 rounded p-2" : "bg-slate-100 border border-slate-300 rounded p-2"}>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs text-gray-400">Msgs/min</p>
-                    <span
-                      className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide"
-                      style={{ color: chatIntensity.color }}
-                    >
-                      <span
-                        className="inline-block w-2 h-2 rounded-full"
-                        style={{ backgroundColor: chatIntensity.color }}
-                      />
-                      {chatIntensity.label}
-                    </span>
-                  </div>
-                  <p className={darkMode ? "text-lg font-bold text-emerald-300" : "text-lg font-bold text-slate-800"}>{messagesPerMinute}</p>
-                </div>
-                <div className={darkMode ? "bg-purple-500/10 border border-purple-500/30 rounded p-2" : "bg-slate-100 border border-slate-300 rounded p-2"}>
-                  <p className="text-xs text-gray-400">Tiempo</p>
-                  <p className={darkMode ? "text-lg font-bold text-purple-300" : "text-lg font-bold text-slate-800"}>
-                  {stats.uptime < 60
-                    ? `${stats.uptime}s`
-                    : `${Math.floor(stats.uptime / 60)}m ${stats.uptime % 60}s`}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setMobilePreviewEnabled(prev => !prev)}
-                style={{ display: 'none' }}
-                className={`px-3 py-2 rounded-lg transition flex items-center gap-2 text-xs font-semibold whitespace-nowrap ${
-                  mobilePreviewEnabled
-                    ? 'bg-cyan-500/25 border border-cyan-400/60 text-cyan-200'
-                    : 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20'
-                }`}
-                title="Mostrar/Ocultar preview móvil"
-              >
-                <MessageCircle className="w-4 h-4" />
-                {mobilePreviewEnabled ? 'Móvil ON' : 'Móvil OFF'}
-              </button>
-              {false && (
+        <div className="space-y-2">
+
+          {/* Barra compacta de conexión — visible solo cuando no está conectado */}
+          {!isConnected && (
+            <form onSubmit={handleConnectSubmit}>
+              <div className={`flex gap-2 p-3 rounded-xl border ${darkMode ? 'bg-cyan-500/5 border-cyan-500/20' : 'bg-indigo-50 border-indigo-200'}`}>
+                <input
+                  type="text"
+                  value={tiktokUser}
+                  onChange={(e) => setTiktokUser(e.target.value)}
+                  placeholder="Usuario de TikTok (ej: @micanal)"
+                  className={`flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none ${darkMode ? 'bg-[#0f0f23] border border-cyan-400/30 text-white' : 'bg-white border border-indigo-300 text-gray-900'}`}
+                  disabled={isConnecting || isWaitingForLive}
+                />
                 <button
-                  onClick={() => setMobilePreviewMuted(prev => !prev)}
-                  className={`px-3 py-2 rounded-lg transition flex items-center gap-2 text-xs font-semibold whitespace-nowrap ${
-                    mobilePreviewMuted
-                      ? 'bg-amber-500/20 border border-amber-400/60 text-amber-200'
-                      : 'bg-emerald-500/15 border border-emerald-400/60 text-emerald-200'
-                  }`}
-                  title="Silenciar/activar audio del preview móvil"
+                  type="submit"
+                  disabled={isConnecting || isWaitingForLive || !tiktokUser}
+                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 disabled:opacity-50 text-white font-semibold rounded-lg transition flex items-center gap-1.5 whitespace-nowrap shrink-0"
+                  style={{ padding: '6px 10px', fontSize: '12px' }}
                 >
-                  {mobilePreviewMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                  {mobilePreviewMuted ? 'Mute' : 'Audio'}
+                  {isConnecting ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+                  {isConnecting ? t('tiktok.connect.connecting') : t('tiktok.connect.btn')}
                 </button>
+                {isWaitingForLive && (
+                  <button type="button" onClick={() => cancelWaitingForLive({ clearError: true })}
+                    className="bg-red-500/15 border border-red-500/50 text-red-300 px-3 py-2 rounded-lg text-sm"
+                  ><X className="w-4 h-4" /></button>
+                )}
+              </div>
+              {error && !isConnected && (
+                <p className="text-red-400 text-xs mt-1 px-1">{error}</p>
               )}
+            </form>
+          )}
+
+          <div className={`w-full flex items-stretch rounded-xl border overflow-hidden ${darkMode ? 'border-white/10 bg-slate-900/30' : 'border-slate-200 bg-white'}`}>
+            {/* Comentarios */}
+            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-2 sm:px-4 py-2 border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}`}>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <MessageCircle className={`w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 ${darkMode ? 'text-cyan-400/60' : 'text-cyan-500/60'}`} />
+                <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-cyan-400/60' : 'text-cyan-600/70'}`}>{t('tiktok.stats.comments')}</span>
+              </div>
+              <p className={`text-lg sm:text-xl font-black tabular-nums leading-none ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{stats.count}</p>
+            </div>
+            {/* Msgs/min */}
+            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-2 sm:px-4 py-2 border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}`}>
+              <div className="flex items-center justify-between gap-1">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <TrendingUp className={`w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 ${darkMode ? 'text-emerald-400/60' : 'text-emerald-500/60'}`} />
+                  <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-emerald-400/60' : 'text-emerald-600/70'}`}>{t('tiktok.stats.msgsMin')}</span>
+                </div>
+                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ color: chatIntensity.color, backgroundColor: chatIntensity.color + '20' }}>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: chatIntensity.color }} />
+                  {chatIntensity.label}
+                </span>
+                <span className="inline-flex sm:hidden w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: chatIntensity.color }} />
+              </div>
+              <p className={`text-lg sm:text-xl font-black tabular-nums leading-none ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>{messagesPerMinute}</p>
+            </div>
+            {/* Tiempo */}
+            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-2 sm:px-5 py-2 sm:py-3 ${isConnected ? `border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}` : ''}`}>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Clock3 className={`w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 ${darkMode ? 'text-purple-400/60' : 'text-purple-500/60'}`} />
+                <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-purple-400/60' : 'text-purple-600/70'}`}>{t('tiktok.stats.time')}</span>
+              </div>
+              <p className={`text-lg sm:text-xl font-black tabular-nums leading-none ${darkMode ? 'text-purple-300' : 'text-purple-700'}`}>
+                {stats.uptime < 60 ? `${stats.uptime}s` : `${Math.floor(stats.uptime / 60)}m ${stats.uptime % 60}s`}
+              </p>
+            </div>
+            {/* Desconectar */}
+            {isConnected && (
               <button
                 onClick={handleDisconnect}
-                className={darkMode
-                  ? "bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-300 px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap"
-                  : "bg-slate-700 hover:bg-slate-600 border border-slate-600 text-white px-4 py-2 rounded-lg transition flex items-center gap-2 whitespace-nowrap"}
+                className={`flex flex-col items-center justify-center gap-1 sm:gap-1.5 px-3 sm:px-8 font-bold text-sm transition-all group ${darkMode
+                  ? 'bg-rose-900/40 hover:bg-rose-900/60 text-rose-300 hover:text-rose-200'
+                  : 'bg-rose-800 hover:bg-rose-900 text-rose-100'}`}
               >
-                <Square className="w-4 h-4" />
-                Desconectar
+                <Square className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:scale-110" />
+                <span className="text-[9px] sm:text-[11px] font-bold uppercase tracking-wide">{t('tiktok.connect.disconnect')}</span>
               </button>
-            </div>
+            )}
           </div>
 
-            <div className="space-y-3">
-              <div className={darkMode ? "bg-cyan-500/10 border border-cyan-400/30 rounded-lg p-4 h-[172px] overflow-hidden" : "bg-cyan-50 border border-cyan-200 rounded-lg p-4 h-[172px] overflow-hidden"}>
+          {/* Flex: chat izq + controles der — en móvil apilados verticalmente */}
+          <div className="flex flex-col sm:flex-row gap-3 items-start">
+          <div className="flex-1 min-w-0 w-full">
+
+            <div className="space-y-2">
+              <div className={darkMode ? "bg-cyan-500/10 border border-cyan-400/30 rounded-lg px-3 py-2 h-[72px] overflow-hidden" : "bg-cyan-50 border border-cyan-200 rounded-lg px-3 py-2 h-[72px] overflow-hidden"}>
                 {currentReadingMessage ? (
-                <div className="space-y-2 h-full flex flex-col">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className={darkMode ? "text-[11px] uppercase tracking-[0.2em] text-cyan-300 font-semibold" : "text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold"}>
-                      Mensaje en curso
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400" />
-                      <Volume2 className="w-4 h-4 text-cyan-400" />
-                    </span>
-                  </div>
-                    <p className="font-semibold leading-tight shrink-0" style={{ color: chatNickColor, fontSize: `${chatFontSize}px` }}>
-                      {nickOverrides[currentReadingMessage.user] || currentReadingMessage.nickname || currentReadingMessage.user}
-                    </p>
-                    <p
-                      className="font-medium overflow-y-auto pr-1 leading-snug"
-                      style={{ color: chatMsgColor, fontSize: `${chatFontSize}px` }}
-                    >
-                      {currentReadingMessage.text}
+                  <div className="h-full flex flex-col justify-between">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/70' : 'text-cyan-600/70'}`}>
+                        {t('tiktok.panel.messageInProgress')}
+                      </span>
+                      <span className="flex items-center gap-1 shrink-0">
+                        <span className="inline-flex rounded-full h-2 w-2 bg-cyan-400 animate-pulse" />
+                        <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
+                      </span>
+                    </div>
+                    <p className="text-sm leading-snug line-clamp-2">
+                      <span className="font-bold mr-1" style={{ color: chatNickColor }}>
+                        {getNickOverrideValue(nickOverrides, currentReadingMessage.user) || currentReadingMessage.nickname || currentReadingMessage.user}:
+                      </span>
+                      <span style={{ color: chatMsgColor }}>{currentReadingMessage.text}</span>
                     </p>
                   </div>
                 ) : (
-                  <div className="h-full flex flex-col justify-center overflow-hidden">
-                  <span className={darkMode ? "text-[11px] uppercase tracking-[0.2em] text-cyan-300 font-semibold mb-2" : "text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-2"}>
-                    Mensaje en curso
-                  </span>
-                    <p className="overflow-y-auto pr-1 leading-snug" style={{ color: chatMsgColor, fontSize: `${chatFontSize}px` }}>
-                      Cuando se empiece a leer un comentario, aparecera aqui fijo.
+                  <div className="h-full flex flex-col justify-between">
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/70' : 'text-cyan-600/70'}`}>
+                      {t('tiktok.panel.messageInProgress')}
+                    </span>
+                    <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {t('tiktok.panel.messageHint')}
                     </p>
                   </div>
                 )}
@@ -2096,13 +3171,23 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               <div className="flex-1">
                 <div
                   ref={chatContainerRef}
-                  style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain' }}
-                  className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-96 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-96 overflow-y-auto space-y-2"}
+                  style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain', height: 'clamp(220px, 35vh, calc(100vh - 380px))', minHeight: '220px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-3 overflow-y-auto space-y-1" : "bg-gray-50 border border-indigo-200 rounded-lg p-3 overflow-y-auto space-y-1"}
                 >
                   {messages.length === 0 ? (
                     <div className="text-center text-gray-400 py-8">
-                      <Loader className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
-                      <p>Esperando comentarios en vivo...</p>
+                      {isConnected ? (
+                        <>
+                          <Loader className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
+                          <p>Esperando comentarios en vivo...</p>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-3xl mb-3 block">📡</span>
+                          <p className={`font-semibold text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>{t('tiktok.panel.connectToChat')}</p>
+                          <p className={`text-xs mt-1 ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>{t('tiktok.panel.connectHint')}</p>
+                        </>
+                      )}
                     </div>
                   ) : (
                     messages.map((msg, idx) => {
@@ -2119,31 +3204,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   : (effectiveHighlightRules.banned.enabled && isUserBannedBySet(bannedUsers, msg.user)) ? effectiveHighlightRules.banned.color
                   : null
                 const hlColor = highlightedUsers[msg.user] || autoColor
-                // DEBUG: Log para test messages
-                if (msg.user?.startsWith('test_')) {
-                  console.log(`[RENDER DEBUG] ${msg.user}:`, {
-                    isModerator: msg.isModerator,
-                    isDonor: msg.isDonor,
-                    isSubscriber: msg.isSubscriber,
-                    isTopGifter: msg.isTopGifter,
-                    rules: {
-                      modEnabled: effectiveHighlightRules.moderators.enabled,
-                      donorEnabled: effectiveHighlightRules.donors.enabled,
-                      subEnabled: effectiveHighlightRules.subscribers.enabled,
-                      communityEnabled: effectiveHighlightRules.communityMembers.enabled,
-                      topEnabled: effectiveHighlightRules.topFans.enabled,
-                    },
-                    autoColor,
-                    hlColor
-                  })
-                }
                 // Tipo de badge para mostrar
                 const badgeLabel = msg.isModerator ? '⚔️ MOD' : msg.isTopGifter ? '🏆 TOP' : msg.isDonor ? '🎁 DONOR' : msg.isSubscriber ? '⭐ SUB' : msg.isCommunityMember ? '💚 CLUB' : null
                 return (
                 <div
-                  key={msg.id || `${msg.user}-${idx}-${msg.text}`}
+                  key={getMessageRenderKey(msg, idx)}
                   style={{ fontSize: `${chatFontSize}px`, ...(hlColor ? { backgroundColor: `${hlColor}40`, borderLeftColor: hlColor, borderLeftWidth: '4px' } : {}) }}
-                  className={`pl-3 py-2 rounded-r relative ${
+                  className={`pl-3 py-1 rounded-r relative transition-colors duration-300 ${
                     msg.status === 'playing'
                       ? darkMode
                         ? 'border-l-2 border-cyan-400 bg-cyan-500/10'
@@ -2155,34 +3222,68 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 >
                   <div className="flex items-center justify-between">
                     {editingNick === msg.id ? (
-                      <input
-                        autoFocus
-                        value={editingValue}
-                        onChange={(e) => setEditingValue(e.target.value)}
-                        onKeyDown={async (e) => {
-                          if (e.key === 'Enter') {
-                            if (editingValue.trim()) {
-                              await apiNicks.set(msg.user, editingValue.trim())
-                              setNickOverrides(prev => ({ ...prev, [msg.user]: editingValue.trim() }))
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2">
+                          <input
+                            autoFocus
+                            value={editingValue}
+                            onChange={(e) => setEditingValue(e.target.value)}
+                          onKeyDown={async (e) => {
+                            if (e.key === 'Enter') {
+                              const nextNick = editingValue.trim()
+                              const normalizedUsername = normalizeTikTokUsername(msg.user)
+                              if (nextNick) {
+                                await apiNicks.set(normalizedUsername, nextNick)
+                                setNickOverrides(prev => ({ ...prev, [normalizedUsername]: nextNick }))
+                              } else {
+                                await apiNicks.remove(normalizedUsername)
+                                setNickOverrides(prev => {
+                                  const next = { ...prev }
+                                  getBanCandidateKeys(normalizedUsername).forEach((key) => delete next[key])
+                                  return next
+                                })
+                              }
+                              setEditingNick(null)
+                            }
+                            if (e.key === 'Escape') setEditingNick(null)
+                          }}
+                          onBlur={async () => {
+                            const nextNick = editingValue.trim()
+                            const normalizedUsername = normalizeTikTokUsername(msg.user)
+                            if (nextNick) {
+                              await apiNicks.set(normalizedUsername, nextNick)
+                              setNickOverrides(prev => ({ ...prev, [normalizedUsername]: nextNick }))
+                            } else {
+                              // Si queda vacío, remover del override
+                              await apiNicks.remove(normalizedUsername)
+                              setNickOverrides(prev => {
+                                const next = { ...prev }
+                                getBanCandidateKeys(normalizedUsername).forEach((key) => delete next[key])
+                                return next
+                              })
                             }
                             setEditingNick(null)
-                          }
-                          if (e.key === 'Escape') setEditingNick(null)
-                        }}
-                        onBlur={async () => {
-                          if (editingValue.trim()) {
-                            await apiNicks.set(msg.user, editingValue.trim())
-                            setNickOverrides(prev => ({ ...prev, [msg.user]: editingValue.trim() }))
-                          } else {
-                            // Si queda vacío, remover del override
-                            await apiNicks.remove(msg.user)
-                          }
-                          setEditingNick(null)
-                        }}
-                        className={`text-sm font-semibold px-1 py-0 rounded outline-none w-32 ${
-                          darkMode ? 'bg-gray-700 text-cyan-300 border border-cyan-500/50' : 'bg-white text-cyan-600 border border-cyan-300'
-                        }`}
-                      />
+                          }}
+                          className={`text-sm font-semibold px-1 py-0 rounded outline-none w-32 ${
+                            darkMode ? 'bg-gray-700 text-cyan-300 border border-cyan-500/50' : 'bg-white text-cyan-600 border border-cyan-300'
+                          }`}
+                          />
+                          <button
+                            onClick={() => copyUsernameToClipboard(msg.user)}
+                            className={`text-sm font-medium whitespace-nowrap cursor-pointer transition-colors ${
+                              copiedUsername === msg.user
+                                ? darkMode ? 'text-green-400' : 'text-green-600'
+                                : darkMode ? 'text-gray-400 hover:text-cyan-400' : 'text-gray-500 hover:text-cyan-600'
+                            }`}
+                            title="Click para copiar usuario"
+                          >
+                            (@{msg.user})
+                          </button>
+                        </div>
+                        <span className={`text-[10px] leading-none ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          Vacio + Enter = nick original
+                        </span>
+                      </div>
                     ) : (
                       <div className="flex items-center gap-1 group/nick">
                         {/* Nick: click izquierdo = editar, click derecho = ban toggle */}
@@ -2203,7 +3304,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                             }
                             if (!isUserBannedBySet(bannedUsers, msg.user)) {
                               setEditingNick(msg.id)
-                              setEditingValue(nickOverrides[msg.user] || msg.nickname || msg.user)
+                              setEditingValue(getNickOverrideValue(nickOverrides, msg.user) || msg.nickname || msg.user)
                             }
                           }}
                           onContextMenu={async (e) => {
@@ -2219,6 +3320,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                                 bannedRef.current = next
                                 return next
                               })
+                              syncSessionModerationList((prev) => removeModerationEntry(prev, msg.user))
                             } else {
                               // Banear
                               await apiBans.add(msg.user)
@@ -2228,6 +3330,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                                 bannedRef.current = next
                                 return next
                               })
+                              syncSessionModerationList((prev) => upsertModerationEntry(prev, msg.user, {
+                                reason: 'Baneado o silenciado manualmente',
+                                source: 'manual'
+                              }))
                             }
                           }}
                           className={`font-semibold cursor-pointer select-none px-1 rounded transition-colors ${
@@ -2239,9 +3345,24 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                           title={highlightMode ? "Click para remarcar/desmarcar este usuario" : isUserBannedBySet(bannedUsers, msg.user) ? "Click derecho para desbloquear" : "Click para editar · Click derecho para silenciar"}
                         >
                           {hlColor && <span className="inline-block w-2.5 h-2.5 rounded-full mr-1 ring-1 ring-white/30" style={{ backgroundColor: hlColor }} />}
-                          {nickOverrides[msg.user] || msg.nickname || msg.user}
+                            {getNickOverrideValue(nickOverrides, msg.user) || msg.nickname || msg.user}
                           {badgeLabel && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded" style={{ backgroundColor: hlColor || '#666', color: '#fff' }}>{badgeLabel}</span>}
                         </p>
+                        <button
+                          onClick={() => copyUsernameToClipboard(msg.user)}
+                          className={`opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded flex-shrink-0 ${
+                            copiedUsername === msg.user
+                              ? darkMode ? 'text-green-400' : 'text-green-600'
+                              : darkMode ? 'text-gray-500 hover:text-cyan-400' : 'text-gray-400 hover:text-cyan-600'
+                          }`}
+                          title="Copiar usuario"
+                        >
+                          {copiedUsername === msg.user ? (
+                            <CheckCircle className="w-3.5 h-3.5" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
                       </div>
                     )}
                     {msg.status === 'playing' && (
@@ -2277,7 +3398,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                               <div className={darkMode ? "rounded-md border border-cyan-500/25 bg-cyan-500/10 p-2" : "rounded-md border border-cyan-200 bg-cyan-50 p-2"}>
                                 <p className={darkMode ? "text-[9px] uppercase tracking-wide text-cyan-300/90" : "text-[9px] uppercase tracking-wide text-cyan-700/90"}>En lectura</p>
                                 <p className="text-[11px] font-semibold truncate" style={{ color: chatNickColor }}>
-                                  {nickOverrides[currentReadingMessage.user] || currentReadingMessage.nickname || currentReadingMessage.user}
+                            {getNickOverrideValue(nickOverrides, currentReadingMessage.user) || currentReadingMessage.nickname || currentReadingMessage.user}
                                 </p>
                                 <p className="text-[11px] leading-snug line-clamp-2" style={{ color: chatMsgColor }}>
                                   {currentReadingMessage.text}
@@ -2285,19 +3406,30 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                               </div>
                             ) : (
                               <p className={darkMode ? "text-[10px] text-slate-400 text-center py-1" : "text-[10px] text-slate-500 text-center py-1"}>
-                                Esperando mensaje en curso...
+                                {t('tiktok.panel.waitingMessage')}
                               </p>
                             )}
                             <div className={darkMode ? "flex-1 rounded-md bg-[#050512] border border-cyan-500/10 p-2 overflow-y-auto space-y-1.5" : "flex-1 rounded-md bg-slate-50 border border-indigo-100 p-2 overflow-y-auto space-y-1.5"}>
                               {messages.length === 0 ? (
-                                <p className={darkMode ? "text-[10px] text-slate-400 text-center py-6" : "text-[10px] text-slate-500 text-center py-6"}>
-                                  Esperando comentarios en vivo...
-                                </p>
+                                <div className="text-center py-6">
+                                  {isConnected ? (
+                                    <p className={darkMode ? "text-[10px] text-slate-400" : "text-[10px] text-slate-500"}>
+                                      Esperando comentarios en vivo...
+                                    </p>
+                                  ) : (
+                                    <>
+                                      <span className="text-lg block mb-1">📡</span>
+                                      <p className={darkMode ? "text-[10px] text-slate-400" : "text-[10px] text-slate-500"}>
+                                        {t('tiktok.panel.connectToChat')}
+                                      </p>
+                                    </>
+                                  )}
+                                </div>
                               ) : (
                                 messages.slice(-12).map((msg, idx) => (
-                                  <div key={`mobile-feed-on-${msg.id || idx}`} className={darkMode ? "rounded-md border border-cyan-500/15 bg-cyan-500/5 p-1.5" : "rounded-md border border-cyan-100 bg-white p-1.5"}>
+                                  <div key={`mobile-feed-on-${getMessageRenderKey(msg, idx)}`} className={darkMode ? "rounded-md border border-cyan-500/15 bg-cyan-500/5 p-1.5" : "rounded-md border border-cyan-100 bg-white p-1.5"}>
                                     <p className="text-[10px] font-semibold truncate" style={{ color: chatNickColor }}>
-                                      {nickOverrides[msg.user] || msg.nickname || msg.user}
+                          {getNickOverrideValue(nickOverrides, msg.user) || msg.nickname || msg.user}
                                     </p>
                                     <p className="text-[10px] leading-snug line-clamp-2" style={{ color: chatMsgColor }}>
                                       {msg.text}
@@ -2315,217 +3447,155 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               )}
             </div>
           </div>
+          </div>{/* fin col izq */}
 
-          {/* Controles */}
-          <div className={`flex flex-col gap-3 rounded-xl border px-3 py-3 md:flex-row md:items-stretch md:justify-between ${
-            darkMode
-              ? 'border-white/10 bg-white/[0.03] shadow-[0_10px_35px_rgba(0,0,0,0.18)]'
-              : 'border-slate-200 bg-white/85 shadow-[0_10px_30px_rgba(148,163,184,0.18)]'
+          {/* Controles - columna derecha en desktop, grid 3 cols en móvil */}
+          <div className={`grid grid-cols-3 sm:flex sm:flex-col rounded-lg border overflow-hidden w-full sm:w-40 sm:shrink-0 ${
+            darkMode ? 'border-white/10 bg-slate-900/40' : 'border-slate-300 bg-slate-100'
           }`}>
-            <div className={`flex flex-wrap lg:flex-nowrap gap-1.5 p-1.5 rounded-lg border h-12 items-center ${
-              darkMode ? 'bg-slate-900/40 border-white/10' : 'bg-slate-100 border-slate-300'
-            }`}>
-              <button
-                onClick={handlePause}
-                className={`h-10 w-[120px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
-                  isPaused
-                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 hover:border-slate-600 shadow-sm'
-                    : darkMode
-                      ? 'border-white/10 bg-slate-800 text-slate-100 hover:bg-slate-700'
-                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
-                }`}
-                title={isPaused ? 'Reanudar lectura' : 'Pausar lectura'}
-              >
-                {isPaused
-                  ? <><Play className="w-3.5 h-3.5" /> Reanudar</>
-                  : <><Pause className="w-3.5 h-3.5" /> Pausar</>
-                }
-              </button>
-              <button
-                onClick={handleRefresh}
-                className={`h-10 w-[120px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
-                  darkMode
-                    ? 'border-cyan-400/30 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25'
-                    : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
-                }`}
-                title="Saltar cola y continuar desde el próximo mensaje"
-              >
-                <RotateCcw className="w-3.5 h-3.5" /> Refrescar
-              </button>
-              <button
-                onClick={() => setSmartChatEnabled((prev) => !prev)}
-                className={`group h-10 w-[120px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
-                  smartChatEnabled
-                    ? 'border-slate-700 bg-gradient-to-r from-slate-700 to-slate-900 text-white hover:from-slate-600 hover:to-slate-800 shadow-sm'
-                    : darkMode
-                      ? 'border-fuchsia-400/25 bg-fuchsia-500/12 text-fuchsia-100 hover:bg-fuchsia-500/18'
-                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
-                }`}
-                title="Activa el filtro inteligente para eliminar spam y basura"
-              >
-                <span className="relative flex h-3 w-3 items-center justify-center">
-                  <span className={`absolute inline-flex h-full w-full rounded-full ${
-                    smartChatEnabled ? 'bg-emerald-400/70' : 'bg-transparent'
-                  }`} />
-                  <span className={`relative inline-flex h-2.5 w-2.5 rounded-full border ${
-                    smartChatEnabled
-                      ? 'border-emerald-200 bg-emerald-400 shadow-[0_0_12px_rgba(74,222,128,0.9)]'
-                      : darkMode
-                        ? 'border-fuchsia-200/30 bg-fuchsia-200/20'
-                        : 'border-slate-400 bg-slate-300'
-                  }`} />
-                </span>
-                <MessageCircle className="w-3.5 h-3.5" />
-                <span>Filtro IA</span>
-              </button>
-              <button
-                onClick={() => setShowHighlightPanel(!showHighlightPanel)}
-                className={`h-10 w-[120px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-2 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
-                  showHighlightPanel || highlightMode
-                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 shadow-sm'
-                    : darkMode
-                      ? 'border-amber-400/25 bg-amber-500/12 text-amber-100 hover:bg-amber-500/18'
-                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
-                }`}
-                title="Remarcar usuarios con color"
-              >
-                <Highlighter className="w-3.5 h-3.5" /> Remarcar
-              </button>
-              {/* Botón para abrir panel de estilo del chat */}
-              <button
-                onClick={() => setShowFontPanel(!showFontPanel)}
-                className={`h-10 w-[104px] shrink-0 whitespace-nowrap leading-none flex items-center justify-center gap-1 px-3 rounded-md text-xs font-semibold tracking-wide border transition-all ${
-                  showFontPanel
-                    ? 'border-slate-700 bg-slate-700 text-white hover:bg-slate-600 shadow-sm'
-                    : darkMode
-                      ? 'border-white/10 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-200'
-                }`}
-                title="Tamaño y colores del chat"
-              >
-                <span style={{ fontSize: '13px' }}>Aa</span>
-              </button>
-            </div>
-            <div className={`h-12 w-full max-w-[520px] rounded-lg border px-2 flex items-center gap-2 ${
-              darkMode ? 'bg-black/20 border-white/5' : 'bg-white border-slate-300'
-            }`}>
-              <div className={`h-10 flex-1 min-w-0 rounded-md px-2 border grid grid-cols-[16px_28px_1fr_52px] items-center gap-2 ${
-                darkMode ? 'bg-slate-900/60 border-slate-700/70' : 'bg-white border-slate-300'
-              }`}>
-                <button
-                  onClick={() => setVolume(v => v > 0 ? 0 : 0.8)}
-                  className={`rounded p-1 transition-all ${darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100'}`}
-                  title={volume === 0 ? 'Activar audio' : 'Silenciar audio'}
-                >
-                  {volume === 0
-                    ? <VolumeX className="w-3.5 h-3.5 text-red-400" />
-                    : <Volume2 className="w-3.5 h-3.5 text-emerald-500" />
-                  }
-                </button>
-                <span className={`text-[10px] font-semibold uppercase tracking-wide ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>VOL</span>
-                <input
-                  type="range" min="0" max="1" step="0.01" value={volume}
-                  onChange={(e) => setVolume(parseFloat(e.target.value))}
-                  className="pro-slider pro-slider-volume w-full cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to right, #10b981 ${volume * 100}%, ${darkMode ? '#334155' : '#d1d5db'} ${volume * 100}%)`
-                  }}
-                />
-                <span className={`w-[52px] text-[12px] font-bold text-right tabular-nums ${
-                  darkMode ? 'text-slate-100' : 'text-slate-800'
-                }`}>
-                  {Math.round(volume * 100)}%
-                </span>
+            {/* Pausar / Reanudar */}
+            <button
+              onClick={handlePause}
+              className={`flex items-center gap-2 px-3 py-2.5 text-xs font-bold border-b transition-all w-full ${
+                isPaused
+                  ? 'bg-slate-700 text-white hover:bg-slate-600'
+                  : darkMode ? 'bg-slate-800 text-slate-100 hover:bg-slate-700 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
+              }`}
+              title={isPaused ? t('tiktok.controls.resumeTitle') : t('tiktok.controls.pauseTitle')}
+            >
+              {isPaused ? <><Play className="w-4 h-4 shrink-0" />{t('tiktok.controls.resume')}</> : <><Pause className="w-4 h-4 shrink-0" />{t('tiktok.controls.pause')}</>}
+            </button>
+            {/* Refrescar */}
+            <button
+              onClick={handleRefresh}
+              className={`flex items-center gap-2 px-3 py-2.5 text-xs font-bold border-b transition-all w-full ${
+                darkMode ? 'bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
+              }`}
+              title="Saltar cola y continuar desde el próximo mensaje"
+            >
+              <RotateCcw className="w-4 h-4 shrink-0" />{t('tiktok.controls.refresh')}
+            </button>
+            {/* Filtro IA */}
+            <button
+              onClick={() => { if (isFreePlan) return; setSmartChatEnabled(prev => !prev) }}
+              disabled={isFreePlan}
+              className={`flex items-center gap-2 px-3 py-2.5 text-xs font-bold border-b transition-all w-full ${
+                smartChatEnabled ? 'bg-slate-700 text-white hover:bg-slate-600'
+                  : darkMode ? 'bg-fuchsia-500/12 text-fuchsia-100 hover:bg-fuchsia-500/20 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
+              } ${isFreePlan ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={isFreePlan ? 'Disponible en planes de pago' : 'Activa el filtro inteligente para eliminar spam y basura'}
+            >
+              <span className={`inline-flex w-2 h-2 rounded-full shrink-0 border ${
+                smartChatEnabled ? 'bg-emerald-400 border-emerald-200 shadow-[0_0_8px_rgba(74,222,128,0.9)]' : darkMode ? 'bg-fuchsia-200/20 border-fuchsia-200/30' : 'bg-slate-300 border-slate-400'
+              }`} />
+              <MessageCircle className="w-4 h-4 shrink-0" />{t('tiktok.controls.aiFilter')}
+            </button>
+            {/* Remarcar */}
+            <button
+              onClick={() => setShowHighlightPanel(!showHighlightPanel)}
+              className={`flex items-center gap-2 px-3 py-2.5 text-xs font-bold border-b transition-all w-full ${
+                showHighlightPanel || highlightMode ? 'bg-slate-700 text-white hover:bg-slate-600'
+                  : darkMode ? 'bg-amber-500/12 text-amber-100 hover:bg-amber-500/20 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
+              }`}
+              title={t('tiktok.controls.highlightTitle')}
+            >
+              <Highlighter className="w-4 h-4 shrink-0" />{t('tiktok.controls.highlight')}
+            </button>
+            {/* Estilo */}
+            <button
+              onClick={() => setShowFontPanel(!showFontPanel)}
+              className={`flex items-center gap-3 px-3 py-2.5 text-xs font-bold border-b transition-all w-full ${
+                showFontPanel ? 'bg-slate-700 text-white hover:bg-slate-600'
+                  : darkMode ? 'bg-slate-800 text-slate-200 hover:bg-slate-700 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
+              }`}
+              title="Tamaño y colores del chat"
+            >
+              <span className="text-base font-black shrink-0 w-4 text-center leading-none">Aa</span>
+              <span>Estilo</span>
+            </button>
+            {/* Nicks */}
+            <button
+              onClick={() => setShowNicksPanel(!showNicksPanel)}
+              className={`flex items-center gap-3 px-3 py-2.5 text-xs font-bold border-b transition-all w-full ${
+                showNicksPanel ? 'bg-slate-700 text-white hover:bg-slate-600'
+                  : darkMode ? 'bg-slate-800 text-slate-200 hover:bg-slate-700 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
+              }`}
+              title="Ver y editar nicks guardados"
+            >
+              <Users className="w-4 h-4 shrink-0" />
+              <span>Nicks</span>
+            </button>
+            {/* VOL */}
+            <div className={`col-span-3 px-4 py-3 border-b ${darkMode ? 'border-white/10' : 'border-slate-300'}`}>
+              <span className={`text-[11px] font-bold uppercase tracking-wider block mb-2 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>VOL</span>
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => setVolume(v => Math.max(0, v - 0.05))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-emerald-400' : 'bg-slate-200 hover:bg-slate-300 text-emerald-600'}`}>−</button>
+                <span className={`flex-1 text-sm font-bold text-center tabular-nums ${darkMode ? 'text-white' : 'text-slate-900'}`}>{Math.round(volume * 100)}%</span>
+                <button onClick={() => setVolume(v => Math.min(1, v + 0.05))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-emerald-400' : 'bg-slate-200 hover:bg-slate-300 text-emerald-600'}`}>+</button>
               </div>
-              <div className={`h-10 flex-1 min-w-0 rounded-md px-2 border grid grid-cols-[28px_1fr_52px] items-center gap-2 ${
-                darkMode ? 'bg-slate-900/60 border-slate-700/70' : 'bg-white border-slate-300'
-              }`}>
-                <span className={`text-[10px] font-semibold uppercase tracking-wide ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>VEL</span>
-                <input
-                  type="range" min="0.5" max="2" step="0.1" value={Number(config.audioSpeed || 1)}
-                  onChange={(e) => updateConfig && updateConfig('audioSpeed', parseFloat(e.target.value))}
-                  className="pro-slider pro-slider-speed w-full cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to right, #2563eb ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%, ${darkMode ? '#334155' : '#d1d5db'} ${((Number(config.audioSpeed || 1) - 0.5) / 1.5) * 100}%)`
-                  }}
-                />
-                <span className={`w-[52px] text-[12px] font-bold text-right tabular-nums ${
-                  darkMode ? 'text-slate-100' : 'text-slate-800'
-                }`}>
-                  {Number(config.audioSpeed || 1).toFixed(1)}x
-                </span>
+            </div>
+            {/* VEL */}
+            <div className={`col-span-3 px-4 py-3`}>
+              <span className={`text-[11px] font-bold uppercase tracking-wider block mb-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>VEL</span>
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => updateConfig && updateConfig('audioSpeed', Math.max(0.5, Number(config.audioSpeed || 1) - 0.1))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-blue-400' : 'bg-slate-200 hover:bg-slate-300 text-blue-600'}`}>−</button>
+                <span className={`flex-1 text-sm font-bold text-center tabular-nums ${darkMode ? 'text-white' : 'text-slate-900'}`}>{Number(config.audioSpeed || 1).toFixed(1)}x</span>
+                <button onClick={() => updateConfig && updateConfig('audioSpeed', Math.min(2, Number(config.audioSpeed || 1) + 0.1))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-blue-400' : 'bg-slate-200 hover:bg-slate-300 text-blue-600'}`}>+</button>
               </div>
             </div>
           </div>
+          {/* Panel lateral derecho — a la derecha en desktop, abajo en móvil */}
+          {(showFontPanel || showHighlightPanel || showNicksPanel) && (
+            <div className={`w-full sm:w-64 sm:shrink-0 rounded-lg border ${
+              darkMode ? 'bg-gray-900/90 border-white/10' : 'bg-white border-slate-200 shadow-md'
+            }`}>
 
           {/* Panel Estilo del Chat */}
           {showFontPanel && (
-            <div className={`rounded-lg border p-3 space-y-3 ${
-              darkMode ? 'bg-gray-900/80 border-cyan-500/30' : 'bg-slate-50 border-slate-300'
-            }`}>
+            <div className="p-3 space-y-3">
+              {/* Header */}
               <div className="flex items-center justify-between">
-                <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/80' : 'text-slate-700'}`}>
-                  Estilo del Chat
-                </span>
-                <button onClick={() => setShowFontPanel(false)} className="text-gray-400 hover:text-gray-200"><X className="w-3.5 h-3.5" /></button>
+                <span className={`text-[11px] font-black uppercase tracking-widest ${darkMode ? 'text-cyan-400' : 'text-slate-600'}`}>Estilo del Chat</span>
+                <button onClick={() => setShowFontPanel(false)} className={`p-1 rounded transition-colors ${darkMode ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}`}><X className="w-3.5 h-3.5" /></button>
               </div>
 
-              {/* Tamaño de letra */}
-              <div className="flex items-center gap-2">
-                <span className={`text-xs font-medium w-20 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Tamaño</span>
-                <button
-                  onClick={() => setChatFontSize(s => Math.max(10, s - 1))}
-                  className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-colors ${
-                    darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
-                  }`}
-                >A-</button>
-                <span className={`text-xs font-mono min-w-[28px] text-center font-bold ${darkMode ? 'text-cyan-400' : 'text-slate-700'}`}>{chatFontSize}px</span>
-                <button
-                  onClick={() => setChatFontSize(s => Math.min(24, s + 1))}
-                  className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-colors ${
-                    darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
-                  }`}
-                >A+</button>
+              {/* Tamaño */}
+              <div className={`flex items-stretch rounded-lg border overflow-hidden ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
+                <button onClick={() => setChatFontSize(s => Math.max(10, s - 1))} className={`flex-1 py-2 text-xs font-bold border-r transition-colors ${darkMode ? 'border-white/10 bg-slate-800 hover:bg-slate-700 text-slate-200' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`}>A−</button>
+                <span className={`px-3 flex items-center text-xs font-black tabular-nums ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`}>{chatFontSize}px</span>
+                <button onClick={() => setChatFontSize(s => Math.min(24, s + 1))} className={`flex-1 py-2 text-xs font-bold border-l transition-colors ${darkMode ? 'border-white/10 bg-slate-800 hover:bg-slate-700 text-slate-200' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`}>A+</button>
               </div>
 
-              {/* Color de Nick */}
-              <div className="flex items-center gap-2">
-                <span className={`text-xs font-medium w-20 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Nick</span>
-                <div className="flex gap-1.5">
-                  {['#000000', '#22d3ee', '#a855f7', '#f59e0b', '#ef4444', '#22c55e', '#3b82f6', '#ec4899', '#f97316', '#ffffff'].map(c => (
-                    <button
-                      key={c}
-                      onClick={() => setChatNickColor(c)}
-                      className={`w-5 h-5 rounded-full transition-transform ${
-                        chatNickColor === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-110'
-                      }`}
-                      style={{ backgroundColor: c, border: (c === '#ffffff' || c === '#000000') ? '1px solid #666' : 'none' }}
+              {/* Color Nick */}
+              <div>
+                <p className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Nick</p>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {['#22d3ee','#a855f7','#f59e0b','#ef4444','#22c55e','#3b82f6','#ec4899','#f97316','#ffffff','#94a3b8'].map(c => (
+                    <button key={c} onClick={() => setChatNickColor(c)}
+                      className={`h-7 rounded-md transition-all ${chatNickColor === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-105'}`}
+                      style={{ backgroundColor: c }}
                     />
                   ))}
                 </div>
               </div>
 
-              {/* Color de Mensaje */}
-              <div className="flex items-center gap-2">
-                <span className={`text-xs font-medium w-20 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Mensaje</span>
-                <div className="flex gap-1.5">
-                  {['#000000', '#d1d5db', '#ffffff', '#22d3ee', '#a855f7', '#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#94a3b8'].map(c => (
-                    <button
-                      key={c}
-                      onClick={() => setChatMsgColor(c)}
-                      className={`w-5 h-5 rounded-full transition-transform ${
-                        chatMsgColor === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-110'
-                      }`}
-                      style={{ backgroundColor: c, border: (c === '#ffffff' || c === '#000000') ? '1px solid #666' : 'none' }}
+              {/* Color Mensaje */}
+              <div>
+                <p className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Mensaje</p>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {['#ffffff','#d1d5db','#94a3b8','#22d3ee','#a855f7','#f59e0b','#22c55e','#3b82f6','#ec4899','#f97316'].map(c => (
+                    <button key={c} onClick={() => setChatMsgColor(c)}
+                      className={`h-7 rounded-md transition-all ${chatMsgColor === c ? 'ring-2 ring-white ring-offset-1 ring-offset-gray-900 scale-110' : 'hover:scale-105'}`}
+                      style={{ backgroundColor: c }}
                     />
                   ))}
                 </div>
               </div>
 
               {/* Preview */}
-              <div className={`rounded p-2 text-xs ${darkMode ? 'bg-gray-800/80' : 'bg-white'}`} style={{ fontSize: `${chatFontSize}px` }}>
-                <span style={{ color: chatNickColor }} className="font-semibold">NickDeEjemplo:</span>
-                <span style={{ color: chatMsgColor }} className="ml-1">Este es un mensaje de prueba</span>
+              <div className={`rounded-lg p-2.5 border ${darkMode ? 'bg-[#0f0f23] border-white/10' : 'bg-slate-50 border-slate-200'}`} style={{ fontSize: `${chatFontSize}px` }}>
+                <span style={{ color: chatNickColor }} className="font-bold">NickEjemplo: </span>
+                <span style={{ color: chatMsgColor }}>Hola, mensaje de prueba!</span>
               </div>
             </div>
           )}
@@ -2537,14 +3607,14 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
             }`}>
               <div className="flex items-center justify-between">
                 <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>
-                  Remarcar por tipo
+                  {t('tiktok.highlight.byType')}
                 </span>
                 <button onClick={() => setShowHighlightPanel(false)} className="text-gray-400 hover:text-gray-200"><X className="w-3.5 h-3.5" /></button>
               </div>
 
               {/* Reglas por tipo */}
               {[
-                { key: 'moderators', label: 'Moderadores' },
+                { key: 'moderators', label: t('tiktok.highlight.moderators') },
                 { key: 'donors', label: 'Donadores' },
                 { key: 'subscribers', label: 'Suscriptores' },
                 { key: 'communityMembers', label: 'Miembros de comunidad' },
@@ -2609,7 +3679,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               <div className={`pt-2 border-t ${darkMode ? 'border-gray-700' : 'border-amber-200'}`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>
-                    Remarcar usuario manual
+                    {t('tiktok.highlight.manual')}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -2672,8 +3742,118 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   </div>
                 )}
               </div>
+
             </div>
           )}
+
+          {/* Panel de Nicks Guardados */}
+          {showNicksPanel && (
+            <div className={`rounded-lg border p-3 space-y-3 ${
+              darkMode ? 'bg-gray-900/80 border-cyan-500/30' : 'bg-cyan-50 border-cyan-200'
+            }`}>
+              <div className="flex items-center justify-between">
+                <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/80' : 'text-cyan-600'}`}>
+                  Nicks Guardados
+                </span>
+                <button onClick={() => setShowNicksPanel(false)} className="text-gray-400 hover:text-gray-200"><X className="w-3.5 h-3.5" /></button>
+              </div>
+
+              {/* Tabla de nicks */}
+              <div className="overflow-x-auto">
+                {Object.entries(nickOverrides).length === 0 ? (
+                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Sin nicks guardados</p>
+                ) : (
+                  <table className={`w-full text-xs ${darkMode ? 'border-gray-700' : 'border-cyan-200'}`}>
+                    <thead>
+                      <tr className={`border-b ${darkMode ? 'border-gray-700' : 'border-cyan-200'}`}>
+                        <th className="text-left px-2 py-2 font-semibold">Usuario</th>
+                        <th className="text-left px-2 py-2 font-semibold">Nick</th>
+                        <th className="text-center px-2 py-2 font-semibold">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(nickOverrides).map(([username, nickname]) => (
+                        <tr key={username} className={`border-b ${darkMode ? 'border-gray-700/50 hover:bg-gray-800/30' : 'border-cyan-100 hover:bg-cyan-100/50'} transition-colors`}>
+                          <td className={`px-2 py-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{username}</td>
+                          <td className={`px-2 py-2 font-semibold ${darkMode ? 'text-cyan-300' : 'text-cyan-600'}`}>
+                            {editingNickInTable === username ? (
+                              <input
+                                autoFocus
+                                type="text"
+                                value={editingNickValueInTable}
+                                onChange={(e) => setEditingNickValueInTable(e.target.value)}
+                                onKeyDown={async (e) => {
+                                  if (e.key === 'Enter') {
+                                    const newNick = editingNickValueInTable.trim()
+                                    if (newNick) {
+                                      await apiNicks.set(username, newNick)
+                                      setNickOverrides(prev => ({ ...prev, [username]: newNick }))
+                                    }
+                                    setEditingNickInTable(null)
+                                  }
+                                  if (e.key === 'Escape') setEditingNickInTable(null)
+                                }}
+                                onBlur={async () => {
+                                  const newNick = editingNickValueInTable.trim()
+                                  if (newNick) {
+                                    await apiNicks.set(username, newNick)
+                                    setNickOverrides(prev => ({ ...prev, [username]: newNick }))
+                                  }
+                                  setEditingNickInTable(null)
+                                }}
+                                className={`text-xs px-2 py-1 rounded border outline-none w-32 ${
+                                  darkMode ? 'bg-gray-700 text-cyan-300 border-cyan-500/50' : 'bg-white text-cyan-600 border-cyan-300'
+                                }`}
+                              />
+                            ) : (
+                              nickname
+                            )}
+                          </td>
+                          <td className="px-2 py-2 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => {
+                                  setEditingNickInTable(username)
+                                  setEditingNickValueInTable(nickname)
+                                }}
+                                className={`p-1 rounded transition-colors ${darkMode ? 'hover:bg-gray-700 text-cyan-400' : 'hover:bg-cyan-200 text-cyan-600'}`}
+                                title="Editar nick"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  await apiNicks.remove(username)
+                                  setNickOverrides(prev => {
+                                    const next = { ...prev }
+                                    delete next[username]
+                                    return next
+                                  })
+                                }}
+                                className={`p-1 rounded transition-colors ${darkMode ? 'hover:bg-red-900/30 text-red-400' : 'hover:bg-red-100 text-red-600'}`}
+                                title="Borrar nick"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          )}
+
+            </div>
+          )}{/* fin panel lateral derecho */}
+          </div>{/* fin flex layout controles */}
+
         </div>
       )}
 
@@ -2694,13 +3874,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                 <div>
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-300 text-xs font-semibold uppercase tracking-[0.2em]">
                     <Sparkles className="w-3.5 h-3.5" />
-                    Resumen premium
+                    {t('tiktok.summary.title')}
                   </div>
                   <h3 className={`mt-3 text-3xl sm:text-4xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                     Cierre del directo
                   </h3>
                   <p className={`mt-2 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                    {summaryTone}. Asi se movio tu chat en esta sesion.
+                    {summaryTone}. {t('tiktok.summary.desc')}
                   </p>
                 </div>
                 <button
@@ -2716,10 +3896,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
               <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { label: 'Mensajes recibidos', value: sessionSummary.receivedCount, icon: MessageCircle, color: 'text-cyan-300' },
+                    { label: t('tiktok.summary.received'), value: sessionSummary.receivedCount, icon: MessageCircle, color: 'text-cyan-300' },
                     { label: 'Mensajes leidos', value: sessionSummary.readCount, icon: Volume2, color: 'text-emerald-300' },
-                    { label: 'Tiempo de transmision', value: sessionSummary.uptimeSeconds, icon: Clock3, color: 'text-violet-300', format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s` },
-                    { label: 'Pico mensajes/min', value: sessionSummary.peakMessagesPerMinute, icon: TrendingUp, color: 'text-amber-300' },
+                    { label: t('tiktok.summary.uptime'), value: sessionSummary.uptimeSeconds, icon: Clock3, color: 'text-violet-300', format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s` },
+                    { label: t('tiktok.summary.peak'), value: sessionSummary.peakMessagesPerMinute, icon: TrendingUp, color: 'text-amber-300' },
                   ].map((stat, index) => {
                     const Icon = stat.icon
                     return (
@@ -2744,7 +3924,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                     <div className="grid grid-cols-2 gap-4">
                       {[
                         { label: 'Porcentaje leido', value: sessionSummary.readPercentage, accent: '#22c55e' },
-                        { label: 'Mensajes filtrados', value: sessionSummary.filteredPercentage, accent: '#f59e0b' },
+                        { label: t('tiktok.summary.filtered'), value: sessionSummary.filteredPercentage, accent: '#f59e0b' },
                       ].map((ring) => (
                         <div key={ring.label} className="flex flex-col items-center gap-3">
                           <div
@@ -2780,7 +3960,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                         </p>
                       </div>
                       <div>
-                        <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Mensajes filtrados</p>
+                        <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t('tiktok.summary.filtered')}</p>
                         <p className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}><AnimatedCount value={sessionSummary.filteredCount} /></p>
                       </div>
                     </div>
@@ -2793,7 +3973,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
                   onClick={closeSessionSummary}
                   className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-white font-bold hover:opacity-90 transition"
                 >
-                  Cerrar resumen
+                  {t('tiktok.summary.close')}
                 </button>
               </div>
             </div>
@@ -2803,5 +3983,4 @@ export default function TikTokLivePanel({ config = {}, updateConfig }) {
     </div>
   )
 }
-
 

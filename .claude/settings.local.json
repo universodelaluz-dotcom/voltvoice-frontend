@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs grep:*)",
+      "Bash(grep -E \"\\\\.\\(js|ts\\)$\")",
+      "Bash(npm run:*)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(node create-admin.js)",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -d \"{\\\\\"email\\\\\":\\\\\"alainsh@gmail.com\\\\\",\\\\\"password\\\\\":\\\\\"Admin1234\\\\\"}\")",
+      "Bash(curl -s http://localhost:5173)"
+    ]
+  }
+}

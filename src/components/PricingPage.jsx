@@ -1,5 +1,6 @@
-import { ArrowLeft } from 'lucide-react'
+﻿import { ArrowLeft } from 'lucide-react'
 import { PricingCards } from './PricingCards'
+import { PricingComparison } from './PricingComparison'
 
 export function PricingPage({ onGoHome, darkMode, onPlanAction }) {
   return (
@@ -15,7 +16,7 @@ export function PricingPage({ onGoHome, darkMode, onPlanAction }) {
             <span>Volver</span>
           </button>
           <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-            StreamVoicer
+            Stream Voicer
           </h1>
           <div className="w-20"></div>
         </div>
@@ -27,15 +28,27 @@ export function PricingPage({ onGoHome, darkMode, onPlanAction }) {
           {/* Title */}
           <div className="text-center mb-12">
             <h2 className="text-5xl font-black mb-4">
-              Planes <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Simples</span>
+              Planes <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Flexibles</span>
             </h2>
-            <p className={`text-xl mb-8 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            <p className={`text-xl ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               Elige el plan perfecto para tu stream
             </p>
           </div>
 
-          {/* Pricing Cards Component */}
+          {/* Pricing Cards */}
           <PricingCards darkMode={darkMode} showToggle={true} onPlanAction={onPlanAction} />
+
+          {/* Divider */}
+          <div className="my-20 flex items-center gap-4">
+            <div className={`flex-1 h-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
+            <span className={`text-sm font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              📋 Comparativa detallada
+            </span>
+            <div className={`flex-1 h-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
+          </div>
+
+          {/* Pricing Comparison Table */}
+          <PricingComparison darkMode={darkMode} onPlanAction={onPlanAction} />
 
           {/* FAQ */}
           <div className="text-center mt-16">
@@ -48,3 +61,4 @@ export function PricingPage({ onGoHome, darkMode, onPlanAction }) {
     </div>
   )
 }
+

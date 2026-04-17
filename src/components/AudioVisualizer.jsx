@@ -1,195 +1,196 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
-export default function AudioVisualizer({ audioUrl, isPlaying, darkMode }) {
+const AUDIO_GRAPH_SYMBOL = Symbol.for('voltvoice.audioGraph')
+
+export default function AudioVisualizer({ audioElement, isPlaying }) {
   const canvasRef = useRef(null)
   const analyserRef = useRef(null)
-  const animationIdRef = useRef(null)
-  const audioCtxRef = useRef(null)
-  const sourceRef = useRef(null)
-  const [isReady, setIsReady] = useState(false)
-  const phaseRef = useRef(0)
+  const animationRef = useRef(null)
+  const smoothLineRef = useRef([])
 
   useEffect(() => {
-    if (!audioUrl) return
+    const target = audioElement
+    if (!target) return
 
-    // Si ya hay un contexto, desconectar antes
-    if (sourceRef.current) {
-      try { sourceRef.current.disconnect() } catch (_) {}
+    const createGraph = () => {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+      const analyser = audioCtx.createAnalyser()
+      analyser.fftSize = 2048
+      analyser.smoothingTimeConstant = 0.5
+      const g = { audioCtx, analyser, source: null, usedCaptureStream: false, lastWiredSrcObject: null }
+      target[AUDIO_GRAPH_SYMBOL] = g
+      return g
     }
-    if (audioCtxRef.current) {
-      try { audioCtxRef.current.close() } catch (_) {}
-    }
 
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-    const analyser = audioCtx.createAnalyser()
-    analyser.fftSize = 2048
-    analyser.smoothingTimeConstant = 0.85
+    const wireSource = (graph) => {
+      if (!graph) return
 
-    // Buscar el elemento <audio> existente en el DOM que tenga este src
-    const existingAudio = document.querySelector(`audio[src="${audioUrl}"]`)
+      // If stream changed (e.g. new WebRTC session), detach old source so we rewire below.
+      const currentSrcObject = target.srcObject || null
+      if (graph.source && graph.usedCaptureStream && currentSrcObject && currentSrcObject !== graph.lastWiredSrcObject) {
+        try { graph.source.disconnect() } catch (_) {}
+        graph.source = null
+        graph.lastWiredSrcObject = null
+      }
 
-    if (existingAudio) {
+      if (graph.source) return
+
       try {
-        const source = audioCtx.createMediaElementSource(existingAudio)
-        source.connect(analyser)
-        analyser.connect(audioCtx.destination)
-        sourceRef.current = source
+        let source = null
+        let usedCaptureStream = false
+
+        if (currentSrcObject) {
+          // WebRTC / MediaStream element: always read from the stream directly.
+          // createMediaElementSource on srcObject elements may return a silent node in
+          // Chrome because WebRTC audio can bypass the Web Audio graph.
+          source = graph.audioCtx.createMediaStreamSource(currentSrcObject)
+          usedCaptureStream = true
+        } else {
+          // Regular <audio src="url"> element.
+          try {
+            source = graph.audioCtx.createMediaElementSource(target)
+          } catch (_) {
+            const stream = typeof target.captureStream === 'function' ? target.captureStream() : null
+            if (stream) {
+              source = graph.audioCtx.createMediaStreamSource(stream)
+              usedCaptureStream = true
+            }
+          }
+        }
+
+        if (!source) return
+        source.connect(graph.analyser)
+        if (!usedCaptureStream) {
+          graph.analyser.connect(graph.audioCtx.destination)
+        }
+        graph.source = source
+        graph.usedCaptureStream = usedCaptureStream
+        graph.lastWiredSrcObject = currentSrcObject
       } catch (_) {
-        // Si ya tiene fuente conectada, solo usamos el analyser sin fuente
+        // Keep silent and retry on next playback event.
       }
     }
 
-    audioCtxRef.current = audioCtx
-    analyserRef.current = analyser
-    setIsReady(true)
+    let graph = target[AUDIO_GRAPH_SYMBOL]
+    if (!graph || graph.audioCtx?.state === 'closed') {
+      graph = createGraph()
+    }
+    wireSource(graph)
+
+    analyserRef.current = graph.analyser
+
+    // Resume immediately — the element may already be playing (e.g. Inworld WebRTC audio
+    // starts before the visualizer is connected), so the 'play' event won't fire again.
+    graph.audioCtx.resume().catch(() => {})
+
+    const resume = () => {
+      if (graph.audioCtx.state !== 'running') {
+        graph.audioCtx.resume().catch(() => {})
+      }
+      // Retry wiring source when playback starts; fixes bot audio elements that get stream late.
+      if (!graph.source) {
+        wireSource(graph)
+      }
+    }
+
+    target.addEventListener('play', resume)
+    target.addEventListener('canplay', resume)
 
     return () => {
-      if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current)
-      try { audioCtx.close() } catch (_) {}
+      target.removeEventListener('play', resume)
+      target.removeEventListener('canplay', resume)
     }
-  }, [audioUrl])
+  }, [audioElement])
 
   useEffect(() => {
-    if (!canvasRef.current) return
-
     const canvas = canvasRef.current
+    if (!canvas) return
     const ctx = canvas.getContext('2d')
 
-    const drawIdle = () => {
-      // Onda suave en reposo
-      const W = canvas.width
-      const H = canvas.height
-      ctx.clearRect(0, 0, W, H)
-      ctx.fillStyle = '#000'
-      ctx.fillRect(0, 0, W, H)
-
-      phaseRef.current += 0.03
-
-      ctx.save()
-      ctx.shadowBlur = 18
-      ctx.shadowColor = '#00e5ff'
-
-      for (let layer = 0; layer < 3; layer++) {
-        const amplitude = [4, 6, 3][layer]
-        const freq = [0.012, 0.018, 0.009][layer]
-        const alpha = [0.25, 0.15, 0.1][layer]
-
-        ctx.beginPath()
-        ctx.strokeStyle = `rgba(0, 200, 255, ${alpha})`
-        ctx.lineWidth = 1.5
-
-        for (let x = 0; x < W; x++) {
-          const y = H / 2 + Math.sin(x * freq + phaseRef.current + layer * 1.5) * amplitude
-          x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
-        }
-        ctx.stroke()
-      }
-      ctx.restore()
-
-      animationIdRef.current = requestAnimationFrame(drawIdle)
+    const points = 170
+    if (!smoothLineRef.current.length) {
+      smoothLineRef.current = new Array(points).fill(0)
     }
 
-    const drawActive = () => {
-      if (!analyserRef.current) {
-        animationIdRef.current = requestAnimationFrame(drawActive)
-        return
-      }
-
-      const analyser = analyserRef.current
-      const bufferLength = analyser.fftSize
-      const timeData = new Float32Array(bufferLength)
-      const freqData = new Uint8Array(analyser.frequencyBinCount)
-      analyser.getFloatTimeDomainData(timeData)
-      analyser.getByteFrequencyData(freqData)
-
-      // Calcular energía para escalar la amplitud
-      let energy = 0
-      for (let i = 0; i < freqData.length; i++) energy += freqData[i]
-      energy = energy / freqData.length / 255
-
+    const draw = () => {
       const W = canvas.width
       const H = canvas.height
+      const midY = H / 2
+
+      const analyser = analyserRef.current
+      const active = Boolean(isPlaying)
+
+      let signal = new Array(points).fill(0)
+      let energy = 0
+
+      if (active && analyser) {
+        const time = new Float32Array(analyser.fftSize)
+        analyser.getFloatTimeDomainData(time)
+
+        let rms = 0
+        for (let i = 0; i < time.length; i++) rms += time[i] * time[i]
+        rms = Math.sqrt(rms / time.length)
+        energy = Math.max(0, Math.min(1, (rms - 0.0018) * 52))
+
+        for (let i = 0; i < points; i++) {
+          const idx = Math.min(time.length - 1, Math.floor((i / points) * time.length))
+          signal[i] = time[idx]
+        }
+      } else {
+        energy = 0
+      }
+
+      const amp = active ? (12 + energy * 120) : 1.4
+      const smooth = active ? 0.36 : 0.14
 
       ctx.clearRect(0, 0, W, H)
       ctx.fillStyle = '#000'
       ctx.fillRect(0, 0, W, H)
 
-      phaseRef.current += 0.04
-
-      const centerY = H / 2
-      const maxAmp = (H / 2) * 0.85
-
-      // ── Glow layers (outer → inner) ──
-      const layers = [
-        { blur: 40, color: 'rgba(0,180,255,0.08)', width: 8 },
-        { blur: 22, color: 'rgba(0,220,255,0.18)', width: 5 },
-        { blur: 10, color: 'rgba(0,240,255,0.45)', width: 2.5 },
-        { blur: 0,  color: 'rgba(200,240,255,0.9)', width: 1.2 },
-      ]
-
-      layers.forEach(({ blur, color, width }) => {
-        ctx.save()
-        ctx.shadowBlur = blur
-        ctx.shadowColor = '#00e5ff'
-        ctx.strokeStyle = color
-        ctx.lineWidth = width
-        ctx.lineJoin = 'round'
-        ctx.beginPath()
-
-        const sliceWidth = W / bufferLength
-        let x = 0
-        for (let i = 0; i < bufferLength; i++) {
-          const v = timeData[i]
-          const y = centerY + v * maxAmp * (0.6 + energy * 1.4)
-          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
-          x += sliceWidth
-        }
-        ctx.stroke()
-        ctx.restore()
-      })
-
-      // Mirror waveform (symmetric reflection with lower opacity)
       ctx.save()
-      ctx.shadowBlur = 12
-      ctx.shadowColor = '#00b4ff'
-      ctx.strokeStyle = 'rgba(0,180,255,0.12)'
-      ctx.lineWidth = 2
+      ctx.shadowBlur = 14
+      ctx.shadowColor = '#00dcff'
+
+      // Glow line
       ctx.beginPath()
-      let x2 = 0
-      for (let i = 0; i < bufferLength; i++) {
-        const v = timeData[i]
-        const y = centerY - v * maxAmp * (0.4 + energy)
-        i === 0 ? ctx.moveTo(x2, y) : ctx.lineTo(x2, y)
-        x2 += W / bufferLength
+      ctx.strokeStyle = `rgba(0,220,255,${0.26 + energy * 0.62})`
+      ctx.lineWidth = 1.8 + energy * 2.2
+      for (let i = 0; i < points; i++) {
+        const prev = smoothLineRef.current[i] || 0
+        const next = prev + (signal[i] - prev) * smooth
+        smoothLineRef.current[i] = next
+        const x = (i / (points - 1)) * W
+        const y = midY + next * amp
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      ctx.stroke()
+
+      // Main baseline that rumbles vertically only
+      ctx.beginPath()
+      ctx.strokeStyle = 'rgba(190,245,255,0.98)'
+      ctx.lineWidth = 1.35 + energy * 1.15
+      for (let i = 0; i < points; i++) {
+        const x = (i / (points - 1)) * W
+        const y = midY + smoothLineRef.current[i] * amp
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
       }
       ctx.stroke()
       ctx.restore()
 
-      animationIdRef.current = requestAnimationFrame(drawActive)
+      animationRef.current = requestAnimationFrame(draw)
     }
 
-    if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current)
-
-    if (isPlaying && isReady) {
-      drawActive()
-    } else {
-      drawIdle()
-    }
-
+    animationRef.current = requestAnimationFrame(draw)
     return () => {
-      if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current)
+      if (animationRef.current) cancelAnimationFrame(animationRef.current)
     }
-  }, [isPlaying, isReady])
+  }, [isPlaying])
 
   return (
-    <div className="w-full rounded-lg overflow-hidden" style={{ background: '#000', height: 100 }}>
-      <canvas
-        ref={canvasRef}
-        width={1200}
-        height={200}
-        className="w-full h-full"
-        style={{ display: 'block' }}
-      />
+    <div className="w-full rounded-lg overflow-hidden" style={{ background: '#000', height: 100, border: '1px solid rgba(34,211,238,0.2)' }}>
+      <canvas ref={canvasRef} width={1200} height={200} className="w-full h-full" style={{ display: 'block' }} />
     </div>
   )
 }

@@ -1,11 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import TikTokLivePanel from './TikTokLivePanel'
 import AudioVisualizer from './AudioVisualizer'
 import BotInvoker from './BotInvoker'
-import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Shield } from 'lucide-react'
+import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Shield, Lock } from 'lucide-react'
 
-export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAdmin, darkMode, setDarkMode, config, updateConfig, user }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAdmin, onGoPricingPage, darkMode, setDarkMode, config, updateConfig, configReady = true, user }) {
+  const { t } = useTranslation()
   const audioSpeed = config.audioSpeed || 1.0
+  const PREMIUM_TEST_CHAR_LIMIT = 500
+  const FREE_LOCAL_LIMIT_CODE = 'FREE_LOCAL_VOICE_DAILY_LIMIT_REACHED'
+  const currentPlan = String(user?.plan || 'free').toLowerCase()
+  const localVoiceLabelSuffix = currentPlan === 'free' ? '' : ` ${t('studio.voice.unlimited')}`
   const [showBotInvoker, setShowBotInvoker] = useState(false)
 
   const toggleTheme = () => {
@@ -22,13 +28,18 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const [voices, setVoices] = useState([])
   const [userVoices, setUserVoices] = useState([])
   const selectedVoice = config.generalVoiceId || 'es-ES'
-  const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
   // Synthesis
-  const [text, setText] = useState('Asi suena tu voz elegida')
+  const [text, setText] = useState(t('studio.voice.defaultText'))
   const [loading, setLoading] = useState(false)
   const [audioUrl, setAudioUrl] = useState(null)
+  const [audioPlaybackNonce, setAudioPlaybackNonce] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [localSpeechActive, setLocalSpeechActive] = useState(false)
+  const [assistantSpeechActive, setAssistantSpeechActive] = useState(false)
+  const [assistantAudioElement, setAssistantAudioElement] = useState(null)
+  const [pttRecordingActive, setPttRecordingActive] = useState(false)
   const audioRef = useRef(null)
   const [tokensUsed, setTokensUsed] = useState(0)
   const [error, setError] = useState(null)
@@ -38,26 +49,54 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const [tokens, setTokens] = useState(user?.tokens || 1000)
   const [totalTokensUsed, setTotalTokensUsed] = useState(0)
   const [synthesisCount, setSynthesisCount] = useState(0)
+  const [announcements, setAnnouncements] = useState([])
 
-  const getAuthToken = () => localStorage.getItem('sv-token') || ''
+  const getAuthToken = () => sessionStorage.getItem('sv-token') || ''
+  const formatResetWait = (seconds = 0) => {
+    const safe = Math.max(0, Number(seconds) || 0)
+    const hours = Math.floor(safe / 3600)
+    const minutes = Math.ceil((safe % 3600) / 60)
+    if (hours <= 0) return `${Math.max(1, minutes)} min`
+    return `${hours}h ${Math.max(0, minutes)}m`
+  }
 
   // Chat simulation
   const [chatMessages, setChatMessages] = useState([
-    { id: 1, user: 'maria_streams', message: '¡Hola! ¿Cómo estás?', timestamp: new Date(Date.now() - 30000) },
-    { id: 2, user: 'juan_gamer', message: 'Este stream es increíble 🔥', timestamp: new Date(Date.now() - 20000) },
-    { id: 3, user: 'sofia_rocks', message: '¡Léeme este mensaje!', timestamp: new Date(Date.now() - 10000) },
+    { id: 1, user: 'maria_streams', message: 'Hola! Como estas?', timestamp: new Date(Date.now() - 30000) },
+    { id: 2, user: 'juan_gamer', message: 'Este stream es increible', timestamp: new Date(Date.now() - 20000) },
+    { id: 3, user: 'sofia_rocks', message: 'Leeme este mensaje!', timestamp: new Date(Date.now() - 10000) },
   ])
   const [newChatMessage, setNewChatMessage] = useState('')
   const [currentChatUser, setCurrentChatUser] = useState('viewer123')
 
-  // Reproducir automáticamente cuando haya audio
+  // Reproducir automaticamente cuando haya audio
   useEffect(() => {
-    if (audioUrl && audioRef.current) {
-      setTimeout(() => audioRef.current?.play(), 100)
-    }
-  }, [audioUrl])
+    if (!audioUrl || !audioRef.current) return
 
-  // Rastrear estado de reproducción para el visualizador
+    const audio = audioRef.current
+    let cancelled = false
+
+    const startPlayback = async () => {
+      try {
+        audio.pause()
+        audio.currentTime = 0
+        audio.load()
+        const maybePromise = audio.play()
+        if (maybePromise && typeof maybePromise.catch === 'function') {
+          await maybePromise
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.warn('[Studio] Autoplay blocked or failed:', err?.message || err)
+        }
+      }
+    }
+
+    startPlayback()
+    return () => { cancelled = true }
+  }, [audioUrl, audioPlaybackNonce])
+
+  // Rastrear estado de reproduccion para el visualizador
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
@@ -111,24 +150,40 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     }
   }
 
+  // Voces premium permitidas por plan
+  const PREMIUM_BY_PLAN = {
+    free: [], start: ['Diego'],
+    creator: ['Diego', 'Lupita'],
+    pro: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    premium: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    elite: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    admin: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    on_demand: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+  }
+  const ALL_PREMIUM_VOICES = [
+    { id: "Diego", name: "Voz natural de Luis - Premium", category: "premium", engine: "inworld" },
+    { id: "Lupita", name: "Voz natural de Sofia - Premium", category: "premium", engine: "inworld" },
+    { id: "Miguel", name: "Voz natural de Gustavo - Premium", category: "premium", engine: "inworld" },
+    { id: "Rafael", name: "Voz natural de Leonel - Premium", category: "premium", engine: "inworld" },
+  ]
+
   // Cargar voces disponibles de Inworld AI + Google TTS + Voces del usuario
   useEffect(() => {
+    const userPlan = user?.plan || 'free'
+    const allowedPremium = PREMIUM_BY_PLAN[userPlan] ?? []
     const allVoices = [
-      // === VOCES LOCALES (Sin tokens, sin backend) ===
-      { id: "es-ES", name: "🔊 Voz Local Español (ilimitada)", category: "webspeech", engine: "webspeech" },
-      { id: "en-US", name: "🔊 Voz Local Inglés (ilimitada)", category: "webspeech", engine: "webspeech" },
+      // === VOCES LOCALES — incluidas en todos los planes, sin tokens ===
+      { id: "es-ES", name: `Voz Local Espanol${localVoiceLabelSuffix}`, category: "webspeech", engine: "webspeech" },
+      { id: "en-US", name: `Voz Local Ingles${localVoiceLabelSuffix}`, category: "webspeech", engine: "webspeech" },
 
-      // === Voces Premium - Naturales ===
-      { id: "Diego", name: "🎙️ Voz natural de Luis - Premium", category: "premium", engine: "inworld" },
-      { id: "Lupita", name: "🎙️ Voz natural de Sofia - Premium", category: "premium", engine: "inworld" },
-      { id: "Miguel", name: "🎙️ Voz natural de Gustavo - Premium", category: "premium", engine: "inworld" },
-      { id: "Rafael", name: "🎙️ Voz natural de Leonel - Premium", category: "premium", engine: "inworld" },
+      // === Voces Premium — filtradas por plan ===
+      ...ALL_PREMIUM_VOICES.filter(v => allowedPremium.includes(v.id)),
 
       // === Voces Clonadas/Generadas del usuario ===
       ...userVoices,
     ]
     setVoices(allVoices)
-  }, [userVoices])
+  }, [userVoices, user?.plan, localVoiceLabelSuffix])
 
   // Cargar voces al montar y escuchar evento de voz nueva
   useEffect(() => {
@@ -164,6 +219,56 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     return () => window.removeEventListener('voltvoice:tokens-updated', handleTokenUpdate)
   }, [])
 
+  useEffect(() => {
+    const handleAssistantVisualizer = (event) => {
+      const active = Boolean(event?.detail?.active)
+      setAssistantSpeechActive(active)
+      if (active) {
+        // Ensure response visualization can start even if PTT flag lags.
+        setPttRecordingActive(false)
+      }
+    }
+
+    window.addEventListener('voltvoice:assistant-visualizer', handleAssistantVisualizer)
+    return () => window.removeEventListener('voltvoice:assistant-visualizer', handleAssistantVisualizer)
+  }, [])
+
+  useEffect(() => {
+    const handleAssistantVisualizerAudio = (event) => {
+      const el = event?.detail?.audioElement || null
+      setAssistantAudioElement(el)
+    }
+
+    window.addEventListener('voltvoice:assistant-visualizer-audio', handleAssistantVisualizerAudio)
+    return () => window.removeEventListener('voltvoice:assistant-visualizer-audio', handleAssistantVisualizerAudio)
+  }, [])
+
+  useEffect(() => {
+    const loadAnnouncements = async () => {
+      try {
+        const token = getAuthToken()
+        if (!token || !user?.id) return
+        const r = await fetch(`${API_URL}/api/ops/announcements`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const d = await r.json().catch(() => ({}))
+        if (r.ok && d.success) setAnnouncements(d.announcements || [])
+      } catch {
+        // silent
+      }
+    }
+    loadAnnouncements()
+  }, [user?.id])
+
+  useEffect(() => {
+    const handlePttAudioState = (event) => {
+      setPttRecordingActive(Boolean(event?.detail?.active))
+    }
+
+    window.addEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
+    return () => window.removeEventListener('voltvoice:ptt-audio-state', handlePttAudioState)
+  }, [])
+
   const handleSynthesize = async () => {
     if (!text.trim()) {
       setError('Por favor escribe algo para sintetizar')
@@ -175,39 +280,53 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       return
     }
 
+    if (text.length > PREMIUM_TEST_CHAR_LIMIT) {
+      setError(`El texto de prueba supera el limite de ${PREMIUM_TEST_CHAR_LIMIT} caracteres.`)
+      return
+    }
+
     setLoading(true)
     setError(null)
     setSuccess(false)
     setAudioUrl(null)
+    setLocalSpeechActive(false)
 
     try {
       const selectedVoiceObj = voices.find(v => v.id === selectedVoice)
       const isWebSpeech = selectedVoiceObj && selectedVoiceObj.engine === "webspeech"
 
       if (isWebSpeech) {
-        // Usar Web Speech API — voces locales del navegador/OS, gratis, sin backend
-        const lang = selectedVoice === "en-US" ? "en-US" : "es-ES"
-        const utterance = new SpeechSynthesisUtterance(text)
-        utterance.rate = audioSpeed
-        utterance.pitch = 1.0
-        utterance.volume = 1.0
-        utterance.lang = lang
+        // Voces básicas por backend TTS para obtener audio real y espectro real.
+        const token = getAuthToken()
+        const response = await fetch(`${API_URL}/api/tts/say`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            text,
+            voice: selectedVoice
+          })
+        })
 
-        // Buscar voz del idioma correcto instalada en el sistema
-        const availableVoices = window.speechSynthesis.getVoices()
-        const matchVoice =
-          availableVoices.find(v => v.lang === lang) ||
-          availableVoices.find(v => v.lang.startsWith(lang.split('-')[0])) ||
-          availableVoices[0]
-        if (matchVoice) utterance.voice = matchVoice
-
-        window.speechSynthesis.cancel()
-        window.speechSynthesis.speak(utterance)
-
-        setTokensUsed(0)
-        setSynthesisCount(prev => prev + 1)
-        setSuccess(true)
-        setTimeout(() => setSuccess(false), 3000)
+        const data = await response.json()
+        if (!response.ok || !data.audio) {
+          if (data?.code === FREE_LOCAL_LIMIT_CODE) {
+            const wait = formatResetWait(data?.details?.resetInSeconds)
+            window.alert(`Llegaste al límite diario de 2 horas de voces locales en plan FREE.\nSe restablece en aproximadamente ${wait}.`)
+          }
+          setError(data.error || "Error al sintetizar la voz básica")
+        } else {
+          setAudioUrl(data.audio)
+          setAudioPlaybackNonce((prev) => prev + 1)
+          setIsPlaying(true)
+          setLocalSpeechActive(false)
+          setTokensUsed(0)
+          setSynthesisCount(prev => prev + 1)
+          setSuccess(true)
+          setTimeout(() => setSuccess(false), 3000)
+        }
       } else {
         const token = getAuthToken()
         let response = await fetch(`${API_URL}/api/inworld/tts`, {
@@ -241,6 +360,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
         if (response.ok && (data.audio || data.success)) {
           setAudioUrl(data.audio || data.audioUrl)
+          setAudioPlaybackNonce((prev) => prev + 1)
           const estTokens = text.length
           const usedTokens = Number(data.tokensUsed || estTokens)
           const remainingTokens = Number(data.remainingTokens)
@@ -259,7 +379,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
         }
       }
     } catch (err) {
-      setError("Error de conexión. Verifica tu conexión a internet.")
+      setError("Error de conexion. Verifica tu conexion a internet.")
       console.error(err)
     } finally {
       setLoading(false)
@@ -300,51 +420,51 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
     <div className={`${darkMode ? "min-h-screen bg-gradient-to-br from-[#0a0a1a] via-[#111827] to-[#0f172a] text-white" : "min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 text-gray-900"}`}>
       {/* Header */}
       <div className={`${darkMode ? "border-b border-cyan-400/30 backdrop-blur-md sticky top-0 z-50 bg-[#0a0a1a]/90" : "border-b border-indigo-200 backdrop-blur-sm sticky top-0 z-50 bg-white/90 shadow-sm"}`}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between gap-3">
           <button
             onClick={onGoHome}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer shrink-0"
           >
-            <img src="/images/Sin%20t%C3%ADtulo%20(200%20x%2060%20px)%20(250%20x%2060%20px).png" alt="StreamVoicer" className="h-12 w-auto" />
+            <img src="/images/streamvoicer6.png" alt="StreamVoicer" className="h-10 sm:h-14 w-auto" />
             <div>
-              {user && <p className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>{user.email}</p>}
+              {user && <p className={`hidden sm:block ${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>{user.email}</p>}
             </div>
           </button>
-          <div className="flex items-center gap-4">
-            <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-              darkMode
-                ? (isStreamActive ? 'bg-red-500/20 border border-red-500/50' : 'bg-gray-700/50 border border-gray-600/50')
-                : (isStreamActive ? 'bg-slate-700 border border-slate-600 text-white' : 'bg-slate-200 border border-slate-300 text-slate-700')
+          <div className={`flex items-stretch rounded-xl border overflow-hidden h-10 sm:h-11 shrink-0 ${darkMode ? 'border-white/10' : 'border-slate-300'}`}>
+            {/* Estado */}
+            <div className={`flex items-center gap-1.5 px-3 sm:px-5 border-r text-xs sm:text-sm font-bold ${
+              darkMode ? 'border-white/10 bg-slate-800 text-slate-300' : 'border-slate-300 bg-white text-slate-600'
             }`}>
-              <div className={`w-2 h-2 rounded-full ${
-                isStreamActive ? (darkMode ? 'bg-red-500 animate-pulse' : 'bg-red-300') : 'bg-gray-500'
-              }`}></div>
-              <span className="text-xs font-semibold">{isStreamActive ? 'EN VIVO' : 'INACTIVO'}</span>
+              <div className={`w-2 h-2 rounded-full shrink-0 ${isStreamActive ? 'bg-red-500 animate-pulse' : 'bg-slate-500'}`} />
+              <span className="hidden xs:inline">{isStreamActive ? t('studio.status.live') : t('studio.status.inactive')}</span>
             </div>
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-              darkMode
-                ? 'bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30'
-                : 'bg-slate-700 border border-slate-600 shadow-sm'
+            {/* Tokens */}
+            <div className={`flex items-center gap-1.5 px-3 sm:px-5 border-r text-xs sm:text-sm font-bold ${
+              darkMode ? 'border-white/10 bg-slate-800' : 'border-slate-300 bg-white'
             }`}>
-              <Zap className={`w-4 h-4 ${darkMode ? 'text-cyan-300' : 'text-slate-200'}`} />
-              <span className={`text-sm font-bold ${darkMode ? 'text-cyan-300' : 'text-slate-100'}`}>{tokens} tokens</span>
+              <Zap className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`} />
+              <span className={darkMode ? 'text-cyan-300' : 'text-cyan-700'}>{tokens}<span className="hidden sm:inline"> tokens</span></span>
             </div>
+            {/* Tema */}
             <button
               onClick={toggleTheme}
-              className={darkMode ? "p-2 rounded-lg bg-gray-800 border border-cyan-500/30 hover:bg-gray-700 transition-colors" : "p-2 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 transition-colors shadow-sm"}
-              title={darkMode ? 'Modo claro' : 'Modo oscuro'}
+              className={`flex items-center justify-center px-3 sm:px-4 border-r transition-all ${
+                darkMode ? 'border-white/10 bg-slate-800 hover:bg-slate-700' : 'border-slate-300 bg-white hover:bg-slate-100'
+              }`}
+              title={darkMode ? t('common.lightMode') : t('common.darkMode')}
             >
-              {darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
+              {darkMode ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
             </button>
+            {/* Admin */}
             {user?.role === 'admin' && onGoAdmin && (
               <button
                 onClick={onGoAdmin}
                 title="Panel Admin"
-                className={darkMode
-                  ? "p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/30 transition-all"
-                  : "p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 border border-red-300 transition-all shadow-sm"}
+                className={`flex items-center justify-center px-3 sm:px-4 transition-all ${
+                  darkMode ? 'bg-red-900/40 hover:bg-red-900/60 text-red-400' : 'bg-red-50 hover:bg-red-100 text-red-500'
+                }`}
               >
-                <Shield className="w-5 h-5" />
+                <Shield className="w-4 h-4" />
               </button>
             )}
           </div>
@@ -352,59 +472,76 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 pt-8 pb-56 lg:pb-72">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-8 pt-4 sm:pt-6 pb-10">
+        {announcements.length > 0 && (
+          <div className="mb-4 space-y-2">
+            {announcements.slice(0, 3).map((notice) => {
+              const isMaintenance = notice.kind === 'maintenance_alert'
+              return (
+                <div key={notice.id} className={`rounded-lg border px-4 py-3 ${
+                  isMaintenance
+                    ? (darkMode ? 'border-amber-400/40 bg-amber-500/10' : 'border-amber-300 bg-amber-50')
+                    : (darkMode ? 'border-cyan-400/30 bg-cyan-500/10' : 'border-cyan-300 bg-cyan-50')
+                }`}>
+                  <p className={`text-xs font-bold uppercase ${isMaintenance ? 'text-amber-400' : 'text-cyan-400'}`}>{notice.kind.replaceAll('_', ' ')}</p>
+                  <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{notice.title}</p>
+                  <p className={`text-xs ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{notice.message}</p>
+                </div>
+              )
+            })}
+          </div>
+        )}
+        <div className="space-y-4">
         {/* TikTok Live Section */}
-        <TikTokLivePanel config={config} updateConfig={updateConfig} />
+        <TikTokLivePanel config={config} updateConfig={updateConfig} configReady={configReady} user={user} darkModeOverride={darkMode} />
 
-        {/* Botones principales: Configuración, Taller de Voces, Estadísticas */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        {/* Nav buttons - fila debajo del panel */}
+        <div className={`flex items-stretch rounded-xl border overflow-hidden ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
           <button
             onClick={onGoControlPanel}
-            className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
-              darkMode
-                ? 'bg-gradient-to-r from-[#1a1a2e] to-[#16213e] border border-cyan-400/30 hover:border-cyan-300 hover:shadow-lg hover:shadow-cyan-500/20 text-cyan-300'
-                : 'bg-gradient-to-r from-slate-700 to-slate-800 border border-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-sm'
+            className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-3 sm:py-4 font-bold text-xs sm:text-sm transition-all border-r ${
+              darkMode ? 'border-white/10 bg-[#1a1a2e] text-cyan-300 hover:bg-[#1e1e38]' : 'border-slate-200 bg-white text-indigo-700 hover:bg-indigo-50'
             }`}
           >
-            <Settings className="w-5 h-5" />
-            <span>Configuración</span>
+            <Settings className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+            <span className="truncate">{t('studio.nav.config')}</span>
           </button>
-          {onGoVoiceCloning && (
-            <button
-              onClick={onGoVoiceCloning}
-              className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
-                darkMode
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white hover:shadow-lg hover:shadow-purple-500/30'
-                  : 'bg-gradient-to-r from-slate-700 to-slate-800 border border-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-sm'
-              }`}
-            >
-              <Mic2 className="w-5 h-5" />
-              <span>Taller de Voces</span>
-            </button>
-          )}
+          {onGoVoiceCloning && (() => {
+            const blocked = String(user?.plan || 'free').toLowerCase() === 'free'
+            return (
+              <button
+                onClick={onGoVoiceCloning}
+                className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-3 sm:py-4 font-bold text-xs sm:text-sm transition-all border-r ${blocked ? 'opacity-70' : ''} ${
+                  darkMode ? 'border-white/10 bg-gradient-to-r from-purple-700/60 to-pink-700/60 text-white hover:from-purple-600/80 hover:to-pink-600/80' : 'border-slate-200 bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500'
+                }`}
+              >
+                <Mic2 className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                <span className="truncate hidden xs:inline">{t('studio.nav.voiceWorkshop')}</span>
+                <span className="truncate xs:hidden">Voces</span>
+                {blocked && <Lock className="w-3.5 h-3.5 ml-1 opacity-70 shrink-0" />}
+              </button>
+            )
+          })()}
           {onGoStatistics && (
             <button
               onClick={onGoStatistics}
-              className={`flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-semibold transition-all ${
-                darkMode
-                  ? 'bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-400/40 hover:border-cyan-300 hover:shadow-lg hover:shadow-cyan-500/30 text-cyan-300'
-                  : 'bg-gradient-to-r from-slate-700 to-slate-800 border border-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-sm'
+              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-3 sm:py-4 font-bold text-xs sm:text-sm transition-all ${
+                darkMode ? 'bg-[#1a1a2e] text-cyan-300 hover:bg-[#1e1e38]' : 'bg-white text-indigo-700 hover:bg-indigo-50'
               }`}
             >
-              <BarChart3 className="w-5 h-5" />
-              <span>Estadísticas</span>
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+              <span className="truncate">{t('studio.nav.stats')}</span>
             </button>
           )}
         </div>
 
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Center Column - Synthesis */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-3">
             {/* Voice Selection */}
             <div className={`${darkMode ? "space-y-2 bg-[#1a1a2e] border border-cyan-400/25 rounded-lg p-4" : "space-y-2 bg-white border border-indigo-200 rounded-lg p-4 shadow-sm"}`}>
               <label className="text-sm font-semibold text-cyan-300 uppercase tracking-wide">
-                Selecciona una voz
+                {t('studio.voice.select')}
               </label>
               <div className="relative">
                 <select
@@ -425,17 +562,18 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             {/* Text Input */}
             <div className={`${darkMode ? "space-y-2 bg-[#1a1a2e] border border-purple-400/25 rounded-lg p-4" : "space-y-2 bg-white border border-indigo-200 rounded-lg p-4 shadow-sm"}`}>
               <label className="text-sm font-semibold text-purple-300 uppercase tracking-wide">
-                Texto a probar
+                {t('studio.voice.test')}
               </label>
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Escribe el texto que deseas convertir en voz..."
-                className={`${darkMode ? "w-full h-32 bg-[#0f0f23] border border-purple-400/30 rounded p-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400 resize-none font-mono text-sm" : "w-full h-32 bg-gray-50 border border-indigo-300 rounded p-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 resize-none font-mono text-sm"}`}
+                maxLength={PREMIUM_TEST_CHAR_LIMIT}
+                placeholder={t('studio.voice.testPlaceholder')}
+                className={`${darkMode ? "w-full h-24 sm:h-32 bg-[#0f0f23] border border-purple-400/30 rounded p-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400 resize-none font-mono text-sm" : "w-full h-24 sm:h-32 bg-gray-50 border border-indigo-300 rounded p-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 resize-none font-mono text-sm"}`}
               />
               <div className={`${darkMode ? "flex justify-between text-xs text-gray-400" : "flex justify-between text-xs text-gray-500"}`}>
-                <span>{charCount} caracteres</span>
-                <span>1 token = 1 caracter</span>
+                <span>{t('studio.chars', { count: charCount, max: PREMIUM_TEST_CHAR_LIMIT })}</span>
+                <span>{t('studio.tokens.charInfo')}</span>
               </div>
             </div>
 
@@ -450,7 +588,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
             {success && (
               <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
                 <Volume2 className="w-5 h-5 text-green-400 flex-shrink-0" />
-                <p className="text-sm text-green-400">¡Síntesis completada!</p>
+                <p className="text-sm text-green-400">{t('studio.success.done')}</p>
               </div>
             )}
 
@@ -468,33 +606,41 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
                 {loading ? (
                   <>
                     <Loader className="w-5 h-5 animate-spin" />
-                    Probando...
+                    {t('studio.voice.testing')}
                   </>
                 ) : (
                   <>
                     <Mic2 className="w-5 h-5" />
-                    Probar voz
+                    {t('studio.voice.testBtn')}
                   </>
                 )}
               </button>
-              <audio ref={audioRef} src={audioUrl || ''} className="hidden" />
             </div>
 
             {hasInsufficientTokens && (
-              <p className="text-sm text-yellow-400 text-center bg-yellow-500/10 p-3 rounded border border-yellow-500/30">
-                No tienes suficientes tokens. Necesitas {estimatedTokens} pero solo tienes {tokens}.
+              <p
+                className={`text-sm text-center p-3 rounded border ${
+                  darkMode
+                    ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30'
+                    : 'text-amber-800 bg-amber-100 border-amber-300'
+                }`}
+              >
+                {t('studio.tokens.insufficient', { needed: estimatedTokens, available: tokens })}
               </p>
             )}
           </div>
 
           {/* Right Column - Stats & Audio */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-3">
             {/* Audio Player - with Visualizer */}
-            {audioUrl && (
-              <div className="space-y-2">
-                <AudioVisualizer audioUrl={audioUrl} isPlaying={isPlaying} darkMode={darkMode} />
+            <div className="space-y-2">
+              <AudioVisualizer
+                audioElement={assistantAudioElement || audioRef.current}
+                isPlaying={!pttRecordingActive && (isPlaying || localSpeechActive || assistantSpeechActive)}
+                darkMode={darkMode}
+              />
+              {audioUrl && (
                 <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-cyan-500/15 to-purple-500/15 border border-cyan-400/30 rounded-lg">
-                  <audio ref={(el) => el && audioUrl && (audioRef.current = el)} src={audioUrl} className="hidden" />
                   <button
                     onClick={() => {
                       if (audioRef.current) {
@@ -509,11 +655,13 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
                     <span className="text-cyan-400 font-bold">{tokensUsed}</span> tokens usados
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Bot Invoker - Push to Talk */}
             <BotInvoker
+              user={user}
+              onGoPricingPage={onGoPricingPage}
               darkMode={darkMode}
               onClose={() => setShowBotInvoker(false)}
               tiktokUsername="test_stream"
@@ -521,7 +669,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
               updateConfig={updateConfig}
             />
 
-            {/* Tokens — minimalista */}
+            {/* Tokens - minimalista */}
             <div className={`${darkMode ? "bg-[#1a1a2e] border border-cyan-400/20 rounded-xl p-4" : "bg-white border border-indigo-200 rounded-xl p-4 shadow-sm"}`}>
               <div className="flex items-baseline justify-between mb-3">
                 <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/70' : 'text-indigo-400'}`}>Tokens</span>
@@ -541,8 +689,15 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
 
           </div>
         </div>
+        </div>{/* fin space-y-4 */}
       </div>
-
+      <audio ref={audioRef} src={audioUrl || ''} className="hidden" />
     </div>
   )
 }
+
+
+
+
+
+

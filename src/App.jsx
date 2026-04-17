@@ -1,9 +1,11 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { StripePayment } from './components/StripePayment'
 import { SynthesisStudio } from './components/SynthesisStudio'
 import VoiceWorkshopPanel from './components/VoiceCloningPanel'
 import { PricingPage } from './components/PricingPage'
 import { PricingCards } from './components/PricingCards'
+import { PricingComparison } from './components/PricingComparison'
 import { ControlPanel } from './components/ControlPanel'
 import { StatisticsDashboard } from './components/StatisticsDashboard'
 import { AuthPage } from './components/AuthPage'
@@ -13,11 +15,21 @@ import AdminPanel from './components/AdminPanel'
 import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft, LogOut } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const TOKEN_API_KEY = 'sv-token-api-v1'
 const LOCAL_CONFIG_CACHE_KEY = 'sv-config-cache-v1'
 const LOCAL_CONFIG_CACHE_KEY_PREFIX = 'sv-config-cache-v2'
 
+const getApiFingerprint = () => {
+  try {
+    return new URL(API_URL).origin
+  } catch {
+    return String(API_URL || '').trim().toLowerCase()
+  }
+}
+
 const DEFAULT_CONFIG = {
   audioSpeed: 1.0,
+  chatVolume: 0.8,
   readOnlyMessage: false,
   skipRepeated: false,
   onlyDonors: false,
@@ -81,12 +93,16 @@ const DEFAULT_CONFIG = {
   chatMsgColorDark: '#d1d5db',
   chatMsgColorLight: '#1f2937',
   themeMode: 'dark',
+  smartChatEnabled: false,
   lastTiktokUser: '',
   mobilePreviewEnabled: false,
   mobilePreviewMuted: true,
   configPreset1: null,
   configPreset2: null,
   configPreset3: null,
+  sessionModerationList: [],
+  highlightedUsers: {},
+  highlightSelectedColor: '#06b6d4',
   highlightRules: {
     moderators: { enabled: false, color: '#a855f7' },
     donors: { enabled: false, color: '#f59e0b' },
@@ -95,6 +111,44 @@ const DEFAULT_CONFIG = {
     communityMembers: { enabled: false, color: '#22c55e' },
     topFans: { enabled: false, color: '#06b6d4' },
   },
+  variedVoicesEnabled: false,
+  variedVoicesSelected: [],
+  configUpdatedAt: 0,
+}
+
+const normalizeHighlightedUsers = (value) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  const out = {}
+  const entries = Object.entries(value).slice(0, 500)
+  for (const [rawUser, rawColor] of entries) {
+    const username = String(rawUser || '').trim()
+    const color = String(rawColor || '').trim()
+    if (!username) continue
+    if (!/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/.test(color)) continue
+    out[username] = color
+  }
+  return out
+}
+
+const normalizeSessionModerationList = (value) => {
+  if (!Array.isArray(value)) return []
+  const seen = new Set()
+  const normalized = []
+  for (const item of value) {
+    const username = String(item?.username || '')
+      .trim()
+      .replace(/^@+/, '')
+      .toLowerCase()
+    if (!username || seen.has(username)) continue
+    seen.add(username)
+    normalized.push({
+      username,
+      reason: String(item?.reason || 'Baneado o silenciado').slice(0, 120),
+      source: String(item?.source || 'unknown').slice(0, 24),
+      addedAt: item?.addedAt || new Date().toISOString()
+    })
+  }
+  return normalized.slice(0, 500)
 }
 
 const normalizeUserConfig = (rawConfig = {}) => {
@@ -116,8 +170,14 @@ const normalizeUserConfig = (rawConfig = {}) => {
     chatMsgColorDark: config.chatMsgColorDark || config.chatMsgColor || DEFAULT_CONFIG.chatMsgColorDark,
     chatMsgColorLight: config.chatMsgColorLight || DEFAULT_CONFIG.chatMsgColorLight,
     themeMode: config.themeMode || DEFAULT_CONFIG.themeMode,
+    configUpdatedAt: Number.isFinite(Number(config.configUpdatedAt)) ? Number(config.configUpdatedAt) : Number(DEFAULT_CONFIG.configUpdatedAt || 0),
     botAssistantVoiceSpeed: normalizedVoiceSpeed,
     botAssistantMaxResponseChars: normalizedMaxChars,
+    sessionModerationList: normalizeSessionModerationList(config.sessionModerationList),
+    highlightedUsers: normalizeHighlightedUsers(config.highlightedUsers),
+    highlightSelectedColor: /^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/.test(String(config.highlightSelectedColor || ''))
+      ? String(config.highlightSelectedColor)
+      : DEFAULT_CONFIG.highlightSelectedColor,
     highlightRules: {
       ...DEFAULT_CONFIG.highlightRules,
       ...(config.highlightRules || {}),
@@ -126,6 +186,20 @@ const normalizeUserConfig = (rawConfig = {}) => {
 }
 
 const getConfigCacheKey = (userIdentifier = 'guest') => `${LOCAL_CONFIG_CACHE_KEY_PREFIX}:${String(userIdentifier || 'guest')}`
+const buildDefaultConfig = () => normalizeUserConfig(DEFAULT_CONFIG)
+
+const normalizeServerConfigPayload = (rawConfig) => {
+  if (!rawConfig) return {}
+  if (typeof rawConfig === 'string') {
+    try {
+      const parsed = JSON.parse(rawConfig)
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+    } catch {
+      return {}
+    }
+  }
+  return (typeof rawConfig === 'object' && !Array.isArray(rawConfig)) ? rawConfig : {}
+}
 
 const loadCachedConfig = (userIdentifier = 'guest') => {
   try {
@@ -140,17 +214,130 @@ const loadCachedConfig = (userIdentifier = 'guest') => {
   }
 }
 
+function AnimatedMetric({ value, className = '', animateOnView = false }) {
+  const buildZeroValue = (rawValue) => {
+    const raw = String(rawValue || '').trim()
+    const hasPlus = raw.startsWith('+')
+    const hasPercent = raw.includes('%')
+    const numericText = raw.replace(/[^0-9.,]/g, '')
+    const decimals = numericText.includes('.') ? (numericText.split('.')[1]?.length || 0) : 0
+    const zero = decimals > 0 ? (0).toFixed(decimals) : '0'
+    return `${hasPlus ? '+' : ''}${zero}${hasPercent ? '%' : ''}`
+  }
+
+  const [display, setDisplay] = useState(animateOnView ? buildZeroValue(value) : value)
+  const [isAnimating, setIsAnimating] = useState(false)
+  const targetRef = useRef(null)
+
+  useEffect(() => {
+    if (!animateOnView) {
+      setDisplay(value)
+      return
+    }
+
+    const node = targetRef.current
+    if (!node) return
+
+    const raw = String(value || '').trim()
+    const hasPlus = raw.startsWith('+')
+    const hasPercent = raw.includes('%')
+    const numericText = raw.replace(/[^0-9.,]/g, '').replace(/,/g, '')
+    const target = Number(numericText || 0)
+    const decimals = numericText.includes('.') ? (numericText.split('.')[1]?.length || 0) : 0
+    const durationMs = 1400
+    let rafId = null
+    let started = false
+    let startTimeoutId = null
+
+    const formatValue = (num) => {
+      const fixed = decimals > 0 ? num.toFixed(decimals) : Math.round(num).toString()
+      const withCommas = Number(fixed).toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      })
+      return `${hasPlus ? '+' : ''}${withCommas}${hasPercent ? '%' : ''}`
+    }
+
+    const animate = () => {
+      if (started) return
+      started = true
+      setIsAnimating(true)
+      setDisplay(buildZeroValue(value))
+      const start = performance.now()
+      const step = (now) => {
+        const progress = Math.min(1, (now - start) / durationMs)
+        const eased = 1 - Math.pow(1 - progress, 3)
+        const current = target * eased
+        setDisplay(formatValue(current))
+        if (progress < 1) {
+          rafId = requestAnimationFrame(step)
+        } else {
+          setIsAnimating(false)
+          setDisplay(value)
+        }
+      }
+      rafId = requestAnimationFrame(step)
+    }
+
+    const isVisibleEnough = () => {
+      const rect = node.getBoundingClientRect()
+      const viewport = window.innerHeight || 0
+      return rect.top <= viewport * 0.82 && rect.bottom >= viewport * 0.2
+    }
+
+    const onScrollCheck = () => {
+      const scrolled = (window.scrollY || window.pageYOffset || 0) > 100
+      const visible = isVisibleEnough()
+      if (!started && scrolled && visible) {
+        if (startTimeoutId) clearTimeout(startTimeoutId)
+        startTimeoutId = setTimeout(() => {
+          animate()
+        }, 180)
+      }
+      if (started && !visible) {
+        // Reinicia para que se vuelva a animar al reingresar.
+        started = false
+        setIsAnimating(false)
+        setDisplay(buildZeroValue(value))
+      }
+    }
+
+    window.addEventListener('scroll', onScrollCheck, { passive: true })
+    window.addEventListener('resize', onScrollCheck)
+    setTimeout(onScrollCheck, 40)
+
+    return () => {
+      window.removeEventListener('scroll', onScrollCheck)
+      window.removeEventListener('resize', onScrollCheck)
+      if (startTimeoutId) clearTimeout(startTimeoutId)
+      if (rafId) cancelAnimationFrame(rafId)
+    }
+  }, [animateOnView, value])
+
+  return (
+    <p
+      ref={targetRef}
+      className={`${className} transition-all duration-300 ${isAnimating ? 'scale-110 brightness-125' : 'scale-100'}`}
+    >
+      {display}
+    </p>
+  )
+}
+
 export function App() {
-  const [currentPage, setCurrentPage] = useState('landing') // 'landing', 'studio', 'voice-workshop', 'pricing', 'control-panel', 'statistics', 'auth', 'admin'
+  const { t } = useTranslation()
+  const [currentPage, setCurrentPage] = useState(() => {
+    const params = window.location.search
+    if (params.includes('preview=admin')) return 'admin'
+    if (params.includes('preview=auth')) return 'auth'
+    return 'landing'
+  }) // 'landing', 'studio', 'voice-workshop', 'pricing', 'control-panel', 'statistics', 'auth', 'admin'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [showContact, setShowContact] = useState(false)
-  const [showFAQ, setShowFAQ] = useState(false)
   const [showCookies, setShowCookies] = useState(false)
-  const [cookieConsent, setCookieConsent] = useState(() => {
-    return localStorage.getItem('cookieConsent') === 'true'
-  })
+  const [cookieConsent, setCookieConsent] = useState(false) // Siempre comienza en false para mostrar el banner
   const [selectedPaymentPackage, setSelectedPaymentPackage] = useState(350000)
   const [selectedCheckoutItem, setSelectedCheckoutItem] = useState(null)
 
@@ -158,6 +345,8 @@ export function App() {
   const [user, setUser] = useState(null)
   const [authToken, setAuthToken] = useState(null)
   const [tokens, setTokens] = useState(100)
+  const isLocalDevBypass = false // Desactivado para requerir login en local
+  const canOpenStudioWithoutAuth = Boolean(user) || isLocalDevBypass
 
   // Currency detection state
   const [exchangeRates, setExchangeRates] = useState(null)
@@ -165,15 +354,37 @@ export function App() {
   const [userCountry, setUserCountry] = useState(null)
 
   // Config centralizado para todas las opciones
-  const [config, setConfig] = useState(() => normalizeUserConfig(loadCachedConfig('guest') || DEFAULT_CONFIG))
+  const [config, setConfig] = useState(() => normalizeUserConfig(loadCachedConfig('guest') || buildDefaultConfig()))
   const [configReady, setConfigReady] = useState(false)
 
-  const updateConfig = (key, value) => setConfig(prev => ({ ...prev, [key]: value }))
+  const updateConfig = useCallback((key, value) => {
+    setConfig((prev) => {
+      if (Object.is(prev?.[key], value)) return prev
+      return { ...prev, [key]: value, configUpdatedAt: Date.now() }
+    })
+  }, [])
+  const latestConfigRef = useRef(config)
+
+  useEffect(() => {
+    latestConfigRef.current = config
+  }, [config])
 
   // Restaurar sesión al cargar
   useEffect(() => {
-    const savedToken = localStorage.getItem('sv-token')
+    const savedToken = sessionStorage.getItem('sv-token')
     const savedUser = localStorage.getItem('sv-user')
+    const savedTokenApi = localStorage.getItem(TOKEN_API_KEY)
+    const currentApi = getApiFingerprint()
+
+    if (savedToken && savedTokenApi && savedTokenApi !== currentApi) {
+      // Evita usar un token generado contra otro backend (local vs prod).
+      sessionStorage.removeItem('sv-token')
+      localStorage.removeItem('sv-user')
+      localStorage.setItem(TOKEN_API_KEY, currentApi)
+      setConfigReady(true)
+      return
+    }
+
     if (savedToken && savedUser) {
       try {
         const userData = JSON.parse(savedUser)
@@ -197,7 +408,7 @@ export function App() {
           setConfigReady(true)
         })
       } catch {
-        localStorage.removeItem('sv-token')
+        sessionStorage.removeItem('sv-token')
         localStorage.removeItem('sv-user')
         setConfigReady(true)
       }
@@ -210,12 +421,21 @@ export function App() {
   useEffect(() => {
     const detectLocationAndExchangeRates = async () => {
       try {
-        // Detectar país por IP
-        setUserCountry('US')
-        setUserCurrency('USD')
+        // Detectar país por navegador/zona horaria
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''
+        const lang = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : ''
+        const isMexico = tz.includes('Mexico') || /-MX$/i.test(lang)
+
+        if (isMexico) {
+          setUserCountry('MX')
+          setUserCurrency('MXN')
+        } else {
+          setUserCountry('US')
+          setUserCurrency('USD')
+        }
 
         // Obtener tipos de cambio desde USD a todas las monedas principales
-        const ratesResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD')
+        const ratesResponse = await fetch('https://open.er-api.com/v6/latest/USD')
         const ratesData = await ratesResponse.json()
 
         if (ratesData.rates) {
@@ -264,15 +484,23 @@ export function App() {
       if (data.success) {
         const userKey = userInfo?.id || userInfo?.email || 'guest'
         const cachedConfigRaw = loadCachedConfig(userKey) || {}
-        const remoteConfigRaw = (data.config && typeof data.config === 'object') ? data.config : {}
+        const remoteConfigRaw = normalizeServerConfigPayload(data.config)
         const hasRemoteConfig = Object.keys(remoteConfigRaw).length > 0
-        const mergedConfig = normalizeUserConfig(
-          hasRemoteConfig
-            ? { ...cachedConfigRaw, ...remoteConfigRaw }
-            : cachedConfigRaw
-        )
+        const cachedUpdatedAt = Number(cachedConfigRaw?.configUpdatedAt || 0)
+        const remoteUpdatedAt = Number(remoteConfigRaw?.configUpdatedAt || 0)
+        const preferCached = cachedUpdatedAt >= remoteUpdatedAt
+        const mergedRaw = hasRemoteConfig
+          ? (preferCached
+            ? { ...remoteConfigRaw, ...cachedConfigRaw }
+            : { ...cachedConfigRaw, ...remoteConfigRaw })
+          : cachedConfigRaw
+        const mergedConfig = normalizeUserConfig(mergedRaw)
         setConfig(mergedConfig)
         setDarkMode(mergedConfig.themeMode !== 'light')
+        if (hasRemoteConfig && preferCached && Object.keys(cachedConfigRaw).length > 0) {
+          // Backfill asíncrono: solo si local es mas reciente que remoto.
+          persistConfigNow(token, mergedConfig).catch(() => {})
+        }
         console.log('[Config] Configuracion del usuario cargada')
       }
     } catch (err) {
@@ -317,9 +545,39 @@ export function App() {
 
   // Auto-guardar config al backend cuando cambia (con debounce)
   const saveTimerRef = useRef(null)
+  const testimonialsScrollRef = useRef(null)
+
+  const persistConfigNow = async (token, configToPersist) => {
+    if (!token || !configToPersist) return false
+    try {
+      const response = await fetch(`${API_URL}/api/settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ config: configToPersist }),
+        keepalive: true
+      })
+      if (!response.ok) {
+        console.warn('[Config] Guardado inmediato falló con estado:', response.status)
+        return false
+      }
+      const payload = await response.json().catch(() => ({ success: true }))
+      if (!payload?.success) {
+        console.warn('[Config] Guardado inmediato rechazado por API')
+        return false
+      }
+      return true
+    } catch (error) {
+      console.warn('[Config] Guardado inmediato error:', error?.message || error)
+      return false
+    }
+  }
 
   // Cache local inmediata por usuario activo (respaldo si falla red/backend)
   useEffect(() => {
+    if (user && !configReady) return
     try {
       const userKey = user?.id || user?.email || 'guest'
       localStorage.setItem(getConfigCacheKey(userKey), JSON.stringify(config))
@@ -331,7 +589,7 @@ export function App() {
   }, [config, user])
 
   useEffect(() => {
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     if (!token || !user || !configReady) return
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
@@ -343,7 +601,16 @@ export function App() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ config })
-      }).then(() => {
+      }).then(async (response) => {
+        if (!response.ok) {
+          console.warn('[Config] Error guardando config. HTTP:', response.status)
+          return
+        }
+        const payload = await response.json().catch(() => ({ success: true }))
+        if (!payload?.success) {
+          console.warn('[Config] Guardado automático rechazado por API')
+          return
+        }
         console.log('[Config] Guardado automático')
       }).catch(() => {})
     }, 2000) // Espera 2 segundos después del último cambio
@@ -352,36 +619,108 @@ export function App() {
   }, [config, user, configReady])
 
   const handleLogin = (userData, token) => {
+    localStorage.setItem(TOKEN_API_KEY, getApiFingerprint())
     setUser(userData)
     setAuthToken(token)
     setTokens(userData.tokens || 100)
+    // Evita mostrar configuraciones heredadas mientras carga el perfil remoto
+    const cleanConfig = buildDefaultConfig()
+    setConfig(cleanConfig)
+    setDarkMode(cleanConfig.themeMode !== 'light')
     setConfigReady(false)
     loadAndApplyUserConfig(token, userData)
     setCurrentPage('studio')
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const token = sessionStorage.getItem('sv-token')
+    const currentUser = user
+    if (token && currentUser) {
+      await persistConfigNow(token, latestConfigRef.current)
+    }
+
     setUser(null)
     setAuthToken(null)
-    localStorage.removeItem('sv-token')
+    sessionStorage.removeItem('sv-token')
     localStorage.removeItem('sv-user')
+    localStorage.removeItem(TOKEN_API_KEY)
     setConfigReady(true)
     // Reset config a defaults
-    setConfig(DEFAULT_CONFIG)
-    setDarkMode(DEFAULT_CONFIG.themeMode !== 'light')
+    const cleanConfig = buildDefaultConfig()
+    setConfig(cleanConfig)
+    setDarkMode(cleanConfig.themeMode !== 'light')
     setCurrentPage('landing')
   }
+
+  // Detectar sesión desplazada desde cualquier fetch de la app
+  useEffect(() => {
+    const originalFetch = window.fetch
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args)
+      if (response.status === 401) {
+        const clone = response.clone()
+        try {
+          const data = await clone.json()
+          const errText = String(data?.error || data?.message || '').toLowerCase()
+
+          if (data?.error === 'SESSION_DISPLACED') {
+            sessionStorage.removeItem('sv-token')
+            localStorage.removeItem('sv-user')
+            localStorage.removeItem(TOKEN_API_KEY)
+            setUser(null)
+            setAuthToken(null)
+            setCurrentPage('auth')
+            setConfig(buildDefaultConfig())
+            setTimeout(() => {
+              alert('⚠️ Tu sesión fue iniciada en otro dispositivo. Has sido desconectado.')
+            }, 100)
+          } else if (
+            sessionStorage.getItem('sv-token') &&
+            (errText.includes('invalid token') || errText.includes('no token provided') || errText.includes('jwt'))
+          ) {
+            // Token vencido / inválido: limpiar sesión para evitar bloqueos raros.
+            sessionStorage.removeItem('sv-token')
+            localStorage.removeItem('sv-user')
+            localStorage.removeItem(TOKEN_API_KEY)
+            setUser(null)
+            setAuthToken(null)
+            setCurrentPage('auth')
+            setConfig(buildDefaultConfig())
+            setTimeout(() => {
+              alert('Tu sesión expiró o quedó inválida. Inicia sesión de nuevo.')
+            }, 100)
+          }
+        } catch (_) {}
+      }
+      return response
+    }
+    return () => { window.fetch = originalFetch }
+  }, [])
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const token = sessionStorage.getItem('sv-token')
+      const currentUser = user
+      if (!token || !currentUser) return
+      fetch(`${API_URL}/api/settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ config: latestConfigRef.current }),
+        keepalive: true
+      }).catch(() => {})
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [user])
 
   const handlePlanAction = (plan, meta = {}) => {
     if (!plan) return
 
     if (plan.price === 0) {
-      setCurrentPage(user ? 'studio' : 'auth')
-      return
-    }
-
-    if (!user) {
-      setCurrentPage('auth')
+      setCurrentPage(canOpenStudioWithoutAuth ? 'studio' : 'auth')
       return
     }
 
@@ -411,6 +750,7 @@ export function App() {
 
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
+      if (window.location.search.includes('light=1')) return false
       return localStorage.getItem('voltvoice-theme') !== 'light'
     }
     return true
@@ -434,77 +774,46 @@ export function App() {
     }
   }, [darkMode, user, configReady, config.themeMode])
 
-  // Admin Panel (solo para admins)
-  if (currentPage === 'admin' && user?.role === 'admin') {
-    return (
-      <AdminPanel
-        onClose={() => setCurrentPage('studio')}
-        darkMode={darkMode}
-        user={user}
-        authToken={authToken}
-      />
-    )
-  }
+  // Scroll al top cuando carga la página
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
 
-  // Auth Page
-  if (currentPage === 'auth') {
+  // Bloquear scroll si no hay consentimiento de cookies
+  useEffect(() => {
+    if (!cookieConsent) {
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = 'unset'
+      }
+    }
+  }, [cookieConsent])
+
+  // Testimonials carousel uses CSS animation (see .testimonials-track in index.css)
+
+  useEffect(() => {
+    if (false && currentPage === 'auth' && canOpenStudioWithoutAuth) { // TEMP: disabled for local preview
+      setCurrentPage('studio')
+    }
+  }, [currentPage, canOpenStudioWithoutAuth])
+
+  // Auth Page — también accesible por ?preview=auth en local
+  if (currentPage === 'auth' || window.location.search.includes('preview=auth')) {
     return <AuthPage onLogin={handleLogin} onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} />
   }
 
   // Pricing Page
   if (currentPage === 'pricing') {
-    return <PricingPage onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} onPlanAction={handlePlanAction} />
-  }
-
-  // Voice Workshop Page (se desmonta al salir, no tiene estado persistente crítico)
-  if (currentPage === 'voice-workshop') {
     return (
-      <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-gray-900"}>
-        {/* Header */}
-        <nav className={`fixed top-0 w-full backdrop-blur-md z-50 transition-colors duration-300 ${darkMode ? 'bg-[#0f0f23]/80 border-b border-cyan-500/20' : 'bg-white/75 border-b border-[#d7dce3] shadow-sm'}`}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-            <button
-              onClick={() => setCurrentPage('landing')}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
-            >
-              <img src="/images/Sin%20t%C3%ADtulo%20(200%20x%2060%20px)%20(250%20x%2060%20px).png" alt="StreamVoicer" className="h-12 w-auto" />
-            </button>
-            <button
-              onClick={() => setCurrentPage('studio')}
-              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Volver al Studio
-            </button>
-          </div>
-        </nav>
-
-        {/* Voice Cloning Content */}
-        <div className="pt-32 pb-20 px-4">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-4xl font-black mb-4">
-              Preparativos <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">de Voces</span>
-            </h2>
-            <p className={`text-lg mb-12 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              Aquí puedes clonar y preparar tus voces personalizadas antes de usarlas en el Studio.
-            </p>
-            <VoiceWorkshopPanel onCloneSuccess={() => {/* Success message shown in panel, no reload */}} darkModeOverride={darkMode} config={config} updateConfig={updateConfig} user={user} />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Statistics Dashboard
-  if (currentPage === 'statistics') {
-    return (
-      <StatisticsDashboard
-        onGoHome={() => setCurrentPage('landing')}
-        onGoStudio={() => setCurrentPage('studio')}
-        darkMode={darkMode}
-        user={user}
-        authToken={authToken}
-      />
+      <>
+        <PricingPage onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} onPlanAction={handlePlanAction} />
+        <StripePayment
+          isOpen={isPaymentOpen}
+          onClose={() => setIsPaymentOpen(false)}
+          initialPackageTokens={selectedPaymentPackage}
+          initialCheckoutItem={selectedCheckoutItem}
+        />
+      </>
     )
   }
 
@@ -521,8 +830,9 @@ export function App() {
     )
   }
 
-  // Studio + ControlPanel: ambos montados, se ocultan con CSS para no perder el WebSocket
-  if (currentPage === 'studio' || currentPage === 'control-panel') {
+  // Studio + Voice Workshop + paneles secundarios: todos en el mismo bloque con display:none/block
+  // para que SynthesisStudio nunca se desmonte (manteniendo el WebSocket de TikTok vivo al navegar a voice-workshop)
+  if (['studio', 'control-panel', 'statistics', 'admin', 'voice-workshop'].includes(currentPage)) {
     return (
       <>
         <div style={{ display: currentPage === 'studio' ? 'block' : 'none' }}>
@@ -532,10 +842,12 @@ export function App() {
             onGoControlPanel={() => setCurrentPage('control-panel')}
             onGoStatistics={() => setCurrentPage('statistics')}
             onGoAdmin={user?.role === 'admin' ? () => setCurrentPage('admin') : undefined}
+            onGoPricingPage={() => setCurrentPage('pricing')}
             darkMode={darkMode}
             setDarkMode={setDarkMode}
             config={config}
             updateConfig={updateConfig}
+            configReady={configReady}
             user={user}
           />
         </div>
@@ -550,133 +862,84 @@ export function App() {
             user={user}
           />
         </div>
+        <div style={{ display: currentPage === 'statistics' ? 'block' : 'none' }}>
+          <StatisticsDashboard
+            onGoHome={() => setCurrentPage('landing')}
+            onGoStudio={() => setCurrentPage('studio')}
+            darkMode={darkMode}
+            user={user}
+            authToken={authToken}
+          />
+        </div>
+        <div style={{ display: (currentPage === 'admin' && (user?.role === 'admin' || window.location.search.includes('preview=admin'))) ? 'block' : 'none' }}>
+          <AdminPanel
+            onClose={() => setCurrentPage('studio')}
+            darkMode={darkMode}
+            user={user}
+            authToken={authToken}
+          />
+        </div>
+        {/* Voice Workshop Page */}
+        <div style={{ display: currentPage === 'voice-workshop' ? 'block' : 'none' }}>
+          <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-gray-900"}>
+            {/* Header */}
+            <nav className={`fixed top-0 w-full backdrop-blur-md z-50 transition-colors duration-300 ${darkMode ? 'bg-[#0f0f23]/80 border-b border-cyan-500/20' : 'bg-white/75 border-b border-[#d7dce3] shadow-sm'}`}>
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+                <button
+                  onClick={() => setCurrentPage('landing')}
+                  className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                  <img src="/images/streamvoicer6.png" alt="StreamVoicer" className="h-14 w-auto" />
+                </button>
+                <button
+                  onClick={() => setCurrentPage('studio')}
+                  className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  {t('landing.backToStudio')}
+                </button>
+              </div>
+            </nav>
+
+            {/* Voice Cloning Content */}
+            <div className="pt-32 pb-20 px-4">
+              <div className="max-w-7xl mx-auto">
+                <h2 className="text-4xl font-black mb-4">
+                  {t('landing.voiceWorkshop.title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{t('landing.voiceWorkshop.titleHighlight')}</span>
+                </h2>
+                <p className={`text-lg mb-12 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  {t('landing.voiceWorkshop.subtitle')}
+                </p>
+                <VoiceWorkshopPanel onCloneSuccess={() => {/* Success message shown in panel, no reload */}} darkModeOverride={darkMode} config={config} updateConfig={updateConfig} user={user} />
+              </div>
+            </div>
+          </div>
+        </div>
       </>
     )
   }
 
-  const benefits = [
-    {
-      icon: '🎭',
-      title: 'Clonación y Sistema de Personajes',
-      subtitle: 'Crea identidades únicas dentro de tu stream.',
-      description: 'Clona voces y asigna personajes a cada tipo de usuario (chat, donadores, moderadores, etc).'
-    },
-    {
-      icon: '⚙️',
-      title: 'Más de 30 Herramientas de Control',
-      subtitle: 'Tú decides cómo se comporta tu chat.',
-      description: 'Filtros inteligentes, control de cola, bloqueo de spam, gestión de mensajes, límites, limpieza automática y más.'
-    },
-    {
-      icon: '🔊',
-      title: 'Interacción en Tiempo Real',
-      subtitle: 'Tu stream reacciona automáticamente.',
-      description: 'Lectura de chat, notificaciones, eventos y acciones sin retrasos.'
-    },
-    {
-      icon: '🎨',
-      title: 'Personalización Total',
-      subtitle: 'Diseña la experiencia completa.',
-      description: 'Colores, nicks, estilos, tipos de usuario, visual del chat y comportamiento.'
-    },
-    {
-      icon: '💰',
-      title: 'Optimizado para Engagement y Monetización',
-      subtitle: 'Convierte interacción en resultados.',
-      description: 'Diferencia donadores, destaca usuarios clave y aumenta participación en tu stream.'
-    },
-    {
-      icon: '🎮',
-      title: 'Preparado para Streaming en Vivo',
-      subtitle: 'Funciona donde lo necesitas.',
-      description: 'Optimizado para TikTok LIVE y flujos en tiempo real.'
-    },
-    {
-      icon: '🔒',
-      title: 'Seguro y Estable',
-      subtitle: 'Sistema confiable para streams largos.',
-      description: 'Protección de datos y rendimiento constante.'
-    }
-  ]
+  const benefits = t('landing.benefits', { returnObjects: true })
 
-  const additionalPackages = [
-    {
-      icon: '🟢',
-      size: 'MINI BOOST',
-      tokens: '150,000',
-      price: '$4.99',
-      priceMxn: '$4.99 USD',
-      hours: '1.5–3 horas'
-    },
-    {
-      icon: '🔵',
-      size: 'POWER BOOST',
-      tokens: '350,000',
-      price: '$9.99',
-      priceMxn: '$9.99 USD',
-      hours: '4–7 horas'
-    },
-    {
-      icon: '🔥',
-      size: 'MAX BOOST',
-      tokens: '700,000',
-      price: '$14.99',
-      priceMxn: '$14.99 USD',
-      hours: '8–12 horas'
-    }
-  ]
-  const howItWorks = [
-    {
-      step: '1',
-      title: 'Conecta tu canal',
-      description: 'Vincula tu cuenta de TikTok o YouTube en segundos'
-    },
-    {
-      step: '2',
-      title: 'Activa StreamVoicer',
-      description: 'Inicia la lectura de mensajes de chat en tiempo real'
-    },
-    {
-      step: '3',
-      title: 'Disfruta',
-      description: 'Los mensajes se leen automáticamente durante tu stream'
-    }
-  ]
-
-  const testimonials = [
-    {
-      name: 'María García',
-      role: 'TikToker - 500K followers',
-      text: 'StreamVoicer cambió mi stream. Mis seguidores aman que sus mensajes se lean en voz. ¡Imprescindible!',
-      avatar: '👩'
-    },
-    {
-      name: 'Juan López',
-      role: 'Streamer - Gaming',
-      text: 'La calidad de las voces es increíble. No parece robótico. Muy recomendado.',
-      avatar: '👨'
-    },
-    {
-      name: 'Sofia Rodríguez',
-      role: 'Youtuber - Lifestyle',
-      text: 'Mis viewers interactúan más ahora. StreamVoicer es un game changer para creadores.',
-      avatar: '👩‍🦱'
-    }
-  ]
+  const additionalPackages = t('landing.packages.items', { returnObjects: true })
+  const howItWorks = t('landing.howItWorks', { returnObjects: true })
+  const faqItems = t('landing.faq.items', { returnObjects: true })
+  const advancedGuide = t('landing.advancedGuide', { returnObjects: true })
 
   return (
     <div className={"min-h-screen overflow-hidden transition-colors duration-300 " + (darkMode ? "bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-gray-900") + ""}>
       {/* Botones Esquina Superior */}
-      <div className="fixed top-4 left-4 z-40 flex items-center gap-3">
+      <div className={`fixed top-4 left-4 z-40 flex items-stretch rounded-xl border overflow-hidden h-11 ${darkMode ? 'border-white/10' : 'border-slate-300 shadow-sm'}`}>
         <button
           onClick={() => setDarkMode(!darkMode)}
-          className={"p-2 rounded-lg transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-yellow-400" : "bg-white/90 hover:bg-white text-gray-700 shadow-md")}
+          title={darkMode ? t('common.lightMode') : t('common.darkMode')}
+          className={`flex items-center justify-center px-4 border-r transition-all ${darkMode ? 'border-white/10 bg-slate-800 hover:bg-slate-700' : 'border-slate-300 bg-white hover:bg-slate-100'}`}
         >
-          {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          {darkMode ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
         </button>
         <button
-          onClick={() => user ? setCurrentPage('studio') : setCurrentPage('auth')}
-          className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg font-bold text-white hover:shadow-lg hover:shadow-cyan-400/50 transition-all text-sm"
+          onClick={() => canOpenStudioWithoutAuth ? setCurrentPage('studio') : setCurrentPage('auth')}
+          className={`flex items-center px-5 text-sm font-bold transition-all ${user?.role === 'admin' ? 'border-r' : ''} ${darkMode ? 'border-white/10 bg-slate-800 text-cyan-300 hover:bg-slate-700' : 'border-slate-300 bg-white text-cyan-700 hover:bg-slate-100'}`}
         >
           Studio
         </button>
@@ -684,30 +947,32 @@ export function App() {
           <button
             onClick={() => setCurrentPage('admin')}
             title="Panel Admin"
-            className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/30 transition-all"
+            className={`flex items-center justify-center px-4 transition-all ${darkMode ? 'bg-red-900/40 hover:bg-red-900/60 text-red-400' : 'bg-red-50 hover:bg-red-100 text-red-500'}`}
           >
             <Shield className="w-4 h-4" />
           </button>
         )}
       </div>
-      <div className="fixed top-4 right-4 z-40 flex items-center gap-3">
+      <div className="fixed top-4 right-4 z-40">
         {user ? (
-          <>
-            <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user.email}</span>
+          <div className={`flex items-stretch rounded-xl border overflow-hidden h-11 ${darkMode ? 'border-white/10' : 'border-slate-300 shadow-sm'}`}>
+            <span className={`flex items-center px-4 border-r text-sm font-medium ${darkMode ? 'border-white/10 bg-slate-800 text-slate-300' : 'border-slate-300 bg-white text-slate-600'}`}>
+              {user.email}
+            </span>
             <button
               onClick={handleLogout}
-              className={"p-2 rounded-lg transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-red-400" : "bg-white/90 hover:bg-white text-red-500 shadow-md")}
-              title="Cerrar sesión"
+              title={t('common.logout')}
+              className={`flex items-center justify-center px-4 transition-all ${darkMode ? 'bg-slate-800 hover:bg-red-900/40 text-red-400' : 'bg-white hover:bg-red-50 text-red-500'}`}
             >
               <LogOut className="w-4 h-4" />
             </button>
-          </>
+          </div>
         ) : (
           <button
-            onClick={() => setCurrentPage('auth')}
-            className={"px-4 py-2 rounded-lg font-semibold text-sm transition-all " + (darkMode ? "bg-white/10 hover:bg-white/20 text-white border border-white/20" : "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm")}
+            onClick={() => canOpenStudioWithoutAuth ? setCurrentPage('studio') : setCurrentPage('auth')}
+            className={`h-11 px-5 rounded-xl border text-sm font-bold transition-all ${darkMode ? 'border-white/10 bg-slate-800 text-white hover:bg-slate-700' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100 shadow-sm'}`}
           >
-            Iniciar Sesión
+            {canOpenStudioWithoutAuth ? t('landing.enterStudio') : t('auth.login.title')}
           </button>
         )}
       </div>
@@ -721,6 +986,7 @@ export function App() {
             <div className="absolute top-1/2 right-0 w-[420px] h-[420px] bg-gradient-to-b from-orange-500/20 to-transparent rounded-full blur-3xl"></div>
           </div>
 
+          {/* Logo/Título de la app */}
           <div className="mb-10 flex justify-center">
             <img
               src="/images/streamvoicer6.png"
@@ -730,19 +996,19 @@ export function App() {
           </div>
 
           <h2 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
-            Tu LIVE ya no suena
+            {t('landing.hero.title')}
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-orange-400">
-              generico
+              {t('landing.hero.titleHighlight')}
             </span>
           </h2>
 
           <p className={"text-xl md:text-2xl mb-8 max-w-2xl mx-auto " + (darkMode ? "text-gray-300" : "text-gray-600")}>
-            Crea personajes con voz, responde al chat en tiempo real y convierte cada stream en una experiencia con identidad propia.
+              {t('landing.hero.subtitle')}
           </p>
 
           <div className="flex flex-wrap gap-3 mb-8 justify-center">
-            {['Narrador epico', 'Villano anime', 'Comedia gamer', 'Modo historia'].map((tag) => (
+            {t('landing.hero.tags', { returnObjects: true }).map((tag) => (
               <span
                 key={tag}
                 className={"px-3 py-2 rounded-lg text-sm border " + (darkMode ? "bg-white/5 border-cyan-400/20 text-cyan-200" : "bg-white border-cyan-200 text-cyan-700")}
@@ -752,99 +1018,224 @@ export function App() {
             ))}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => user ? setCurrentPage('studio') : setCurrentPage('auth')}
-              className="px-8 py-4 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-lg font-bold text-lg text-white hover:shadow-xl hover:shadow-cyan-400/50 transition-all flex items-center justify-center gap-2"
-            >
-              {user ? 'Ir al Studio' : 'Comenzar Gratis'} <ChevronRight className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setCurrentPage('pricing')}
-              className={"px-8 py-4 border-2 rounded-lg font-bold text-lg transition-all " + (darkMode ? "border-orange-300/60 text-orange-300 hover:bg-orange-400/10" : "border-orange-400 text-orange-500 hover:bg-orange-50")}
-            >
-              Ver Planes
-            </button>
+          <div className="flex justify-center">
+            <div className="relative inline-flex">
+              <span
+                className={"absolute -inset-1 rounded-xl pointer-events-none animate-ping opacity-60 " + (darkMode
+                  ? "bg-cyan-400/30"
+                  : "bg-cyan-300/40")}
+              />
+              <button
+                onClick={() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' })}
+                className={"relative z-10 px-10 py-4 rounded-lg font-extrabold text-lg transition-all shadow-lg hover:scale-[1.03] animate-pulse flex items-center gap-2 " + (darkMode
+                  ? "bg-gradient-to-r from-cyan-400 to-blue-500 text-white hover:shadow-cyan-400/50"
+                  : "bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:shadow-cyan-300/70")}
+              >
+                {t('landing.hero.viewPlans')}
+                <ChevronRight className="w-5 h-5" />
+              </button>
+              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none" />
+            </div>
           </div>
 
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="py-20 px-4">
+      {/* Success Cases Section */}
+      <section className={`py-20 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="max-w-7xl mx-auto">
-          <h3 className="text-4xl font-black text-center mb-16">
-            ¿Por qué elegir <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">StreamVoicer</span>?
-          </h3>
+          <div className="text-center mb-16">
+            <h3 className={`text-4xl font-black mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              {t('landing.successCases.title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{t('landing.successCases.titleHighlight')}</span>
+            </h3>
+            <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              {t('landing.successCases.subtitle')}
+            </p>
+          </div>
 
+          {/* Success Cases Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {benefits.map((benefit, idx) => (
+            {t('landing.successCases.items', { returnObjects: true }).map((caseItem, idx) => (
               <div
                 key={idx}
-                className={"group rounded-xl p-8 transition-all " + (darkMode ? "bg-gradient-to-br from-white/5 to-white/0 border border-white/10 hover:border-cyan-400/50 hover:bg-white/10" : "bg-white border border-gray-200 shadow-md hover:shadow-lg hover:border-cyan-400")}
+                className={`rounded-xl overflow-hidden border transition-all duration-300 hover:shadow-xl hover:-translate-y-2 ${
+                  darkMode
+                    ? 'bg-gray-800 border-gray-700'
+                    : 'bg-white border-gray-200'
+                }`}
               >
-                <div className="text-4xl mb-4">{benefit.icon}</div>
-                <h4 className="text-xl font-bold mb-2">{benefit.title}</h4>
-                {benefit.subtitle && (
-                  <p className="text-sm font-medium mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">{benefit.subtitle}</p>
-                )}
-                <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{benefit.description}</p>
+                {/* Metric Header */}
+                <div className={`p-6 text-center border-b ${
+                  darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-200'
+                }`}>
+                  <AnimatedMetric
+                    value={caseItem.metric}
+                    animateOnView={true}
+                    className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 drop-shadow-[0_2px_8px_rgba(255,115,0,0.35)] mb-2"
+                  />
+                  <p className={`text-sm font-bold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    {caseItem.label}
+                  </p>
+                </div>
+
+                {/* Image */}
+                <div className="h-48 overflow-hidden bg-gray-300">
+                  <img
+                    src={caseItem.img}
+                    alt={caseItem.creator}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+
+                {/* Content */}
+                <div className="p-6">
+                  <h4 className={`text-lg font-black mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {caseItem.creator}
+                  </h4>
+                  <p className={`text-xs font-bold mb-3 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>
+                    {caseItem.category}
+                  </p>
+                  <p className={`text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {caseItem.description}
+                  </p>
+                </div>
               </div>
             ))}
+          </div>
+
+          <div className="mt-32 mb-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+              {t('landing.metrics', { returnObjects: true }).map((item) => (
+                <div
+                  key={item.title}
+                  className="text-center"
+                >
+                  <AnimatedMetric
+                    value={item.metric}
+                    animateOnView={true}
+                    className="text-6xl md:text-7xl font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 drop-shadow-[0_3px_12px_rgba(255,115,0,0.4)]"
+                  />
+                  <p className={`mt-3 text-base md:text-lg font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    {item.title}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className={`py-20 px-4 border-y ${
-        darkMode
-          ? 'bg-gradient-to-r from-cyan-500/5 to-purple-500/5 border-white/10'
-          : 'bg-white border-slate-200'
-      }`}>
+      {/* Testimonials Section - Horizontal Scroll */}
+      <section className={`py-20 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="max-w-7xl mx-auto">
-          <h3 className={`text-4xl font-black text-center mb-16 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-            Así de <span className={darkMode ? "text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500" : "text-slate-700"}>fácil</span> es empezar
-          </h3>
+          <div className="text-center mb-12">
+            <h3 className={`text-4xl font-black mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              {t('landing.testimonials.title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{t('landing.testimonials.titleHighlight')}</span>
+            </h3>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {howItWorks.map((item, idx) => (
-              <div key={idx} className="relative">
-                <div className={`rounded-xl p-8 text-center border ${
-                  darkMode
-                    ? 'bg-gradient-to-br from-cyan-400/20 to-purple-500/20 border-cyan-400/30'
-                    : 'bg-slate-50 border-slate-300 shadow-sm'
-                }`}>
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-4 ${
-                    darkMode
-                      ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white'
-                      : 'bg-slate-700 text-white'
-                  }`}>
-                    {item.step}
+          {/* Horizontal Scroll Testimonials - CSS infinite animation */}
+          <div className="overflow-x-hidden pb-4 -mx-4 px-4">
+            <div className="testimonials-track flex gap-6 w-max">
+              {/* Cards duplicated for seamless infinite loop (CSS translateX -50%) */}
+              {[...Array(2)].flatMap((_, copy) =>
+                t('landing.testimonials.items', { returnObjects: true }).map((testimonial, idx) => (
+                  <div
+                    key={`${copy}-${idx}`}
+                    aria-hidden={copy === 1}
+                    className={`flex-shrink-0 w-80 p-6 rounded-xl border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                      darkMode
+                        ? 'bg-gray-800 border-gray-700'
+                        : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    {/* Stars */}
+                    <div className="flex gap-1 mb-4">
+                      {[...Array(testimonial.stars)].map((_, i) => (
+                        <span key={i} className="text-yellow-400 text-lg">⭐</span>
+                      ))}
+                    </div>
+
+                    {/* Benefit Highlight */}
+                    <p className={`text-sm font-bold mb-3 pb-3 border-b ${
+                      darkMode
+                        ? 'text-cyan-400 border-gray-700'
+                        : 'text-cyan-600 border-gray-200'
+                    }`}>
+                      {testimonial.benefit}
+                    </p>
+
+                    {/* Text */}
+                    <p className={`text-sm leading-relaxed mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {testimonial.text}
+                    </p>
+
+                    {/* Name & Type */}
+                    <div className="border-t pt-4" style={{borderColor: darkMode ? '#374151' : '#e5e7eb'}}>
+                      <p className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {testimonial.name}
+                      </p>
+                      <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {testimonial.type}
+                      </p>
+                    </div>
                   </div>
-                  <h4 className={`text-xl font-bold mb-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{item.title}</h4>
-                  <p className={darkMode ? "text-gray-400" : "text-slate-600"}>{item.description}</p>
-                </div>
-                {idx < howItWorks.length - 1 && (
-                  <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2">
-                    <ChevronRight className={`w-8 h-8 ${darkMode ? 'text-cyan-400/50' : 'text-slate-400'}`} />
-                  </div>
-                )}
-              </div>
-            ))}
+                ))
+              )}
+            </div>
           </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section className="py-20 px-4">
+      <section id="pricing-section" className="pt-20 pb-8 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-black mb-4">
-              💰 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">PAQUETES COMPLETOS</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{t('landing.pricing.title')}</span>
             </h3>
-            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>Elige el plan perfecto para tu stream</p>
+            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{t('landing.pricing.subtitle')}</p>
           </div>
           <PricingCards darkMode={darkMode} showToggle={true} onPlanAction={handlePlanAction} />
+
+          {/* Divider */}
+          <div className="my-20 flex items-center gap-4">
+            <div className={`flex-1 h-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
+            <span className={`text-sm font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              {t('landing.pricing.comparison')}
+            </span>
+            <div className={`flex-1 h-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
+          </div>
+
+          {/* Pricing Comparison */}
+          <PricingComparison darkMode={darkMode} onPlanAction={handlePlanAction} />
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="pt-10 pb-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h3 className="text-4xl font-black mb-4">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{t('landing.faq.title')}</span>
+            </h3>
+            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{t('landing.faq.subtitle')}</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {faqItems.map((faq, idx) => (
+              <div key={idx} className={`p-6 rounded-lg border-l-4 ${darkMode ? 'bg-gray-800/50 border-cyan-500' : 'bg-gray-50 border-cyan-400'}`}>
+                <h4 className={`text-lg font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {faq.icon} {faq.q}
+                </h4>
+                <p className={`text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {faq.a}
+                </p>
+              </div>
+            ))}
+          </div>
+
         </div>
       </section>
 
@@ -859,14 +1250,14 @@ export function App() {
         <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-16">
             <span className={"text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 inline-block " + (darkMode ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "bg-cyan-50 text-cyan-600 border border-cyan-200")}>
-              💰 PAQUETES EXTRA (RECARGAS) →
+              {t('landing.packages.badge')}
             </span>
             <h3 className="text-5xl font-black mt-4 mb-4">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500">
-                Recarga de Tokens
+                {t('landing.packages.title')}
               </span>
             </h3>
-            <p className={"text-xl font-medium " + (darkMode ? "text-gray-200" : "text-gray-700")}>Si tu plan mensual se queda corto, recarga al instante sin esperar al siguiente mes.</p>
+            <p className={"text-xl font-medium " + (darkMode ? "text-gray-200" : "text-gray-700")}>{t('landing.packages.subtitle')}</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -891,7 +1282,7 @@ export function App() {
 
                   {isPopular && (
                     <div className={"text-[10px] font-black tracking-wider mb-4 px-3 py-1 rounded-full text-center w-full bg-gradient-to-r " + gradient + " text-white"}>
-                      🔥 MÁS POPULAR
+                      {t('landing.packages.popular')}
                     </div>
                   )}
                   {!isPopular && <div className="mb-4 h-6" />}
@@ -905,27 +1296,42 @@ export function App() {
                     <div className={"text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r " + gradient}>
                       {pkg.price} <span className={"text-base font-bold " + (darkMode ? "text-gray-400" : "text-gray-500")}>USD</span>
                     </div>
-                    {exchangeRates && userCurrency !== 'USD' && (
+                    {exchangeRates?.MXN && (
                       <div className={"text-xs font-medium " + (darkMode ? "text-gray-500" : "text-gray-400")}>
                         {(() => {
                           const priceNum = parseFloat(pkg.price.replace('$', ''))
-                          const converted = convertPrice(priceNum)
-                          return `≈ ${converted.display} aprox.`
+                          const mxnAmount = priceNum * exchangeRates.MXN
+                          const mxnDisplay = new Intl.NumberFormat('es-MX', {
+                            style: 'currency',
+                            currency: 'MXN',
+                            maximumFractionDigits: 0
+                          }).format(mxnAmount)
+                          return t('landing.packages.approxMxn', { mxn: mxnDisplay })
                         })()}
                       </div>
                     )}
                   </div>
 
                     <div className={"rounded-xl px-3 py-2 mb-4 " + (darkMode ? "bg-white/5" : "bg-gray-50")}>
-                      <div className={"text-xs " + (darkMode ? "text-gray-500" : "text-gray-400")}>🎙️ Caracteres</div>
+                      <div className={"text-xs " + (darkMode ? "text-gray-500" : "text-gray-400")}>{t('landing.packages.characters')}</div>
                       <div className={"font-black text-lg text-transparent bg-clip-text bg-gradient-to-r " + gradient}>{pkg.tokens}</div>
                     </div>
 
                     <p className={"text-sm mb-2 " + (darkMode ? "text-gray-400" : "text-gray-500")}>⏱️ {pkg.hours}</p>
 
-                  <button className={"w-full py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r transition-all mt-auto " + gradient + " hover:opacity-90 hover:shadow-lg"}>
-                    Comprar ahora →
-                  </button>
+                  {isPopular ? (
+                    <div className="relative mt-auto">
+                      <span className={"absolute -inset-1 rounded-xl pointer-events-none animate-ping opacity-50 bg-gradient-to-r " + gradient} />
+                      <button className={"relative z-10 w-full py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r animate-pulse transition-all shadow-lg " + gradient + " hover:opacity-90"}>
+                        {t('landing.packages.buyNowPopular')}
+                      </button>
+                      <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none z-20" />
+                    </div>
+                  ) : (
+                    <button className={"w-full py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r transition-all mt-auto " + gradient + " hover:opacity-90 hover:shadow-lg"}>
+                      {t('landing.packages.buyNow')}
+                    </button>
+                  )}
                 </div>
               </div>
               )
@@ -934,39 +1340,8 @@ export function App() {
 
           {/* Bottom note */}
           <p className={"text-center text-xs mt-10 " + (darkMode ? "text-gray-600" : "text-gray-400")}>
-            🧠 NOTA: El consumo depende de la actividad del chat y la configuración. Puedes extender la duración usando filtros inteligentes y lectura selectiva.
+            {t('landing.packages.note')}
           </p>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className={`py-20 px-4 ${
-        darkMode ? 'bg-gradient-to-r from-purple-500/5 to-cyan-500/5' : 'bg-slate-50'
-      }`}>
-        <div className="max-w-7xl mx-auto">
-          <h3 className={`text-4xl font-black text-center mb-16 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-            Lo que dicen nuestros <span className={darkMode ? "text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500" : "text-slate-700"}>creadores</span>
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, idx) => (
-              <div key={idx} className={darkMode ? "bg-white/5 border border-white/10 rounded-xl p-8" : "bg-white border border-gray-200 shadow-md rounded-xl p-8"}>
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="text-4xl">{testimonial.avatar}</div>
-                  <div>
-                    <h4 className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{testimonial.name}</h4>
-                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{testimonial.role}</p>
-                  </div>
-                </div>
-                <div className="flex gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <span key={i} className="text-yellow-400">⭐</span>
-                  ))}
-                </div>
-                <p className={`italic ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>"{testimonial.text}"</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -975,31 +1350,31 @@ export function App() {
         <div className="max-w-4xl mx-auto text-center">
           <div className={`rounded-2xl p-12 ${darkMode ? 'bg-gradient-to-br from-cyan-400/20 to-purple-500/20 border border-cyan-400/30' : 'bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600'}`}>
             <h3 className={`text-4xl font-black mb-6 ${darkMode ? 'text-white' : 'text-white'}`}>
-              Listo para revolucionar tus streams?
+              {t('landing.cta.title')}
             </h3>
             <p className={`text-xl mb-8 ${darkMode ? 'text-gray-300' : 'text-slate-200'}`}>
-              Únete a miles de creadores que ya están usando StreamVoicer
+              {t('landing.cta.subtitle')}
             </p>
             <div className="flex gap-4 justify-center">
               <button
-                onClick={() => user ? setCurrentPage('studio') : setCurrentPage('auth')}
+                onClick={() => canOpenStudioWithoutAuth ? setCurrentPage('studio') : setCurrentPage('auth')}
                 className={`px-8 py-4 rounded-lg font-bold text-lg transition-all inline-flex items-center gap-2 ${
                   darkMode
                     ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white hover:shadow-xl hover:shadow-cyan-400/50'
                     : 'bg-white text-slate-900 hover:bg-slate-100'
                 }`}
               >
-                {user ? 'Ir al Studio' : 'Comenzar Gratis'} <ChevronRight className="w-5 h-5" />
+                {t('landing.cta.btn')} <ChevronRight className="w-5 h-5" />
               </button>
               <button
-                onClick={() => setCurrentPage('pricing')}
+                onClick={() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' })}
                 className={`px-8 py-4 border-2 rounded-lg font-bold text-lg transition-all inline-flex items-center gap-2 ${
                   darkMode
                     ? 'border-cyan-400 text-cyan-400 hover:bg-cyan-400/10'
                     : 'border-slate-200 text-white hover:bg-white/10'
                 }`}
               >
-                Ver Planes
+                {t('landing.hero.viewPlans')}
               </button>
             </div>
           </div>
@@ -1011,28 +1386,27 @@ export function App() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h4 className="font-bold mb-4">StreamVoicer</h4>
+              <h4 className="font-bold mb-4">Stream Voicer</h4>
               <p className="text-sm text-gray-400">La mejor solución para leer chats en vivo</p>
             </div>
             <div>
               <h4 className="font-bold mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><button onClick={() => setShowTerms(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Términos</button></li>
-                <li><button onClick={() => setShowPrivacy(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Privacidad</button></li>
+                <li><button onClick={() => setShowTerms(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">{t('landing.footer.terms')}</button></li>
+                <li><button onClick={() => setShowPrivacy(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">{t('landing.footer.privacy')}</button></li>
                 <li><button onClick={() => setShowCookies(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Cookies</button></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-4">Soporte</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><button onClick={() => setShowContact(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Contacto</button></li>
-                <li><button onClick={() => setShowFAQ(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">FAQ</button></li>
+                <li><button onClick={() => setShowContact(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">{t('landing.footer.contact')}</button></li>
               </ul>
             </div>
           </div>
 
           <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2026 StreamVoicer. Todos los derechos reservados.</p>
+            <p>{t('landing.footer.rights')}</p>
           </div>
         </div>
       </footer>
@@ -1056,15 +1430,15 @@ export function App() {
             <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. Aceptación de Términos</h3>
-                <p>Al usar StreamVoicer, aceptas estos términos y condiciones. Si no estás de acuerdo, no uses el servicio.</p>
+                <p>Al usar Stream Voicer, aceptas estos términos y condiciones. Si no estás de acuerdo, no uses el servicio.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. Descripción del Servicio</h3>
-                <p>StreamVoicer es una plataforma de síntesis de voz (TTS) para streamers. Proporciona características para leer mensajes en vivo usando inteligencia artificial.</p>
+                <p>Stream Voicer es una plataforma de síntesis de voz (TTS) para streamers. Proporciona características para leer mensajes en vivo usando inteligencia artificial.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Uso Permitido</h3>
-                <p>Debes usar StreamVoicer solo para propósitos legales y éticos. Se prohíbe:</p>
+                <p>Debes usar Stream Voicer solo para propósitos legales y éticos. Se prohíbe:</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>Contenido ofensivo, discriminatorio o ilegal</li>
                   <li>Intentos de piratería o acceso no autorizado</li>
@@ -1073,12 +1447,13 @@ export function App() {
                 </ul>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Suscripciones y Pagos</h3>
-                <p>Los planes son recurrentes. Puedes cancelar en cualquier momento. No hay reembolsos por uso parcial del período.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Suscripciones, Pagos y Reembolsos</h3>
+                <p>Los upgrades se aplican de inmediato con ajuste proporcional según tiempo restante y tiempo total del ciclo (calculado con timestamps exactos). Los downgrades se aplican en el siguiente ciclo de facturación. Puedes cancelar en cualquier momento y conservarás acceso hasta el final del período actual. No hay reembolsos por uso parcial del período.</p>
+                <p className="mt-2"><strong>Paquetes de tokens:</strong> Los paquetes de tokens son productos digitales de consumo inmediato. Una vez procesada la compra, no aplican reembolsos ni devoluciones de ningún tipo, independientemente del uso realizado. Al completar la compra, el usuario acepta expresamente esta política.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Limitaciones de Responsabilidad</h3>
-                <p>StreamVoicer se proporciona "tal cual". No garantizamos disponibilidad continua. No somos responsables por daños indirectos.</p>
+                <p>Stream Voicer se proporciona "tal cual". No garantizamos disponibilidad continua. No somos responsables por daños indirectos.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en los Términos</h3>
@@ -1121,7 +1496,7 @@ export function App() {
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Cookies y Tecnologías Similares</h3>
-                <p>Usamos cookies para mejorar tu experiencia y analizar el uso del servicio.</p>
+                <p>{t('cookies.shortText')}</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Derechos del Usuario</h3>
@@ -1133,7 +1508,7 @@ export function App() {
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>7. Contacto</h3>
-                <p>Para preguntas sobre privacidad, contáctanos a: support@streamvoicer.com</p>
+                <p>Para preguntas sobre privacidad, contáctanos a: soporte@streamvoicer.com</p>
               </section>
             </div>
             <button onClick={() => setShowPrivacy(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
@@ -1155,8 +1530,8 @@ export function App() {
               <p>¿Tienes preguntas o necesitas ayuda? Nos encantaría escucharte.</p>
               <div className="bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl p-4 text-center">
                 <p className="text-white text-sm mb-2 font-bold">Envíanos un correo a:</p>
-                <a href="mailto:opusvolt@gmail.com" className="text-white text-lg font-black hover:opacity-80 transition">
-                  opusvolt@gmail.com
+                <a href="mailto:soporte@streamvoicer.com" className="text-white text-lg font-black hover:opacity-80 transition">
+                  soporte@streamvoicer.com
                 </a>
               </div>
               <p className="text-sm">Responderemos tu mensaje lo antes posible. Esperamos tu contacto.</p>
@@ -1168,88 +1543,35 @@ export function App() {
         </div>
       )}
 
-      {/* FAQ Modal */}
-      {showFAQ && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
-          <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Preguntas Frecuentes</h2>
-              <button onClick={() => setShowFAQ(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
-            </div>
-            <div className={`space-y-6 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Cómo funciona StreamVoicer?</h3>
-                <p>StreamVoicer es una plataforma de síntesis de voz (TTS) que lee automáticamente los mensajes de tu chat de TikTok LIVE usando inteligencia artificial con voces naturales en español.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Qué es un token?</h3>
-                <p>Un token representa caracteres de texto. Cuando un usuario envía un mensaje, se consumen tokens según la cantidad de caracteres. Cada plan incluye una cantidad mensual de tokens renovables.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Puedo cambiar de plan cuando quiera?</h3>
-                <p>Sí, puedes cambiar o cancelar tu plan en cualquier momento. Los cambios se reflejan en tu próximo período de facturación.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Qué hago si se me acaban los tokens?</h3>
-                <p>Puedes comprar tokens adicionales en cualquier momento en la sección "Recarga de Tokens". Los tokens se acumulan con los de tu plan actual.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Los tokens expiran?</h3>
-                <p>No, los tokens no expiran. Se acumulan en tu cuenta y puedes usarlos cuando quieras mientras tengas una suscripción activa.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Funciona con otros idiomas?</h3>
-                <p>Actualmente StreamVoicer está optimizado para español. Estamos trabajando en agregar más idiomas próximamente.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Cuánto tiempo toma procesar un mensaje?</h3>
-                <p>Los mensajes se procesan en tiempo real. Típicamente entre 2-5 segundos dependiendo de la longitud y el servidor.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Puedo personalizar las voces?</h3>
-                <p>Sí, en el panel de control puedes elegir entre diferentes voces en español y configurar qué mensajes se leen según tus reglas.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Es seguro dar acceso a mi TikTok?</h3>
-                <p>Sí, solo solicitamos acceso a la información pública de tu stream LIVE. Tus datos están protegidos y no compartimos información con terceros.</p>
-              </div>
-              <div>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Hay período de prueba gratuito?</h3>
-                <p>Si prefieres primero una prueba, puedes empezar con START y luego subir a CREATOR o PRO cuando tu chat crezca.</p>
-              </div>
-            </div>
-            <button onClick={() => setShowFAQ(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
-              Cerrar
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Cookies Modal */}
       {showCookies && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
-          <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-            <div className="flex justify-between items-center mb-6">
+          <div className={`rounded-2xl w-full max-w-4xl my-8 flex flex-col ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`} style={{maxHeight: 'calc(100vh - 64px)'}}>
+            {/* Header */}
+            <div className={`flex justify-between items-center p-8 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Política de Cookies</h2>
-              <button onClick={() => setShowCookies(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
+              <button onClick={() => setShowCookies(false)} className="text-2xl opacity-50 hover:opacity-100 font-bold">×</button>
             </div>
-            <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+
+            {/* Contenido scrolleable */}
+            <div className={`flex-1 overflow-y-auto px-8 pt-8 pb-16 space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Qué son las cookies?</h3>
-                <p>Las cookies son pequeños archivos de texto que se guardan en tu dispositivo cuando visitas nuestro sitio. Nos ayudan a mejorar tu experiencia y analizar cómo usas StreamVoicer.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{t('cookies.whatAre')}</h3>
+                <p>{t('cookies.whatAreText')}</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Tipos de Cookies que Usamos</h3>
                 <ul className="list-disc pl-5 space-y-2">
                   <li><strong>Cookies Esenciales:</strong> Necesarias para el funcionamiento básico del sitio (autenticación, seguridad)</li>
                   <li><strong>Cookies de Rendimiento:</strong> Nos ayudan a entender cómo usas el sitio y mejorarlo</li>
-                  <li><strong>Cookies de Análisis:</strong> Rastrean cómo interactúas con StreamVoicer para optimizar la experiencia</li>
+                  <li><strong>Cookies de Análisis:</strong> Rastrean cómo interactúas con Stream Voicer para optimizar la experiencia</li>
                   <li><strong>Cookies de Publicidad:</strong> Permiten mostrar anuncios relevantes según tus intereses</li>
                 </ul>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Cómo Usamos las Cookies?</h3>
-                <p>Usamos cookies para:</p>
+                <p>{t('cookies.weUse')}</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>Mantener tu sesión iniciada</li>
                   <li>Recordar tus preferencias de idioma y tema</li>
@@ -1260,57 +1582,94 @@ export function App() {
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Control de Cookies</h3>
-                <p>Puedes controlar o eliminar cookies desde la configuración de tu navegador. Ten en cuenta que desactivarlas puede afectar la funcionalidad del sitio.</p>
+                <p>{t('cookies.control')}</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cookies de Terceros</h3>
-                <p>Usamos servicios de terceros como Google Analytics que también pueden guardar cookies. Consulta sus políticas para más información.</p>
+                <p>{t('cookies.thirdParty')}</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cambios en la Política</h3>
                 <p>Nos reservamos el derecho de actualizar esta política en cualquier momento. Te notificaremos de cambios significativos.</p>
               </section>
             </div>
-            <button onClick={() => setShowCookies(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
-              Cerrar
-            </button>
+
+            {/* Footer con botón */}
+            <div className={`p-8 border-t ${darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gray-50'}`}>
+              <button onClick={() => setShowCookies(false)} className="w-full py-3 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-cyan-400/50 transition-all">
+                ✅ Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Cookie Consent Banner */}
+
+
+      {/* Cookie Consent Banner - Agresivo */}
       {!cookieConsent && (
-        <div className={`fixed bottom-0 left-0 right-0 p-4 z-[998] ${darkMode ? 'bg-gray-900 border-t border-gray-700' : 'bg-white border-t border-gray-200 shadow-lg'}`}>
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex-1">
-              <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                Usamos cookies para mejorar tu experiencia. Al continuar, aceptas nuestra{' '}
-                <button onClick={() => setShowCookies(true)} className="underline hover:no-underline text-cyan-400 font-semibold">
-                  política de cookies
-                </button>
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setCookieConsent(true) && localStorage.setItem('cookieConsent', 'true')}
-                className="px-6 py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90 whitespace-nowrap"
-              >
-                Aceptar
-              </button>
-              <button
-                onClick={() => setCookieConsent(true) && localStorage.setItem('cookieConsent', 'true')}
-                className={`px-6 py-2 rounded-lg font-bold whitespace-nowrap ${darkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-              >
-                Rechazar
-              </button>
+        <>
+          {/* Overlay oscuro que bloquea clicks */}
+          <div className="fixed inset-0 bg-black/40 z-[997] pointer-events-auto" onClick={() => {}} />
+
+          {/* Banner */}
+          <div className={`fixed bottom-0 left-0 right-0 z-[999] border-t-4 ${darkMode ? 'bg-gray-900 border-cyan-500' : 'bg-white border-cyan-400'} shadow-2xl`}>
+            <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                {/* Texto */}
+                <div className="md:col-span-2">
+                  <h3 className={`text-lg font-bold tracking-wide mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    🍪 {t('cookies.title')}
+                  </h3>
+                  <p className={`text-sm mb-3 leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {t('cookies.text')}
+                  </p>
+                  <button
+                    onClick={() => setShowCookies(true)}
+                    className="text-cyan-400 hover:text-cyan-300 text-sm font-medium underline underline-offset-2"
+                  >
+                    {t('cookies.details')}
+                  </button>
+                </div>
+
+                {/* Botones */}
+                <div className="flex flex-col sm:flex-row gap-3 justify-end">
+                  <button
+                    onClick={() => {
+                      setCookieConsent(true)
+                      localStorage.setItem('cookieConsent', 'true')
+                    }}
+                    className="px-7 py-3 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-semibold text-sm rounded-lg hover:opacity-90 hover:shadow-lg hover:shadow-cyan-400/40 transition-all whitespace-nowrap"
+                  >
+                    {t('cookies.acceptAll')}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCookieConsent(true)
+                      localStorage.setItem('cookieConsent', 'true')
+                    }}
+                    className={`px-7 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all border ${
+                      darkMode
+                        ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-600'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-300'
+                    }`}
+                  >
+                    {t('cookies.reject')}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   )
 }
 // Cache buster 1774553392
+
+
+
+
 
 
 

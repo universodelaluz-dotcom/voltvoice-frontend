@@ -2,6 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ocultar badge de reCAPTCHA (reemplazado por texto de disclosure) */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}
+
+@keyframes testimonial-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.testimonials-track {
+  animation: testimonial-scroll 35s linear infinite;
+  will-change: transform;
+}
+.testimonials-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes float1 {
+  0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0.7; }
+  50% { transform: translateY(-18px) translateX(6px); opacity: 1; }
+}
+@keyframes float2 {
+  0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0.5; }
+  50% { transform: translateY(14px) translateX(-8px); opacity: 0.9; }
+}
+@keyframes float3 {
+  0%, 100% { transform: translateY(0px); opacity: 0.6; }
+  50% { transform: translateY(-10px); opacity: 1; }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(6,182,212,0.2); }
+  50% { box-shadow: 0 0 40px rgba(6,182,212,0.5), 0 0 80px rgba(139,92,246,0.2); }
+}
+@keyframes wave-bar {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+.float-1 { animation: float1 4s ease-in-out infinite; }
+.float-2 { animation: float2 5.5s ease-in-out infinite; }
+.float-3 { animation: float3 3.5s ease-in-out infinite; }
+.pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+.wave-bar { animation: wave-bar 1s ease-in-out infinite; }
+
 * {
   margin: 0;
   padding: 0;
@@ -189,3 +232,210 @@ body {
 .pulse-indicator {
   animation: pulse-dot 1s infinite;
 }
+
+/* Remaster visual para pantalla de Configuración */
+.control-panel-remaster {
+  font-family: 'Aptos', 'Segoe UI Variable', 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.control-panel-remaster .max-w-6xl {
+  max-width: 1120px;
+}
+
+.control-panel-remaster nav h1 {
+  font-size: clamp(2rem, 2.8vw, 2.6rem) !important;
+  letter-spacing: -0.02em;
+}
+
+.control-panel-remaster .rounded-2xl,
+.control-panel-remaster .rounded-xl {
+  border-radius: 18px !important;
+}
+
+.control-panel-remaster .section-strip {
+  border-radius: 16px !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.control-panel-remaster .grid.grid-cols-1.lg\:grid-cols-2.gap-4 > div {
+  border-width: 1px;
+}
+
+.control-panel-remaster .space-y-1 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 10px !important;
+}
+
+.control-panel-remaster button,
+.control-panel-remaster input,
+.control-panel-remaster select,
+.control-panel-remaster textarea,
+.control-panel-remaster label,
+.control-panel-remaster p,
+.control-panel-remaster span {
+  font-size: clamp(1rem, 0.25vw + 0.98rem, 1.12rem);
+  line-height: 1.45;
+}
+
+.control-panel-remaster input,
+.control-panel-remaster select,
+.control-panel-remaster textarea {
+  min-height: 46px;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+
+.control-panel-remaster textarea {
+  min-height: 110px;
+}
+
+.control-panel-remaster [class*='tracking-widest'],
+.control-panel-remaster [class*='tracking-wide'] {
+  letter-spacing: 0.06em !important;
+}
+
+.control-panel-remaster [class*='bg-gradient-to-r'] {
+  box-shadow: none !important;
+}
+
+:root:not(.dark) .control-panel-remaster {
+  background:
+    radial-gradient(900px 380px at 8% -10%, #dce3eb 0%, transparent 60%),
+    radial-gradient(800px 360px at 100% -5%, #e8edf3 0%, transparent 58%),
+    linear-gradient(180deg, #f3f5f8 0%, #eef2f6 100%) !important;
+}
+
+:root:not(.dark) .control-panel-remaster .rounded-2xl,
+:root:not(.dark) .control-panel-remaster .rounded-xl {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: #dbe2ea !important;
+}
+
+:root.dark .control-panel-remaster .rounded-2xl,
+:root.dark .control-panel-remaster .rounded-xl {
+  background-color: rgba(15, 23, 42, 0.55) !important;
+  border-color: rgba(56, 189, 248, 0.24) !important;
+}
+
+@media (max-width: 900px) {
+  .control-panel-remaster nav h1 {
+    font-size: clamp(1.6rem, 6vw, 2rem) !important;
+  }
+
+  .control-panel-remaster button,
+  .control-panel-remaster input,
+  .control-panel-remaster select,
+  .control-panel-remaster textarea,
+  .control-panel-remaster label,
+  .control-panel-remaster p,
+  .control-panel-remaster span {
+    font-size: 1.02rem;
+  }
+}
+
+/* Orbit animations for hero section avatars */
+@keyframes orbit {
+  from {
+    transform: rotate(0deg) translateX(180px) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(180px) rotate(-360deg);
+  }
+}
+
+@keyframes orbit-slow {
+  from {
+    transform: rotate(0deg) translateX(200px) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(200px) rotate(-360deg);
+  }
+}
+
+.orbit-avatar {
+  animation: orbit 25s linear infinite;
+}
+
+.orbit-avatar-slow {
+  animation: orbit-slow 30s linear infinite;
+}
+
+/* Smooth theme transition - prevent flicker when switching dark mode */
+* {
+  @apply transition-colors duration-300;
+}
+
+/* Animaciones para Dashboard de Estadísticas */
+@keyframes slide-up-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes counter-animate {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bar-grow {
+  from {
+    height: 0%;
+    opacity: 0;
+  }
+  to {
+    height: var(--bar-height);
+    opacity: 1;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(6, 182, 212, 0.4)); }
+  50% { filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.8)); }
+}
+
+@keyframes scale-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Utility classes para animaciones */
+.animate-slide-up {
+  animation: slide-up-fade-in 0.6s ease-out forwards;
+}
+
+.animate-bar-grow {
+  animation: bar-grow 0.8s ease-out forwards;
+}
+
+.animate-counter {
+  animation: counter-animate 0.8s ease-out forwards;
+}
+
+.animate-glow {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.animate-scale-bounce {
+  animation: scale-bounce 0.3s ease-out;
+}
+
+/* Delays para efecto cascada */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+.delay-700 { animation-delay: 700ms; }

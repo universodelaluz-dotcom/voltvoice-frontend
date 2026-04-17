@@ -1,0 +1,838 @@
+{
+  "landing": {
+    "nav": {
+      "features": "Características",
+      "pricing": "Precios",
+      "login": "Iniciar Sesión",
+      "tryFree": "Probar Gratis"
+    },
+    "enterStudio": "Entrar al Studio",
+    "backToStudio": "Volver al Studio",
+    "hero": {
+      "badge": "🚀 Plataforma #1 para TikTok LIVE",
+      "title": "Tu LIVE ya no sonará",
+      "titleHighlight": "genérico",
+      "subtitle": "Dale voz a tu chat de TikTok LIVE con personajes en vivo y crea una experiencia única.",
+      "ctaStart": "Comenzar Gratis",
+      "ctaWatch": "Ver Demo",
+      "statsUsers": "Creadores activos",
+      "statsVoices": "Voces disponibles",
+      "statsUptime": "Uptime garantizado",
+      "viewPlans": "Ver Planes",
+      "tags": ["🎮 Tu personaje famoso leyendo comentarios", "😂 Narrador gracioso reaccionando", "😈 Voz troll para donaciones"]
+    },
+    "features": {
+      "title": "Todo lo que necesitas para",
+      "titleHighlight": "dominar tu LIVE",
+      "aiVoice": "Voz por IA en tiempo real",
+      "aiVoiceDesc": "Lee comentarios del chat con voces naturales premium. Sin delays, sin interrupciones.",
+      "smartFilter": "Filtro inteligente de chat",
+      "smartFilterDesc": "Filtra spam y prioriza los comentarios más relevantes automáticamente.",
+      "multiVoice": "Múltiples voces",
+      "multiVoiceDesc": "Asigna voces diferentes según el tipo de usuario: donadores, moderadores, followers.",
+      "voiceClone": "Clonación de voz",
+      "voiceCloneDesc": "Crea tu propia voz personalizada con IA en minutos.",
+      "analytics": "Analíticas en tiempo real",
+      "analyticsDesc": "Monitorea mensajes, tokens usados y rendimiento de tu stream.",
+      "multiLang": "Multiidioma",
+      "multiLangDesc": "Soporte para múltiples idiomas y configuraciones regionales."
+    },
+    "testimonials": {
+      "title": "Lo que dicen nuestros",
+      "titleHighlight": "creadores",
+      "items": [
+        { "name": "@alexgamertok", "type": "TikTok Creator Gaming", "benefit": "🟢 Tu stream nunca se queda muerto", "text": "Antes si me callaba 30 segundos el Live se moría solo. Con Stream Voicer el chat tiene vida propia: los viewers leen, comentan y se quedan aunque yo esté enfocado en el juego.", "stars": 5 },
+        { "name": "@sofiaart", "type": "TikTok Creator Art", "benefit": "💬 Tu chat trabaja por ti", "text": "No tengo que estar leyendo comentarios todo el tiempo. Stream Voicer los procesa, destaca los mejores y mantiene la conversación fluida. Yo solo me concentro en crear contenido y el chat se cuida solo.", "stars": 5 },
+        { "name": "@carlosmusica.live", "type": "TikTok Creator Música", "benefit": "⚡ Más interacción sin más esfuerzo", "text": "Mis Lives ahora tienen 3x más engagement sin que yo haga nada diferente. La gente comenta más porque sabe que sus mensajes van a ser valorados. Es increíble cuánta interacción genera sin esfuerzo extra.", "stars": 5 },
+        { "name": "@dianabeauty_tk", "type": "TikTok Creator Belleza", "benefit": "🎯 Convierte mensajes en participación", "text": "Cada comentario que llega se convierte en una participación real. Ya no es solo \"jeje\" abajo, ahora los comentarios generan conversación. Mi comunidad se siente escuchada y eso atrae más personas al Live.", "stars": 5 },
+        { "name": "@javierstreamer22", "type": "TikTok Creator Competitivo", "benefit": "⭐ Destaca a tus seguidores y donadores", "text": "El sistema automáticamente reconoce a mis followers y donadores. No tengo que perder tiempo dándoles shout-outs manuales. Ellos se sienten valorados naturalmente y eso me genera más donaciones y suscripciones.", "stars": 5 },
+        { "name": "@mariacomedy_tk", "type": "TikTok Creator Comedia", "benefit": "🚀 Haz tu stream dinámico sin hablar más", "text": "Mi Live es mucho más dinámico y entretenido sin que tenga que estar hablando todo el tiempo para mantener atención. El chat está tan activo y valorado que la gente viene por la comunidad, no solo por mí.", "stars": 5 }
+      ]
+    },
+    "pricing": {
+      "title": "💰 PAQUETES COMPLETOS",
+      "subtitle": "Elige el plan perfecto para tu stream",
+      "comparison": "📋 Comparativa detallada"
+    },
+    "faq": {
+      "title": "❓ Preguntas Frecuentes",
+      "subtitle": "Resuelve tus dudas sobre Stream Voicer",
+      "items": [
+        { "icon": "🔊", "q": "¿Cómo funciona Stream Voicer?", "a": "Stream Voicer lee en tiempo real los mensajes de tu chat de TikTok LIVE y los reproduce con voz para mantener interacción constante en tu stream." },
+        { "icon": "🧩", "q": "¿Qué es un token?", "a": "1 token equivale a 1 carácter generado. El consumo aplica cuando usas voces premium o voces personalizadas." },
+        { "icon": "🎙️", "q": "¿Qué voces consumen tokens?", "a": "Las voces premium y las voces personalizadas consumen tokens. La voz esencial no consume tokens." },
+        { "icon": "♻️", "q": "¿Si el audio sale de caché también se cobran tokens?", "a": "Sí. El caché optimiza rendimiento y costos internos de procesamiento, pero el consumo de tokens del usuario se mantiene según caracteres generados en voces premium/personalizadas." },
+        { "icon": "💳", "q": "¿Qué hago si se me acaban los tokens?", "a": "Puedes recargar al instante desde la sección \"Recarga de Tokens\". Si no tienes tokens, las voces premium/personalizadas dejan de reproducirse hasta recargar." },
+        { "icon": "⏳", "q": "¿Cómo funciona el plan FREE?", "a": "El plan FREE incluye 1 voz esencial con 2 horas diarias. El contador se restablece cada 24 horas." },
+        { "icon": "🔄", "q": "¿Puedo cambiar o cancelar mi plan cuando quiera?", "a": "Sí. Los upgrades se aplican de inmediato con ajuste proporcional al tiempo restante del ciclo. Los downgrades se aplican en el siguiente ciclo. Puedes cancelar en cualquier momento." },
+        { "icon": "🌍", "q": "¿Funciona con otros idiomas?", "a": "Actualmente Stream Voicer está optimizado para español. Próximamente se integrarán más idiomas." },
+        { "icon": "⚡", "q": "¿Cuánto tarda en procesarse un mensaje?", "a": "Se procesa en tiempo real. Normalmente tarda entre 1 y 5 segundos según longitud del mensaje, voz elegida y carga del sistema." },
+        { "icon": "🔐", "q": "¿Es seguro conectar mi TikTok?", "a": "Sí. Solo se usa el acceso necesario para leer la actividad pública de tu LIVE. No compartimos tus datos con terceros." },
+        { "icon": "🆓", "q": "¿Hay prueba gratis?", "a": "Sí. Puedes empezar con FREE y subir a START, CREATOR o PRO cuando necesites más capacidad y más voces." },
+        { "icon": "🛠️", "q": "¿Puedo crear y editar mis voces personalizadas?", "a": "Sí. Puedes gestionar voces personalizadas desde tu panel. La cantidad disponible depende de tu plan activo." }
+      ]
+    },
+    "footer": {
+      "rights": "Todos los derechos reservados.",
+      "terms": "Términos de Servicio",
+      "privacy": "Privacidad",
+      "contact": "Contacto"
+    },
+    "successCases": {
+      "title": "Resultados reales de",
+      "titleHighlight": "nuestros creadores",
+      "subtitle": "Números que hablan por sí solos",
+      "items": [
+        { "metric": "+150%", "label": "De 50K → 125K seguidores en 3 meses", "creator": "🎮 Alex Gaming", "category": "Gaming Live", "description": "Chat activo en vivo gracias a voces que reaccionan en tiempo real.", "img": "https://voltvoice-frontend.vercel.app/images/web1.png" },
+        { "metric": "+2,500", "label": "Comentarios por LIVE", "creator": "🎮 Max JuanGamingPro", "category": "Gaming Live", "description": "El chat cobra vida con voces y se vuelve parte del show.", "img": "https://voltvoice-frontend.vercel.app/images/web%207.png" },
+        { "metric": "+85%", "label": "Aumento en donaciones", "creator": "😂 Carlos Comedy", "category": "Comedia Live", "description": "Las voces en vivo hacen el stream más divertido y participativo.", "img": "https://voltvoice-frontend.vercel.app/images/web3.png" }
+      ]
+    },
+    "metrics": [
+      { "metric": "+200%", "title": "Seguidores diarios" },
+      { "metric": "+70%", "title": "Conversión a seguidores" },
+      { "metric": "+45%", "title": "Retención de viewers" }
+    ],
+    "packages": {
+      "badge": "💰 PAQUETES EXTRA (RECARGAS) →",
+      "title": "Recarga de Tokens",
+      "subtitle": "Si tu plan mensual se queda corto, recarga al instante sin esperar al siguiente mes.",
+      "popular": "🔥 MÁS POPULAR",
+      "characters": "🎙️ Caracteres",
+      "approxMxn": "Aprox. {{mxn}} MXN",
+      "buyNow": "Comprar ahora →",
+      "buyNowPopular": "🚀 Comprar ahora →",
+      "note": "🧠 NOTA: El consumo depende de la actividad del chat y la configuración. Puedes extender la duración usando filtros inteligentes y lectura selectiva.",
+      "items": [
+        { "size": "MINI BOOST", "tokens": "150,000", "price": "$4.99", "hours": "1.5–3 horas" },
+        { "size": "POWER BOOST", "tokens": "350,000", "price": "$9.99", "hours": "4–7 horas" },
+        { "size": "MAX BOOST", "tokens": "700,000", "price": "$14.99", "hours": "8–12 horas" }
+      ]
+    },
+    "cta": {
+      "title": "¿Listo para revolucionar tus streams?",
+      "subtitle": "Únete a miles de creadores que ya están usando Stream Voicer",
+      "btn": "Comenzar Gratis"
+    },
+    "benefits": [
+      { "icon": "🎭", "title": "Clonación y Sistema de Personajes", "subtitle": "Crea identidades únicas dentro de tu stream.", "description": "Clona voces y asigna personajes a cada tipo de usuario (chat, donadores, moderadores, etc)." },
+      { "icon": "⚙️", "title": "Más de 30 Herramientas de Control", "subtitle": "Tú decides cómo se comporta tu chat.", "description": "Filtros inteligentes, control de cola, bloqueo de spam, gestión de mensajes, límites, limpieza automática y más." },
+      { "icon": "🔊", "title": "Interacción en Tiempo Real", "subtitle": "Tu stream reacciona automáticamente.", "description": "Lectura de chat, notificaciones, eventos y acciones sin retrasos." },
+      { "icon": "🎨", "title": "Personalización Total", "subtitle": "Diseña la experiencia completa.", "description": "Colores, nicks, estilos, tipos de usuario, visual del chat y comportamiento." },
+      { "icon": "💰", "title": "Optimizado para Engagement y Monetización", "subtitle": "Convierte interacción en resultados.", "description": "Diferencia donadores, destaca usuarios clave y aumenta participación en tu stream." },
+      { "icon": "🎮", "title": "Preparado para Streaming en Vivo", "subtitle": "Funciona donde lo necesitas.", "description": "Optimizado para TikTok LIVE y flujos en tiempo real." },
+      { "icon": "🔒", "title": "Seguro y Estable", "subtitle": "Sistema confiable para streams largos.", "description": "Protección de datos y rendimiento constante." }
+    ],
+    "howItWorks": [
+      { "step": "1", "title": "Conecta tu canal", "description": "Vincula tu cuenta de TikTok o YouTube en segundos" },
+      { "step": "2", "title": "Activa Stream Voicer", "description": "Inicia la lectura de mensajes de chat en tiempo real" },
+      { "step": "3", "title": "Disfruta", "description": "Los mensajes se leen automáticamente durante tu stream" }
+    ],
+    "advancedGuide": [
+      { "title": "Filtro inteligente (en simple)", "description": "Cuando el chat va rápido, prioriza mensajes con valor de conversación y reduce ruido (spam, repetidos, puro emoji o texto poco legible). Cuando el chat se calma, abre más cobertura para leer más mensajes útiles." },
+      { "title": "Asistente de IA en vivo", "description": "El asistente toma contexto reciente del chat para responder en tono de tu stream. Puedes dispararlo manualmente o con reglas de interacción para equilibrar frecuencia, naturalidad y control." },
+      { "title": "Tokens y consumo real", "description": "Las voces premium y personalizadas consumen tokens por caracteres generados. La voz esencial del plan FREE no consume tokens, pero mantiene su ventana diaria de uso para cuidar estabilidad y costos." },
+      { "title": "Roles y prioridad de lectura", "description": "Puedes darle preferencia a moderadores, suscriptores, comunidad y donadores. También puedes forzar solo preguntas o combinarlas con otros filtros para que el chat mantenga foco." },
+      { "title": "Recomendación de arranque", "description": "Empieza con filtros básicos: saltar repetidos, ignorar links y mínimo de longitud. Luego ajusta voces por rol (ej. donadores/preguntas) y sube agresividad solo si el volumen del chat lo exige." },
+      { "title": "Cómo evaluar si está bien configurado", "description": "Usa el resumen de sesión: si mejora la calidad de mensajes leídos sin perder ritmo del live, vas bien. Ajusta poco a poco para mantener el balance entre cantidad, claridad y engagement." }
+    ],
+    "voiceWorkshop": {
+      "title": "Preparativos",
+      "titleHighlight": "de Voces",
+      "subtitle": "Aquí puedes clonar y preparar tus voces personalizadas antes de usarlas en el Studio."
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar sesión",
+      "email": "Email",
+      "password": "Contraseña",
+      "submit": "Entrar",
+      "loading": "Entrando...",
+      "noAccount": "¿No tienes cuenta?",
+      "register": "Regístrate",
+      "forgot": "¿Olvidaste tu contraseña?",
+      "welcomeTitle": "Bienvenido",
+      "enterEmail": "Accede con tu email",
+      "registerDesc": "Regístrate gratis y obtén 100 tokens",
+      "welcomeDesc": "Inicia sesión para acceder a Stream Voicer",
+      "continueEmail": "o continúa con email",
+      "orEmail": "o con email",
+      "isNew": "¿Eres nuevo?",
+      "registerFree": "Regístrate gratis",
+      "myPassword": "mi contraseña",
+      "myUser": "mi usuario",
+      "forgotLabel": "Olvidé:",
+      "connectingGoogle": "Conectando con Google...",
+      "enterBtn": "Entrar",
+      "createFreeBtn": "Crear cuenta gratis",
+      "sendingCode": "Enviando código...",
+      "homeBtn": "Inicio"
+    },
+    "register": {
+      "title": "Crear cuenta",
+      "name": "Nombre",
+      "email": "Email",
+      "password": "Contraseña",
+      "confirm": "Confirmar contraseña",
+      "submit": "Crear cuenta",
+      "loading": "Creando...",
+      "hasAccount": "¿Ya tienes cuenta?",
+      "login": "Inicia sesión",
+      "terms": "Al registrarte aceptas nuestros",
+      "termsLink": "Términos de Servicio"
+    },
+    "verify": {
+      "title": "Verifica tu email",
+      "desc": "Enviamos un código a tu email",
+      "code": "Código de verificación",
+      "submit": "Verificar",
+      "loading": "Verificando...",
+      "resend": "Reenviar código",
+      "code6digits": "Código de Verificación (6 dígitos)",
+      "checkEmail": "Revisa tu email para el código",
+      "notReceived": "¿No recibiste el código?",
+      "resendIn": "Reenviar en {{s}}s",
+      "resendBtn": "Reenviar",
+      "changeEmail": "Cambiar email",
+      "verifying": "Verificando...",
+      "verifyBtn": "Verificar Email"
+    },
+    "forgot": {
+      "title": "Recuperar contraseña",
+      "email": "Email",
+      "send": "Enviar código",
+      "sending": "Enviando...",
+      "code": "Código recibido",
+      "newPassword": "Nueva contraseña",
+      "confirmPassword": "Confirmar contraseña",
+      "reset": "Cambiar contraseña",
+      "resetting": "Cambiando...",
+      "backToLogin": "Volver al login",
+      "backLogin": "← Volver al inicio de sesión",
+      "yourEmail": "Tu email",
+      "sendCodeBtn": "Enviarme código",
+      "codeSentToEmail": "Código enviado a {{email}}",
+      "recoveryCode": "Código de recuperación",
+      "confirmNew": "Confirmar nueva contraseña",
+      "minChars": "Mínimo 8 caracteres",
+      "repeatPass": "Repite la contraseña",
+      "updating": "Actualizando...",
+      "changeBtn": "Cambiar contraseña",
+      "useOtherEmail": "← Usar otro email",
+      "resetTitle": "Restablecer Contraseña",
+      "forgotDesc": "Te enviaremos un código de recuperación por email",
+      "codeDesc": "Ingresa el código enviado a"
+    },
+    "forgotUser": {
+      "title": "Olvidé mi Usuario",
+      "desc": "Tu usuario en Stream Voicer es el correo electrónico con el que te registraste.",
+      "back": "← Volver al inicio de sesión"
+    },
+    "branding": {
+      "title": "Tu chat TikTok",
+      "highlight": "cobró vida.",
+      "subtitle": "Voces con IA que leen tu stream en tiempo real.",
+      "features": [
+        { "icon": "🎙️", "title": "Voces con IA", "desc": "Más de 20 voces premium" },
+        { "icon": "⚡", "title": "Tiempo real", "desc": "Sin delay, sin complicaciones" },
+        { "icon": "🎭", "title": "Bots con personalidad", "desc": "Personajes que interactúan solos" }
+      ],
+      "reading": "leyendo mensaje...",
+      "chatBubble1": "gg crack!",
+      "chatBubble2": "qué voz más chida"
+    },
+    "recaptcha": {
+      "text": "Protegido por reCAPTCHA.",
+      "privacy": "Privacidad",
+      "terms": "Términos",
+      "google": "de Google."
+    },
+    "errors": {
+      "completeFields": "Completa todos los campos",
+      "passwordMismatch": "Las contraseñas no coinciden",
+      "passwordLength": "La contraseña debe tener al menos 8 caracteres",
+      "captchaRequired": "CAPTCHA requerido para crear la cuenta.",
+      "captchaFailed": "No se pudo validar CAPTCHA. Intenta de nuevo.",
+      "connectionError": "Error de conexión. Intenta de nuevo.",
+      "googleError": "Error con Google",
+      "codeRequired": "Ingresa el código de verificación",
+      "codeLength": "El código debe tener 6 dígitos",
+      "codeIncorrect": "Código incorrecto",
+      "emailRequired": "Ingresa tu email para recuperar la contraseña",
+      "resetFailed": "No se pudo restablecer la contraseña",
+      "resetRequired": "Completa email, código y nueva contraseña"
+    },
+    "success": {
+      "codeSent": "Si el email existe, enviamos un código.",
+      "passwordReset": "Contraseña actualizada. Ya puedes iniciar sesión."
+    },
+    "google": {
+      "continueWith": "Continuar con Google"
+    }
+  },
+  "studio": {
+    "nav": {
+      "config": "Configuración",
+      "voiceWorkshop": "Taller de Voces",
+      "stats": "Estadísticas",
+      "admin": "Admin"
+    },
+    "voice": {
+      "select": "Selecciona una voz",
+      "unlimited": "(ilimitada)",
+      "test": "Texto a probar",
+      "testPlaceholder": "Escribe el texto que deseas convertir en voz...",
+      "testBtn": "Probar voz",
+      "testing": "Probando...",
+      "defaultText": "Así suena tu voz elegida"
+    },
+    "tokens": {
+      "label": "Tokens",
+      "used": "tokens usados",
+      "charInfo": "1 token = 1 carácter",
+      "insufficient": "No tienes suficientes tokens. Necesitas {{needed}} pero solo tienes {{available}}."
+    },
+    "errors": {
+      "textRequired": "Por favor escribe algo para sintetizar",
+      "voiceRequired": "Por favor selecciona una voz",
+      "textTooLong": "El texto de prueba supera el límite de 500 caracteres.",
+      "dailyLimit": "Llegaste al límite diario de 2 horas de voces locales en plan FREE.\nSe restablece en aproximadamente {{wait}}.",
+      "synthesis": "Error al sintetizar la voz",
+      "connection": "Error de conexión. Verifica tu conexión a internet."
+    },
+    "status": {
+      "live": "EN VIVO",
+      "inactive": "INACTIVO"
+    },
+    "success": {
+      "done": "¡Síntesis completada!"
+    },
+    "chars": "{{count}}/{{max}} caracteres",
+    "voiceLocal": {
+      "spanish": "Voz Local Español",
+      "english": "Voz Local Inglés"
+    },
+    "workshop": "Taller de Voces",
+    "config": "Configuración",
+    "stats": "Estadísticas"
+  },
+  "tiktok": {
+    "connect": {
+      "placeholder": "usuario de TikTok",
+      "btn": "Conectar",
+      "connecting": "Conectando...",
+      "disconnect": "Desconectar",
+      "connected": "Conectado",
+      "error": "Error al conectar"
+    },
+    "chat": {
+      "title": "Chat en vivo",
+      "empty": "Esperando mensajes...",
+      "filters": "Filtros"
+    },
+    "panel": {
+      "title": "Tiktok Live Chat",
+      "sessionTab": "Sesion",
+      "helpBtn": "AYUDA",
+      "disconnected": "DESCONECTADO",
+      "waitingLive": "ESPERANDO LIVE",
+      "sessionExplosive": "Sesion explosiva",
+      "sessionActive": "Sesion activa",
+      "sessionChill": "Sesion fluida",
+      "searchPlaceholder": "Buscar en preguntas y respuestas...",
+      "messageInProgress": "Mensaje en curso",
+      "messageHint": "Cuando se empiece a leer un comentario, aparecera aqui fijo.",
+      "connectToChat": "Conéctate para ver el chat",
+      "connectHint": "Ingresa tu usuario de TikTok arriba",
+      "waitingMessage": "Esperando mensaje en curso..."
+    },
+    "support": {
+      "title": "Contactar Soporte",
+      "response": "Respondemos en 24–48 hrs",
+      "sendBtn": "Enviar mensaje",
+      "placeholder": "Describe tu problema o consulta con el mayor detalle posible...",
+      "charCount": "{{count}}/500 caracteres",
+      "submit": "📨 Enviar a soporte",
+      "sending": "Enviando..."
+    },
+    "stats": {
+      "comments": "Comentarios",
+      "msgsMin": "Msgs/min",
+      "time": "Tiempo"
+    },
+    "controls": {
+      "pause": "Pausar",
+      "resume": "Reanudar",
+      "pauseTitle": "Pausar lectura",
+      "resumeTitle": "Reanudar lectura",
+      "refresh": "Refrescar",
+      "aiFilter": "Filtro IA",
+      "highlight": "Remarcar",
+      "highlightTitle": "Remarcar usuarios con color",
+      "vol": "VOL",
+      "vel": "VEL"
+    },
+    "highlight": {
+      "byType": "Remarcar por tipo",
+      "manual": "Remarcar usuario manual",
+      "moderators": "Moderadores"
+    },
+    "summary": {
+      "title": "Resumen premium",
+      "desc": "Asi se movio tu chat en esta sesion.",
+      "received": "Mensajes recibidos",
+      "uptime": "Tiempo de transmision",
+      "peak": "Pico mensajes/min",
+      "filtered": "Mensajes filtrados",
+      "close": "Cerrar resumen"
+    },
+    "faq": {
+      "title": "Guía de ayuda",
+      "questions": [
+        { "q": "¿Cómo empiezo a usar la plataforma?", "a": "Inicia sesión, entra al Studio, conecta tu usuario de TikTok LIVE, elige voz y activa lectura." },
+        { "q": "¿Qué hace el filtro inteligente?", "a": "Prioriza mensajes útiles y reduce ruido como spam, links, mensajes repetidos, vacíos o poco legibles." },
+        { "q": "¿El filtro inteligente cambia según el ritmo del chat?", "a": "Sí. Cuando el chat va rápido filtra más; cuando va tranquilo deja pasar más mensajes." },
+        { "q": "¿Qué es un token?", "a": "1 token equivale a 1 carácter generado en voces premium o personalizadas." },
+        { "q": "¿Qué voces consumen tokens?", "a": "Las voces premium y personalizadas. La voz esencial no consume tokens." },
+        { "q": "¿Qué pasa si me quedo sin tokens?", "a": "Si no alcanzan los tokens para voz premium o personalizada, cambia a voz esencial." },
+        { "q": "¿Cómo funciona el plan FREE?", "a": "Incluye voz esencial con 2 horas diarias. El contador se reinicia cada 24 horas." },
+        { "q": "¿Cómo crear una voz personalizada?", "a": "Entra a Voice Workshop, sube una muestra de voz, genera la voz, pruébala y asígnala al uso que quieras." },
+        { "q": "¿Cuántas voces clonadas puedo eliminar por día?", "a": "En plan Start puedes eliminar hasta 3 voces por día. En Creator y Pro, hasta 6 por día." },
+        { "q": "¿Cómo subir un audio ideal para clonar voz?", "a": "Usa una voz clara, sin ruido ni música de fondo. Recomendado: 10 a 15 segundos. Entre mejor calidad del audio, mejor resultado del clonado." },
+        { "q": "¿Cuáles límites tiene Extractor Pro?", "a": "Creator: 4 usos por día. Pro: 7 usos por día. Se reinicia cada 24 horas." },
+        { "q": "Asistente de IA: ¿para qué sirve?", "a": "Utiliza el contexto reciente del chat para responder preguntas breves con la personalidad y voz que configures." },
+        { "q": "Asistente de IA: ¿en qué plan está disponible?", "a": "Disponible solo en Plan Pro." },
+        { "q": "¿Puedo configurar tono y frecuencia del asistente?", "a": "Sí. Puedes ajustar frecuencia, tono y longitud de respuesta." },
+        { "q": "¿Cómo sé si mi configuración está funcionando bien?", "a": "Revisa el resumen de sesión: mensajes recibidos, leídos, filtrados y ritmo general del LIVE." },
+        { "q": "¿No conecta mi LIVE, qué reviso primero?", "a": "Verifica usuario exacto de TikTok, confirma que el LIVE esté activo e intenta reconectar." },
+        { "q": "¿No se escucha audio, qué reviso?", "a": "Valida volumen del panel, salida de audio del navegador y que no esté en pausa." },
+        { "q": "¿Cómo silenciar la voz de una persona?", "a": "En el panel de chat, abre moderación del usuario y agrégalo a la lista de silenciados/baneados." },
+        { "q": "¿Cómo desbloquear a una persona del silencio de voz?", "a": "Ve a la lista de moderación de la sesión, busca el usuario y quítalo del silencio/baneo." },
+        { "q": "¿Cómo cambiar el nick de un usuario?", "a": "En la sección de nicks, selecciona al usuario, escribe el nuevo nombre y guarda." },
+        { "q": "¿Puedo cambiar o cancelar mi plan cuando quiera?", "a": "Sí. Puedes actualizar, cambiar o cancelar desde tu cuenta." },
+        { "q": "¿Puedo cambiar de plan en cualquier momento?", "a": "Sí, puedes cambiar de plan cuando quieras desde la configuración de tu cuenta." },
+        { "q": "¿Qué pasa si subo de plan (upgrade)?", "a": "El cambio se aplica de inmediato y solo pagas la diferencia proporcional del tiempo restante en tu ciclo de facturación." },
+        { "q": "¿Qué pasa si bajo de plan (downgrade)?", "a": "El cambio se aplicará al inicio del siguiente ciclo de facturación. Hasta entonces sigues disfrutando tu plan actual." },
+        { "q": "¿Puedo cancelar mi plan en cualquier momento?", "a": "Sí, puedes cancelar cuando quieras. Seguirás teniendo acceso hasta el final del periodo ya pagado." },
+        { "q": "¿Puedo solicitar un reembolso?", "a": "Solo dentro de las primeras 24 a 48 horas desde la contratación. Pasado ese tiempo no aplica reembolso." },
+        { "q": "¿Aplica reembolso si ya usé el servicio?", "a": "No si el servicio fue utilizado de forma significativa durante ese periodo." },
+        { "q": "¿Hay alguna alternativa al reembolso?", "a": "En algunos casos podemos ofrecerte crédito interno para usar en futuros ciclos. Contáctanos para evaluarlo." },
+        { "q": "¿Es segura la conexión con TikTok?", "a": "Sí. Solo se usa acceso necesario para leer actividad pública de tu LIVE." },
+        { "q": "¿En qué idioma funciona mejor actualmente?", "a": "Actualmente está optimizado para español." }
+      ]
+    }
+  },
+  "voiceClone": {
+    "tabs": {
+      "workshop": "Taller de Voces",
+      "test": "Probar Voz",
+      "extractor": "Extractor de Audio"
+    },
+    "upload": {
+      "label": "Subir muestra de voz",
+      "hint": "MP3 o WAV, máx. 10MB, 10-15 segundos recomendado",
+      "btn": "Seleccionar archivo",
+      "processing": "Procesando..."
+    },
+    "voiceName": {
+      "label": "Nombre para la voz",
+      "placeholder": "Ej: Mi voz, Voz del personaje..."
+    },
+    "clone": {
+      "btn": "Clonar voz",
+      "cloning": "Clonando...",
+      "success": "¡Voz \"{{name}}\" clonada exitosamente!",
+      "error": "Error al clonar la voz"
+    },
+    "test": {
+      "selectHint": "Selecciona una voz y escribe un texto para probar",
+      "placeholder": "Escribe el texto para probar la voz...",
+      "btn": "Generar audio",
+      "generating": "Generando...",
+      "success": "✓ Audio generado exitosamente"
+    },
+    "delete": {
+      "confirm": "¿Eliminar la voz \"{{name}}\"?",
+      "success": "Voz \"{{name}}\" eliminada",
+      "error": "Error eliminando voz"
+    },
+    "rename": {
+      "success": "Voz renombrada a \"{{name}}\"",
+      "error": "Error renombrando la voz",
+      "emptyName": "El nombre no puede estar vacío"
+    },
+    "errors": {
+      "invalidFile": "Solo se aceptan archivos MP3 o WAV",
+      "fileTooLarge": "El archivo no debe exceder 10MB",
+      "synthesis": "Error al sintetizar el audio",
+      "upload": "Error subiendo archivo"
+    },
+    "extractor": {
+      "hint": "Sube un video o audio largo, selecciona el segmento y clona la voz",
+      "uploadBtn": "Subir archivo",
+      "duration": "Duración: {{sec}}s",
+      "selectRange": "Selecciona rango",
+      "start": "Inicio",
+      "end": "Fin",
+      "preview": "▶ Preview",
+      "useClip": "Usar este clip",
+      "processing": "Procesando clip...",
+      "usesLeft": "Te quedan {{n}} usos por hoy, se renueva cada 24 hrs."
+    }
+  },
+  "control": {
+    "title": "Configuración",
+    "sections": {
+      "voice": "Voz",
+      "reading": "Lectura",
+      "filters": "Filtros",
+      "announcements": "Anuncios",
+      "moderation": "Moderación",
+      "shortcuts": "Atajos",
+      "presets": "Presets"
+    },
+    "shortcut": {
+      "change": "Cambiar tecla",
+      "press": "Presiona una tecla..."
+    },
+    "preset": {
+      "saved": "Preset {{num}} guardado",
+      "empty": "Preset {{num}} vacío"
+    },
+    "locked": "Función no disponible en tu plan",
+    "moderation": {
+      "banned": "Baneado o silenciado",
+      "silencedAI": "Silenciado por asistente IA",
+      "silencedChat": "Silenciado desde chat",
+      "sources": {
+        "system": "sistema",
+        "unknown": "desconocido",
+        "user": "usuario",
+        "bot": "asistente IA",
+        "chat": "chat",
+        "manual": "manual",
+        "database": "base de datos"
+      }
+    },
+    "filters": {
+      "smartChat": "filtro inteligente",
+      "onlyMods": "leer solo moderadores",
+      "onlyDonors": "leer solo donadores",
+      "onlyQuestions": "leer solo preguntas",
+      "onlyNoName": "leer solo mensajes sin nombre",
+      "skipRepeated": "saltar mensajes repetidos",
+      "ignoreLinks": "ignorar links",
+      "profanity": "filtro de palabrotas",
+      "plainNicks": "solo nicks simples",
+      "stripEmojis": "no leer emojis en chat",
+      "excessiveEmojis": "ignorar emojis excesivos",
+      "announceFollowers": "anunciar follows",
+      "announceGifts": "anunciar regalos",
+      "announceViewers": "anunciar viewers",
+      "announceLikes": "anunciar likes",
+      "announceShares": "anunciar shares",
+      "announceBattles": "anunciar battles",
+      "announcePolls": "anunciar polls",
+      "announceGoals": "anunciar goals",
+      "autoSpam": "chequeos automáticos de spam",
+      "pushToTalk": "push to talk"
+    },
+    "reading": {
+      "title": "Lectura",
+      "onlyMessage": "Leer solo mensajes (sin nombre)",
+      "onlyMessageHint": "Lee el mensaje sin mencionar quién lo escribió",
+      "skipRepeated": "Saltar mensajes repetidos",
+      "onlyQuestions": "Leer solo preguntas",
+      "onlyQuestionsHint": "Solo lee mensajes que contengan signos de interrogación",
+      "onlyDonors": "Leer solo donadores",
+      "onlyMods": "Leer solo moderadores",
+      "onlyModsHint": "Solo lee mensajes de moderadores del live",
+      "onlySubs": "Leer solo suscriptores",
+      "onlySubsHint": "Solo lee usuarios suscritos al creador del live",
+      "onlyCommunity": "Filtro de miembros de comunidad",
+      "onlyCommunityHint": "Solo lee usuarios Fan o SuperFan del LIVE bajo el mismo filtro de comunidad"
+    },
+    "voiceSection": {
+      "title": "Voces",
+      "available": "Disponible en otros planes"
+    },
+    "announcements": {
+      "followers": "Anunciar nuevos seguidores a cada (seg)",
+      "followersHint": "Anuncia en voz cuando alguien te sigue",
+      "gifts": "Anunciar regalos a cada (seg)",
+      "giftsHint": "Anuncia en voz cuando recibes un regalo",
+      "viewers": "Anunciar conteo de viewers a cada (seg)",
+      "viewersHint": "Dice cuántos viewers hay en el live periódicamente",
+      "likes": "Anunciar likes a cada (seg)",
+      "likesHint": "Anuncia la cantidad de likes acumulados",
+      "shares": "Anunciar shares a cada (seg)",
+      "sharesHint": "Anuncia cuando alguien comparte tu live",
+      "battles": "Anunciar batallas",
+      "battlesHint": "Anuncia inicio y resultado de batallas en vivo",
+      "polls": "Anunciar encuestas",
+      "pollsHint": "Anuncia cuando se crea una encuesta en el live",
+      "goals": "Anunciar metas/goals",
+      "goalsHint": "Anuncia progreso de metas del live"
+    },
+    "filterSection": {
+      "title": "Filtros",
+      "cleanNicks": "Limpiar nicks (No leerá sus emojis ni números ni caracteres raros)",
+      "cleanNicksHint": "Limpia el nombre del usuario dejando solo letras",
+      "noEmojis": "No leer emojis en chat",
+      "noEmojisHint": "Elimina emojis del mensaje antes de leerlo en voz",
+      "profanity": "Filtro de palabrotas",
+      "profanityHint": "Bloquea mensajes que contengan palabras prohibidas",
+      "wordListPlaceholder": "Escribe tus palabras aquí",
+      "excessiveEmojisHint": "Lee el mensaje pero quita emojis si pasan del límite",
+      "charLimitHint": "Corta mensajes largos al máximo de caracteres indicado",
+      "queueHint": "Evita acumulación excesiva de mensajes por leer"
+    }
+  },
+  "bot": {
+    "title": "🤖 Invocar Personaje",
+    "select": "Selecciona personaje:",
+    "modes": {
+      "text": "Texto",
+      "mic": "Micrófono"
+    },
+    "question": "¿Qué pregunta quieres hacer al personaje?",
+    "record": {
+      "start": "Iniciar grabación",
+      "stop": "Detener grabación"
+    },
+    "invoke": "Invocar {{name}}",
+    "invoking": "Invocando...",
+    "audio": {
+      "play": "Reproducir",
+      "pause": "Pausar",
+      "responded": "respondió"
+    },
+    "errors": {
+      "setup": "Error: selecciona una personalidad y una voz en Configuración.",
+      "noCharacter": "Error: selecciona una personalidad en Configuración.",
+      "noVoice": "Error: selecciona una voz en Configuración.",
+      "micFailed": "No se pudo acceder al micrófono",
+      "selectAndWrite": "Selecciona un personaje y escribe una pregunta",
+      "noStream": "No hay stream conectado"
+    },
+    "note": "Nota: para usar F9/F8 debes seleccionar ambas opciones.",
+    "selectOne": "Seleccionar uno",
+    "messagePlaceholder": "Escribe un mensaje..."
+  },
+  "cookies": {
+    "title": "🍪 POLÍTICA DE COOKIES",
+    "text": "Utilizamos cookies para mejorar tu experiencia, analizar cómo usas Stream Voicer y personalizar contenido. Al continuar navegando, aceptas nuestra política.",
+    "details": "👉 Ver detalles completos",
+    "acceptAll": "✅ ACEPTAR TODAS",
+    "reject": "Rechazar",
+    "whatAre": "¿Qué son las cookies?",
+    "whatAreText": "Las cookies son pequeños archivos de texto que se guardan en tu dispositivo cuando visitas nuestro sitio. Nos ayudan a mejorar tu experiencia y analizar cómo usas Stream Voicer.",
+    "weUse": "Usamos cookies para:",
+    "thirdParty": "Usamos servicios de terceros como Google Analytics que también pueden guardar cookies. Consulta sus políticas para más información.",
+    "control": "Puedes controlar o eliminar cookies desde la configuración de tu navegador. Ten en cuenta que desactivarlas puede afectar la funcionalidad del sitio.",
+    "shortText": "Usamos cookies para mejorar tu experiencia y analizar el uso del servicio."
+  },
+  "payment": {
+    "titleTokens": "Comprar Recarga",
+    "titlePlan": "Comprar Plan",
+    "popular": "POPULAR",
+    "characters": "caracteres",
+    "approxMxn": "Aprox. {{mxn}} MXN",
+    "billingMonthly": "facturación mensual",
+    "billingAnnual": "facturación anual",
+    "reference": "Referencia en MXN aproximada; se adapta al tipo de cambio USD/MXN del día.",
+    "chooseMethod": "Elige método de pago",
+    "mercadopago": "Pagar con Mercado Pago",
+    "paypal": "Pagar con PayPal",
+    "processing": "Procesando...",
+    "coupon": {
+      "label": "Cupón de descuento",
+      "placeholder": "STREAM10",
+      "apply": "Aplicar",
+      "subtotal": "Subtotal",
+      "discount": "Descuento",
+      "total": "Total"
+    },
+    "cancel": "Cancelar",
+    "noRefund": "⚠️ Sin reembolsos en paquetes de tokens",
+    "noRefundDetail": "Los paquetes de tokens son productos digitales de consumo inmediato. Una vez procesada la compra, no aplican reembolsos ni devoluciones de ningún tipo.",
+    "secure": "Pagos 100% seguros - Mercado Pago y PayPal",
+    "planScheduled": "Cambio de plan programado para el siguiente ciclo.",
+    "loginRequired": "Inicia sesión para continuar con el pago."
+  },
+  "pricing": {
+    "header": "💰 PAQUETES COMPLETOS",
+    "subtitle": "Elige el plan perfecto para tu stream",
+    "popular": "🔥 MÁS POPULAR",
+    "toggle": {
+      "monthly": "Mensual",
+      "annual": "Anual"
+    },
+    "perMonth": "USD",
+    "perYear": "USD / año",
+    "approxMonth": "(~${{price}} USD/mes)",
+    "note": "🧠 NOTA",
+    "noteText1": "El consumo depende de la actividad del chat y la configuración.",
+    "noteText2": "Puedes extender la duración usando filtros inteligentes y lectura selectiva.",
+    "noteRef": "Referencia en MXN aproximada; se adapta al tipo de cambio USD/MXN del día.",
+    "plans": {
+      "free": {
+        "name": "FREE",
+        "description": "Excelente para probar plataforma",
+        "cta": "Comenzar Gratis",
+        "stream": "Perfecto para experimentar con la plataforma",
+        "extension": "Silencia usuarios en un click",
+        "voices": ["1 voz esencial (2 horas diarias)"],
+        "compatibility": ["Marcador de usuarios específicos", "Chat visible", "Filtros básicos"]
+      },
+      "start": {
+        "name": "START",
+        "description": "Ideal para streams ligeros",
+        "cta": "Adquirir START",
+        "stream": "En uso de voz premium rinde aprox 2-4 horas de stream activo",
+        "extension": "Permite extender la duración optimizando tu chat",
+        "voices": ["1 voz personalizada por IA (reutilizable)", "1 voz natural premium", "1 voz esencial (ilimitada)", "200,000 caracteres (~tokens)"],
+        "compatibility": ["filtrado inteligente", "lectura selectiva (preguntas, donadores, etc.)", "control de mensajes"]
+      },
+      "creator": {
+        "name": "CREATOR",
+        "description": "Ideal para streams activos",
+        "cta": "Adquirir CREATOR",
+        "stream": "Rinde aprox 5-8 horas de stream activo",
+        "extension": "Mejor rendimiento y eficiencia en el uso de tokens",
+        "voices": ["2 voces personalizadas por IA (reutilizables)", "2 voces naturales premium", "1 voz esencial (ilimitada)", "500,000 caracteres (~tokens)"],
+        "compatibility": ["lectura inteligente del chat", "voces dinámicas por tipo de usuario", "🎬 Extractor de audio", "control avanzado de mensajes"]
+      },
+      "pro": {
+        "name": "PRO",
+        "description": "Ideal para interacción constante",
+        "cta": "Adquirir PRO",
+        "stream": "Rinde aprox 10-15 horas de stream activo",
+        "experience": "Experiencia completa con IA",
+        "voices": ["5 voces personalizadas por IA (reutilizables)", "4 voces naturales premium", "1 voz esencial (ilimitada)", "800,000 caracteres (~tokens)"],
+        "compatibility": ["sistema completo de filtrado", "🎬 Extractor de audio", "control total del chat", "optimización máxima del consumo"]
+      }
+    },
+    "annual": {
+      "buyPlan": "Comprar {{name}}",
+      "start": {
+        "name": "START ANUAL",
+        "saving": "Ahorra ~$25 USD",
+        "benefits": ["1 voz personalizada por IA (reutilizable)", "1 voz natural premium", "1 voz esencial (ilimitada)", "200,000 caracteres (~tokens)", "Rinde aprox 2-4 horas de stream activo", "filtrado inteligente", "lectura selectiva (preguntas, donadores, etc.)", "control de mensajes"]
+      },
+      "creator": {
+        "name": "CREATOR ANUAL",
+        "saving": "Ahorra ~$46 USD",
+        "benefits": ["2 voces personalizadas por IA (reutilizables)", "2 voces naturales premium", "1 voz esencial (ilimitada)", "500,000 caracteres (~tokens)", "Rinde aprox 5-8 horas de stream activo", "lectura inteligente del chat", "voces dinámicas por tipo de usuario", "🎬 Extractor de audio", "control avanzado de mensajes"]
+      },
+      "pro": {
+        "name": "PRO ANUAL",
+        "saving": "Ahorra ~$67 USD",
+        "benefits": ["5 voces personalizadas por IA (reutilizables)", "4 voces naturales premium", "1 voz esencial (ilimitada)", "800,000 caracteres (~tokens)", "Rinde aprox 10-15 horas de stream activo", "Experiencia completa con IA", "sistema completo de filtrado", "🎬 Extractor de audio", "control total del chat", "optimización máxima del consumo"]
+      }
+    },
+    "compatible": "Compatible con:",
+    "includes": "Incluye:",
+    "comparison": {
+      "title": "Haz que tu audiencia escuche... se impacte! y genere interacción!",
+      "subtitle": "Plataforma de voz avanzada para streamers, gamers y creadores.",
+      "capabilities": "Capacidades",
+      "perMonth": "/ mes",
+      "mostPopular": "más popular",
+      "choosePlan": "Elegir plan",
+      "startFree": "Empieza gratis",
+      "categories": {
+        "voices": "Voces para stream",
+        "usage": "Tiempo de uso real (voces premium y personalizadas)",
+        "tools": "Herramientas y Características",
+        "ai": "IA y Automatización"
+      },
+      "features": {
+        "essentialVoice": "Voz esencial",
+        "customVoices": "Voces personalizadas",
+        "premiumVoices": "Voces premium",
+        "monthlyCapacity": "Capacidad mensual",
+        "messageTools": "Herramientas optimizadoras de mensajes",
+        "dynamicVoices": "Voces dinámicas por tipo de usuario",
+        "audioExtractor": "🎬 Extractor de audio",
+        "basicFilters": "Filtros básicos para optimizar el chat",
+        "advancedControls": "Controles avanzados de mensajes",
+        "smartReading": "Lectura inteligente del chat",
+        "aiAssistant": "Asistente por IA",
+        "aiCommentator": "Comentarista en vivo por IA"
+      },
+      "values": {
+        "unlimited": "ILIMITADO",
+        "limited": "limitado",
+        "freeHours": "2 horas diarias",
+        "customVoices1": "1 voz personalizada",
+        "customVoices2": "2 voces personalizadas",
+        "customVoices5": "5 voces personalizadas",
+        "premiumVoices1": "1 voz premium",
+        "premiumVoices2": "2 voces premium",
+        "premiumVoices4": "4 voces premium",
+        "monthlyStart": "200,000 tokens (≈ 2-4 h)",
+        "monthlyCreator": "500,000 tokens (≈ 5-8 h)",
+        "monthlyPro": "800,000 tokens (≈ 10-15 h)"
+      },
+      "howWorks": "Cómo funciona",
+      "howWorksList": [
+        "FREE incluye voz esencial con 2 horas diarias.",
+        "En planes de pago, la voz esencial es ilimitada.",
+        "Voces premium y personalizadas consumen tokens según uso real de audio.",
+        "Los tokens se renuevan cada mes automáticamente.",
+        "Puedes combinar voz esencial y voces premium para optimizar costo y rendimiento."
+      ]
+    }
+  },
+  "aiWorkshop": {
+    "title": "Taller de Asistentes de IA Roleplay",
+    "newChar": "Nuevo Personaje",
+    "empty": "No hay personajes creados aún. ¡Crea tu primer personaje!",
+    "form": {
+      "title": "Crear Nuevo Personaje",
+      "name": "Nombre del personaje (ej: Batman, Detective, etc.)",
+      "description": "Descripción (opcional)",
+      "prompt": "System prompt (cómo debe actuar el personaje)...",
+      "noVoice": "Sin voz asignada (usar default)",
+      "baseVoices": "Voces base",
+      "customVoices": "Mis voces clonadas",
+      "create": "Crear Personaje",
+      "creating": "Creando...",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "nameRequired": "Nombre y prompt del sistema son requeridos"
+    },
+    "messages": {
+      "created": "Personaje \"{{name}}\" creado exitosamente",
+      "updated": "Personaje actualizado",
+      "deleted": "Personaje \"{{name}}\" eliminado"
+    },
+    "character": {
+      "example": "(ejemplo)",
+      "custom": "✓"
+    }
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "¡Éxito!",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "back": "Volver",
+    "yes": "Sí",
+    "no": "No",
+    "confirm": "Confirmar",
+    "logout": "Cerrar sesión",
+    "settings": "Configuración",
+    "plan": "Plan",
+    "tokens": "Tokens",
+    "darkMode": "Modo oscuro",
+    "lightMode": "Modo claro"
+  }
+}

@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
-import { Mic2, Send, Volume2 } from 'lucide-react'
+import { Mic2, Send, Volume2, Lock } from 'lucide-react'
 import inworldRealtimeService from '../services/inworldRealtimeService'
 import chatStore from '../services/chatStore.js'
+import { useTranslation } from 'react-i18next'
 
 const BUILTIN_VOICE_OPTIONS = [
   { id: 'Diego', name: 'Diego' },
@@ -97,10 +98,10 @@ const CONFIG_COMMANDS = [
     aliases: [
       'filtro de palabrotas',
       'filtro anti groserias',
-      'filtro anti groserías',
+      'filtro anti groserias',
       'bloquear malas palabras',
       'bloquear groserias',
-      'bloquear groserías'
+      'bloquear groserias'
     ]
   },
   {
@@ -243,7 +244,8 @@ const CONFIG_COMMANDS = [
   }
 ]
 
-export default function BotInvoker({ darkMode = true, onClose, config, updateConfig }) {
+export default function BotInvoker({ user, onGoPricingPage, darkMode = true, onClose, config, updateConfig }) {
+  const { t } = useTranslation()
   const [characters, setCharacters] = useState([])
   const [userVoices, setUserVoices] = useState([])
   const [voicesLoaded, setVoicesLoaded] = useState(false)
@@ -256,10 +258,14 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const [isLoading, setIsLoading] = useState(false)
   const [hasVoiceResponse, setHasVoiceResponse] = useState(false)
   const [isPlayingResponse, setIsPlayingResponse] = useState(false)
+  const [assistantVisualActive, setAssistantVisualActive] = useState(false)
+  const [assistantAudioElement, setAssistantAudioElement] = useState(null)
   const [voiceLabel, setVoiceLabel] = useState('Clive')
   const [hasActiveResponse, setHasActiveResponse] = useState(false)
+  const [lastUsedClonedVoice, setLastUsedClonedVoice] = useState(null)
 
   const mediaStreamRef = useRef(null)
+  const sessionRecoveryRef = useRef({ isRecovering: false, recoveryStartTime: null })
   const chatSuppressedRef = useRef(false)
   const responseTimeoutRef = useRef(null)
   const hasActiveResponseRef = useRef(false)
@@ -274,9 +280,11 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const localAudioRef = useRef(null)
   const latestResponseTextRef = useRef('')
   const hasChargedCurrentResponseRef = useRef(false)
-  const selectedRealtimeVoiceIdRef = useRef('')
+  const selectedCharacterIdRef = useRef(config?.botAssistantCharacterId || null)
+  const selectedRealtimeVoiceIdRef = useRef(config?.botAssistantVoiceId || '')
   const voiceLabelRef = useRef('Clive')
   const sessionBrokenRef = useRef(false)
+  const isRecordingRef = useRef(false)
   const autopilotBusyRef = useRef(false)
   const lastAutopilotSignatureRef = useRef('')
   const lastAutopilotTextRef = useRef('')
@@ -298,7 +306,50 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   const lastBotResponseTimestampRef = useRef(null)  // When bot last responded (timestamp)
   const messagesCountSinceLastResponseRef = useRef(0)  // How many messages since last response
 
-  const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const FREE_LOCAL_LIMIT_CODE = 'FREE_LOCAL_VOICE_DAILY_LIMIT_REACHED'
+const formatResetWait = (seconds = 0) => {
+  const safe = Math.max(0, Number(seconds) || 0)
+  const hours = Math.floor(safe / 3600)
+  const minutes = Math.ceil((safe % 3600) / 60)
+  if (hours <= 0) return `${Math.max(1, minutes)} min`
+  return `${hours}h ${Math.max(0, minutes)}m`
+}
+
+  const emitAssistantVisualizerState = (active) => {
+    window.dispatchEvent(new CustomEvent('voltvoice:assistant-visualizer', {
+      detail: { active: Boolean(active) }
+    }))
+  }
+
+  const emitAssistantVisualizerAudio = (audioElement) => {
+    window.dispatchEvent(new CustomEvent('voltvoice:assistant-visualizer-audio', {
+      detail: { audioElement: audioElement || null }
+    }))
+  }
+
+  const emitVisualizerKick = (level = 0.5) => {
+    window.dispatchEvent(new CustomEvent('voltvoice:visualizer-kick', {
+      detail: { level: Math.max(0, Math.min(1, Number(level) || 0.5)) }
+    }))
+  }
+
+  const bindRealtimeAudioToVisualizer = () => {
+    if (localAudioRef.current) {
+      setAssistantAudioElement(localAudioRef.current)
+      emitAssistantVisualizerAudio(localAudioRef.current)
+      return
+    }
+
+    const realtimeAudio =
+      (typeof inworldRealtimeService.getOutputAudioElement === 'function'
+        ? inworldRealtimeService.getOutputAudioElement()
+        : null) || inworldRealtimeService.outputAudioElement || null
+    if (realtimeAudio) {
+      setAssistantAudioElement(realtimeAudio)
+      emitAssistantVisualizerAudio(realtimeAudio)
+    }
+  }
 
   const getAssistantMaxResponseChars = () => {
     const configured = Number(config?.botAssistantMaxResponseChars)
@@ -316,11 +367,36 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     const raw = String(text || '').trim()
     const maxChars = getAssistantMaxResponseChars()
     if (!raw || raw.length <= maxChars) return raw
-    return `${raw.slice(0, maxChars).trimEnd()}…`
+    return `${raw.slice(0, maxChars).trimEnd()}...`
+  }
+
+  const getAssistantSetupError = () => {
+    const hasCharacter = Boolean(selectedCharacterIdRef.current)
+    const hasVoice = Boolean(selectedRealtimeVoiceIdRef.current)
+    if (hasCharacter && hasVoice) return null
+    if (!hasCharacter && !hasVoice) return t('bot.errors.setup')
+    if (!hasCharacter) return t('bot.errors.noCharacter')
+    return t('bot.errors.noVoice')
+  }
+
+  const ensureAssistantReady = () => {
+    const setupError = getAssistantSetupError()
+    if (!setupError) return true
+    clearResponseTimeout()
+    setIsLoading(false)
+    setIsRecording(false)
+    setPttSuppressed(false)
+    unlockChatSuppression()
+    setResponse(`${setupError} ${t('bot.note')}`)
+    return false
   }
 
   const beginAssistantResponseWindow = () => {
     console.log('[Bot] beginAssistantResponseWindow: CALLED - resetting state for new response')
+    // Importante: no activar visualizador durante push-to-talk/espera.
+    // Se activa únicamente cuando empieza audio real de respuesta.
+    setAssistantVisualActive(false)
+    emitAssistantVisualizerState(false)
     assistantResponseActiveRef.current = true
     assistantResponseHadAudioRef.current = false
     heardSpeechThisTurnRef.current = false
@@ -336,6 +412,8 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   }
 
   const endAssistantResponseWindow = () => {
+    setAssistantVisualActive(false)
+    emitAssistantVisualizerState(false)
     assistantResponseActiveRef.current = false
     assistantResponseHadAudioRef.current = false
     heardSpeechThisTurnRef.current = false
@@ -349,7 +427,6 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
     chatSuppressedRef.current = active
     console.log(`[Bot] setChatSuppressed(${active}) - dispatching voltvoice:assistant-speech-state`)
-    console.trace('[Bot] setChatSuppressed stack trace')
     window.dispatchEvent(new CustomEvent('voltvoice:assistant-speech-state', {
       detail: { active }
     }))
@@ -371,7 +448,6 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
   const suppressChatAudio = () => {
     console.log('[Bot] suppressChatAudio() called')
-    console.trace('[Bot] suppressChatAudio stack trace')
     lockChatSuppression()
     dispatchChatPlaybackControl('pause')
   }
@@ -380,7 +456,6 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     // Don't end response window here - let RMS detection do it
     // endAssistantResponseWindow() should only be called when RMS confirms audio has truly ended
     console.log('[Bot] restoreChatAudioImmediate() called')
-    console.trace('[Bot] restoreChatAudioImmediate stack trace')
     unlockChatSuppression()
     dispatchChatPlaybackControl('resume')
   }
@@ -481,7 +556,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   }
 
   const reportRealtimeUsage = async (text, voiceId) => {
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     if (!token || !text?.trim()) {
       return
     }
@@ -521,7 +596,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
       responseCompletedRef.current = true
       botIsAudiblySpeakingRef.current = false
       restoreChatAudioImmediate()
-      setResponse((current) => current || 'La IA tardó demasiado en responder. Intenta de nuevo.')
+      setResponse((current) => current || 'La IA tardo demasiado en responder. Intenta de nuevo.')
     }, 35000)
   }
 
@@ -932,7 +1007,7 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   }
 
   const fetchStatsSummary = async () => {
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     if (!token) {
       throw new Error('No encontre sesion activa para consultar estadisticas.')
     }
@@ -948,10 +1023,10 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
   }
 
   const speakLocalResponse = async (text, voiceId) => {
-    const token = localStorage.getItem('sv-token')
+    const token = sessionStorage.getItem('sv-token')
     const selectedVoice = voiceId || selectedRealtimeVoiceId || 'Clive'
 
-    // Detectar si es una voz básica de Google (no Inworld)
+    // Detectar si es una voz basica de Google (no Inworld)
     const isBasicVoice = selectedVoice === 'es-ES' || selectedVoice === 'en-US'
     const endpoint = isBasicVoice ? '/api/tts/say' : '/api/inworld/tts'
 
@@ -971,7 +1046,15 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     })
 
     const data = await response.json()
-    if (!response.ok || !(data.audio || data.audioUrl)) {
+    if (!response.ok) {
+      if (data?.code === FREE_LOCAL_LIMIT_CODE) {
+        const wait = formatResetWait(data?.details?.resetInSeconds)
+        window.alert(`Llegaste al límite diario de 2 horas de voces locales en plan FREE.\nSe restablece en aproximadamente ${wait}.`)
+      }
+      throw new Error(data?.error || 'No se pudo sintetizar audio local')
+    }
+
+    if (!(data.audio || data.audioUrl)) {
       throw new Error(data?.error || 'No se pudo sintetizar audio local')
     }
 
@@ -987,9 +1070,14 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
 
     const audio = new Audio(data.audio || data.audioUrl)
     localAudioRef.current = audio
+    setAssistantAudioElement(audio)
+    emitAssistantVisualizerAudio(audio)
     audio.playbackRate = getAssistantVoiceSpeed()
 
     audio.onplay = () => {
+      setAssistantVisualActive(true)
+      emitAssistantVisualizerState(true)
+      emitVisualizerKick(0.85)
       lockChatSuppression()
       hasVoiceResponseRef.current = true
       responsePlaybackStartedRef.current = true
@@ -1000,6 +1088,8 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     }
 
     audio.onended = () => {
+      setAssistantVisualActive(false)
+      emitAssistantVisualizerState(false)
       responsePlaybackStartedRef.current = false
       setIsPlayingResponse(false)
       unlockChatSuppression()
@@ -1014,6 +1104,8 @@ export default function BotInvoker({ darkMode = true, onClose, config, updateCon
     }
 
     audio.onerror = () => {
+      setAssistantVisualActive(false)
+      emitAssistantVisualizerState(false)
       responsePlaybackStartedRef.current = false
       setIsPlayingResponse(false)
       unlockChatSuppression()
@@ -1200,18 +1292,18 @@ Reglas de salida:
 - CRITICO: NUNCA leas en voz alta ni cites textualmente el contenido de mensajes del chat. JAMAS repitas palabra por palabra lo que dijo alguien. Siempre reacciona con TUS PROPIAS PALABRAS originales.
 
 Directiva de comportamiento continuo:
-Mantén al personaje creado siempre fresco, variado y natural.
+Manten al personaje creado siempre fresco, variado y natural.
 Evita repetir siempre el mismo tipo de frases, bromas o temas.
-Lee el chat reciente y métete en los temas activos reaccionando como si estuvieras presente en tiempo real.
-Detecta patrones, conversaciones activas, tensiones, momentos graciosos y oportunidades para intervenir con humor, observación, preguntas o comentarios inteligentes.
-Alterna tipos de intervención para no volverte predecible.
-Si detectas spam, flood, provocación barata o negatividad insistente, indica brevemente que se aplicó silencio y no te enganches con trolls.
+Lee el chat reciente y metete en los temas activos reaccionando como si estuvieras presente en tiempo real.
+Detecta patrones, conversaciones activas, tensiones, momentos graciosos y oportunidades para intervenir con humor, observacion, preguntas o comentarios inteligentes.
+Alterna tipos de intervencion para no volverte predecible.
+Si detectas spam, flood, provocacion barata o negatividad insistente, indica brevemente que se aplico silencio y no te enganches con trolls.
 Objetivo: mantener el chat vivo, entretenido, en movimiento y bajo control.
 
 Extras obligatorios:
-1) Evitar repetición: si recientemente hiciste un tipo de comentario, varía el siguiente.
-2) Prioridad a lo interesante: prioriza mensajes que generen conversación, risa, reacción o movimiento del chat.
-3) __SKIP__ SOLO si el mensaje es una repetición exacta (mismo usuario, exactamente el mismo texto, en los últimos 10 segundos). En TODOS los otros casos, SIEMPRE responde con algo contextual y natural.
+1) Evitar repeticion: si recientemente hiciste un tipo de comentario, varia el siguiente.
+2) Prioridad a lo interesante: prioriza mensajes que generen conversacion, risa, reaccion o movimiento del chat.
+3) __SKIP__ SOLO si el mensaje es una repeticion exacta (mismo usuario, exactamente el mismo texto, en los ultimos 10 segundos). En TODOS los otros casos, SIEMPRE responde con algo contextual y natural.
 `.trim()
 
     armResponseTimeout()
@@ -1511,8 +1603,12 @@ Extras obligatorios:
         console.log('[F8] Bot ocupado, ignorado')
         return
       }
+      if (!ensureAssistantReady()) {
+        console.log('[F8] Bloqueado: falta personalidad o voz')
+        return
+      }
 
-      console.log('[F8] ¡LLAMAR AL INTERACTUADOR AHORA!')
+      console.log('[F8] LLAMAR AL INTERACTUADOR AHORA!')
       try {
         // Pick an intent like autopilot does, but skip threshold checks
         console.log('[F8] Step 1: Calling pickAutopilotIntent()')
@@ -1521,6 +1617,8 @@ Extras obligatorios:
 
         console.log('[F8] Step 3: Setting state (isLoading, etc)')
         setIsLoading(true)
+        setAssistantVisualActive(false)
+        emitAssistantVisualizerState(false)
         clearResponseTimeout()
         setHasVoiceResponse(false)
         hasVoiceResponseRef.current = false
@@ -1541,7 +1639,7 @@ Extras obligatorios:
         let localResponse = String(localResult || '').trim()
         console.log('[F8] Step 6: localResponse:', localResponse?.substring?.(0, 50))
         if (localResponse === '__SKIP__' || !localResponse) {
-          console.log('[F8] Primary intent vacío/skip, fallback directo')
+          console.log('[F8] Primary intent vacio/skip, fallback directo')
           const fallbackResult = await fn.executeLocalIntent({ type: 'epic_chat_line' }, 'f8-manual-fallback')
           localResponse = String(fallbackResult || '').trim()
         }
@@ -1553,7 +1651,7 @@ Extras obligatorios:
           setHasActiveResponse(true)
           hasActiveResponseRef.current = true
           await speakLocalResponse(localResponse, selectedRealtimeVoiceIdRef.current || voiceLabelRef.current)
-          console.log('[F8] ✓ Completado')
+          console.log('[F8] OK Completado')
         } else {
           console.log('[F8] Step 7: No localResponse, cleanup')
           setIsLoading(false)
@@ -1576,8 +1674,20 @@ Extras obligatorios:
 
   // Effect: track voice selection changes
   useEffect(() => {
+    selectedCharacterIdRef.current = selectedCharacterId || null
+  }, [selectedCharacterId])
+
+  useEffect(() => {
     selectedRealtimeVoiceIdRef.current = selectedRealtimeVoiceId
     console.log(`[Voice] selectedRealtimeVoiceId updated: ${selectedRealtimeVoiceId}`)
+
+    // CRITICAL: Track cloned voices for session recovery after expiration
+    // If voice is NOT a builtin voice, it's a cloned/custom voice - save it
+    const isBuiltinVoice = BUILTIN_VOICE_OPTIONS.some(v => v.id === selectedRealtimeVoiceId)
+    if (selectedRealtimeVoiceId && !isBuiltinVoice) {
+      setLastUsedClonedVoice(selectedRealtimeVoiceId)
+      console.log(`[Voice] Tracked cloned voice for recovery: ${selectedRealtimeVoiceId}`)
+    }
   }, [selectedRealtimeVoiceId])
 
   useEffect(() => {
@@ -1611,6 +1721,10 @@ Extras obligatorios:
   useEffect(() => {
     voiceLabelRef.current = voiceLabel
   }, [voiceLabel])
+
+  useEffect(() => {
+    isRecordingRef.current = isRecording
+  }, [isRecording])
 
   useEffect(() => {
     const handleTextResponse = (data) => {
@@ -1706,6 +1820,9 @@ Extras obligatorios:
     }
 
     const handleAudioTrackUnmuted = () => {
+      if (isRecordingRef.current) {
+        return
+      }
       console.log('[Bot] handleAudioTrackUnmuted: FIRED', {
         assistantResponseActive: assistantResponseActiveRef.current,
         responsePlaybackStartedBefore: responsePlaybackStartedRef.current
@@ -1732,27 +1849,28 @@ Extras obligatorios:
     }
 
     const handleAudioEnergySpeaking = (data) => {
-      console.log('[Bot] handleAudioEnergySpeaking: CALLED', {
-        assistantResponseActive: assistantResponseActiveRef.current,
-        rms: data?.rms,
-        responsePlaybackStartedBefore: responsePlaybackStartedRef.current,
-        hasInactivityTimer: !!inactivityTimerRef.current
-      })
+      if (isRecordingRef.current) {
+        return
+      }
       if (!assistantResponseActiveRef.current) {
-        console.log('[Bot] handleAudioEnergySpeaking: Response not active, returning')
         return
       }
       assistantResponseHadAudioRef.current = true
       heardSpeechThisTurnRef.current = true
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = true
+      setAssistantVisualActive(true)
+      emitAssistantVisualizerState(true)
+      bindRealtimeAudioToVisualizer()
+      setHasVoiceResponse(true)
+      hasVoiceResponseRef.current = true
+      setIsPlayingResponse(true)
+      emitVisualizerKick(Math.min(1, Math.max(0.35, Number(data?.rms || 0) * 28)))
       // Audio energy detected = playback is happening, set flag (works for all responses including persistent connection)
       responsePlaybackStartedRef.current = true
-      console.log('[Bot] handleAudioEnergySpeaking: Set responsePlaybackStartedRef=true, timer reset')
 
       // Reset inactivity timer - bot is speaking again
       if (inactivityTimerRef.current) {
-        console.log('[Bot] handleAudioEnergySpeaking: Clearing inactivity timer (bot speaking again)')
         clearTimeout(inactivityTimerRef.current)
         inactivityTimerRef.current = null
       }
@@ -1761,13 +1879,14 @@ Extras obligatorios:
     }
 
     const handleAudioEnergySilent = (data) => {
+      if (isRecordingRef.current) {
+        return
+      }
       if (!assistantResponseActiveRef.current) {
         return
       }
       lastRmsRef.current = Number(data?.rms || 0)
       botIsAudiblySpeakingRef.current = false
-
-      console.log('[Bot] handleAudioEnergySilent: Bot went silent, starting inactivity timer')
 
       // Start inactivity timer: if bot doesn't speak for INACTIVITY_TIMEOUT_MS, unlock chat
       if (inactivityTimerRef.current) {
@@ -1850,6 +1969,7 @@ Extras obligatorios:
         }
 
         restoreChatAudioImmediate()
+        setAssistantVisualActive(false)
         return
       }
 
@@ -1896,6 +2016,13 @@ Extras obligatorios:
     }
 
     const handleAudioStarted = () => {
+      if (isRecordingRef.current) {
+        return
+      }
+      setAssistantVisualActive(true)
+      emitAssistantVisualizerState(true)
+      bindRealtimeAudioToVisualizer()
+      emitVisualizerKick(0.8)
       heardSpeechThisTurnRef.current = true
       botIsAudiblySpeakingRef.current = true
       suppressChatAudio()
@@ -1913,7 +2040,7 @@ Extras obligatorios:
         console.log('[Bot] handleAudioStarted: setResponse callback - current:', current?.substring?.(0, 30) || 'null')
         // Clear timeout message, but preserve valid response text
         // Only preserve if it matches the latest response we received
-        if (current === 'La IA tardó demasiado en responder. Intenta de nuevo.') {
+        if (current === 'La IA tardo demasiado en responder. Intenta de nuevo.') {
           console.log('[Bot] handleAudioStarted: Clearing timeout message')
           return null
         }
@@ -1934,8 +2061,65 @@ Extras obligatorios:
       console.log('[Bot] handleAudioComplete: Waiting for RMS silence to confirm audio is truly done')
       // CRITICAL: Do NOT reset responsePlaybackStartedRef here!
       // Do NOT call restore functions here!
-      // Audio transmission complete ≠ audio playback complete
+      // Audio transmission complete != audio playback complete
       // Wait for handleAudioEnergySilent to confirm via RMS detection
+    }
+
+    const handleSessionExpired = async ({ errorMsg, voice: recoveryVoice }) => {
+      console.error('[SessionRecovery] Session expired detected:', errorMsg)
+      console.error('[SessionRecovery] Will recover with voice:', lastUsedClonedVoice || recoveryVoice || 'Clive')
+
+      // Prevent multiple recovery attempts
+      if (sessionRecoveryRef.current.isRecovering) {
+        console.warn('[SessionRecovery] Recovery already in progress, ignoring duplicate event')
+        return
+      }
+
+      sessionRecoveryRef.current.isRecovering = true
+      sessionRecoveryRef.current.recoveryStartTime = Date.now()
+
+      try {
+        // Step 1: Close broken session without resetting voice
+        console.log('[SessionRecovery] Closing broken session...')
+        inworldRealtimeService.closeSession({ preserveVoice: true })
+
+        // Step 2: Wait brief moment for cleanup
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        // Step 3: Restore voice to saved cloned voice
+        const voiceToRestore = lastUsedClonedVoice || recoveryVoice || 'Clive'
+        console.log('[SessionRecovery] Restoring voice:', voiceToRestore)
+        inworldRealtimeService.restoreSessionVoice(voiceToRestore)
+
+        // Step 4: Restart session with restored voice
+        console.log('[SessionRecovery] Restarting session with recovered voice...')
+        const characterId = selectedCharacterIdRef.current
+        const systemPrompt = 'You are a helpful voice assistant. Respond in Spanish. Keep responses concise.'
+
+        if (characterId) {
+          await inworldRealtimeService.startSession(
+            characterId,
+            systemPrompt,
+            null,
+            API_URL,
+            voiceToRestore
+          )
+          console.log('[SessionRecovery] Session restarted successfully with voice:', voiceToRestore)
+
+          // Emit recovery complete
+          setResponse('Sesión restaurada. Listo para continuar.')
+          setIsLoading(false)
+        } else {
+          console.error('[SessionRecovery] No character selected, cannot restart session')
+        }
+      } catch (error) {
+        console.error('[SessionRecovery] Recovery failed:', error)
+        setResponse('Error al restaurar la sesión. Intenta de nuevo.')
+        setIsLoading(false)
+        markSessionBroken()
+      } finally {
+        sessionRecoveryRef.current.isRecovering = false
+      }
     }
 
     const handleError = (error) => {
@@ -1945,6 +2129,8 @@ Extras obligatorios:
       setResponse(`Error: ${error?.message || 'Unknown error'}`)
       setIsLoading(false)
       setIsRecording(false)
+      setAssistantVisualActive(false)
+      emitAssistantVisualizerState(false)
       responseCompletedRef.current = true
       botIsAudiblySpeakingRef.current = false
       restoreChatAudioImmediate()
@@ -1965,6 +2151,7 @@ Extras obligatorios:
     inworldRealtimeService.on('audio-complete', handleAudioComplete)
     inworldRealtimeService.on('input-transcript-delta', handleInputTranscriptDelta)
     inworldRealtimeService.on('input-transcript-complete', handleInputTranscriptComplete)
+    inworldRealtimeService.on('session-expired', handleSessionExpired)
     inworldRealtimeService.on('error', handleError)
 
     return () => {
@@ -1982,6 +2169,7 @@ Extras obligatorios:
       inworldRealtimeService.off('audio-complete', handleAudioComplete)
       inworldRealtimeService.off('input-transcript-delta', handleInputTranscriptDelta)
       inworldRealtimeService.off('input-transcript-complete', handleInputTranscriptComplete)
+      inworldRealtimeService.off('session-expired', handleSessionExpired)
       inworldRealtimeService.off('error', handleError)
       if (localAudioRef.current) {
         localAudioRef.current.pause()
@@ -1994,6 +2182,7 @@ Extras obligatorios:
       setPttSuppressed(false)
       responseCompletedRef.current = true
       botIsAudiblySpeakingRef.current = false
+      emitAssistantVisualizerState(false)
       restoreChatAudioImmediate()
       resetTranscriptCapture({ accept: false })
       inworldRealtimeService.closeSession()
@@ -2006,6 +2195,7 @@ Extras obligatorios:
     hasVoiceResponseRef.current = false
     responsePlaybackStartedRef.current = false
     setIsPlayingResponse(false)
+    setAssistantVisualActive(false)
     setHasActiveResponse(false)
     hasActiveResponseRef.current = false
     hasChargedCurrentResponseRef.current = false
@@ -2033,7 +2223,7 @@ Extras obligatorios:
 
   const loadCharacters = async () => {
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       const res = await fetch(`${API_URL}/api/bot/characters`, {
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -2044,7 +2234,7 @@ Extras obligatorios:
         if (filtered.length > 0) {
           const configuredId = config?.botAssistantCharacterId
           const configuredCharacter = filtered.find((character) => character.id === configuredId)
-          setSelectedCharacterId(configuredCharacter?.id || filtered[0].id)
+          setSelectedCharacterId(configuredCharacter?.id || '')
         }
       }
     } catch (err) {
@@ -2054,7 +2244,7 @@ Extras obligatorios:
 
   const loadUserVoices = async () => {
     try {
-      const token = localStorage.getItem('sv-token')
+      const token = sessionStorage.getItem('sv-token')
       const res = await fetch(`${API_URL}/api/settings/voices`, {
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -2171,7 +2361,13 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
 
   const startRecording = async () => {
     try {
+      if (!ensureAssistantReady()) return
       setIsLoading(true)
+      setAssistantVisualActive(false)
+      emitAssistantVisualizerState(false)
+      assistantResponseActiveRef.current = false
+      assistantResponseHadAudioRef.current = false
+      botIsAudiblySpeakingRef.current = false
       clearResponseTimeout()
       setResponse(null)
       setHasVoiceResponse(false)
@@ -2198,7 +2394,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
       setIsLoading(false)
       setPttSuppressed(false)
       restoreChatAudioImmediate()
-      alert('No se pudo iniciar el bot de voz')
+      alert(t('bot.errors.micFailed'))
     }
   }
 
@@ -2213,6 +2409,8 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
 
       setIsRecording(false)
       setIsLoading(true)
+      setAssistantVisualActive(false)
+      emitAssistantVisualizerState(false)
       setPttSuppressed(false)
       stream.getAudioTracks().forEach(track => track.stop())
       setTimeout(() => {
@@ -2274,6 +2472,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
     if (!text.trim()) {
       return
     }
+    if (!ensureAssistantReady()) return
 
     console.log('[Bot] invokeBot called with text:', text.substring(0, 50))
     console.log('[Bot] invokeBot: Current response state:', response?.substring?.(0, 50) || 'null')
@@ -2340,6 +2539,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
   const handleRetryAudio = async () => {
     try {
       await inworldRealtimeService.resumeOutputAudio()
+      bindRealtimeAudioToVisualizer()
     } catch (err) {
       console.error('Error resuming audio:', err)
     }
@@ -2394,7 +2594,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
       .filter((user) => user.negativeScore >= 3 && user.messageCount >= 3)
       .sort((a, b) => (b.negativeScore - a.negativeScore) || (b.messageCount - a.messageCount))[0]
     const questions = chatStore.getQuestions(15)
-    const hasJokes = recent.some((item) => /(jaja|jeje|xd|lol|🤣|😂)/i.test(String(item.text || '')))
+    const hasJokes = recent.some((item) => /(jaja|jeje|xd|lol)/i.test(String(item.text || '')))
     const hasIntenseFlow = recent.length >= 30
     const celebrationLevel = Number(stats?.giftsToday || 0) + Number(stats?.followsToday || 0) + Number(stats?.sharesToday || 0)
     const lowSignalMessages = recent.filter((item) => {
@@ -2404,7 +2604,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
     }).length
     const questionRate = recent.length > 0 ? (questions.length / recent.length) : 0
     const interestingRate = recent.length > 0
-      ? (recent.filter((item) => /[?¿!]|(jaja|jeje|xd|lol|wow|no manches|contexto|por que|como|cuando|donde|opinan|debate|drama|troll)/i.test(String(item.text || ''))).length / recent.length)
+      ? (recent.filter((item) => /[?!]|(jaja|jeje|xd|lol|wow|no manches|contexto|por que|como|cuando|donde|opinan|debate|drama|troll)/i.test(String(item.text || ''))).length / recent.length)
       : 0
     const lowSignalRatio = recent.length > 0 ? (lowSignalMessages / recent.length) : 1
 
@@ -2530,24 +2730,80 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
     }
   }
 
+  useEffect(() => {
+    if (!hasVoiceResponse || assistantAudioElement) return
+    bindRealtimeAudioToVisualizer()
+  }, [hasVoiceResponse, assistantAudioElement])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      bindRealtimeAudioToVisualizer()
+    }, 700)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    const audio = assistantAudioElement
+    if (!audio) return
+
+    const syncPlaying = () => setIsPlayingResponse(!audio.paused)
+    audio.addEventListener('play', syncPlaying)
+    audio.addEventListener('playing', syncPlaying)
+    audio.addEventListener('pause', syncPlaying)
+    audio.addEventListener('ended', syncPlaying)
+    syncPlaying()
+
+    return () => {
+      audio.removeEventListener('play', syncPlaying)
+      audio.removeEventListener('playing', syncPlaying)
+      audio.removeEventListener('pause', syncPlaying)
+      audio.removeEventListener('ended', syncPlaying)
+    }
+  }, [assistantAudioElement])
+
   // Autopilot deshabilitado: el interactuador solo se invoca manualmente (F8).
+  const missingAssistantSetup = !selectedCharacterId || !selectedRealtimeVoiceId
+
+  // Feature access control: Only PRO users can use the assistant
+  const userPlan = user?.plan || 'free'
+  const isPROUser = userPlan === 'pro' || userPlan === 'premium' || userPlan === 'elite' || userPlan === 'admin' || userPlan === 'on_demand'
+  const isFeatureLockedForUser = !isPROUser
 
   return (
-    <div className={`rounded-lg border p-4 space-y-3 ${
+    <div className={`relative rounded-lg border p-4 space-y-3 ${
+      isFeatureLockedForUser ? 'opacity-50 pointer-events-none' : ''
+    } ${
       darkMode
         ? 'bg-[#1a1a2e] border-cyan-400/30'
         : 'bg-white border-indigo-200 shadow-sm'
     }`}>
+      {isFeatureLockedForUser && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onGoPricingPage?.()
+          }}
+          className={`absolute top-2 right-2 p-2 rounded-full transition-all pointer-events-auto ${
+            darkMode
+              ? 'bg-purple-500/40 hover:bg-purple-500/70 text-purple-300'
+              : 'bg-purple-300/50 hover:bg-purple-400 text-purple-600'
+          }`}
+          title="Ver planes - Solo disponible en plan PRO"
+        >
+          <Lock className="w-4 h-4" />
+        </button>
+      )}
+
       <div className="flex items-center justify-between">
         <h3 className={`text-sm font-bold ${darkMode ? 'text-cyan-300' : 'text-indigo-600'}`}>
-          Llamar a Asistente
+          {t('bot.title')}
         </h3>
       </div>
 
       {/* Selector de personalidad */}
       <div>
         <label className={`block text-xs font-bold mb-1 ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`}>
-          🎭 Personalidad
+          Personalidad
         </label>
         <select
           value={selectedCharacterId || ''}
@@ -2558,7 +2814,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
               : 'bg-gray-50 border border-indigo-300 text-gray-900'
           }`}
         >
-          <option value="">— Elige una personalidad —</option>
+          <option value="">{t('bot.selectOne')}</option>
           {characters.map(char => (
             <option key={char.id} value={char.id}>
               {char.name}
@@ -2570,7 +2826,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
       {/* Selector de voz */}
       <div>
         <label className={`block text-xs font-bold mb-1 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-          🔊 Voz a utilizar
+          Voz a utilizar
         </label>
         <select
           value={selectedRealtimeVoiceId}
@@ -2581,7 +2837,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
               : 'bg-gray-50 border border-purple-300 text-gray-900'
           }`}
         >
-          <option value="">— Automática según personalidad —</option>
+          <option value="">{t('bot.selectOne')}</option>
           <optgroup label="Voces Premium">
             <option value="Diego">Voz natural de Luis - Premium</option>
             <option value="Lupita">Voz natural de Sofia - Premium</option>
@@ -2600,6 +2856,16 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
         </select>
       </div>
 
+      {missingAssistantSetup && (
+        <div className={`rounded p-2 text-xs border ${
+          darkMode
+            ? 'bg-amber-500/10 border-amber-400/30 text-amber-300'
+            : 'bg-amber-50 border-amber-300 text-amber-800'
+        }`}>
+          {t('bot.note')}
+        </div>
+      )}
+
       <div className="flex gap-2">
         <button
           onClick={() => setInputMode('microphone')}
@@ -2609,7 +2875,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
               : darkMode ? 'bg-[#0f0f23] text-gray-400' : 'bg-slate-100 text-slate-700 border border-slate-300'
           }`}
         >
-          Micrófono
+          {t('bot.modes.mic')}
         </button>
         <button
           onClick={() => setInputMode('text')}
@@ -2619,14 +2885,14 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
               : darkMode ? 'bg-[#0f0f23] text-gray-400' : 'bg-slate-100 text-slate-700 border border-slate-300'
           }`}
         >
-          Texto
+          {t('bot.modes.text')}
         </button>
       </div>
 
       {inputMode === 'microphone' && (
         <button
           onClick={isRecording ? stopRecording : startRecording}
-          disabled={isLoading}
+          disabled={isLoading || missingAssistantSetup}
           className={`w-full p-3 rounded font-bold flex items-center justify-center gap-2 transition-all ${
             isRecording
               ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
@@ -2647,7 +2913,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
-            placeholder="Escribe un mensaje..."
+            placeholder={t('bot.messagePlaceholder')}
             className={`flex-1 p-2 rounded text-sm ${
               darkMode
                 ? 'bg-[#0f0f23] border border-cyan-400/30 text-white placeholder-gray-600'
@@ -2656,7 +2922,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
           />
           <button
             onClick={handleTextSubmit}
-            disabled={isLoading || !inputText.trim()}
+            disabled={isLoading || !inputText.trim() || missingAssistantSetup}
             className={`p-2 rounded disabled:opacity-50 transition-all ${
               darkMode ? 'bg-cyan-500 text-white hover:bg-cyan-600' : 'bg-slate-700 text-white hover:bg-slate-600'
             }`}
@@ -2668,7 +2934,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
 
       {isLoading && (
         <div className={`text-center text-sm ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`}>
-          Procesando...
+          {t('bot.invoking')}
         </div>
       )}
 
@@ -2684,22 +2950,24 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
       }`}>
         {response ? (
           <>
-            <p className="font-bold mb-2">Respuesta del Bot:</p>
+            <p className="font-bold mb-2">{t('bot.audio.responded')}:</p>
             <p>{response}</p>
             <p className="mt-2 text-xs text-gray-400">Voz realtime: {voiceLabel}</p>
 
             {hasVoiceResponse && (
-              <div className="mt-3 flex items-center gap-2">
-                <button
-                  onClick={handleRetryAudio}
-                  className="p-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full hover:shadow-lg text-white transition-all"
-                  title="Reintentar audio"
-                >
-                  <Volume2 className="w-4 h-4" />
-                </button>
-                <span className="text-xs text-gray-400">
-                  {isPlayingResponse ? 'La respuesta de voz se está reproduciendo' : 'Si no se oyó, toca este botón para reactivar el audio'}
-                </span>
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleRetryAudio}
+                    className="p-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full hover:shadow-lg text-white transition-all"
+                    title="Reintentar audio"
+                  >
+                    <Volume2 className="w-4 h-4" />
+                  </button>
+                  <span className="text-xs text-gray-400">
+                    {isPlayingResponse ? t('bot.audio.play') : t('bot.audio.pause')}
+                  </span>
+                </div>
               </div>
             )}
           </>
@@ -2708,6 +2976,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
     </div>
   )
 }
+
 
 
 
