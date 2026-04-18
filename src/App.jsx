@@ -16,6 +16,8 @@ import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon,
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 const TOKEN_API_KEY = 'sv-token-api-v1'
+const TOKEN_STORAGE_KEY = 'sv-token'
+const TOKEN_PERSIST_KEY = 'sv-token-persist'
 const LOCAL_CONFIG_CACHE_KEY = 'sv-config-cache-v1'
 const LOCAL_CONFIG_CACHE_KEY_PREFIX = 'sv-config-cache-v2'
 
@@ -214,6 +216,29 @@ const loadCachedConfig = (userIdentifier = 'guest') => {
   }
 }
 
+const getStoredToken = () => sessionStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(TOKEN_PERSIST_KEY) || ''
+
+const persistAuthToken = (token) => {
+  if (!token) return
+  sessionStorage.setItem(TOKEN_STORAGE_KEY, token)
+  localStorage.setItem(TOKEN_PERSIST_KEY, token)
+}
+
+const clearStoredAuthToken = () => {
+  sessionStorage.removeItem(TOKEN_STORAGE_KEY)
+  localStorage.removeItem(TOKEN_PERSIST_KEY)
+}
+
+const reconcileMercadoPagoPayments = async (apiUrl, token) => {
+  if (!apiUrl || !token) return
+  try {
+    await fetch(`${apiUrl}/api/mercadopago/reconcile`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    })
+  } catch (_) {}
+}
+
 function AnimatedMetric({ value, className = '', animateOnView = false }) {
   const buildZeroValue = (rawValue) => {
     const raw = String(rawValue || '').trim()
@@ -371,14 +396,14 @@ export function App() {
 
   // Restaurar sesión al cargar
   useEffect(() => {
-    const savedToken = sessionStorage.getItem('sv-token')
+    const savedToken = getStoredToken()
     const savedUser = localStorage.getItem('sv-user')
     const savedTokenApi = localStorage.getItem(TOKEN_API_KEY)
     const currentApi = getApiFingerprint()
 
     if (savedToken && savedTokenApi && savedTokenApi !== currentApi) {
       // Evita usar un token generado contra otro backend (local vs prod).
-      sessionStorage.removeItem('sv-token')
+      clearStoredAuthToken()
       localStorage.removeItem('sv-user')
       localStorage.setItem(TOKEN_API_KEY, currentApi)
       setConfigReady(true)
@@ -387,6 +412,7 @@ export function App() {
 
     if (savedToken && savedUser) {
       try {
+        sessionStorage.setItem(TOKEN_STORAGE_KEY, savedToken)
         const userData = JSON.parse(savedUser)
         setUser(userData)
         setAuthToken(savedToken)
@@ -399,6 +425,7 @@ export function App() {
             setUser(data.user)
             setTokens(data.user.tokens || 100)
             localStorage.setItem('sv-user', JSON.stringify(data.user))
+            reconcileMercadoPagoPayments(API_URL, savedToken)
             // Cargar config guardada del usuario
             loadAndApplyUserConfig(savedToken, data.user)
           } else {
@@ -408,7 +435,7 @@ export function App() {
           setConfigReady(true)
         })
       } catch {
-        sessionStorage.removeItem('sv-token')
+        clearStoredAuthToken()
         localStorage.removeItem('sv-user')
         setConfigReady(true)
       }
@@ -589,7 +616,7 @@ export function App() {
   }, [config, user])
 
   useEffect(() => {
-    const token = sessionStorage.getItem('sv-token')
+    const token = getStoredToken()
     if (!token || !user || !configReady) return
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
@@ -620,6 +647,8 @@ export function App() {
 
   const handleLogin = (userData, token) => {
     localStorage.setItem(TOKEN_API_KEY, getApiFingerprint())
+    persistAuthToken(token)
+    localStorage.setItem('sv-user', JSON.stringify(userData))
     setUser(userData)
     setAuthToken(token)
     setTokens(userData.tokens || 100)
@@ -628,12 +657,13 @@ export function App() {
     setConfig(cleanConfig)
     setDarkMode(cleanConfig.themeMode !== 'light')
     setConfigReady(false)
+    reconcileMercadoPagoPayments(API_URL, token)
     loadAndApplyUserConfig(token, userData)
     setCurrentPage('studio')
   }
 
   const handleLogout = async () => {
-    const token = sessionStorage.getItem('sv-token')
+    const token = getStoredToken()
     const currentUser = user
     if (token && currentUser) {
       await persistConfigNow(token, latestConfigRef.current)
@@ -641,7 +671,7 @@ export function App() {
 
     setUser(null)
     setAuthToken(null)
-    sessionStorage.removeItem('sv-token')
+    clearStoredAuthToken()
     localStorage.removeItem('sv-user')
     localStorage.removeItem(TOKEN_API_KEY)
     setConfigReady(true)
@@ -664,7 +694,7 @@ export function App() {
           const errText = String(data?.error || data?.message || '').toLowerCase()
 
           if (data?.error === 'SESSION_DISPLACED') {
-            sessionStorage.removeItem('sv-token')
+            clearStoredAuthToken()
             localStorage.removeItem('sv-user')
             localStorage.removeItem(TOKEN_API_KEY)
             setUser(null)
@@ -675,11 +705,11 @@ export function App() {
               alert('⚠️ Tu sesión fue iniciada en otro dispositivo. Has sido desconectado.')
             }, 100)
           } else if (
-            sessionStorage.getItem('sv-token') &&
+            getStoredToken() &&
             (errText.includes('invalid token') || errText.includes('no token provided') || errText.includes('jwt'))
           ) {
             // Token vencido / inválido: limpiar sesión para evitar bloqueos raros.
-            sessionStorage.removeItem('sv-token')
+            clearStoredAuthToken()
             localStorage.removeItem('sv-user')
             localStorage.removeItem(TOKEN_API_KEY)
             setUser(null)
@@ -699,7 +729,7 @@ export function App() {
 
   useEffect(() => {
     const handleBeforeUnload = () => {
-      const token = sessionStorage.getItem('sv-token')
+      const token = getStoredToken()
       const currentUser = user
       if (!token || !currentUser) return
       fetch(`${API_URL}/api/settings`, {
@@ -799,6 +829,27 @@ export function App() {
       setCurrentPage('studio')
     }
   }, [currentPage, canOpenStudioWithoutAuth])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const paymentStatus = params.get('payment')
+    if (paymentStatus !== 'success') return
+    const token = getStoredToken()
+    if (!token) return
+    reconcileMercadoPagoPayments(API_URL, token).then(async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await response.json()
+        if (data?.success) {
+          setUser(data.user)
+          setTokens(data.user.tokens || 100)
+          localStorage.setItem('sv-user', JSON.stringify(data.user))
+        }
+      } catch (_) {}
+    })
+  }, [])
 
   // Auth Page — también accesible por ?preview=auth en local
   if (currentPage === 'auth' || window.location.search.includes('preview=auth')) {

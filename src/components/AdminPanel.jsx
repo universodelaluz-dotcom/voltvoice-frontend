@@ -1406,6 +1406,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                       <th className="text-left px-4 py-3">Estado</th>
                       <th className="text-left px-4 py-3">Email</th>
                       <th className="text-left px-4 py-3">Plan</th>
+                      <th className="text-left px-4 py-3">Suscripción</th>
                       <th className="text-left px-4 py-3">Seguridad</th>
                       <th className="text-left px-4 py-3">Comprados</th>
                       <th className="text-left px-4 py-3">Restantes</th>
@@ -1416,7 +1417,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                   <tbody>
                     {!loading && !usersError && users.length === 0 && (
                       <tr>
-                        <td colSpan={8} className={`px-4 py-10 text-center text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        <td colSpan={9} className={`px-4 py-10 text-center text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                           No hay usuarios registrados con este filtro
                         </td>
                       </tr>
@@ -1425,6 +1426,13 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                       const online = isOnline(u.last_seen)
                       const suspended = !!u.is_suspended
                       const userPlan = u.normalized_plan || u.plan || 'free'
+                      const billingCycle = String(u.subscription_billing_cycle || 'monthly').toLowerCase() === 'annual' ? 'annual' : 'monthly'
+                      const renewalAt = u.subscription_current_period_end ? new Date(u.subscription_current_period_end) : null
+                      const hasPendingPlan = !!u.subscription_pending_plan_display
+                      const pendingPlanLabel = hasPendingPlan
+                        ? `${String(u.subscription_pending_plan_display || '').toUpperCase()} ${u.subscription_pending_billing_cycle === 'annual' ? 'ANUAL' : 'MENSUAL'}`
+                        : null
+                      const pendingAt = u.subscription_pending_effective_at ? new Date(u.subscription_pending_effective_at) : null
                       const s = planStyle(userPlan)
                       const pillClass = darkMode
                         ? `${s.bg} ${s.text}`
@@ -1464,6 +1472,24 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                                 {String(userPlan || 'free').toUpperCase()}
                               </span>
                             )}
+                          </td>
+
+                          {/* Seguridad */}
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col gap-1.5">
+                              <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold inline-block w-fit ${billingCycle === 'annual' ? 'bg-amber-500/20 text-amber-300' : 'bg-cyan-500/20 text-cyan-300'}`}>
+                                {billingCycle === 'annual' ? 'ANUAL' : 'MENSUAL'}
+                              </span>
+                              <span className={`text-[11px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Renueva: {renewalAt ? renewalAt.toLocaleString('es-MX') : 'N/D'}
+                              </span>
+                              {hasPendingPlan && (
+                                <span className="text-[11px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 inline-block w-fit">
+                                  Programado: {pendingPlanLabel}
+                                  {pendingAt ? ` (${pendingAt.toLocaleDateString('es-MX')})` : ''}
+                                </span>
+                              )}
+                            </div>
                           </td>
 
                           {/* Seguridad */}

@@ -3,6 +3,8 @@ import { X, Zap, Check, AlertCircle, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const TOKEN_STORAGE_KEY = 'sv-token'
+const TOKEN_PERSIST_KEY = 'sv-token-persist'
 
 const tokenPackages = [
   { tokens: 150000, price: 4.99, label: '150K', size: 'MINI BOOST' },
@@ -74,7 +76,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     }).format(usdPrice * usdMxn)
 
   const getAuthHeaders = () => {
-    const token = sessionStorage.getItem('sv-token')
+    const token = sessionStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(TOKEN_PERSIST_KEY)
     if (!token) return null
     return {
       'Content-Type': 'application/json',
@@ -129,6 +131,19 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     : { type: 'tokens', package: selectedPackage }
 
   const validCoupon = couponValidation?.valid ? couponValidation : null
+  const isScheduledPlanAction = (action) => ['downgrade_next_cycle', 'billing_cycle_next_cycle'].includes(String(action || ''))
+
+  const confirmScheduledPlanPayment = (action) => {
+    if (!isScheduledPlanAction(action)) return true
+    const planLabel = String(currentItem?.label || '').trim() || 'nuevo plan'
+    const cycleLabel = currentItem?.billingCycle === 'annual' ? 'anual' : 'mensual'
+    const message = [
+      `Aviso importante: el cambio a ${planLabel} (${cycleLabel}) se aplicará en tu siguiente ciclo de facturación.`,
+      'Hoy se procesa el pago, pero mantendrás tu plan actual hasta la renovación.',
+      '¿Deseas continuar al pago?'
+    ].join('\n\n')
+    return window.confirm(message)
+  }
 
   const requestPayload = currentItem.type === 'plan'
     ? {
@@ -161,11 +176,15 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         body: JSON.stringify(requestPayload),
       })
       const data = await res.json()
+      const preferredCheckoutUrl = data.checkoutUrl || data.sandboxUrl
+
       if (data.requiresPayment === false) {
         alert(data.message || t('payment.planScheduled'))
         onClose?.()
-      } else if (data.checkoutUrl) window.location.href = data.checkoutUrl
-      else if (data.sandboxUrl) window.location.href = data.sandboxUrl
+      } else if (preferredCheckoutUrl) {
+        if (!confirmScheduledPlanPayment(data.action)) return
+        window.location.href = preferredCheckoutUrl
+      }
       else alert('Error MercadoPago: ' + (data.error || 'desconocido'))
     } catch (e) {
       alert('Error: ' + e.message)
@@ -194,6 +213,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         alert(data.message || t('payment.planScheduled'))
         onClose?.()
       } else if (data.approvalUrl) {
+        if (!confirmScheduledPlanPayment(data.action)) return
         const w = 500
         const h = 650
         const left = (screen.width - w) / 2
