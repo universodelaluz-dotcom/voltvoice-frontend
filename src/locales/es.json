@@ -693,7 +693,7 @@
         "stream": "En uso de voz premium rinde aprox 2-4 horas de stream activo",
         "extension": "Permite extender la duración optimizando tu chat",
         "voices": ["1 voz personalizada por IA (reutilizable)", "1 voz natural premium", "1 voz esencial (ilimitada)", "200,000 caracteres (~tokens)"],
-        "compatibility": ["filtrado inteligente", "lectura selectiva (preguntas, donadores, etc.)", "control de mensajes"]
+        "compatibility": ["puedes agregar voz personalizada a moderadores", "lectura selectiva (preguntas, donadores, etc.)", "control de mensajes"]
       },
       "creator": {
         "name": "CREATOR",
@@ -719,7 +719,7 @@
       "start": {
         "name": "START ANUAL",
         "saving": "Ahorra ~$25 USD",
-        "benefits": ["1 voz personalizada por IA (reutilizable)", "1 voz natural premium", "1 voz esencial (ilimitada)", "200,000 caracteres (~tokens)", "Rinde aprox 2-4 horas de stream activo", "filtrado inteligente", "lectura selectiva (preguntas, donadores, etc.)", "control de mensajes"]
+        "benefits": ["1 voz personalizada por IA (reutilizable)", "1 voz natural premium", "1 voz esencial (ilimitada)", "200,000 caracteres (~tokens)", "Rinde aprox 2-4 horas de stream activo", "puedes agregar voz personalizada a moderadores", "lectura selectiva (preguntas, donadores, etc.)", "control de mensajes"]
       },
       "creator": {
         "name": "CREATOR ANUAL",

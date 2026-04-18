@@ -118,7 +118,6 @@ const isFeatureBlocked = (feature, userPlan) => {
 const normalizeUserPlan = (rawPlan = 'free') => {
   const normalized = String(rawPlan || 'free').trim().toLowerCase()
   const map = {
-    pro: 'start',
     premium: 'creator',
     elite: 'pro',
     on_demand: 'free',
@@ -289,7 +288,7 @@ function SectionHeader({ title, tone, darkMode }) {
   )
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const API_URL = import.meta.env.VITE_API_URL || ((typeof window !== 'undefined' && ['localhost','127.0.0.1'].includes(window.location.hostname)) ? 'http://localhost:3000' : 'https://voltvoice-backend.onrender.com')
 
 const normalizeModerationList = (value) => {
   if (!Array.isArray(value)) return []
