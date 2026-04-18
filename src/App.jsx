@@ -730,7 +730,10 @@ export function App() {
       PRO: 'pro',
     }
 
-    const billingCycle = meta.billingCycle || 'monthly'
+    const planPrice = Number(plan.price)
+    const inferredAnnualPrices = new Set([59, 109, 149])
+    const inferredBillingCycle = inferredAnnualPrices.has(planPrice) ? 'annual' : 'monthly'
+    const billingCycle = meta.billingCycle || inferredBillingCycle
     const recommendedPackages = {
       START: 150000,
       CREATOR: 350000,
