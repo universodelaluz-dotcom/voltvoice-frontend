@@ -349,12 +349,13 @@ function AnimatedMetric({ value, className = '', animateOnView = false }) {
   )
 }
 
-function PublicTestResetCard({ darkMode }) {
+function PublicTestResetCard({ darkMode, onAssumeUser }) {
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [resettingId, setResettingId] = useState(null)
   const [users, setUsers] = useState([])
   const [message, setMessage] = useState('')
+  const [assumingId, setAssumingId] = useState(null)
 
   const loadUsers = useCallback(async () => {
     setLoading(true)
@@ -391,17 +392,36 @@ function PublicTestResetCard({ darkMode }) {
     }
   }
 
+  const assumeUser = async (userId) => {
+    if (!onAssumeUser) return
+    setAssumingId(userId)
+    setMessage('')
+    try {
+      const res = await fetch(`${API_URL}/api/test-lab/users/${userId}/assume`, { method: 'POST' })
+      const data = await res.json()
+      if (!data?.success || !data?.token || !data?.user) {
+        throw new Error(data?.error || 'No se pudo tomar el rol del usuario.')
+      }
+      onAssumeUser(data.user, data.token)
+      setMessage(`Entraste como ${data.user.email}`)
+    } catch (error) {
+      setMessage(error.message || 'Error al iniciar sesión temporal.')
+    } finally {
+      setAssumingId(null)
+    }
+  }
+
   return (
-    <section className="px-4 pb-4">
-      <div className={`max-w-7xl mx-auto rounded-xl border ${darkMode ? 'bg-[#11142a]/80 border-cyan-500/30' : 'bg-white border-cyan-200 shadow-sm'}`}>
+    <section className="px-4 pb-2">
+      <div className={`max-w-5xl mx-auto rounded-lg border ${darkMode ? 'bg-[#11142a]/70 border-cyan-500/20' : 'bg-white border-cyan-100 shadow-sm'}`}>
         <button
           onClick={() => setIsOpen((prev) => !prev)}
-          className={`w-full px-5 py-4 flex items-center justify-between text-left ${darkMode ? 'hover:bg-white/5' : 'hover:bg-cyan-50'} transition-colors`}
+          className={`w-full px-4 py-3 flex items-center justify-between text-left ${darkMode ? 'hover:bg-white/5' : 'hover:bg-cyan-50'} transition-colors`}
         >
           <div className="flex items-center gap-3">
             <TestTube2 className="w-5 h-5 text-cyan-400" />
             <div>
-              <p className={`font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Panel rápido de pruebas</p>
+              <p className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>Panel rápido de pruebas</p>
               <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Reset público para Usuario 1, 2, 3 y 4</p>
             </div>
           </div>
@@ -409,8 +429,8 @@ function PublicTestResetCard({ darkMode }) {
         </button>
 
         {isOpen && (
-          <div className={`px-5 pb-5 border-t ${darkMode ? 'border-white/10' : 'border-cyan-100'}`}>
-            <div className="pt-4 flex items-center justify-between mb-3">
+          <div className={`px-4 pb-4 border-t ${darkMode ? 'border-white/10' : 'border-cyan-100'}`}>
+            <div className="pt-3 flex items-center justify-between mb-2">
               <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cada reset deja: tokens en 0, membresía FREE y pagos borrados.</p>
               <button
                 onClick={loadUsers}
@@ -425,12 +445,12 @@ function PublicTestResetCard({ darkMode }) {
                 <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {[0, 1, 2, 3].map((idx) => {
                   const user = users[idx]
                   return (
-                    <div key={idx} className={`rounded-lg border p-4 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
-                      <p className={`font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>USUARIO {idx + 1}</p>
+                    <div key={idx} className={`rounded-md border p-3 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
+                      <p className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>USUARIO {idx + 1}</p>
                       {user ? (
                         <>
                           <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>ID: {user.id}</p>
@@ -439,10 +459,18 @@ function PublicTestResetCard({ darkMode }) {
                           <button
                             onClick={() => resetUser(user.id)}
                             disabled={resettingId === user.id}
-                            className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-black text-white bg-gradient-to-r from-red-500 to-orange-500 hover:opacity-90 disabled:opacity-70"
+                            className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-black text-white bg-gradient-to-r from-red-500 to-orange-500 hover:opacity-90 disabled:opacity-70"
                           >
                             {resettingId === user.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
                             BORRAR DATOS
+                          </button>
+                          <button
+                            onClick={() => assumeUser(user.id)}
+                            disabled={assumingId === user.id}
+                            className="mt-1.5 w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-black text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:opacity-90 disabled:opacity-70"
+                          >
+                            {assumingId === user.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
+                            ENTRAR COMO ESTE USUARIO
                           </button>
                         </>
                       ) : (
@@ -775,6 +803,10 @@ export function App() {
     reconcileMercadoPagoPayments(API_URL, token)
     loadAndApplyUserConfig(token, userData)
     setCurrentPage('studio')
+  }
+
+  const handleAssumeTestUser = (userData, token) => {
+    handleLogin(userData, token)
   }
 
   const handleLogout = async () => {
@@ -1146,7 +1178,7 @@ export function App() {
         )}
       </div>
 
-      <PublicTestResetCard darkMode={darkMode} />
+      <PublicTestResetCard darkMode={darkMode} onAssumeUser={handleAssumeTestUser} />
 
       {/* Hero Section */}
       <section className="pt-10 pb-16 px-4 relative overflow-hidden">
