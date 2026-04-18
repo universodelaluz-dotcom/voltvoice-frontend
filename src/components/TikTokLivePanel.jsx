@@ -521,8 +521,18 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const [chatMsgColor, setChatMsgColor] = useState(() => getThemeChatMsgColor(config, localStorage.getItem('voltvoice-theme') !== 'light'))
   const [showFontPanel, setShowFontPanel] = useState(false)
   const [smartChatEnabled, setSmartChatEnabled] = useState(config.smartChatEnabled || false)
-  const currentPlan = String(user?.plan || 'free').toLowerCase()
+  const normalizePlan = (rawPlan = 'free') => {
+    const normalized = String(rawPlan || 'free').trim().toLowerCase()
+    const map = {
+      premium: 'creator',
+      elite: 'pro',
+      on_demand: 'free',
+    }
+    return map[normalized] || normalized || 'free'
+  }
+  const currentPlan = normalizePlan(user?.plan || 'free')
   const isFreePlan = currentPlan === 'free'
+  const canUseAdvancedVoiceTools = ['creator', 'pro', 'admin'].includes(currentPlan)
   const freeLocalUsageRef = useRef(readFreeLocalVoiceUsage())
   const localLimitPopupAtRef = useRef(0)
   const [mobilePreviewEnabled, setMobilePreviewEnabled] = useState(config.mobilePreviewEnabled || false)
@@ -1799,7 +1809,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     const isQuestionEligible = item.isQuestion || isQuestion(item.sourceText || item.rawText || item.text || '')
 
     // PRIORIDAD 0: Voz personalizada por usuario (MÁXIMA PRIORIDAD)
-    if (c.userVoiceAssignments && c.userVoiceAssignments.length > 0) {
+    if (canUseAdvancedVoiceTools && c.userVoiceAssignments && c.userVoiceAssignments.length > 0) {
       // Normalizar username: quitar @ si lo tiene para comparación
       const normalizedUsername = username.toLowerCase().replace(/^@+/, '')
       const userAssignment = c.userVoiceAssignments.find(a => a.username.toLowerCase() === normalizedUsername)
@@ -1852,7 +1862,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     }
 
     // Modo voces variadas: si está enabled y hay voces seleccionadas, randomiza
-    if (c.variedVoicesEnabled && c.variedVoicesSelected && c.variedVoicesSelected.length > 0) {
+    if (canUseAdvancedVoiceTools && c.variedVoicesEnabled && c.variedVoicesSelected && c.variedVoicesSelected.length > 0) {
       const validVoices = c.variedVoicesSelected.filter(v => v && typeof v === 'string' && v.trim())
       if (validVoices.length > 0) {
         const randomIndex = Math.floor(Math.random() * validVoices.length)

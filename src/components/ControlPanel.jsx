@@ -27,6 +27,7 @@ const isFeatureBlocked = (feature, userPlan) => {
       // NOTIFICACIONES Y IA - BLOQUEADAS
       notifications: true,
       aiAssistant: true,
+      advancedVoiceTools: true,
       // LECTURA - SOLO ALGUNOS LIBRES
       readOnlyMessage: false, // BLOQUEADO
       onlyQuestions: false, // BLOQUEADO
@@ -61,6 +62,7 @@ const isFeatureBlocked = (feature, userPlan) => {
       // NOTIFICACIONES Y IA - BLOQUEADAS
       notifications: true,
       aiAssistant: true,
+      advancedVoiceTools: true,
       // LECTURA Y FILTROS BASICOS - LIBRES
       readOnlyMessage: false, // LIBRE
       onlyQuestions: false, // LIBRE
@@ -90,6 +92,7 @@ const isFeatureBlocked = (feature, userPlan) => {
       maxQueue: false,
       notifications: false,
       aiAssistant: true, // SOLO ESTO BLOQUEADO
+      advancedVoiceTools: false,
       readOnlyMessage: false,
       onlyQuestions: false,
       onlyDonors: false,
@@ -110,6 +113,17 @@ const isFeatureBlocked = (feature, userPlan) => {
 
   const planBlocks = blockedByPlan[plan] || blockedByPlan.free
   return planBlocks.all === false ? false : (planBlocks[feature] ?? false)
+}
+
+const normalizeUserPlan = (rawPlan = 'free') => {
+  const normalized = String(rawPlan || 'free').trim().toLowerCase()
+  const map = {
+    pro: 'start',
+    premium: 'creator',
+    elite: 'pro',
+    on_demand: 'free',
+  }
+  return map[normalized] || normalized || 'free'
 }
 
 // Componente wrapper para mostrar secciones bloqueadas
@@ -440,7 +454,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     return () => window.removeEventListener('voice-added', handleVoiceAdded)
   }, [user?.email])
 
-  const userPlan = user?.plan || 'free'
+  const userPlan = normalizeUserPlan(user?.plan || 'free')
   const PREMIUM_BY_PLAN = {
     free: [], start: ['Diego'],
     creator: ['Diego', 'Lupita'],
@@ -1031,8 +1045,12 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
                   : config.variedVoicesEnabled
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
-                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
+                  : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
+                {isFeatureBlocked('advancedVoiceTools', userPlan) && (
+                  <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR y PRO" />
+                )}
+                <div className={`${isFeatureBlocked('advancedVoiceTools', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
                 <button onClick={() => updateConfig('variedVoicesEnabled', !config.variedVoicesEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                     config.variedVoicesEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
@@ -1074,6 +1092,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     )}
                   </div>
                 )}
+                </div>
               </div>
 
               {/* Voces personalizadas por usuario */}
@@ -1084,8 +1103,12 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
                   : showUserVoiceAssignments
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
-                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
+                  : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
+                {isFeatureBlocked('advancedVoiceTools', userPlan) && (
+                  <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR y PRO" />
+                )}
+                <div className={`${isFeatureBlocked('advancedVoiceTools', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
                 <button onClick={() => setShowUserVoiceAssignments(!showUserVoiceAssignments)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                     showUserVoiceAssignments ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
@@ -1174,6 +1197,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     )}
                   </div>
                 )}
+                </div>
               </div>
 
               {/* LEFT COLUMN - BLOQUE INDEPENDIENTE DE NOTIFICACIONES */}
