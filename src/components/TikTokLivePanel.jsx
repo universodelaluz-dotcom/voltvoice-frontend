@@ -3,7 +3,7 @@ import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban
 import chatStore from '../services/chatStore.js'
 import { useTranslation } from 'react-i18next'
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const API_URL = import.meta.env.VITE_API_URL || ((typeof window !== 'undefined' && ['localhost','127.0.0.1'].includes(window.location.hostname)) ? 'http://localhost:3000' : 'https://voltvoice-backend.onrender.com')
 const FREE_LOCAL_VOICE_DAILY_LIMIT_MS = 2 * 60 * 60 * 1000
 const FREE_LOCAL_VOICE_USAGE_KEY = 'voltvoice_free_local_voice_usage_v1'
 
@@ -532,6 +532,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   }
   const currentPlan = normalizePlan(user?.plan || 'free')
   const isFreePlan = currentPlan === 'free'
+  const canUseAiFilter = ['creator', 'pro', 'admin'].includes(currentPlan)
   const canUseAdvancedVoiceTools = ['creator', 'pro', 'admin'].includes(currentPlan)
   const freeLocalUsageRef = useRef(readFreeLocalVoiceUsage())
   const localLimitPopupAtRef = useRef(0)
@@ -661,11 +662,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     setSelectedColor(config.highlightSelectedColor || '#06b6d4')
   }, [config.highlightSelectedColor])
   useEffect(() => {
-    if (isFreePlan && smartChatEnabled) {
+    if (!canUseAiFilter && smartChatEnabled) {
       setSmartChatEnabled(false)
       if (canWriteConfigNow) updateConfig('smartChatEnabled', false)
     }
-  }, [isFreePlan, smartChatEnabled, canWriteConfigNow, updateConfig])
+  }, [canUseAiFilter, smartChatEnabled, canWriteConfigNow, updateConfig])
   useEffect(() => {
     setMobilePreviewEnabled(config.mobilePreviewEnabled || false)
   }, [config.mobilePreviewEnabled])
@@ -766,9 +767,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   // Mantener refs actualizados para acceso en callbacks del WebSocket
   useEffect(() => { configRef.current = config }, [config])
   useEffect(() => {
-    smartChatEnabledRef.current = smartChatEnabled
-    configRef.current = { ...configRef.current, smartChatEnabled }
-  }, [smartChatEnabled])
+    const normalizedSmartChat = canUseAiFilter && smartChatEnabled
+    smartChatEnabledRef.current = normalizedSmartChat
+    configRef.current = { ...configRef.current, smartChatEnabled: normalizedSmartChat }
+  }, [smartChatEnabled, canUseAiFilter])
   useEffect(() => {
     isPausedRef.current = isPaused
     if (isPaused) {
@@ -1402,7 +1404,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           // Sumar al contador de comentarios
           setStats(prev => ({ ...prev, count: prev.count + 1 }))
 
-          const smartChatActive = !!smartChatEnabledRef.current
+          const smartChatActive = canUseAiFilter && !!smartChatEnabledRef.current
 
           // Si está baneado, no leer en voz
           if (isBanned) { markFilteredMessage(); return }
@@ -1891,7 +1893,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     }
     item.voiceId = resolveVoiceIdAtEnqueue(item)
 
-    if (smartChatEnabledRef.current) {
+    if (canUseAiFilter && smartChatEnabledRef.current) {
       const metrics = getSmartMetrics()
       const normalizedQueuedText = normalizeMessageForMatching(item.rawText || item.text)
       if (!item.isNotification && hasQueuedDuplicate(normalizedQueuedText)) {
@@ -1986,7 +1988,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       if (disconnectedRef.current) break
       if (isPausedRef.current || isAudioSuppressed()) break
       const item = speakQueueRef.current.shift()
-      if (smartChatEnabledRef.current) {
+      if (canUseAiFilter && smartChatEnabledRef.current) {
         const metrics = getSmartMetrics()
         if (shouldHardDropSmartMessage(item, metrics)) {
           console.log('[TikTok] Smart chat saltó un pendiente viejo o ilegible para mantenerse fresco')
@@ -3487,13 +3489,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             </button>
             {/* Filtro IA */}
             <button
-              onClick={() => { if (isFreePlan) return; setSmartChatEnabled(prev => !prev) }}
-              disabled={isFreePlan}
+              onClick={() => { if (!canUseAiFilter) return; setSmartChatEnabled(prev => !prev) }}
+              disabled={!canUseAiFilter}
               className={`flex items-center gap-2 px-3 py-2.5 text-xs font-bold border-b transition-all w-full ${
                 smartChatEnabled ? 'bg-slate-700 text-white hover:bg-slate-600'
                   : darkMode ? 'bg-fuchsia-500/12 text-fuchsia-100 hover:bg-fuchsia-500/20 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
-              } ${isFreePlan ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={isFreePlan ? 'Disponible en planes de pago' : 'Activa el filtro inteligente para eliminar spam y basura'}
+              } ${!canUseAiFilter ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={!canUseAiFilter ? 'Disponible en CREATOR y PRO' : 'Activa el filtro inteligente para eliminar spam y basura'}
             >
               <span className={`inline-flex w-2 h-2 rounded-full shrink-0 border ${
                 smartChatEnabled ? 'bg-emerald-400 border-emerald-200 shadow-[0_0_8px_rgba(74,222,128,0.9)]' : darkMode ? 'bg-fuchsia-200/20 border-fuchsia-200/30' : 'bg-slate-300 border-slate-400'

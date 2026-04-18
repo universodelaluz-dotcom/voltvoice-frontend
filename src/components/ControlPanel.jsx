@@ -71,7 +71,7 @@ const isFeatureBlocked = (feature, userPlan) => {
       onlySubscribers: false, // LIBRE
       onlyCommunityMembers: false, // LIBRE
       ignoreLinks: false, // LIBRE
-      profanityFilterEnabled: false, // LIBRE
+      profanityFilterEnabled: true, // BLOQUEADO (solo CREATOR+)
       skipRepeated: false, // LIBRE
       onlyPlainNicks: false, // LIBRE
       stripChatEmojis: false, // LIBRE
@@ -1250,49 +1250,52 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 <>
                   {/* FILTROS EN START+ */}
                   <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} hint="No lee links ni URLs en los mensajes" />
-                  <CheckOption
-                    label={t('control.filterSection.profanity')}
-                    checked={config.profanityFilterEnabled}
-                    onChange={() => {
-                      const next = !config.profanityFilterEnabled
-                      updateConfig('profanityFilterEnabled', next)
-                      if (!next) setShowProfanityEditor(false)
-                    }}
-                    darkMode={darkMode}
-                    hint={t('control.filterSection.profanityHint')}
-                  />
-                  {config.profanityFilterEnabled && (
-                    <div className={`mb-2 rounded-xl px-4 py-3 border ${
-                      darkMode ? 'bg-cyan-500/10 border-cyan-400/40' : 'bg-slate-100 border-slate-400 shadow-sm'
-                    }`}>
-                      <button
-                        onClick={() => setShowProfanityEditor((prev) => !prev)}
-                        className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
-                          darkMode
-                            ? 'text-cyan-200 border-cyan-400/40 hover:bg-cyan-500/10'
-                            : 'text-slate-700 border-slate-300 hover:bg-white'
-                        }`}
-                      >
-                        {showProfanityEditor ? 'Ocultar lista' : 'Agregar otras propias'}
-                      </button>
-                      {showProfanityEditor && (
-                        <div className="mt-2">
-                          <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-200' : 'text-slate-700'}`}>
-                            Palabras prohibidas (separadas por coma o salto de línea)
-                          </label>
-                          <textarea
-                            value={config.profanityWords || ''}
-                            onChange={(e) => updateConfig('profanityWords', e.target.value)}
-                            rows={3}
-                            placeholder={t('control.filterSection.wordListPlaceholder')}
-                            className={`w-full px-3 py-2 text-sm rounded-lg border resize-y ${
-                              darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
-                            }`}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <div className={`relative ${isFeatureBlocked('profanityFilterEnabled', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {isFeatureBlocked('profanityFilterEnabled', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
+                    <CheckOption
+                      label={t('control.filterSection.profanity')}
+                      checked={config.profanityFilterEnabled}
+                      onChange={() => {
+                        const next = !config.profanityFilterEnabled
+                        updateConfig('profanityFilterEnabled', next)
+                        if (!next) setShowProfanityEditor(false)
+                      }}
+                      darkMode={darkMode}
+                      hint={t('control.filterSection.profanityHint')}
+                    />
+                    {config.profanityFilterEnabled && (
+                      <div className={`mb-2 rounded-xl px-4 py-3 border ${
+                        darkMode ? 'bg-cyan-500/10 border-cyan-400/40' : 'bg-slate-100 border-slate-400 shadow-sm'
+                      }`}>
+                        <button
+                          onClick={() => setShowProfanityEditor((prev) => !prev)}
+                          className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
+                            darkMode
+                              ? 'text-cyan-200 border-cyan-400/40 hover:bg-cyan-500/10'
+                              : 'text-slate-700 border-slate-300 hover:bg-white'
+                          }`}
+                        >
+                          {showProfanityEditor ? 'Ocultar lista' : 'Agregar otras propias'}
+                        </button>
+                        {showProfanityEditor && (
+                          <div className="mt-2">
+                            <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-200' : 'text-slate-700'}`}>
+                              Palabras prohibidas (separadas por coma o salto de línea)
+                            </label>
+                            <textarea
+                              value={config.profanityWords || ''}
+                              onChange={(e) => updateConfig('profanityWords', e.target.value)}
+                              rows={3}
+                              placeholder={t('control.filterSection.wordListPlaceholder')}
+                              className={`w-full px-3 py-2 text-sm rounded-lg border resize-y ${
+                                darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                              }`}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   {/* ESTOS TRES FILTROS SIEMPRE LIBRES */}
                   <CheckOption label={t('control.filterSection.cleanNicks')} checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint={t('control.filterSection.cleanNicksHint')} />
                   <CheckOption label={t('control.filterSection.noEmojis')} checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} hint={t('control.filterSection.noEmojisHint')} />
