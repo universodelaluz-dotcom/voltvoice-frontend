@@ -71,7 +71,7 @@ const isFeatureBlocked = (feature, userPlan) => {
       onlySubscribers: false, // LIBRE
       onlyCommunityMembers: false, // LIBRE
       ignoreLinks: false, // LIBRE
-      profanityFilterEnabled: true, // BLOQUEADO (solo CREATOR+)
+      profanityFilterEnabled: false, // LIBRE EN PLANES DE PAGA
       skipRepeated: false, // LIBRE
       onlyPlainNicks: false, // LIBRE
       stripChatEmojis: false, // LIBRE

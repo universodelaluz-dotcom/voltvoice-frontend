@@ -1,11 +1,11 @@
-ï»¿import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Users, Zap, TrendingUp, Activity, Search, ChevronLeft,
   RefreshCw, Shield, Edit2, Check, X, Plus, BarChart2, Wifi, Tag, Trash2, PauseCircle, PlayCircle, KeyRound, Bell, AlertTriangle, Database, Download, Mic
 } from 'lucide-react'
 import CouponManager from './CouponManager'
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const API_URL = import.meta.env.VITE_API_URL || ((typeof window !== 'undefined' && ['localhost','127.0.0.1'].includes(window.location.hostname)) ? 'http://localhost:3000' : 'https://voltvoice-backend.onrender.com')
 
 const PLANS = ['all', 'free', 'start', 'creator', 'pro', 'admin']
 const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
@@ -49,6 +49,9 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [opsLoading, setOpsLoading] = useState(false)
   const [anomalies, setAnomalies] = useState([])
   const [broadcasts, setBroadcasts] = useState([])
+  const [movementLogsLoading, setMovementLogsLoading] = useState(false)
+  const [movementLogsError, setMovementLogsError] = useState(null)
+  const [movementLogsByMonth, setMovementLogsByMonth] = useState([])
   const [activityUserId, setActivityUserId] = useState(null)
   const [activityData, setActivityData] = useState(null)
   const [activityLoading, setActivityLoading] = useState(false)
@@ -70,6 +73,19 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
     priority: 'normal',
     status: 'active'
   })
+  const [deployMonitorLoading, setDeployMonitorLoading] = useState(false)
+  const [deployMonitorData, setDeployMonitorData] = useState({
+    connectedUsers: 0,
+    readyForDeploy: false,
+    settings: {
+      notifyEnabled: false,
+      notifyEmail: '',
+      maintenanceMessage: 'Aviso importante: estaremos en mantenimiento durante 4 minutos para aplicar mejoras. Gracias por tu paciencia.',
+      notifySentForCurrentWindow: false,
+      lastNotifiedReadyAt: null
+    }
+  })
+  const [deployMonitorSaving, setDeployMonitorSaving] = useState(false)
   const [audioCacheSettings, setAudioCacheSettings] = useState({
     enabled: true,
     maxCacheableChars: 120,
@@ -96,7 +112,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [dashboardYear, setDashboardYear] = useState(new Date().getFullYear())
   const [dashboardMonth, setDashboardMonth] = useState(0) // 0 = todos
   const [monthSortKey, setMonthSortKey] = useState('monthKey')
-  const [monthSortDir, setMonthSortDir] = useState('desc') // mÃ¡s reciente primero
+  const [monthSortDir, setMonthSortDir] = useState('desc') // más reciente primero
 
     const [voicesUser, setVoicesUser] = useState(null)
   const [voicesList, setVoicesList] = useState([])
@@ -226,6 +242,63 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
     setOpsLoading(false)
   }, [authToken])
 
+  const loadDeployMonitor = useCallback(async () => {
+    if (!authToken) return
+    setDeployMonitorLoading(true)
+    try {
+      const r = await fetch(`${API_URL}/api/admin/deploy-monitor/status`, { headers: buildHeaders() })
+      const d = await r.json().catch(() => ({}))
+      if (r.ok && d.success) {
+        setDeployMonitorData({
+          connectedUsers: Number(d.connectedUsers || 0),
+          readyForDeploy: d.readyForDeploy === true,
+          settings: {
+            notifyEnabled: Boolean(d?.settings?.notifyEnabled),
+            notifyEmail: d?.settings?.notifyEmail || '',
+            maintenanceMessage: d?.settings?.maintenanceMessage || 'Aviso importante: estaremos en mantenimiento durante 4 minutos para aplicar mejoras. Gracias por tu paciencia.',
+            notifySentForCurrentWindow: Boolean(d?.settings?.notifySentForCurrentWindow),
+            lastNotifiedReadyAt: d?.settings?.lastNotifiedReadyAt || null,
+          }
+        })
+        if (d.emailNotificationSentNow) {
+          showMsg('Aviso de deploy enviado a tu correo')
+        }
+      }
+    } catch (e) {
+      console.error('[Admin] Deploy monitor load error:', e)
+    } finally {
+      setDeployMonitorLoading(false)
+    }
+  }, [authToken])
+
+  const loadMovementLogs = useCallback(async () => {
+    if (!authToken) return
+    setMovementLogsLoading(true)
+    setMovementLogsError(null)
+    try {
+      const params = new URLSearchParams({
+        year: String(dashboardYear),
+        month: String(dashboardMonth || 0),
+        page: '1',
+        limit: '300'
+      })
+      const r = await fetch(`${API_URL}/api/admin/transactions/logs?${params.toString()}`, { headers: buildHeaders() })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) {
+        setMovementLogsError(d.error || `Error del servidor (HTTP ${r.status})`)
+        setMovementLogsByMonth([])
+        return
+      }
+      setMovementLogsByMonth(Array.isArray(d.byMonth) ? d.byMonth : [])
+    } catch (e) {
+      console.error('[Admin] Movement logs load error:', e)
+      setMovementLogsError('Error de conexi?n con el servidor')
+      setMovementLogsByMonth([])
+    } finally {
+      setMovementLogsLoading(false)
+    }
+  }, [authToken, dashboardYear, dashboardMonth])
+
   const loadAudioCache = useCallback(async () => {
     if (!authToken) return
     setAudioCacheLoading(true)
@@ -303,15 +376,27 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
       loadUsers()
       loadStats()
     }
-    if (tab === 'ops') loadOps()
+    if (tab === 'ops') {
+      loadOps()
+      loadMovementLogs()
+      loadDeployMonitor()
+    }
     if (tab === 'cache') loadAudioCache()
-  }, [authToken, tab, page, planFilter, loadStats, loadUsers, loadOps, loadAudioCache])
+  }, [authToken, tab, page, planFilter, loadStats, loadUsers, loadOps, loadMovementLogs, loadDeployMonitor, loadAudioCache])
 
   useEffect(() => {
     if (!authToken || tab !== 'users') return
     const t = setTimeout(loadUsers, 350)
     return () => clearTimeout(t)
   }, [authToken, tab, search, loadUsers])
+
+  useEffect(() => {
+    if (!authToken || tab !== 'ops') return
+    const id = setInterval(() => {
+      loadDeployMonitor()
+    }, 30000)
+    return () => clearInterval(id)
+  }, [authToken, tab, loadDeployMonitor])
 
   const createUser = async () => {
     try {
@@ -544,6 +629,75 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
     }
   }
 
+  const saveDeployMonitorSettings = async () => {
+    try {
+      setDeployMonitorSaving(true)
+      const payload = {
+        notifyEnabled: deployMonitorData.settings.notifyEnabled,
+        notifyEmail: deployMonitorData.settings.notifyEmail
+      }
+      const r = await fetch(`${API_URL}/api/admin/deploy-monitor/settings`, {
+        method: 'PUT',
+        headers: buildHeaders(),
+        body: JSON.stringify(payload)
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) return showMsg(d.error || 'Error guardando notificador', 'error')
+      setDeployMonitorData((prev) => ({
+        ...prev,
+        settings: { ...prev.settings, ...(d.settings || {}) }
+      }))
+      showMsg('Notificador de deploy actualizado')
+    } catch {
+      showMsg('Error guardando notificador', 'error')
+    } finally {
+      setDeployMonitorSaving(false)
+    }
+  }
+
+  const saveDeployMaintenanceMessage = async () => {
+    try {
+      setDeployMonitorSaving(true)
+      const r = await fetch(`${API_URL}/api/admin/deploy-monitor/message`, {
+        method: 'PUT',
+        headers: buildHeaders(),
+        body: JSON.stringify({ maintenanceMessage: deployMonitorData.settings.maintenanceMessage })
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) return showMsg(d.error || 'Error guardando mensaje', 'error')
+      setDeployMonitorData((prev) => ({
+        ...prev,
+        settings: { ...prev.settings, ...(d.settings || {}) }
+      }))
+      showMsg('Mensaje de mantenimiento guardado')
+    } catch {
+      showMsg('Error guardando mensaje', 'error')
+    } finally {
+      setDeployMonitorSaving(false)
+    }
+  }
+
+  const sendMaintenanceNoticeNow = async () => {
+    try {
+      setDeployMonitorSaving(true)
+      const r = await fetch(`${API_URL}/api/admin/deploy-monitor/send-maintenance-notice`, {
+        method: 'POST',
+        headers: buildHeaders(),
+        body: JSON.stringify({
+          title: 'Aviso de mantenimiento',
+          message: deployMonitorData.settings.maintenanceMessage
+        })
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) return showMsg(d.error || 'Error enviando aviso', 'error')
+      showMsg('Aviso enviado a usuarios')
+      loadOps()
+    } catch {
+      showMsg('Error enviando aviso', 'error')
+    } finally {
+      setDeployMonitorSaving(false)
+    }
+  }
   const isOnline = (last_seen) => {
     if (!last_seen) return false
     return (Date.now() - new Date(last_seen).getTime()) < 5 * 60 * 1000
@@ -578,6 +732,28 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
     return value.toLocaleString()
   }
   const fmtUsd = (n) => Number(n || 0).toLocaleString('es-MX', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
+  const formatActionLabel = (action = '') =>
+    String(action || '')
+      .replace(/_/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/^\w/, (c) => c.toUpperCase())
+
+  const movementSummary = (item = {}) => {
+    if (item.source === 'payment') {
+      const tokens = Number(item?.details?.tokensPurchased || 0)
+      const amount = Number(item?.details?.amountUsd || 0)
+      const buyer = item.actorEmail || `Usuario #${item.actorUserId || 'N/A'}`
+      if (tokens > 0) {
+        return `${buyer} compr? ${tokens.toLocaleString()} tokens (${fmtUsd(amount)})`
+      }
+      return `${buyer} complet? un pago (${fmtUsd(amount)})`
+    }
+
+    const actor = item.actorEmail || `Admin #${item.actorUserId || 'N/A'}`
+    const target = item.targetEmail ? ` -> ${item.targetEmail}` : ''
+    return `${actor}: ${formatActionLabel(item.action)}${target}`
+  }
 
   return (
     <div className={bg}>
@@ -598,7 +774,17 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
             </span>
           </div>
           <button
-            onClick={tab === 'dashboard' ? loadStats : tab === 'users' ? loadUsers : tab === 'ops' ? loadOps : tab === 'cache' ? loadAudioCache : null}
+            onClick={
+              tab === 'dashboard'
+                ? loadStats
+                : tab === 'users'
+                ? loadUsers
+                : tab === 'ops'
+                ? () => { loadOps(); loadMovementLogs(); loadDeployMonitor() }
+                : tab === 'cache'
+                ? loadAudioCache
+                : null
+            }
             className={`p-2 rounded-lg ${darkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -627,7 +813,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
         {tab === 'dashboard' && loading && (
           <div className="flex items-center justify-center py-20">
             <RefreshCw className="w-6 h-6 animate-spin text-cyan-400 mr-3" />
-            <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Cargando estadÃ­sticas...</span>
+            <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Cargando estadísticas...</span>
           </div>
         )}
         {tab === 'dashboard' && !loading && !stats && (
@@ -635,7 +821,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
             <Shield className="w-10 h-10 text-red-400 mx-auto mb-4" />
             <p className={`font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Sin datos</p>
             <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              {usersError || 'No se pudieron cargar las estadÃ­sticas. Verifica que estÃ©s autenticado como admin.'}
+              {usersError || 'No se pudieron cargar las estadísticas. Verifica que estés autenticado como admin.'}
             </p>
             <button onClick={loadStats} className="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors">
               Reintentar
@@ -658,7 +844,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
             if (monthSortKey === key) setMonthSortDir(d => d === 'asc' ? 'desc' : 'asc')
             else { setMonthSortKey(key); setMonthSortDir('desc') }
           }
-          const sortIcon = (key) => monthSortKey === key ? (monthSortDir === 'desc' ? ' â†“' : ' â†‘') : ' â†•'
+          const sortIcon = (key) => monthSortKey === key ? (monthSortDir === 'desc' ? ' ?' : ' ?') : ' ?'
           const maxTokens  = Math.max(...allMonths.map(m => Number(m.tokens || 0)), 1)
           const maxRevenue = Math.max(...allMonths.map(m => Number(m.revenueUsd || 0)), 1)
           const maxUsers   = Math.max(...allMonths.map(m => Number(m.users || 0)), 1)
@@ -668,11 +854,11 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
           return (
             <div className="space-y-6">
 
-              {/* === Selector AÃ±o / Mes === */}
+              {/* === Selector Año / Mes === */}
               <div className={card}>
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>AÃ±o</span>
+                    <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Año</span>
                     <div className="flex gap-1">
                       {yearOptions.map(y => (
                         <button key={y} onClick={() => { setDashboardYear(y); setDashboardMonth(0) }}
@@ -693,7 +879,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                     </div>
                   </div>
                   <span className={`text-xs ml-auto hidden sm:block ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                    {dashboardYear}{dashboardMonth > 0 ? ` Â· ${MONTH_NAMES[dashboardMonth - 1]}` : ' Â· Todo el aÃ±o'}
+                    {dashboardYear}{dashboardMonth > 0 ? ` · ${MONTH_NAMES[dashboardMonth - 1]}` : ' · Todo el año'}
                   </span>
                 </div>
               </div>
@@ -702,7 +888,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                   { label: 'Total Usuarios', value: stats.totalUsers.toLocaleString(), icon: Users, color: 'text-cyan-400', sub: `+${stats.usersToday} hoy` },
-                  { label: 'En LÃ­nea Ahora', value: stats.onlineUsers.toLocaleString(), icon: Wifi, color: 'text-green-400', sub: 'Ãšltimos 5 min', pulse: true },
+                  { label: 'En Línea Ahora', value: stats.onlineUsers.toLocaleString(), icon: Wifi, color: 'text-green-400', sub: 'Últimos 5 min', pulse: true },
                   { label: 'Tokens Usados', value: fmtCompact(stats.totalTokensUsed), icon: Zap, color: 'text-yellow-400', sub: `${fmtCompact(stats.tokensUsedToday)} hoy` },
                   { label: 'Transacciones', value: stats.totalTransactions.toLocaleString(), icon: TrendingUp, color: 'text-purple-400', sub: 'completadas' },
                 ].map((k, i) => (
@@ -720,12 +906,12 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 ))}
               </div>
 
-              {/* Financiero aÃ±o seleccionado + mini grÃ¡ficos */}
+              {/* Financiero año seleccionado + mini gráficos */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className={card}>
                   <p className={`text-xs font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ingresos {dashboardYear}</p>
                   <p className="text-xl font-black text-emerald-400 mt-1">{fmtUsd(stats.revenueYearUsd)}</p>
-                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual: {fmtUsd(stats.revenueMonthUsd)} Â· Total: {fmtUsd(stats.revenueTotalUsd)}</p>
+                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual: {fmtUsd(stats.revenueMonthUsd)} · Total: {fmtUsd(stats.revenueTotalUsd)}</p>
                   <div className="flex items-end gap-0.5 h-10 mt-3">
                     {allMonths.map((m, i) => (
                       <div key={i} title={`${m.monthKey}: ${fmtUsd(m.revenueUsd)}`}
@@ -781,7 +967,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 </div>
               </div>
 
-              {/* Contadores perÃ­odo */}
+              {/* Contadores período */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className={card}>
                   <h3 className="font-bold mb-2">Usuarios registrados</h3>
@@ -803,13 +989,13 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 </div>
               </div>
 
-              {/* Resumen mensual con grÃ¡fico + tabla ordenable */}
+              {/* Resumen mensual con gráfico + tabla ordenable */}
               <div className={card}>
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                  <h3 className="font-bold">Resumen mensual â€” {dashboardYear}{dashboardMonth > 0 ? ` Â· ${MONTH_NAMES[dashboardMonth - 1]}` : ''}</h3>
-                  <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{sortedMonths.length} {sortedMonths.length === 1 ? 'mes' : 'meses'} Â· clic columna para ordenar</span>
+                  <h3 className="font-bold">Resumen mensual — {dashboardYear}{dashboardMonth > 0 ? ` · ${MONTH_NAMES[dashboardMonth - 1]}` : ''}</h3>
+                  <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{sortedMonths.length} {sortedMonths.length === 1 ? 'mes' : 'meses'} · clic columna para ordenar</span>
                 </div>
-                {/* GrÃ¡fico de barras â€” tokens */}
+                {/* Gráfico de barras — tokens */}
                 <div className="mb-4">
                   <p className={`text-xs mb-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Tokens por mes (clic para filtrar)</p>
                   <div className="flex items-end gap-0.5 h-20">
@@ -861,7 +1047,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                       ))}
                       {sortedMonths.length === 0 && (
                         <tr>
-                          <td colSpan={4} className={`py-4 text-center ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>Sin datos para este perÃ­odo</td>
+                          <td colSpan={4} className={`py-4 text-center ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>Sin datos para este período</td>
                         </tr>
                       )}
                     </tbody>
@@ -869,13 +1055,13 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 </div>
               </div>
 
-              {/* Uso por horario y dÃ­a de la semana */}
+              {/* Uso por horario y día de la semana */}
               {(stats.hourlyUsage || stats.weekdayUsage) && (() => {
                 const hours   = stats.hourlyUsage  || []
                 const weekdays = stats.weekdayUsage || []
                 const maxHToken = Math.max(...hours.map(h => h.tokens), 1)
                 const maxWToken = Math.max(...weekdays.map(d => d.tokens), 1)
-                const DOW_NAMES = ['Dom','Lun','Mar','MiÃ©','Jue','Vie','SÃ¡b']
+                const DOW_NAMES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
                 const peakHour = hours.reduce((p, c) => c.tokens > p.tokens ? c : p, hours[0] || { hour: 0, tokens: 0 })
                 const peakDay  = weekdays.reduce((p, c) => c.tokens > p.tokens ? c : p, weekdays[0] || { dow: 0, tokens: 0 })
 
@@ -892,7 +1078,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 return (
                   <div className={card}>
                     <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
-                      <h3 className="font-bold">Uso por Horario â€” {dashboardYear}</h3>
+                      <h3 className="font-bold">Uso por Horario — {dashboardYear}</h3>
                       <div className="flex gap-4 text-xs">
                         <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
                           Pico diario: <span className="text-cyan-400 font-bold">{peakHour.hour}:00h</span>
@@ -903,8 +1089,8 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                       </div>
                     </div>
 
-                    {/* GrÃ¡fico de horas â€” 24 barras */}
-                    <p className={`text-xs mb-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Tokens por hora del dÃ­a (hora MÃ©xico)</p>
+                    {/* Gráfico de horas — 24 barras */}
+                    <p className={`text-xs mb-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Tokens por hora del día (hora México)</p>
                     <div className="flex items-end gap-px h-24 mb-1">
                       {hours.map((h) => {
                         const pct = Math.max(2, (h.tokens / maxHToken) * 100)
@@ -915,7 +1101,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                             <div
                               className="w-full rounded-t-sm transition-all"
                               style={{ height: `${pct}%`, backgroundColor: isPeak ? '#facc15' : isNight ? '#6366f1' : '#22d3ee', opacity: isPeak ? 1 : 0.7 }}
-                              title={`${h.hour}:00h â€” ${fmtCompact(h.tokens)} tokens Â· ${h.messages.toLocaleString()} msgs`}
+                              title={`${h.hour}:00h — ${fmtCompact(h.tokens)} tokens · ${h.messages.toLocaleString()} msgs`}
                             />
                           </div>
                         )
@@ -930,8 +1116,8 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                       ))}
                     </div>
 
-                    {/* GrÃ¡fico de dÃ­as de semana â€” 7 barras grandes */}
-                    <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Tokens por dÃ­a de la semana</p>
+                    {/* Gráfico de días de semana — 7 barras grandes */}
+                    <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Tokens por día de la semana</p>
                     <div className="grid grid-cols-7 gap-2">
                       {weekdays.map((d) => {
                         const pct = maxWToken > 0 ? Math.round((d.tokens / maxWToken) * 100) : 0
@@ -947,7 +1133,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                               <div
                                 className="w-full rounded-lg transition-all"
                                 style={{ height: `${Math.max(4, pct)}%`, backgroundColor: barColor, opacity: 0.85 }}
-                                title={`${DOW_NAMES[d.dow]}: ${fmtCompact(d.tokens)} tokens Â· ${d.messages.toLocaleString()} msgs`}
+                                title={`${DOW_NAMES[d.dow]}: ${fmtCompact(d.tokens)} tokens · ${d.messages.toLocaleString()} msgs`}
                               />
                             </div>
                             <span className={`text-xs font-semibold ${isPeakD ? 'text-yellow-400' : isWeekend ? 'text-violet-400' : darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -961,10 +1147,10 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
 
                     {/* Leyenda */}
                     <div className={`flex gap-4 mt-4 text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-yellow-400 inline-block" /> Hora/dÃ­a pico</span>
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-cyan-400 inline-block" /> DÃ­as laborales</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-yellow-400 inline-block" /> Hora/día pico</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-cyan-400 inline-block" /> Días laborales</span>
                       <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-violet-400 inline-block" /> Fin de semana</span>
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-indigo-400 inline-block" /> Noche (22hâ€“6h)</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-indigo-400 inline-block" /> Noche (22h–6h)</span>
                     </div>
                   </div>
                 )
@@ -1006,7 +1192,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className={card}>
                   <h3 className="font-bold mb-1">Top por Tokens Usados</h3>
-                  <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mayor a menor Â· histÃ³rico total</p>
+                  <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mayor a menor · histórico total</p>
                   <div className="space-y-2.5">
                     {[...stats.topUsers].sort((a, b) => Number(b.total_used) - Number(a.total_used)).slice(0, 10).map((u, i) => (
                       <div key={i} className="flex items-center justify-between gap-2">
@@ -1027,13 +1213,13 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
 
                 <div className={card}>
                   <h3 className="font-bold mb-1">Actividad Reciente</h3>
-                  <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>MÃ¡s reciente primero</p>
+                  <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Más reciente primero</p>
                   <div className="space-y-2">
                     {[...stats.recentActivity].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10).map((a, i) => (
                       <div key={i} className={`flex items-center justify-between text-xs border-b last:border-0 pb-1.5 ${darkMode ? 'border-white/5' : 'border-gray-100'}`}>
                         <div className="min-w-0">
                           <span className={`truncate block max-w-[150px] ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{a.email}</span>
-                          <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>{a.action || 'sÃ­ntesis'}</span>
+                          <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>{a.action || 'síntesis'}</span>
                         </div>
                         <div className="text-right shrink-0 ml-2">
                           <span className="text-yellow-400 font-bold block">{a.tokens_used?.toLocaleString()}</span>
@@ -1054,6 +1240,148 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
         {/* ===== OPERACIONES ===== */}
         {tab === 'ops' && (
           <div className="space-y-6">
+            <div className={card}>
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                <div>
+                  <h3 className="font-bold">Deploy inteligente (Stream Voicer)</h3>
+                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Usuarios conectados ahora y herramientas para desplegar sin interrumpir.
+                  </p>
+                </div>
+                <div className={`px-3 py-2 rounded-lg text-xs font-semibold ${deployMonitorData.readyForDeploy ? 'bg-emerald-500/20 text-emerald-300' : 'bg-yellow-500/20 text-yellow-300'}`}>
+                  {deployMonitorData.readyForDeploy ? 'LISTO PARA DEPLOY' : 'AUN HAY USUARIOS CONECTADOS'}
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={`rounded-xl border p-4 ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
+                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>USUARIOS CONECTADOS AHORA</p>
+                  <p className="text-3xl font-black mt-1">{Number(deployMonitorData.connectedUsers || 0)}</p>
+                  <p className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Se considera conectado quien tuvo actividad en los ultimos 5 minutos.
+                  </p>
+                </div>
+
+                <div className={`rounded-xl border p-4 space-y-3 ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
+                  <label className="flex items-center gap-2 text-sm font-medium">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(deployMonitorData.settings.notifyEnabled)}
+                      onChange={(e) => setDeployMonitorData((prev) => ({
+                        ...prev,
+                        settings: { ...prev.settings, notifyEnabled: e.target.checked }
+                      }))}
+                    />
+                    Activar avisador por correo
+                  </label>
+                  <input
+                    className={`${inp} w-full`}
+                    placeholder="tu-correo@dominio.com"
+                    value={deployMonitorData.settings.notifyEmail || ''}
+                    onChange={(e) => setDeployMonitorData((prev) => ({
+                      ...prev,
+                      settings: { ...prev.settings, notifyEmail: e.target.value }
+                    }))}
+                  />
+                  <button
+                    onClick={saveDeployMonitorSettings}
+                    disabled={deployMonitorSaving}
+                    className={`px-3 py-2 rounded-lg text-sm font-semibold ${deployMonitorSaving ? 'bg-gray-500/40 text-gray-200' : 'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30'}`}
+                  >
+                    Guardar avisador
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <label className="text-sm font-semibold block mb-2">Mensaje para usuarios (durante 4 minutos)</label>
+                <textarea
+                  className={`${inp} w-full min-h-24`}
+                  value={deployMonitorData.settings.maintenanceMessage || ''}
+                  onChange={(e) => setDeployMonitorData((prev) => ({
+                    ...prev,
+                    settings: { ...prev.settings, maintenanceMessage: e.target.value }
+                  }))}
+                />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={saveDeployMaintenanceMessage}
+                    disabled={deployMonitorSaving}
+                    className={`px-3 py-2 rounded-lg text-sm font-semibold ${deployMonitorSaving ? 'bg-gray-500/40 text-gray-200' : 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/30'}`}
+                  >
+                    Guardar mensaje
+                  </button>
+                  <button
+                    onClick={sendMaintenanceNoticeNow}
+                    disabled={deployMonitorSaving}
+                    className={`px-3 py-2 rounded-lg text-sm font-semibold ${deployMonitorSaving ? 'bg-gray-500/40 text-gray-200' : 'bg-fuchsia-500/20 text-fuchsia-300 hover:bg-fuchsia-500/30'}`}
+                  >
+                    Mandar aviso ahora
+                  </button>
+                  <button
+                    onClick={loadDeployMonitor}
+                    className={`px-3 py-2 rounded-lg text-sm font-semibold ${darkMode ? 'bg-white/10 text-gray-200 hover:bg-white/15' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                  >
+                    Recargar estado
+                  </button>
+                </div>
+                {deployMonitorLoading && (
+                  <p className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Actualizando estado...</p>
+                )}
+              </div>
+            </div>
+            <div className={card}>
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <h3 className="font-bold">Log general de movimientos</h3>
+                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Formato bruto: USUARIO hizo accion en fecha y hora.
+                  </p>
+                </div>
+                <button
+                  onClick={loadMovementLogs}
+                  className={`px-3 py-1.5 text-xs rounded-lg border ${darkMode ? 'border-white/15 hover:bg-white/10' : 'border-gray-300 hover:bg-gray-100'}`}
+                >
+                  Recargar log
+                </button>
+              </div>
+
+              {movementLogsLoading && (
+                <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Cargando movimientos...</div>
+              )}
+              {!movementLogsLoading && movementLogsError && (
+                <div className="text-sm text-red-400">{movementLogsError}</div>
+              )}
+              {!movementLogsLoading && !movementLogsError && movementLogsByMonth.length === 0 && (
+                <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Sin movimientos para el periodo seleccionado.</div>
+              )}
+              {!movementLogsLoading && !movementLogsError && movementLogsByMonth.length > 0 && (
+                <div className="space-y-4 max-h-[560px] overflow-y-auto pr-1">
+                  {movementLogsByMonth.map((group) => (
+                    <div key={group.monthKey} className={`rounded-xl border ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'} p-3`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-bold">{group.monthKey}</p>
+                        <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{group.total} movimientos</span>
+                      </div>
+                      <div className="space-y-2">
+                        {(group.items || []).map((item, idx) => (
+                          <div key={`${group.monthKey}-${idx}`} className={`rounded-lg border px-3 py-2 ${darkMode ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-white'}`}>
+                            <p className="text-sm">{movementSummary(item)}</p>
+                            <div className={`mt-1 text-[11px] flex flex-wrap gap-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              <span>{new Date(item.eventAt).toLocaleString('es-MX')}</span>
+                              <span>-</span>
+                              <span>{item.source}</span>
+                              <span>-</span>
+                              <span>{formatActionLabel(item.action)}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className={card}>
                 <h3 className="font-bold mb-3">Crear Usuario</h3>
@@ -1406,7 +1734,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                       <th className="text-left px-4 py-3">Estado</th>
                       <th className="text-left px-4 py-3">Email</th>
                       <th className="text-left px-4 py-3">Plan</th>
-                      <th className="text-left px-4 py-3">SuscripciÃ³n</th>
+                      <th className="text-left px-4 py-3">Suscripción</th>
                       <th className="text-left px-4 py-3">Seguridad</th>
                       <th className="text-left px-4 py-3">Comprados</th>
                       <th className="text-left px-4 py-3">Restantes</th>
@@ -1582,7 +1910,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 </table>
               </div>
 
-              {/* PaginaciÃ³n */}
+              {/* Paginación */}
               {totalPages > 1 && (
                 <div className={`flex items-center justify-between px-4 py-3 border-t ${darkMode ? 'border-white/5' : 'border-gray-100'}`}>
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
@@ -1657,10 +1985,10 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 />
               </div>
               <div>
-                <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>ContraseÃ±a inicial *</label>
+                <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Contraseña inicial *</label>
                 <input
                   className={`${inp} w-full`}
-                  placeholder="MÃ­nimo 6 caracteres"
+                  placeholder="Mínimo 6 caracteres"
                   value={createUserForm.password}
                   onChange={e => setCreateUserForm(p => ({ ...p, password: e.target.value }))}
                 />
