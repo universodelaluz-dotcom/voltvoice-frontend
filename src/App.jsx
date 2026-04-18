@@ -12,7 +12,7 @@ import { AuthPage } from './components/AuthPage'
 import BotPanel from './components/BotPanel'
 import AIRoleplayWorkshop from './components/AIRoleplayWorkshop'
 import AdminPanel from './components/AdminPanel'
-import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft, LogOut } from 'lucide-react'
+import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft, LogOut, ChevronDown, ChevronUp, RotateCcw, Loader2, TestTube2 } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 const TOKEN_API_KEY = 'sv-token-api-v1'
@@ -346,6 +346,121 @@ function AnimatedMetric({ value, className = '', animateOnView = false }) {
     >
       {display}
     </p>
+  )
+}
+
+function PublicTestResetCard({ darkMode }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [resettingId, setResettingId] = useState(null)
+  const [users, setUsers] = useState([])
+  const [message, setMessage] = useState('')
+
+  const loadUsers = useCallback(async () => {
+    setLoading(true)
+    setMessage('')
+    try {
+      const res = await fetch(`${API_URL}/api/test-lab/users`)
+      const data = await res.json()
+      if (!data?.success) throw new Error(data?.error || 'No se pudo cargar')
+      setUsers(Array.isArray(data.users) ? data.users : [])
+    } catch (error) {
+      setMessage(error.message || 'Error cargando usuarios de prueba.')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isOpen) loadUsers()
+  }, [isOpen, loadUsers])
+
+  const resetUser = async (userId) => {
+    setResettingId(userId)
+    setMessage('')
+    try {
+      const res = await fetch(`${API_URL}/api/test-lab/users/${userId}/reset`, { method: 'POST' })
+      const data = await res.json()
+      if (!data?.success) throw new Error(data?.error || 'No se pudo resetear')
+      setUsers(Array.isArray(data.users) ? data.users : [])
+      setMessage(data.message || 'Reset aplicado.')
+    } catch (error) {
+      setMessage(error.message || 'Error al resetear usuario.')
+    } finally {
+      setResettingId(null)
+    }
+  }
+
+  return (
+    <section className="px-4 pb-4">
+      <div className={`max-w-7xl mx-auto rounded-xl border ${darkMode ? 'bg-[#11142a]/80 border-cyan-500/30' : 'bg-white border-cyan-200 shadow-sm'}`}>
+        <button
+          onClick={() => setIsOpen((prev) => !prev)}
+          className={`w-full px-5 py-4 flex items-center justify-between text-left ${darkMode ? 'hover:bg-white/5' : 'hover:bg-cyan-50'} transition-colors`}
+        >
+          <div className="flex items-center gap-3">
+            <TestTube2 className="w-5 h-5 text-cyan-400" />
+            <div>
+              <p className={`font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Panel rápido de pruebas</p>
+              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Reset público para Usuario 1, 2, 3 y 4</p>
+            </div>
+          </div>
+          {isOpen ? <ChevronUp className="w-5 h-5 text-cyan-400" /> : <ChevronDown className="w-5 h-5 text-cyan-400" />}
+        </button>
+
+        {isOpen && (
+          <div className={`px-5 pb-5 border-t ${darkMode ? 'border-white/10' : 'border-cyan-100'}`}>
+            <div className="pt-4 flex items-center justify-between mb-3">
+              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cada reset deja: tokens en 0, membresía FREE y pagos borrados.</p>
+              <button
+                onClick={loadUsers}
+                className={`text-xs font-bold px-3 py-1.5 rounded-md ${darkMode ? 'bg-white/10 text-cyan-300 hover:bg-white/20' : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}`}
+              >
+                Recargar
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="py-8 flex items-center justify-center">
+                <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[0, 1, 2, 3].map((idx) => {
+                  const user = users[idx]
+                  return (
+                    <div key={idx} className={`rounded-lg border p-4 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
+                      <p className={`font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>USUARIO {idx + 1}</p>
+                      {user ? (
+                        <>
+                          <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>ID: {user.id}</p>
+                          <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Membresía actual: <span className="font-bold uppercase">{user.plan}</span></p>
+                          <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Tokens: <span className="font-bold">{Number(user.tokens || 0).toLocaleString()}</span></p>
+                          <button
+                            onClick={() => resetUser(user.id)}
+                            disabled={resettingId === user.id}
+                            className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-black text-white bg-gradient-to-r from-red-500 to-orange-500 hover:opacity-90 disabled:opacity-70"
+                          >
+                            {resettingId === user.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                            BORRAR DATOS
+                          </button>
+                        </>
+                      ) : (
+                        <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>Sin usuario asignado todavía.</p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {message && (
+              <p className={`mt-3 text-xs font-semibold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{message}</p>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
   )
 }
 
@@ -1030,6 +1145,8 @@ export function App() {
           </button>
         )}
       </div>
+
+      <PublicTestResetCard darkMode={darkMode} />
 
       {/* Hero Section */}
       <section className="pt-10 pb-16 px-4 relative overflow-hidden">
