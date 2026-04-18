@@ -79,7 +79,8 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
     readyForDeploy: false,
     settings: {
       notifyEnabled: false,
-      notifyEmail: '',
+      notifyEmail: 'soporte@streamvoicer.com',
+      noticeTitle: 'Mensaje para usuarios',
       maintenanceMessage: 'Aviso importante: estaremos en mantenimiento durante 4 minutos para aplicar mejoras. Gracias por tu paciencia.',
       notifySentForCurrentWindow: false,
       lastNotifiedReadyAt: null
@@ -254,7 +255,8 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
           readyForDeploy: d.readyForDeploy === true,
           settings: {
             notifyEnabled: Boolean(d?.settings?.notifyEnabled),
-            notifyEmail: d?.settings?.notifyEmail || '',
+            notifyEmail: d?.settings?.notifyEmail || 'soporte@streamvoicer.com',
+            noticeTitle: d?.settings?.noticeTitle || 'Mensaje para usuarios',
             maintenanceMessage: d?.settings?.maintenanceMessage || 'Aviso importante: estaremos en mantenimiento durante 4 minutos para aplicar mejoras. Gracias por tu paciencia.',
             notifySentForCurrentWindow: Boolean(d?.settings?.notifySentForCurrentWindow),
             lastNotifiedReadyAt: d?.settings?.lastNotifiedReadyAt || null,
@@ -629,12 +631,28 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
     }
   }
 
+  const deleteBroadcast = async (broadcastId) => {
+    if (!window.confirm('¿Borrar comunicado? Esta accion no se puede deshacer.')) return
+    try {
+      const r = await fetch(`${API_URL}/api/admin/broadcasts/${broadcastId}`, {
+        method: 'DELETE',
+        headers: buildHeaders()
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) return showMsg(d.error || 'Error borrando comunicado', 'error')
+      showMsg('Comunicado borrado')
+      loadOps()
+    } catch {
+      showMsg('Error borrando comunicado', 'error')
+    }
+  }
+
   const saveDeployMonitorSettings = async () => {
     try {
       setDeployMonitorSaving(true)
       const payload = {
         notifyEnabled: deployMonitorData.settings.notifyEnabled,
-        notifyEmail: deployMonitorData.settings.notifyEmail
+        notifyEmail: (deployMonitorData.settings.notifyEmail || 'soporte@streamvoicer.com')
       }
       const r = await fetch(`${API_URL}/api/admin/deploy-monitor/settings`, {
         method: 'PUT',
@@ -684,7 +702,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
         method: 'POST',
         headers: buildHeaders(),
         body: JSON.stringify({
-          title: 'Aviso de mantenimiento',
+          title: (deployMonitorData.settings.noticeTitle || 'Mensaje para usuarios'),
           message: deployMonitorData.settings.maintenanceMessage
         })
       })
@@ -1189,7 +1207,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
               </div>
 
               {/* Top usuarios + Actividad reciente */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                 <div className={card}>
                   <h3 className="font-bold mb-1">Top por Tokens Usados</h3>
                   <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mayor a menor · histórico total</p>
@@ -1294,9 +1312,19 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
               </div>
 
               <div className="mt-4">
-                <label className="text-sm font-semibold block mb-2">Mensaje para usuarios (durante 4 minutos)</label>
+                <label className="text-sm font-semibold block mb-2">Mensaje para usuarios</label>
+                <input
+                  className={`${inp} w-full mb-2`}
+                  placeholder="Titulo del comunicado"
+                  value={deployMonitorData.settings.noticeTitle || ''}
+                  onChange={(e) => setDeployMonitorData((prev) => ({
+                    ...prev,
+                    settings: { ...prev.settings, noticeTitle: e.target.value }
+                  }))}
+                />
                 <textarea
                   className={`${inp} w-full min-h-24`}
+                  placeholder="Mensaje del comunicado"
                   value={deployMonitorData.settings.maintenanceMessage || ''}
                   onChange={(e) => setDeployMonitorData((prev) => ({
                     ...prev,
@@ -1382,7 +1410,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
               <div className={card}>
                 <h3 className="font-bold mb-3">Crear Usuario</h3>
                 <div className="space-y-2">
@@ -1406,36 +1434,6 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                   <button onClick={createUser}
                     className="w-full py-2 rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 text-white text-sm font-bold">
                     Crear Usuario
-                  </button>
-                </div>
-              </div>
-
-              <div className={card}>
-                <h3 className="font-bold mb-3">Comunicados Globales</h3>
-                <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <select className={inp} value={broadcastForm.kind}
-                      onChange={(e) => setBroadcastForm((prev) => ({ ...prev, kind: e.target.value }))}>
-                      <option value="global_message">Mensaje global</option>
-                      <option value="in_app_notification">Notificacion in-app</option>
-                      <option value="maintenance_alert">Alerta mantenimiento</option>
-                    </select>
-                    <select className={inp} value={broadcastForm.status}
-                      onChange={(e) => setBroadcastForm((prev) => ({ ...prev, status: e.target.value }))}>
-                      <option value="active">active</option>
-                      <option value="draft">draft</option>
-                      <option value="paused">paused</option>
-                    </select>
-                  </div>
-                  <input className={`${inp} w-full`} placeholder="Titulo"
-                    value={broadcastForm.title}
-                    onChange={(e) => setBroadcastForm((prev) => ({ ...prev, title: e.target.value }))} />
-                  <textarea className={`${inp} w-full min-h-24`} placeholder="Mensaje"
-                    value={broadcastForm.message}
-                    onChange={(e) => setBroadcastForm((prev) => ({ ...prev, message: e.target.value }))} />
-                  <button onClick={createBroadcast}
-                    className="w-full py-2 rounded-lg bg-gradient-to-r from-fuchsia-500 to-purple-500 text-white text-sm font-bold">
-                    Publicar Comunicado
                   </button>
                 </div>
               </div>
@@ -1476,7 +1474,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                       <div className="flex gap-1">
                         <button onClick={() => setBroadcastStatus(b.id, 'active')} className="px-2 py-1 text-xs rounded bg-green-500/20 text-green-300">Activar</button>
                         <button onClick={() => setBroadcastStatus(b.id, 'paused')} className="px-2 py-1 text-xs rounded bg-yellow-500/20 text-yellow-300">Pausar</button>
-                        <button onClick={() => setBroadcastStatus(b.id, 'archived')} className="px-2 py-1 text-xs rounded bg-red-500/20 text-red-300">Archivar</button>
+                        <button onClick={() => deleteBroadcast(b.id)} className="px-2 py-1 text-xs rounded bg-red-500/20 text-red-300">Borrar</button>
                       </div>
                     </div>
                   </div>

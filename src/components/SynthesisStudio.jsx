@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import TikTokLivePanel from './TikTokLivePanel'
 import AudioVisualizer from './AudioVisualizer'
@@ -50,6 +50,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
   const [totalTokensUsed, setTotalTokensUsed] = useState(0)
   const [synthesisCount, setSynthesisCount] = useState(0)
   const [announcements, setAnnouncements] = useState([])
+  const [dismissedAnnouncementIds, setDismissedAnnouncementIds] = useState([])
+  const [maintenancePopupNotice, setMaintenancePopupNotice] = useState(null)
+  const announcementTimersRef = useRef(new Map())
 
   const getAuthToken = () => sessionStorage.getItem('sv-token') || ''
   const formatResetWait = (seconds = 0) => {
@@ -243,22 +246,82 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
     return () => window.removeEventListener('voltvoice:assistant-visualizer-audio', handleAssistantVisualizerAudio)
   }, [])
 
-  useEffect(() => {
-    const loadAnnouncements = async () => {
-      try {
-        const token = getAuthToken()
-        if (!token || !user?.id) return
-        const r = await fetch(`${API_URL}/api/ops/announcements`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        const d = await r.json().catch(() => ({}))
-        if (r.ok && d.success) setAnnouncements(d.announcements || [])
-      } catch {
-        // silent
-      }
+  const loadAnnouncements = useCallback(async () => {
+    try {
+      const token = getAuthToken()
+      if (!token || !user?.id) return
+      const r = await fetch(`${API_URL}/api/ops/announcements`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const d = await r.json().catch(() => ({}))
+      if (r.ok && d.success) setAnnouncements(d.announcements || [])
+    } catch {
+      // silent
     }
-    loadAnnouncements()
   }, [user?.id])
+
+  useEffect(() => {
+    if (!user?.id) return
+    loadAnnouncements()
+    const id = setInterval(() => {
+      loadAnnouncements()
+    }, 20000)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadAnnouncements()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', loadAnnouncements)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', loadAnnouncements)
+    }
+  }, [user?.id, loadAnnouncements])
+
+  useEffect(() => {
+    if (!Array.isArray(announcements) || announcements.length === 0) return
+    const nextMaintenance = announcements.find((notice) => {
+      if (notice?.kind !== 'maintenance_alert') return false
+      return !dismissedAnnouncementIds.includes(String(notice.id))
+    })
+    if (nextMaintenance) setMaintenancePopupNotice(nextMaintenance)
+  }, [announcements, dismissedAnnouncementIds])
+
+  useEffect(() => {
+    if (!Array.isArray(announcements) || announcements.length === 0) return
+    const activeTimers = announcementTimersRef.current
+    for (const notice of announcements) {
+      const id = String(notice?.id || '')
+      if (!id) continue
+      if (dismissedAnnouncementIds.includes(id)) continue
+      if (activeTimers.has(id)) continue
+      const timeoutId = setTimeout(() => {
+        setDismissedAnnouncementIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+        activeTimers.delete(id)
+      }, 15000)
+      activeTimers.set(id, timeoutId)
+    }
+    return () => {
+      // keep timers across renders; cleanup only happens on unmount below
+    }
+  }, [announcements, dismissedAnnouncementIds])
+
+  useEffect(() => {
+    return () => {
+      const activeTimers = announcementTimersRef.current
+      for (const timeoutId of activeTimers.values()) clearTimeout(timeoutId)
+      activeTimers.clear()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!maintenancePopupNotice) return
+    const id = setTimeout(() => {
+      setDismissedAnnouncementIds((prev) => [...prev, String(maintenancePopupNotice.id)])
+      setMaintenancePopupNotice(null)
+    }, 15000)
+    return () => clearTimeout(id)
+  }, [maintenancePopupNotice])
 
   useEffect(() => {
     const handlePttAudioState = (event) => {
@@ -418,6 +481,42 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
 
   return (
     <div className={`${darkMode ? "min-h-screen bg-gradient-to-br from-[#0a0a1a] via-[#111827] to-[#0f172a] text-white" : "min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 text-gray-900"}`}>
+      {maintenancePopupNotice && (
+        <div className="fixed top-4 right-4 z-[120] pointer-events-none">
+          <div className={`pointer-events-auto w-[360px] max-w-[92vw] rounded-2xl border p-4 shadow-2xl backdrop-blur-md ${
+            darkMode
+              ? 'bg-[#11162fcc] border-cyan-300/30'
+              : 'bg-white/95 border-cyan-300/60'
+          }`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-cyan-400">Aviso de Stream Voicer</p>
+                <h3 className={`mt-0.5 text-sm font-black leading-tight ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {maintenancePopupNotice.title || 'Aviso importante'}
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setDismissedAnnouncementIds((prev) => [...prev, String(maintenancePopupNotice.id)])
+                  setMaintenancePopupNotice(null)
+                }}
+                className={`shrink-0 px-2 py-1 rounded-lg text-xs font-bold ${
+                  darkMode ? 'bg-white/10 text-gray-200 hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                title="Cerrar"
+              >
+                Cerrar
+              </button>
+            </div>
+            <p className={`mt-2 text-xs leading-relaxed ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+              {maintenancePopupNotice.message}
+            </p>
+            <div className={`mt-3 text-[11px] ${darkMode ? 'text-cyan-200/90' : 'text-cyan-700'}`}>
+              Este aviso se cerrara automaticamente en 15 segundos.
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className={`${darkMode ? "border-b border-cyan-400/30 backdrop-blur-md sticky top-0 z-50 bg-[#0a0a1a]/90" : "border-b border-indigo-200 backdrop-blur-sm sticky top-0 z-50 bg-white/90 shadow-sm"}`}>
         <div className="max-w-[1100px] mx-auto px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between gap-3">
@@ -473,9 +572,12 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
 
       {/* Main Content */}
       <div className="max-w-[1100px] mx-auto px-4 sm:px-8 pt-4 sm:pt-6 pb-10">
-        {announcements.length > 0 && (
+        {announcements.filter((notice) => !dismissedAnnouncementIds.includes(String(notice.id))).length > 0 && (
           <div className="mb-4 space-y-2">
-            {announcements.slice(0, 3).map((notice) => {
+            {announcements
+              .filter((notice) => !dismissedAnnouncementIds.includes(String(notice.id)))
+              .slice(0, 3)
+              .map((notice) => {
               const isMaintenance = notice.kind === 'maintenance_alert'
               return (
                 <div key={notice.id} className={`rounded-lg border px-4 py-3 ${
@@ -483,9 +585,21 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
                     ? (darkMode ? 'border-amber-400/40 bg-amber-500/10' : 'border-amber-300 bg-amber-50')
                     : (darkMode ? 'border-cyan-400/30 bg-cyan-500/10' : 'border-cyan-300 bg-cyan-50')
                 }`}>
-                  <p className={`text-xs font-bold uppercase ${isMaintenance ? 'text-amber-400' : 'text-cyan-400'}`}>{notice.kind.replaceAll('_', ' ')}</p>
-                  <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{notice.title}</p>
-                  <p className={`text-xs ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{notice.message}</p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className={`text-xs font-bold uppercase ${isMaintenance ? 'text-amber-400' : 'text-cyan-400'}`}>{notice.kind.replaceAll('_', ' ')}</p>
+                      <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{notice.title}</p>
+                      <p className={`text-xs ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{notice.message}</p>
+                    </div>
+                    <button
+                      onClick={() => setDismissedAnnouncementIds((prev) => [...prev, String(notice.id)])}
+                      className={`shrink-0 px-2 py-1 rounded-lg text-[11px] font-bold ${
+                        darkMode ? 'bg-white/10 text-gray-200 hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      Cerrar
+                    </button>
+                  </div>
                 </div>
               )
             })}
@@ -695,6 +809,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
     </div>
   )
 }
+
 
 
 
