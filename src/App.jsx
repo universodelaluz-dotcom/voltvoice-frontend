@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StripePayment } from './components/StripePayment'
 import { SynthesisStudio } from './components/SynthesisStudio'
@@ -12,7 +12,7 @@ import { AuthPage } from './components/AuthPage'
 import BotPanel from './components/BotPanel'
 import AIRoleplayWorkshop from './components/AIRoleplayWorkshop'
 import AdminPanel from './components/AdminPanel'
-import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft, LogOut, ChevronDown, ChevronUp, RotateCcw, Loader2, TestTube2 } from 'lucide-react'
+import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft, LogOut, ChevronDown, ChevronUp, RotateCcw, Loader2, TestTube2, Check } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 const TOKEN_API_KEY = 'sv-token-api-v1'
@@ -20,6 +20,7 @@ const TOKEN_STORAGE_KEY = 'sv-token'
 const TOKEN_PERSIST_KEY = 'sv-token-persist'
 const LOCAL_CONFIG_CACHE_KEY = 'sv-config-cache-v1'
 const LOCAL_CONFIG_CACHE_KEY_PREFIX = 'sv-config-cache-v2'
+const COOKIE_CONSENT_KEY = 'cookieConsent'
 
 const getApiFingerprint = () => {
   try {
@@ -240,13 +241,16 @@ const reconcileMercadoPagoPayments = async (apiUrl, token) => {
 }
 
 const capturePaypalOrder = async (apiUrl, token, orderId) => {
-  if (!apiUrl || !token || !orderId) return
+  if (!apiUrl || !orderId) return
+  const headers = {
+    'Content-Type': 'application/json'
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
   const response = await fetch(`${apiUrl}/api/paypal/capture-order`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    },
+    headers,
     body: JSON.stringify({ orderId })
   })
   const data = await response.json().catch(() => ({}))
@@ -421,7 +425,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
       onAssumeUser(data.user, data.token)
       setMessage(`Entraste como ${data.user.email}`)
     } catch (error) {
-      setMessage(error.message || 'Error al iniciar sesión temporal.')
+      setMessage(error.message || 'Error al iniciar sesiÃ³n temporal.')
     } finally {
       setAssumingId(null)
     }
@@ -437,8 +441,8 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
           <div className="flex items-center gap-3">
             <TestTube2 className="w-5 h-5 text-cyan-400" />
             <div>
-              <p className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>Panel rápido de pruebas</p>
-              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Reset público para Usuario 1, 2, 3 y 4</p>
+              <p className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>Panel rÃ¡pido de pruebas</p>
+              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Reset pÃºblico para Usuario 1, 2, 3 y 4</p>
             </div>
           </div>
           {isOpen ? <ChevronUp className="w-5 h-5 text-cyan-400" /> : <ChevronDown className="w-5 h-5 text-cyan-400" />}
@@ -447,7 +451,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
         {isOpen && (
           <div className={`px-4 pb-4 border-t ${darkMode ? 'border-white/10' : 'border-cyan-100'}`}>
             <div className="pt-3 flex items-center justify-between mb-2">
-              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cada reset deja: tokens en 0, membresía FREE y pagos borrados.</p>
+              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cada reset deja: tokens en 0, membresÃ­a FREE y pagos borrados.</p>
               <button
                 onClick={loadUsers}
                 className={`text-xs font-bold px-3 py-1.5 rounded-md ${darkMode ? 'bg-white/10 text-cyan-300 hover:bg-white/20' : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}`}
@@ -470,7 +474,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
                       {user ? (
                         <>
                           <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>ID: {user.id}</p>
-                          <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Membresía actual: <span className="font-bold uppercase">{user.plan}</span></p>
+                          <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>MembresÃ­a actual: <span className="font-bold uppercase">{user.plan}</span></p>
                           <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Tokens: <span className="font-bold">{Number(user.tokens || 0).toLocaleString()}</span></p>
                           <button
                             onClick={() => resetUser(user.id)}
@@ -490,7 +494,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
                           </button>
                         </>
                       ) : (
-                        <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>Sin usuario asignado todavía.</p>
+                        <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>Sin usuario asignado todavÃ­a.</p>
                       )}
                     </div>
                   )
@@ -511,19 +515,32 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
 export function App() {
   const { t } = useTranslation()
   const [currentPage, setCurrentPage] = useState(() => {
-    const params = window.location.search
-    if (params.includes('preview=admin')) return 'admin'
-    if (params.includes('preview=auth')) return 'auth'
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('payment') === 'success') return 'studio'
+    if (params.get('preview') === 'admin') return 'admin'
+    if (params.get('preview') === 'auth') return 'auth'
     return 'landing'
   }) // 'landing', 'studio', 'voice-workshop', 'pricing', 'control-panel', 'statistics', 'auth', 'admin'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [showContact, setShowContact] = useState(false)
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactMessage, setContactMessage] = useState('')
+  const [contactSending, setContactSending] = useState(false)
+  const [contactDone, setContactDone] = useState(false)
+  const [contactError, setContactError] = useState(null)
   const [showCookies, setShowCookies] = useState(false)
-  const [cookieConsent, setCookieConsent] = useState(false) // Siempre comienza en false para mostrar el banner
+  const [cookieConsent, setCookieConsent] = useState(() => {
+    try {
+      return localStorage.getItem(COOKIE_CONSENT_KEY) === 'true'
+    } catch {
+      return false
+    }
+  })
   const [selectedPaymentPackage, setSelectedPaymentPackage] = useState(350000)
   const [selectedCheckoutItem, setSelectedCheckoutItem] = useState(null)
+  const [paymentNotice, setPaymentNotice] = useState(null)
 
   // Auth state
   const [user, setUser] = useState(null)
@@ -541,6 +558,73 @@ export function App() {
   const [config, setConfig] = useState(() => normalizeUserConfig(loadCachedConfig('guest') || buildDefaultConfig()))
   const [configReady, setConfigReady] = useState(false)
 
+  const isValidEmail = useCallback((value = '') => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim())
+  }, [])
+
+  const sendContactMessage = useCallback(async () => {
+    if (contactSending) return
+    const text = String(contactMessage || '').trim()
+    if (text.length < 5) {
+      setContactError('Escribe al menos 5 caracteres.')
+      return
+    }
+    if (text.length > 500) {
+      setContactError('El mensaje excede 500 caracteres.')
+      return
+    }
+    const isLoggedIn = Boolean(authToken && user)
+    const email = String(contactEmail || '').trim()
+    if (!isLoggedIn && !isValidEmail(email)) {
+      setContactError('Ingresa un correo valido para poder responderte.')
+      return
+    }
+
+    setContactSending(true)
+    setContactError(null)
+
+    try {
+      const endpoint = isLoggedIn ? '/api/support/message' : '/api/support/public'
+      const headers = { 'Content-Type': 'application/json' }
+      if (isLoggedIn) headers.Authorization = `Bearer ${authToken}`
+
+      const body = isLoggedIn
+        ? { message: text }
+        : { email, message: text }
+
+      const res = await fetch(`${API_URL}${endpoint}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body)
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || 'No se pudo enviar el mensaje.')
+      }
+
+      setContactDone(true)
+      setContactMessage('')
+      if (!isLoggedIn) setContactEmail('')
+    } catch (error) {
+      setContactError(error.message || 'Error al enviar el mensaje.')
+    } finally {
+      setContactSending(false)
+    }
+  }, [API_URL, authToken, contactEmail, contactMessage, contactSending, isValidEmail, user])
+
+  useEffect(() => {
+    if (showContact) {
+      setContactDone(false)
+      setContactError(null)
+    }
+  }, [showContact])
+  
+  useEffect(() => {
+    if (!paymentNotice) return
+    const timer = setTimeout(() => setPaymentNotice(null), 9000)
+    return () => clearTimeout(timer)
+  }, [paymentNotice])
+
   const updateConfig = useCallback((key, value) => {
     setConfig((prev) => {
       if (Object.is(prev?.[key], value)) return prev
@@ -553,7 +637,7 @@ export function App() {
     latestConfigRef.current = config
   }, [config])
 
-  // Restaurar sesión al cargar
+  // Restaurar sesiÃ³n al cargar
   useEffect(() => {
     const savedToken = getStoredToken()
     const savedUser = localStorage.getItem('sv-user')
@@ -603,11 +687,11 @@ export function App() {
     }
   }, [])
 
-  // Detectar ubicación y tipos de cambio
+  // Detectar ubicaciÃ³n y tipos de cambio
   useEffect(() => {
     const detectLocationAndExchangeRates = async () => {
       try {
-        // Detectar país por navegador/zona horaria
+        // Detectar paÃ­s por navegador/zona horaria
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''
         const lang = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : ''
         const isMexico = tz.includes('Mexico') || /-MX$/i.test(lang)
@@ -628,7 +712,7 @@ export function App() {
           setExchangeRates(ratesData.rates)
         }
       } catch (error) {
-        console.error('Error detectando ubicación/tipos de cambio:', error)
+        console.error('Error detectando ubicaciÃ³n/tipos de cambio:', error)
         // Fallback si hay error
         setExchangeRates({
           MXN: 20,
@@ -654,7 +738,7 @@ export function App() {
       const data = await res.json()
       if (data.success && data.config && Object.keys(data.config).length > 0) {
         setConfig(prev => ({ ...prev, ...data.config }))
-        console.log('[Config] Configuración del usuario cargada')
+        console.log('[Config] ConfiguraciÃ³n del usuario cargada')
       }
     } catch (err) {
       console.error('[Config] Error cargando config:', err)
@@ -684,7 +768,7 @@ export function App() {
         setConfig(mergedConfig)
         setDarkMode(mergedConfig.themeMode !== 'light')
         if (hasRemoteConfig && preferCached && Object.keys(cachedConfigRaw).length > 0) {
-          // Backfill asíncrono: solo si local es mas reciente que remoto.
+          // Backfill asÃ­ncrono: solo si local es mas reciente que remoto.
           persistConfigNow(token, mergedConfig).catch(() => {})
         }
         console.log('[Config] Configuracion del usuario cargada')
@@ -712,11 +796,11 @@ export function App() {
       CLP: '$',
       PEN: 'S/',
       UYU: '$',
-      EUR: '€',
-      GBP: '£',
-      JPY: '¥',
-      CNY: '¥',
-      INR: '₹',
+      EUR: '\u20AC',
+      GBP: '\u00A3',
+      JPY: '\u00A5',
+      CNY: '\u00A5',
+      INR: '\u20B9',
       AUD: '$',
       CAD: '$'
     }
@@ -746,7 +830,7 @@ export function App() {
         keepalive: true
       })
       if (!response.ok) {
-        console.warn('[Config] Guardado inmediato falló con estado:', response.status)
+        console.warn('[Config] Guardado inmediato fallÃ³ con estado:', response.status)
         return false
       }
       const payload = await response.json().catch(() => ({ success: true }))
@@ -767,7 +851,7 @@ export function App() {
     try {
       const userKey = user?.id || user?.email || 'guest'
       localStorage.setItem(getConfigCacheKey(userKey), JSON.stringify(config))
-      // Mantener legado para evitar perder estado de usuarios previos en transición
+      // Mantener legado para evitar perder estado de usuarios previos en transiciÃ³n
       if (!user) {
         localStorage.setItem(LOCAL_CONFIG_CACHE_KEY, JSON.stringify(config))
       }
@@ -794,12 +878,12 @@ export function App() {
         }
         const payload = await response.json().catch(() => ({ success: true }))
         if (!payload?.success) {
-          console.warn('[Config] Guardado automático rechazado por API')
+          console.warn('[Config] Guardado automÃ¡tico rechazado por API')
           return
         }
-        console.log('[Config] Guardado automático')
+        console.log('[Config] Guardado automÃ¡tico')
       }).catch(() => {})
-    }, 2000) // Espera 2 segundos después del último cambio
+    }, 2000) // Espera 2 segundos despuÃ©s del Ãºltimo cambio
 
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
   }, [config, user, configReady])
@@ -845,7 +929,7 @@ export function App() {
     setCurrentPage('landing')
   }
 
-  // Detectar sesión desplazada desde cualquier fetch de la app
+  // Detectar sesiÃ³n desplazada desde cualquier fetch de la app
   useEffect(() => {
     const originalFetch = window.fetch
     window.fetch = async (...args) => {
@@ -865,13 +949,13 @@ export function App() {
             setCurrentPage('auth')
             setConfig(buildDefaultConfig())
             setTimeout(() => {
-              alert('⚠️ Tu sesión fue iniciada en otro dispositivo. Has sido desconectado.')
+              alert('\u26A0\uFE0F Tu sesi\u00f3n fue iniciada en otro dispositivo. Has sido desconectado.')
             }, 100)
           } else if (
             getStoredToken() &&
             (errText.includes('invalid token') || errText.includes('no token provided') || errText.includes('jwt'))
           ) {
-            // Token vencido / inválido: limpiar sesión para evitar bloqueos raros.
+            // Token vencido / invÃ¡lido: limpiar sesiÃ³n para evitar bloqueos raros.
             clearStoredAuthToken()
             localStorage.removeItem('sv-user')
             localStorage.removeItem(TOKEN_API_KEY)
@@ -880,7 +964,7 @@ export function App() {
             setCurrentPage('auth')
             setConfig(buildDefaultConfig())
             setTimeout(() => {
-              alert('Tu sesión expiró o quedó inválida. Inicia sesión de nuevo.')
+              alert('Tu sesiÃ³n expirÃ³ o quedÃ³ invÃ¡lida. Inicia sesiÃ³n de nuevo.')
             }, 100)
           }
         } catch (_) {}
@@ -970,20 +1054,25 @@ export function App() {
     }
   }, [darkMode, user, configReady, config.themeMode])
 
-  // Scroll al top cuando carga la página
+  // Scroll al top cuando carga la pÃ¡gina
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
 
   // Bloquear scroll si no hay consentimiento de cookies
   useEffect(() => {
-    if (!cookieConsent) {
+    const shouldLockForCookies = !cookieConsent && currentPage === 'landing'
+    if (shouldLockForCookies) {
       document.body.style.overflow = 'hidden'
       return () => {
         document.body.style.overflow = 'unset'
       }
     }
-  }, [cookieConsent])
+    document.body.style.overflow = 'unset'
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [cookieConsent, currentPage])
 
   // Testimonials carousel uses CSS animation (see .testimonials-track in index.css)
 
@@ -1000,10 +1089,14 @@ export function App() {
 
     const provider = String(params.get('provider') || '').toLowerCase()
     const paypalOrderId = params.get('token') || params.get('orderId') || ''
+    const paypalAlreadyCaptured = params.get('captured') === '1'
+    const callbackKey = `sv-payment-callback:${provider}:${paypalOrderId || 'na'}:${paymentStatus}`
     const token = getStoredToken()
-    if (!token) return
+    const isPaypalCallback = provider === 'paypal' && Boolean(paypalOrderId)
+    if (!isPaypalCallback && !token) return
 
     const refreshUser = async () => {
+      if (!token) return
       try {
         const response = await fetch(`${API_URL}/api/auth/me`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -1023,31 +1116,125 @@ export function App() {
       } catch (_) {}
     }
 
+    const callbackState = sessionStorage.getItem(callbackKey)
+    if (callbackState === 'done') {
+      cleanPaymentQuery()
+      setCurrentPage('studio')
+      setPaymentNotice({
+        title: 'Pago acreditado',
+        message: 'Tu compra se proceso correctamente. Ya estas en Studio con tus beneficios activos.',
+        status: 'success'
+      })
+      return
+    }
+    if (callbackState === 'inflight') return
+    setCurrentPage('studio')
+    setPaymentNotice({
+      title: 'Procesando pago...',
+      message: 'Estamos acreditando tu compra en este momento.',
+      status: 'processing'
+    })
+
     ;(async () => {
+      let completed = false
+      sessionStorage.setItem(callbackKey, 'inflight')
       try {
-        if (provider === 'paypal' && paypalOrderId) {
+        if (provider === 'paypal' && paypalAlreadyCaptured) {
+          // Ya capturado por backend /api/paypal/return
+        } else if (provider === 'paypal' && paypalOrderId) {
           await capturePaypalOrder(API_URL, token, paypalOrderId)
         } else {
+          if (!token) throw new Error('Sesion no disponible para reconciliar el pago')
           await reconcileMercadoPagoPayments(API_URL, token)
         }
+        completed = true
+        sessionStorage.setItem(callbackKey, 'done')
+        setPaymentNotice({
+          title: 'Pago acreditado',
+          message: 'Tu compra se proceso correctamente. Ya estas en Studio con tus beneficios activos.',
+          status: 'success'
+        })
       } catch (error) {
+        sessionStorage.removeItem(callbackKey)
         console.error('[PAYMENT] Error completing payment callback:', error?.message || error)
+        setPaymentNotice({
+          title: 'No se pudo acreditar el pago',
+          message: 'Hubo un problema al confirmar la compra. Intenta de nuevo en unos segundos.',
+          status: 'error'
+        })
       } finally {
         await refreshUser()
         cleanPaymentQuery()
       }
     })()
   }, [])
-
-  // Auth Page — también accesible por ?preview=auth en local
+  const paymentNoticeBanner = paymentNotice ? (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px]" />
+      <div className={`relative w-[min(94vw,760px)] rounded-3xl border shadow-2xl ${
+        darkMode
+          ? 'bg-[#0d1630] border-cyan-400/50 text-white'
+          : 'bg-white border-cyan-300 text-slate-900'
+      }`}>
+        <div className="p-6 md:p-8">
+          <div className="flex items-start gap-4">
+          <div className={`mt-0.5 w-11 h-11 rounded-full flex items-center justify-center ${
+            paymentNotice.status === 'processing'
+              ? 'bg-cyan-500/20 text-cyan-300'
+              : paymentNotice.status === 'error'
+                ? 'bg-red-500/20 text-red-300'
+                : 'bg-emerald-500/20 text-emerald-400'
+          }`}>
+              {paymentNotice.status === 'processing'
+                ? <Loader2 className="w-6 h-6 animate-spin" />
+                : <Check className="w-6 h-6" />
+              }
+          </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-black text-2xl md:text-3xl leading-tight">{paymentNotice.title}</p>
+              <p className={`text-sm md:text-lg mt-2 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                {paymentNotice.message}
+              </p>
+            </div>
+          </div>
+          <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
+            <button
+              onClick={() => {
+                setCurrentPage('studio')
+                setPaymentNotice(null)
+              }}
+              className="px-5 py-2.5 text-sm md:text-base font-bold rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90 transition"
+            >
+              Ir a Studio
+            </button>
+            <button
+              onClick={() => setPaymentNotice(null)}
+              className={`px-4 py-2.5 text-sm md:text-base rounded-xl font-bold transition ${
+                darkMode ? 'text-slate-200 bg-white/10 hover:bg-white/20' : 'text-slate-700 bg-slate-100 hover:bg-slate-200'
+              }`}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : null
+  // Auth Page â€” tambiÃ©n accesible por ?preview=auth en local
   if (currentPage === 'auth' || window.location.search.includes('preview=auth')) {
-    return <AuthPage onLogin={handleLogin} onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} />
+    return (
+      <>
+        {paymentNoticeBanner}
+        <AuthPage onLogin={handleLogin} onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} />
+      </>
+    )
   }
 
   // Pricing Page
   if (currentPage === 'pricing') {
     return (
       <>
+        {paymentNoticeBanner}
         <PricingPage onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} onPlanAction={handlePlanAction} />
         <StripePayment
           isOpen={isPaymentOpen}
@@ -1062,13 +1249,16 @@ export function App() {
   // AI Roleplay Workshop
   if (currentPage === 'ai-roleplay') {
     return (
-      <AIRoleplayWorkshop
-        onClose={() => setCurrentPage('control-panel')}
-        darkMode={darkMode}
-        user={user}
-        config={config}
-        updateConfig={updateConfig}
-      />
+      <>
+        {paymentNoticeBanner}
+        <AIRoleplayWorkshop
+          onClose={() => setCurrentPage('control-panel')}
+          darkMode={darkMode}
+          user={user}
+          config={config}
+          updateConfig={updateConfig}
+        />
+      </>
     )
   }
 
@@ -1077,6 +1267,7 @@ export function App() {
   if (['studio', 'control-panel', 'statistics', 'admin', 'voice-workshop'].includes(currentPage)) {
     return (
       <>
+        {paymentNoticeBanner}
         <div style={{ display: currentPage === 'studio' ? 'block' : 'none' }}>
           <SynthesisStudio
             onGoHome={() => setCurrentPage('landing')}
@@ -1170,6 +1361,7 @@ export function App() {
 
   return (
     <div className={"min-h-screen overflow-hidden transition-colors duration-300 " + (darkMode ? "bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-gray-900") + ""}>
+      {paymentNoticeBanner}
       {/* Botones Esquina Superior */}
       <div className={`fixed top-4 left-4 z-40 flex items-stretch rounded-xl border overflow-hidden h-11 ${darkMode ? 'border-white/10' : 'border-slate-300 shadow-sm'}`}>
         <button
@@ -1219,7 +1411,6 @@ export function App() {
         )}
       </div>
 
-      <PublicTestResetCard darkMode={darkMode} onAssumeUser={handleAssumeTestUser} />
 
       {/* Hero Section */}
       <section className="pt-10 pb-16 px-4 relative overflow-hidden">
@@ -1230,7 +1421,7 @@ export function App() {
             <div className="absolute top-1/2 right-0 w-[420px] h-[420px] bg-gradient-to-b from-orange-500/20 to-transparent rounded-full blur-3xl"></div>
           </div>
 
-          {/* Logo/Título de la app */}
+          {/* Logo/TÃ­tulo de la app */}
           <div className="mb-10 flex justify-center">
             <img
               src="/images/streamvoicer6.png"
@@ -1397,7 +1588,7 @@ export function App() {
                     {/* Stars */}
                     <div className="flex gap-1 mb-4">
                       {[...Array(testimonial.stars)].map((_, i) => (
-                        <span key={i} className="text-yellow-400 text-lg">⭐</span>
+                        <span key={i} className="text-yellow-400 text-lg">{'\u2B50'}</span>
                       ))}
                     </div>
 
@@ -1561,7 +1752,7 @@ export function App() {
                       <div className={"font-black text-lg text-transparent bg-clip-text bg-gradient-to-r " + gradient}>{pkg.tokens}</div>
                     </div>
 
-                    <p className={"text-sm mb-2 " + (darkMode ? "text-gray-400" : "text-gray-500")}>⏱️ {pkg.hours}</p>
+                    <p className={"text-sm mb-2 " + (darkMode ? "text-gray-400" : "text-gray-500")}>Tiempo estimado: {pkg.hours}</p>
 
                   {isPopular ? (
                     <div className="relative mt-auto">
@@ -1631,7 +1822,7 @@ export function App() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <h4 className="font-bold mb-4">Stream Voicer</h4>
-              <p className="text-sm text-gray-400">La mejor solución para leer chats en vivo</p>
+              <p className="text-sm text-gray-400">{'La mejor soluci\u00f3n para leer chats en vivo'}</p>
             </div>
             <div>
               <h4 className="font-bold mb-4">Legal</h4>
@@ -1663,45 +1854,45 @@ export function App() {
         initialCheckoutItem={selectedCheckoutItem}
       />
 
-      {/* Términos Modal */}
+      {/* TÃ©rminos Modal */}
       {showTerms && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
           <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Términos de Servicio</h2>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>TÃ©rminos de Servicio</h2>
               <button onClick={() => setShowTerms(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
             </div>
             <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. Aceptación de Términos</h3>
-                <p>Al usar Stream Voicer, aceptas estos términos y condiciones. Si no estás de acuerdo, no uses el servicio.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. AceptaciÃ³n de TÃ©rminos</h3>
+                <p>Al usar Stream Voicer, aceptas estos tÃ©rminos y condiciones. Si no estÃ¡s de acuerdo, no uses el servicio.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. Descripción del Servicio</h3>
-                <p>Stream Voicer es una plataforma de síntesis de voz (TTS) para streamers. Proporciona características para leer mensajes en vivo usando inteligencia artificial.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. DescripciÃ³n del Servicio</h3>
+                <p>Stream Voicer es una plataforma de sÃ­ntesis de voz (TTS) para streamers. Proporciona caracterÃ­sticas para leer mensajes en vivo usando inteligencia artificial.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Uso Permitido</h3>
-                <p>Debes usar Stream Voicer solo para propósitos legales y éticos. Se prohíbe:</p>
+                <p>Debes usar Stream Voicer solo para propÃ³sitos legales y Ã©ticos. Se prohÃ­be:</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>Contenido ofensivo, discriminatorio o ilegal</li>
-                  <li>Intentos de piratería o acceso no autorizado</li>
+                  <li>Intentos de piraterÃ­a o acceso no autorizado</li>
                   <li>Spam o abuso del servicio</li>
-                  <li>Violación de derechos de terceros</li>
+                  <li>ViolaciÃ³n de derechos de terceros</li>
                 </ul>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Suscripciones, Pagos y Reembolsos</h3>
-                <p>Los upgrades se aplican de inmediato con ajuste proporcional según tiempo restante y tiempo total del ciclo (calculado con timestamps exactos). Los downgrades se aplican en el siguiente ciclo de facturación. Puedes cancelar en cualquier momento y conservarás acceso hasta el final del período actual. No hay reembolsos por uso parcial del período.</p>
-                <p className="mt-2"><strong>Paquetes de tokens:</strong> Los paquetes de tokens son productos digitales de consumo inmediato. Una vez procesada la compra, no aplican reembolsos ni devoluciones de ningún tipo, independientemente del uso realizado. Al completar la compra, el usuario acepta expresamente esta política.</p>
+                <p>Los upgrades se aplican de inmediato con ajuste proporcional segÃºn tiempo restante y tiempo total del ciclo (calculado con timestamps exactos). Los downgrades se aplican en el siguiente ciclo de facturaciÃ³n. Puedes cancelar en cualquier momento y conservarÃ¡s acceso hasta el final del perÃ­odo actual. No hay reembolsos por uso parcial del perÃ­odo.</p>
+                <p className="mt-2"><strong>Paquetes de tokens:</strong> Los paquetes de tokens son productos digitales de consumo inmediato. Una vez procesada la compra, no aplican reembolsos ni devoluciones de ningÃºn tipo, independientemente del uso realizado. Al completar la compra, el usuario acepta expresamente esta polÃ­tica.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Limitaciones de Responsabilidad</h3>
-                <p>Stream Voicer se proporciona "tal cual". No garantizamos disponibilidad continua. No somos responsables por daños indirectos.</p>
+                <p>Stream Voicer se proporciona "tal cual". No garantizamos disponibilidad continua. No somos responsables por daÃ±os indirectos.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en los Términos</h3>
-                <p>Nos reservamos el derecho de modificar estos términos. Te notificaremos de cambios significativos.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en los TÃ©rminos</h3>
+                <p>Nos reservamos el derecho de modificar estos tÃ©rminos. Te notificaremos de cambios significativos.</p>
               </section>
             </div>
             <button onClick={() => setShowTerms(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
@@ -1716,17 +1907,17 @@ export function App() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
           <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Política de Privacidad</h2>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>PolÃ­tica de Privacidad</h2>
               <button onClick={() => setShowPrivacy(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
             </div>
             <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. Información que Recolectamos</h3>
-                <p>Recolectamos información que voluntariamente proporcionas, como nombre, email, y datos de suscripción.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. InformaciÃ³n que Recolectamos</h3>
+                <p>Recolectamos informaciÃ³n que voluntariamente proporcionas, como nombre, email, y datos de suscripciÃ³n.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. Cómo Usamos Tu Información</h3>
-                <p>Usamos tu información para:</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. CÃ³mo Usamos Tu InformaciÃ³n</h3>
+                <p>Usamos tu informaciÃ³n para:</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>Proporcionar y mejorar nuestros servicios</li>
                   <li>Procesar pagos y suscripciones</li>
@@ -1736,23 +1927,23 @@ export function App() {
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Seguridad de Datos</h3>
-                <p>Implementamos medidas de seguridad estándar para proteger tu información. Sin embargo, no podemos garantizar seguridad absoluta.</p>
+                <p>Implementamos medidas de seguridad estÃ¡ndar para proteger tu informaciÃ³n. Sin embargo, no podemos garantizar seguridad absoluta.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Cookies y Tecnologías Similares</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Cookies y TecnologÃ­as Similares</h3>
                 <p>{t('cookies.shortText')}</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Derechos del Usuario</h3>
-                <p>Tienes derecho a acceder, modificar o eliminar tu información personal. Contacta al correo de soporte para solicitar estos derechos.</p>
+                <p>Tienes derecho a acceder, modificar o eliminar tu informaciÃ³n personal. Contacta al correo de soporte para solicitar estos derechos.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en la Política</h3>
-                <p>Nos reservamos el derecho de actualizar esta política. Los cambios serán notificados en esta página.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en la PolÃ­tica</h3>
+                <p>Nos reservamos el derecho de actualizar esta polÃ­tica. Los cambios serÃ¡n notificados en esta pÃ¡gina.</p>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>7. Contacto</h3>
-                <p>Para preguntas sobre privacidad, contáctanos a: soporte@streamvoicer.com</p>
+                <p>Para preguntas sobre privacidad, contÃ¡ctanos a: soporte@streamvoicer.com</p>
               </section>
             </div>
             <button onClick={() => setShowPrivacy(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
@@ -1762,7 +1953,7 @@ export function App() {
         </div>
       )}
 
-      {/* Contacto Modal */}
+            {/* Contacto Modal */}
       {showContact && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4">
           <div className={`rounded-2xl p-8 max-w-md w-full ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
@@ -1771,13 +1962,60 @@ export function App() {
               <button onClick={() => setShowContact(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
             </div>
             <div className={`space-y-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              <p>¿Tienes preguntas o necesitas ayuda? Nos encantaría escucharte.</p>
-              <div className="bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl p-4 text-center">
-                <p className="text-white text-sm mb-2 font-bold">Envíanos un correo a:</p>
-                <a href="mailto:soporte@streamvoicer.com" className="text-white text-lg font-black hover:opacity-80 transition">
-                  soporte@streamvoicer.com
-                </a>
-              </div>
+              <p>{t('tiktok.support.placeholder')}</p>
+              {!user && (
+                <div>
+                  <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Correo de contacto
+                  </label>
+                  <input
+                    type="email"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder="tu@email.com"
+                    className={`mt-1 w-full px-3 py-2 rounded-lg text-sm ${
+                      darkMode
+                        ? 'bg-[#0b1327] border border-cyan-400/30 text-white placeholder:text-gray-500 focus:border-cyan-300'
+                        : 'bg-white border border-cyan-300 text-gray-900 placeholder:text-gray-400'
+                    } outline-none`}
+                  />
+                </div>
+              )}
+
+              {contactDone ? (
+                <div className={`text-center py-4 rounded-xl ${darkMode ? 'bg-green-500/10 border border-green-400/30' : 'bg-green-50 border border-green-300'}`}>
+                  <p className={`font-bold ${darkMode ? 'text-green-300' : 'text-green-700'}`}>Mensaje enviado correctamente.</p>
+                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Te responderemos en 24-48 hrs.</p>
+                </div>
+              ) : (
+                <div>
+                  <textarea
+                    value={contactMessage}
+                    onChange={(e) => setContactMessage(e.target.value.slice(0, 500))}
+                    rows={5}
+                    maxLength={500}
+                    placeholder={t('tiktok.support.placeholder')}
+                    className={`w-full rounded-xl px-3 py-2 text-sm resize-none outline-none ${
+                      darkMode
+                        ? 'bg-[#0b1327] border border-cyan-400/30 text-white placeholder:text-gray-500 focus:border-cyan-300'
+                        : 'bg-white border border-cyan-300 text-gray-900 placeholder:text-gray-400'
+                    }`}
+                  />
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <span className={`text-xs ${contactMessage.length >= 450 ? 'text-orange-400' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {t('tiktok.support.charCount', { count: contactMessage.length })}
+                    </span>
+                    {contactError && <span className="text-xs text-red-400">{contactError}</span>}
+                  </div>
+                  <button
+                    onClick={sendContactMessage}
+                    disabled={!contactMessage.trim() || contactSending}
+                    className="mt-3 w-full py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 disabled:opacity-50"
+                  >
+                    {contactSending ? t('tiktok.support.sending') : t('tiktok.support.submit')}
+                  </button>
+                </div>
+              )}
               <p className="text-sm">Responderemos tu mensaje lo antes posible. Esperamos tu contacto.</p>
             </div>
             <button onClick={() => setShowContact(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
@@ -1794,7 +2032,7 @@ export function App() {
           <div className={`rounded-2xl w-full max-w-4xl my-8 flex flex-col ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`} style={{maxHeight: 'calc(100vh - 64px)'}}>
             {/* Header */}
             <div className={`flex justify-between items-center p-8 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Política de Cookies</h2>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>PolÃ­tica de Cookies</h2>
               <button onClick={() => setShowCookies(false)} className="text-2xl opacity-50 hover:opacity-100 font-bold">×</button>
             </div>
 
@@ -1807,20 +2045,20 @@ export function App() {
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Tipos de Cookies que Usamos</h3>
                 <ul className="list-disc pl-5 space-y-2">
-                  <li><strong>Cookies Esenciales:</strong> Necesarias para el funcionamiento básico del sitio (autenticación, seguridad)</li>
-                  <li><strong>Cookies de Rendimiento:</strong> Nos ayudan a entender cómo usas el sitio y mejorarlo</li>
-                  <li><strong>Cookies de Análisis:</strong> Rastrean cómo interactúas con Stream Voicer para optimizar la experiencia</li>
-                  <li><strong>Cookies de Publicidad:</strong> Permiten mostrar anuncios relevantes según tus intereses</li>
+                  <li><strong>Cookies Esenciales:</strong> Necesarias para el funcionamiento bÃ¡sico del sitio (autenticaciÃ³n, seguridad)</li>
+                  <li><strong>Cookies de Rendimiento:</strong> Nos ayudan a entender cÃ³mo usas el sitio y mejorarlo</li>
+                  <li><strong>Cookies de AnÃ¡lisis:</strong> Rastrean cÃ³mo interactÃºas con Stream Voicer para optimizar la experiencia</li>
+                  <li><strong>Cookies de Publicidad:</strong> Permiten mostrar anuncios relevantes segÃºn tus intereses</li>
                 </ul>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>¿Cómo Usamos las Cookies?</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{'\u00bfC\u00f3mo Usamos las Cookies?'}</h3>
                 <p>{t('cookies.weUse')}</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li>Mantener tu sesión iniciada</li>
+                  <li>Mantener tu sesiÃ³n iniciada</li>
                   <li>Recordar tus preferencias de idioma y tema</li>
-                  <li>Analizar el tráfico del sitio con Google Analytics</li>
-                  <li>Personalizar contenido según tu actividad</li>
+                  <li>Analizar el trÃ¡fico del sitio con Google Analytics</li>
+                  <li>Personalizar contenido segÃºn tu actividad</li>
                   <li>Prevenir fraude y mejorar la seguridad</li>
                 </ul>
               </section>
@@ -1833,15 +2071,15 @@ export function App() {
                 <p>{t('cookies.thirdParty')}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cambios en la Política</h3>
-                <p>Nos reservamos el derecho de actualizar esta política en cualquier momento. Te notificaremos de cambios significativos.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cambios en la PolÃ­tica</h3>
+                <p>Nos reservamos el derecho de actualizar esta polÃ­tica en cualquier momento. Te notificaremos de cambios significativos.</p>
               </section>
             </div>
 
-            {/* Footer con botón */}
+            {/* Footer con botÃ³n */}
             <div className={`p-8 border-t ${darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gray-50'}`}>
               <button onClick={() => setShowCookies(false)} className="w-full py-3 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-cyan-400/50 transition-all">
-                ✅ Cerrar
+                {'\u2705 Cerrar'}
               </button>
             </div>
           </div>
@@ -1863,7 +2101,7 @@ export function App() {
                 {/* Texto */}
                 <div className="md:col-span-2">
                   <h3 className={`text-lg font-bold tracking-wide mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    🍪 {t('cookies.title')}
+                    {'\u{1F36A} '} {t('cookies.title')}
                   </h3>
                   <p className={`text-sm mb-3 leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     {t('cookies.text')}
@@ -1881,7 +2119,7 @@ export function App() {
                   <button
                     onClick={() => {
                       setCookieConsent(true)
-                      localStorage.setItem('cookieConsent', 'true')
+                      localStorage.setItem(COOKIE_CONSENT_KEY, 'true')
                     }}
                     className="px-7 py-3 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-semibold text-sm rounded-lg hover:opacity-90 hover:shadow-lg hover:shadow-cyan-400/40 transition-all whitespace-nowrap"
                   >
@@ -1890,7 +2128,7 @@ export function App() {
                   <button
                     onClick={() => {
                       setCookieConsent(true)
-                      localStorage.setItem('cookieConsent', 'true')
+                      localStorage.setItem(COOKIE_CONSENT_KEY, 'true')
                     }}
                     className={`px-7 py-3 rounded-lg font-medium text-sm whitespace-nowrap transition-all border ${
                       darkMode
@@ -1910,6 +2148,10 @@ export function App() {
   )
 }
 // Cache buster 1774553392
+
+
+
+
 
 
 

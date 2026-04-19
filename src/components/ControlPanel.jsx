@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Check, HelpCircle, Keyboard, ChevronRight, Ban, Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -454,6 +454,30 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   }, [user?.email])
 
   const userPlan = normalizeUserPlan(user?.plan || 'free')
+  useEffect(() => {
+    if (userPlan !== 'free') return
+
+    const forcedOffInFree = [
+      'ignoreLinks',
+      'profanityFilterEnabled',
+      'ignoreExcessiveEmojis',
+      'minMessageLengthEnabled',
+      'donorCharLimitEnabled',
+      'maxQueueEnabled',
+    ]
+
+    forcedOffInFree.forEach((key) => {
+      if (config?.[key]) updateConfig(key, false)
+    })
+  }, [
+    userPlan,
+    config?.ignoreLinks,
+    config?.profanityFilterEnabled,
+    config?.ignoreExcessiveEmojis,
+    config?.minMessageLengthEnabled,
+    config?.donorCharLimitEnabled,
+    config?.maxQueueEnabled,
+  ])
   const PREMIUM_BY_PLAN = {
     free: [], start: ['Diego'],
     creator: ['Diego', 'Lupita'],
@@ -1237,12 +1261,12 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   }`}>
                     <FeatureLockedOverlay darkMode={darkMode} message="Filtros avanzados disponibles en START+" showIcon showMessage />
                     <div>
-                      <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => {}} darkMode={darkMode} />
-                      <CheckOption label={t('control.filterSection.profanity')} checked={config.profanityFilterEnabled} onChange={() => {}} darkMode={darkMode} />
-                      <CheckWithInput label="Ignorar emojis excesivos del chat a cantidad máxima permitida:" checked={config.ignoreExcessiveEmojis} onToggle={() => {}} value={config.maxEmojisAllowed} onValueChange={() => {}} placeholder="3" darkMode={darkMode} />
-                      <CheckWithInput label="Ignorar mensajes muy cortos (mínimo de caracteres)" checked={config.minMessageLengthEnabled} onToggle={() => {}} value={config.minMessageLength} onValueChange={() => {}} placeholder="3" darkMode={darkMode} />
-                      <CheckWithInput label="Límite de caracteres en todos los mensajes (máximo)" checked={config.donorCharLimitEnabled} onToggle={() => {}} value={config.donorCharLimit} onValueChange={() => {}} placeholder="200" darkMode={darkMode} />
-                      <CheckWithInput label="Límite de mensajes en espera (descarta nuevos si se llena)" checked={config.maxQueueEnabled} onToggle={() => {}} value={config.maxQueueSize} onValueChange={() => {}} placeholder="20" darkMode={darkMode} />
+                      <CheckOption label="Ignorar enlaces/URLs" checked={false} onChange={() => {}} darkMode={darkMode} />
+                      <CheckOption label={t('control.filterSection.profanity')} checked={false} onChange={() => {}} darkMode={darkMode} />
+                      <CheckWithInput label="Ignorar emojis excesivos del chat a cantidad máxima permitida:" checked={false} onToggle={() => {}} value={config.maxEmojisAllowed} onValueChange={() => {}} placeholder="3" darkMode={darkMode} />
+                      <CheckWithInput label="Ignorar mensajes muy cortos (mínimo de caracteres)" checked={false} onToggle={() => {}} value={config.minMessageLength} onValueChange={() => {}} placeholder="3" darkMode={darkMode} />
+                      <CheckWithInput label="Límite de caracteres en todos los mensajes (máximo)" checked={false} onToggle={() => {}} value={config.donorCharLimit} onValueChange={() => {}} placeholder="200" darkMode={darkMode} />
+                      <CheckWithInput label="Límite de mensajes en espera (descarta nuevos si se llena)" checked={false} onToggle={() => {}} value={config.maxQueueSize} onValueChange={() => {}} placeholder="20" darkMode={darkMode} />
                     </div>
                   </div>
                 </>
@@ -1640,6 +1664,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     </div>
   )
 }
+
+
 
 
 

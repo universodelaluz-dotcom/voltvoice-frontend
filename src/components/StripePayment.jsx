@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 const TOKEN_STORAGE_KEY = 'sv-token'
 const TOKEN_PERSIST_KEY = 'sv-token-persist'
+const FREE_PLANS = new Set(['free', 'on_demand'])
 
 const tokenPackages = [
   { tokens: 150000, price: 4.99, label: '150K', size: 'MINI BOOST' },
@@ -89,6 +90,18 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     return selectedPackage.price
   }
 
+  const isCurrentUserFreePlan = () => {
+    try {
+      const raw = localStorage.getItem('sv-user')
+      if (!raw) return false
+      const user = JSON.parse(raw)
+      const plan = String(user?.plan || '').toLowerCase()
+      return FREE_PLANS.has(plan)
+    } catch {
+      return false
+    }
+  }
+
   const validateCoupon = useCallback(async () => {
     const code = couponCode.trim()
     if (!code) {
@@ -163,6 +176,11 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
   const handleMercadoPago = async () => {
     setLoading('mercadopago')
     try {
+      if (currentItem.type === 'tokens' && isCurrentUserFreePlan()) {
+        alert('Primero debes adquirir un plan de pago para poder comprar paquetes de tokens.')
+        setLoading(null)
+        return
+      }
       const headers = getAuthHeaders()
       if (!headers) {
         alert(t('payment.loginRequired'))
@@ -196,10 +214,13 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
   const handlePayPal = async () => {
     setLoading('paypal')
     try {
+      if (currentItem.type === 'tokens' && isCurrentUserFreePlan()) {
+        alert('Primero debes adquirir un plan de pago para poder comprar paquetes de tokens.')
+        return
+      }
       const headers = getAuthHeaders()
       if (!headers) {
         alert(t('payment.loginRequired'))
-        setLoading(null)
         return
       }
 
@@ -217,10 +238,10 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         window.location.href = data.approvalUrl
       } else {
         alert('Error PayPal: ' + (data.error || 'desconocido'))
-        setLoading(null)
       }
     } catch (e) {
       alert('Error: ' + e.message)
+    } finally {
       setLoading(null)
     }
   }

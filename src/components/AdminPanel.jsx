@@ -11,7 +11,7 @@ const PLANS = ['all', 'free', 'start', 'creator', 'pro', 'admin']
 const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
 const PLAN_STYLE = {
-  all:     { bg: 'bg-white/10',          text: 'text-white',        dot: 'bg-white' },
+  all:     { bg: 'bg-white/10',          text: 'text-gray-200',     dot: 'bg-white' },
   free:    { bg: 'bg-gray-500/20',       text: 'text-gray-300',     dot: 'bg-gray-400' },
   start:   { bg: 'bg-emerald-500/20',    text: 'text-emerald-300',  dot: 'bg-emerald-400' },
   creator: { bg: 'bg-blue-500/20',       text: 'text-blue-300',     dot: 'bg-blue-400' },
@@ -52,6 +52,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [movementLogsLoading, setMovementLogsLoading] = useState(false)
   const [movementLogsError, setMovementLogsError] = useState(null)
   const [movementLogsByMonth, setMovementLogsByMonth] = useState([])
+  const [deletingMovementKey, setDeletingMovementKey] = useState('')
   const [activityUserId, setActivityUserId] = useState(null)
   const [activityData, setActivityData] = useState(null)
   const [activityLoading, setActivityLoading] = useState(false)
@@ -294,13 +295,44 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
       setMovementLogsByMonth(Array.isArray(d.byMonth) ? d.byMonth : [])
     } catch (e) {
       console.error('[Admin] Movement logs load error:', e)
-      setMovementLogsError('Error de conexi?n con el servidor')
+      setMovementLogsError('Error de conexion con el servidor')
       setMovementLogsByMonth([])
     } finally {
       setMovementLogsLoading(false)
     }
   }, [authToken, dashboardYear, dashboardMonth])
 
+
+  const deleteMovementLog = async (item) => {
+    try {
+      const source = String(item?.source || '').trim()
+      const entryId = Number.parseInt(item?.entryId, 10)
+      if (!source || !Number.isFinite(entryId) || entryId <= 0) {
+        showMsg('No se puede borrar este movimiento (faltan datos).', 'error')
+        return
+      }
+
+      const movementKey = `${source}:${entryId}`
+      setDeletingMovementKey(movementKey)
+
+      const r = await fetch(`${API_URL}/api/admin/transactions/logs/${encodeURIComponent(source)}/${entryId}`, {
+        method: 'DELETE',
+        headers: buildHeaders()
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d.success) {
+        showMsg(d.error || 'No se pudo borrar el movimiento', 'error')
+        return
+      }
+
+      showMsg('Movimiento borrado')
+      await loadMovementLogs()
+    } catch (e) {
+      showMsg(e.message || 'Error borrando movimiento', 'error')
+    } finally {
+      setDeletingMovementKey('')
+    }
+  }
   const loadAudioCache = useCallback(async () => {
     if (!authToken) return
     setAudioCacheLoading(true)
@@ -763,9 +795,9 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
       const amount = Number(item?.details?.amountUsd || 0)
       const buyer = item.actorEmail || `Usuario #${item.actorUserId || 'N/A'}`
       if (tokens > 0) {
-        return `${buyer} compr? ${tokens.toLocaleString()} tokens (${fmtUsd(amount)})`
+        return `${buyer} compro ${tokens.toLocaleString()} tokens (${fmtUsd(amount)})`
       }
-      return `${buyer} complet? un pago (${fmtUsd(amount)})`
+      return `${buyer} completo un pago (${fmtUsd(amount)})`
     }
 
     const actor = item.actorEmail || `Admin #${item.actorUserId || 'N/A'}`
@@ -862,7 +894,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
             if (monthSortKey === key) setMonthSortDir(d => d === 'asc' ? 'desc' : 'asc')
             else { setMonthSortKey(key); setMonthSortDir('desc') }
           }
-          const sortIcon = (key) => monthSortKey === key ? (monthSortDir === 'desc' ? ' ?' : ' ?') : ' ?'
+          const sortIcon = (key) => monthSortKey === key ? (monthSortDir === 'desc' ? ' v' : ' ^') : ' -'
           const maxTokens  = Math.max(...allMonths.map(m => Number(m.tokens || 0)), 1)
           const maxRevenue = Math.max(...allMonths.map(m => Number(m.revenueUsd || 0)), 1)
           const maxUsers   = Math.max(...allMonths.map(m => Number(m.users || 0)), 1)
@@ -1392,9 +1424,23 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                         <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{group.total} movimientos</span>
                       </div>
                       <div className="space-y-2">
-                        {(group.items || []).map((item, idx) => (
-                          <div key={`${group.monthKey}-${idx}`} className={`rounded-lg border px-3 py-2 ${darkMode ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-white'}`}>
-                            <p className="text-sm">{movementSummary(item)}</p>
+                        {(group.items || []).map((item, idx) => {
+                          const movementKey = `${item.source || 'unknown'}:${item.entryId || `${group.monthKey}-${idx}`}`
+                          const isDeletingMovement = deletingMovementKey === movementKey
+                          return (
+                          <div key={movementKey} className={`rounded-lg border px-3 py-2 ${darkMode ? 'border-white/10 bg-black/20' : 'border-gray-200 bg-white'}`}>
+                            <div className="flex items-start justify-between gap-3">
+                              <p className="text-sm">{movementSummary(item)}</p>
+                              <button
+                                onClick={() => deleteMovementLog(item)}
+                                disabled={isDeletingMovement || !item?.entryId}
+                                className={`shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${darkMode ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30 disabled:opacity-50' : 'bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50'}`}
+                                title={item?.entryId ? 'Borrar movimiento' : 'No se puede borrar este movimiento'}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                {isDeletingMovement ? 'Borrando...' : 'Borrar'}
+                              </button>
+                            </div>
                             <div className={`mt-1 text-[11px] flex flex-wrap gap-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                               <span>{new Date(item.eventAt).toLocaleString('es-MX')}</span>
                               <span>-</span>
@@ -1403,7 +1449,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                               <span>{formatActionLabel(item.action)}</span>
                             </div>
                           </div>
-                        ))}
+                        )})}
                       </div>
                     </div>
                   ))}
@@ -1660,7 +1706,9 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                       onClick={() => { setPlanFilter(plan); setPage(1) }}
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                         active
-                          ? `${s.bg} ${s.text} border-current`
+                          ? (darkMode
+                              ? `${s.bg} ${s.text} border-current`
+                              : `${PLAN_PILL_LIGHT[plan] || PLAN_PILL_LIGHT.free} border-current`)
                           : darkMode
                             ? 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
                             : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200'
@@ -1668,7 +1716,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                     >
                       <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
                       <span className="uppercase">{plan === 'all' ? 'Todos' : plan}</span>
-                      <span className={`font-black ${active ? s.text : darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <span className={`font-black ${active ? (darkMode ? s.text : 'text-gray-800') : darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         {count}
                       </span>
                       {online > 0 && (
@@ -2218,6 +2266,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
     </div>
   )
 }
+
 
 
 

@@ -466,6 +466,23 @@ const apiNicks = {
 
 export default function TikTokLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride }) {
   const { t } = useTranslation()
+  const normalizedPlan = String(user?.plan || 'free').toLowerCase()
+  const displayPlan =
+    normalizedPlan === 'pro' ? 'START' :
+    normalizedPlan === 'premium' ? 'CREATOR' :
+    normalizedPlan === 'elite' ? 'PRO' :
+    normalizedPlan === 'on_demand' ? 'PRO' :
+    normalizedPlan === 'admin' ? 'ADMIN' :
+    normalizedPlan.toUpperCase()
+  const planBadgeClass = normalizedPlan === 'admin'
+    ? 'bg-red-500/20 text-red-300 border-red-400/30'
+    : (normalizedPlan === 'pro' || normalizedPlan === 'start')
+      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+      : (normalizedPlan === 'premium' || normalizedPlan === 'creator')
+        ? 'bg-blue-500/20 text-blue-300 border-blue-400/30'
+        : (normalizedPlan === 'elite')
+          ? 'bg-purple-500/20 text-purple-300 border-purple-400/30'
+          : 'bg-gray-500/20 text-gray-300 border-gray-400/30'
 
   const PLATFORM_HELP_FAQ = t('tiktok.faq.questions', { returnObjects: true })
 
@@ -2772,7 +2789,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
           </div>
           <div className="min-w-0">
-            <h2 className={`text-xs sm:text-lg font-black tracking-tight leading-tight whitespace-nowrap ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t('tiktok.panel.title')}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className={`text-xs sm:text-lg font-black tracking-tight leading-tight whitespace-nowrap ${darkMode ? 'text-white' : 'text-gray-900'}`}>{t('tiktok.panel.title')}</h2>
+              <span className={`px-2 py-0.5 rounded-full border text-[10px] sm:text-[11px] font-black tracking-widest ${planBadgeClass}`}>
+                {displayPlan}
+              </span>
+            </div>
             <p className={`text-[10px] sm:text-[11px] font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Stream Voicer</p>
           </div>
         </div>

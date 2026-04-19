@@ -88,6 +88,9 @@ export default function CouponManager({ darkMode, authToken }) {
     ? 'bg-white/10 border border-white/20 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-cyan-400'
     : 'bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-400'
   const lbl = `block text-xs font-medium mb-1 ${dm ? 'text-gray-400' : 'text-gray-600'}`
+  const sel = dm
+    ? 'bg-white text-gray-900 border border-white/20 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-cyan-500'
+    : 'bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-400'
 
   const showMsg = (text, type = 'success') => {
     setMessage({ text, type })
@@ -310,7 +313,7 @@ export default function CouponManager({ darkMode, authToken }) {
           </div>
           <div>
             <label className={lbl}>Estado</label>
-            <select className={`${inp} w-full`} value={form.status}
+            <select className={`${sel} w-full`} value={form.status}
               onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>
               {Object.entries(STATUS_STYLES).map(([k, v]) => (
                 <option key={k} value={k}>{v.label}</option>
@@ -337,7 +340,7 @@ export default function CouponManager({ darkMode, authToken }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className={lbl}>Tipo de Descuento *</label>
-            <select className={`${inp} w-full`} value={form.discount_type}
+            <select className={`${sel} w-full`} value={form.discount_type}
               onChange={e => setForm(p => ({ ...p, discount_type: e.target.value }))}>
               <option value="percentage">Porcentaje (%)</option>
               <option value="fixed">Monto Fijo (USD)</option>
@@ -433,7 +436,7 @@ export default function CouponManager({ darkMode, authToken }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className={lbl}>Aplica Para</label>
-            <select className={`${inp} w-full`} value={form.applies_to}
+            <select className={`${sel} w-full`} value={form.applies_to}
               onChange={e => setForm(p => ({ ...p, applies_to: e.target.value }))}>
               {Object.entries(APPLIES_LABELS).map(([k, v]) => (
                 <option key={k} value={k}>{v}</option>
@@ -442,7 +445,7 @@ export default function CouponManager({ darkMode, authToken }) {
           </div>
           <div>
             <label className={lbl}>Tipo de Usuario Elegible</label>
-            <select className={`${inp} w-full`} value={form.eligible_user_type}
+            <select className={`${sel} w-full`} value={form.eligible_user_type}
               onChange={e => setForm(p => ({ ...p, eligible_user_type: e.target.value }))}>
               {Object.entries(ELIGIBLE_LABELS).map(([k, v]) => (
                 <option key={k} value={k}>{v}</option>
@@ -689,14 +692,14 @@ export default function CouponManager({ darkMode, authToken }) {
           <input className={`${inp} pl-9 w-full`} placeholder="Buscar código o nombre..."
             value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
         </div>
-        <select className={`${inp}`} value={statusFilter}
+              <select className={`${sel}`} value={statusFilter}
           onChange={e => { setStatusFilter(e.target.value); setPage(1) }}>
           <option value="">Todos los estados</option>
           {Object.entries(STATUS_STYLES).map(([k, v]) => (
             <option key={k} value={k}>{v.label}</option>
           ))}
         </select>
-        <select className={`${inp}`} value={discountTypeFilter}
+              <select className={`${sel}`} value={discountTypeFilter}
           onChange={e => { setDiscountTypeFilter(e.target.value); setPage(1) }}>
           <option value="">Tipo de descuento</option>
           <option value="percentage">Porcentaje</option>
@@ -863,3 +866,4 @@ export default function CouponManager({ darkMode, authToken }) {
     </div>
   )
 }
+
