@@ -3,6 +3,7 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "redirects": [
+    { "source": "/sitemap.xml", "destination": "/sitemap-main.xml", "permanent": false },
     { "source": "/faq", "destination": "/faq/", "permanent": true },
     { "source": "/precios", "destination": "/precios/", "permanent": true },
     { "source": "/como-funciona", "destination": "/como-funciona/", "permanent": true }
@@ -23,6 +24,13 @@
     },
     {
       "source": "/sitemap.xml",
+      "headers": [
+        { "key": "Content-Type", "value": "application/xml" },
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    },
+    {
+      "source": "/sitemap-main.xml",
       "headers": [
         { "key": "Content-Type", "value": "application/xml" },
         { "key": "Cache-Control", "value": "public, max-age=86400" }
