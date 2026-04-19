@@ -3,6 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <script>
+    (function () {
+      const key = 'voltvoice-theme';
+      const saved = localStorage.getItem(key);
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
   <title>Cómo funciona StreamVoicer | Guía rápida</title>
   <meta name="description" content="Guía rápida de StreamVoicer: conecta tu cuenta, configura voz IA y empieza a leer comentarios de TikTok Live en tiempo real.">
   <link rel="canonical" href="https://streamvoicer.com/como-funciona/">
@@ -12,30 +21,138 @@
   <meta property="og:description" content="Pasos para usar StreamVoicer con TikTok Live.">
   <meta property="og:url" content="https://streamvoicer.com/como-funciona/">
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #0b1220; color: #e5e7eb; }
-    main { max-width: 880px; margin: 0 auto; padding: 40px 20px 56px; }
-    a { color: #22d3ee; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .step { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
-    nav { display: flex; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
-    h1 { font-size: 2rem; margin: 0 0 10px; }
-    strong { color: #ffffff; }
+    :root {
+      --bg: #070b16;
+      --line: #27324b;
+      --text: #e5e7eb;
+      --muted: #a5b4cc;
+      --c1: #22d3ee;
+      --c2: #60a5fa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(1000px 430px at 10% -10%, #0e273d 0%, transparent 60%),
+        radial-gradient(900px 360px at 95% 0%, #3a1d4f 0%, transparent 50%),
+        #070b16;
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 60px; }
+    .nav {
+      display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px;
+      background: rgba(15, 23, 42, .65); border: 1px solid var(--line); border-radius: 12px; padding: 10px;
+      backdrop-filter: blur(6px);
+    }
+    .nav a {
+      color: #dbeafe; text-decoration: none; font-weight: 700; font-size: .95rem;
+      padding: 8px 12px; border-radius: 9px; border: 1px solid transparent;
+    }
+    .nav a:hover { border-color: #335582; background: #0c1a31; }
+    .theme-toggle {
+      margin-left: auto;
+      border: 1px solid #3a4c6b;
+      background: #0d1b33;
+      color: #dbeafe;
+      border-radius: 9px;
+      padding: 8px 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .theme-toggle:hover { background: #11254a; }
+    .hero {
+      border: 1px solid var(--line); border-radius: 20px; padding: 24px;
+      background: linear-gradient(140deg, rgba(13,28,54,.95), rgba(15,23,42,.95));
+      margin-bottom: 18px;
+    }
+    h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 3.5vw, 2.5rem); }
+    p { color: var(--muted); }
+    .home-btn {
+      display: inline-flex; align-items: center; gap: 8px; margin-top: 8px;
+      padding: 10px 14px; border-radius: 10px; font-weight: 800; text-decoration: none;
+      color: #041723; background: linear-gradient(90deg, var(--c1), var(--c2));
+      border: 1px solid #7dd3fc;
+    }
+    .step {
+      background: linear-gradient(180deg, #111827, #0b1428);
+      border: 1px solid #27324b;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+      color: #cdd7e7;
+    }
+    .step strong { color: #fff; }
+
+    html[data-theme="light"] body {
+      color: #0f172a;
+      background:
+        radial-gradient(1000px 430px at 10% -10%, #d8e8ff 0%, transparent 60%),
+        radial-gradient(900px 360px at 95% 0%, #e9dcff 0%, transparent 50%),
+        #f4f8ff;
+    }
+    html[data-theme="light"] .nav {
+      background: rgba(255,255,255,.82);
+      border-color: #d6e0ed;
+    }
+    html[data-theme="light"] .nav a { color: #0f172a; }
+    html[data-theme="light"] .nav a:hover { background: #e8f0ff; border-color: #c7d6ee; }
+    html[data-theme="light"] .theme-toggle {
+      background: #ffffff;
+      color: #0f172a;
+      border-color: #c8d5ea;
+    }
+    html[data-theme="light"] .hero {
+      background: linear-gradient(140deg, rgba(255,255,255,.96), rgba(242,248,255,.96));
+      border-color: #d6e0ed;
+    }
+    html[data-theme="light"] p { color: #334155; }
+    html[data-theme="light"] .step {
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+      border-color: #d6e0ed;
+      color: #334155;
+    }
+    html[data-theme="light"] .step strong { color: #0f172a; }
   </style>
 </head>
 <body>
-  <main>
-    <nav>
+  <main class="wrap">
+    <nav class="nav">
       <a href="/">Inicio</a>
       <a href="/precios/">Precios</a>
       <a href="/faq/">FAQ</a>
+      <button id="themeToggle" class="theme-toggle" type="button">Cambiar tema</button>
     </nav>
-    <h1>Cómo funciona StreamVoicer</h1>
-    <p>En pocos pasos puedes empezar a leer chat de TikTok Live con voz IA:</p>
+
+    <section class="hero">
+      <h1>Cómo funciona StreamVoicer</h1>
+      <p>En pocos pasos puedes empezar a leer chat de TikTok Live con voz IA:</p>
+      <a class="home-btn" href="/">🏠 Ir a la página principal</a>
+    </section>
 
     <div class="step"><strong>Paso 1:</strong> Crea tu cuenta e inicia sesión.</div>
     <div class="step"><strong>Paso 2:</strong> Conecta tu usuario de TikTok Live.</div>
     <div class="step"><strong>Paso 3:</strong> Configura voz, filtros y preferencias.</div>
     <div class="step"><strong>Paso 4:</strong> Inicia tu live y deja que StreamVoicer lea los mensajes en tiempo real.</div>
   </main>
+
+  <script>
+    (function () {
+      const key = 'voltvoice-theme';
+      const btn = document.getElementById('themeToggle');
+      if (!btn) return;
+      const updateLabel = (theme) => {
+        btn.textContent = theme === 'dark' ? '☀️ Modo claro' : '🌙 Modo oscuro';
+      };
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      updateLabel(current);
+      btn.addEventListener('click', function () {
+        const now = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', now);
+        localStorage.setItem(key, now);
+        updateLabel(now);
+      });
+    })();
+  </script>
 </body>
 </html>

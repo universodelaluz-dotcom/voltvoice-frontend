@@ -3,6 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <script>
+    (function () {
+      const key = 'voltvoice-theme';
+      const saved = localStorage.getItem(key);
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
   <title>FAQ StreamVoicer | Preguntas frecuentes de TikTok Live + Voz IA</title>
   <meta name="description" content="Todas las preguntas frecuentes de StreamVoicer: tokens, planes, voces, seguridad, tiempos de lectura y configuración para TikTok Live.">
   <link rel="canonical" href="https://streamvoicer.com/faq/">
@@ -104,6 +113,54 @@
     }
     .tips h3 { margin: 0 0 10px; color: #dbeafe; }
     .tips ul { margin: 0; padding-left: 18px; color: #b8c6dc; }
+    .theme-toggle {
+      margin-left: auto;
+      border: 1px solid #3a4c6b;
+      background: #0d1b33;
+      color: #dbeafe;
+      border-radius: 9px;
+      padding: 8px 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .theme-toggle:hover { background: #11254a; }
+    html[data-theme="light"] body {
+      color: #0f172a;
+      background:
+        radial-gradient(1200px 500px at 10% -10%, #d8e8ff 0%, transparent 60%),
+        radial-gradient(900px 400px at 95% 0%, #e9dcff 0%, transparent 50%),
+        #f4f8ff;
+    }
+    html[data-theme="light"] .nav {
+      background: rgba(255, 255, 255, .82);
+      border-color: #d6e0ed;
+    }
+    html[data-theme="light"] .nav a { color: #0f172a; }
+    html[data-theme="light"] .nav a:hover { background: #e8f0ff; border-color: #c7d6ee; }
+    html[data-theme="light"] .theme-toggle {
+      background: #ffffff;
+      color: #0f172a;
+      border-color: #c8d5ea;
+    }
+    html[data-theme="light"] .hero {
+      background: linear-gradient(140deg, rgba(255,255,255,.96), rgba(242,248,255,.96));
+      border-color: #d6e0ed;
+    }
+    html[data-theme="light"] .sub,
+    html[data-theme="light"] details p,
+    html[data-theme="light"] .tips ul { color: #334155; }
+    html[data-theme="light"] .section-title,
+    html[data-theme="light"] .tips h3,
+    html[data-theme="light"] h1 { color: #0f172a; }
+    html[data-theme="light"] details {
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+      border-color: #d6e0ed;
+    }
+    html[data-theme="light"] details p { border-top-color: #d6e0ed; }
+    html[data-theme="light"] .tips {
+      background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(244,248,255,.98));
+      border-color: #d6e0ed;
+    }
     @media (min-width: 900px) {
       .grid { grid-template-columns: 1fr 1fr; }
     }
@@ -128,6 +185,7 @@
       <a href="/">Inicio</a>
       <a href="/precios/">Precios</a>
       <a href="/como-funciona/">Cómo funciona</a>
+      <button id="themeToggle" class="theme-toggle" type="button">Cambiar tema</button>
     </nav>
 
     <section class="hero">
@@ -170,5 +228,23 @@
       </ul>
     </section>
   </main>
+  <script>
+    (function () {
+      const key = 'voltvoice-theme';
+      const btn = document.getElementById('themeToggle');
+      if (!btn) return;
+      const updateLabel = (theme) => {
+        btn.textContent = theme === 'dark' ? '☀️ Modo claro' : '🌙 Modo oscuro';
+      };
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      updateLabel(current);
+      btn.addEventListener('click', function () {
+        const now = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', now);
+        localStorage.setItem(key, now);
+        updateLabel(now);
+      });
+    })();
+  </script>
 </body>
 </html>
