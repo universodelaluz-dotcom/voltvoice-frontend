@@ -239,6 +239,22 @@ const reconcileMercadoPagoPayments = async (apiUrl, token) => {
   } catch (_) {}
 }
 
+const capturePaypalOrder = async (apiUrl, token, orderId) => {
+  if (!apiUrl || !token || !orderId) return
+  const response = await fetch(`${apiUrl}/api/paypal/capture-order`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ orderId })
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.error || 'No se pudo capturar el pago de PayPal')
+  }
+}
+
 function AnimatedMetric({ value, className = '', animateOnView = false }) {
   const buildZeroValue = (rawValue) => {
     const raw = String(rawValue || '').trim()
@@ -983,7 +999,10 @@ export function App() {
     if (paymentStatus !== 'success') return
     const token = getStoredToken()
     if (!token) return
-    reconcileMercadoPagoPayments(API_URL, token).then(async () => {
+    const provider = String(params.get('provider') || '').toLowerCase()
+    const paypalOrderId = params.get('token') || params.get('orderId') || ''
+
+    const refreshUser = async () => {
       try {
         const response = await fetch(`${API_URL}/api/auth/me`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -995,7 +1014,65 @@ export function App() {
           localStorage.setItem('sv-user', JSON.stringify(data.user))
         }
       } catch (_) {}
-    })
+    }
+
+    const finishPopupIfNeeded = () => {
+      if (!window.opener || window.opener.closed) return
+      try {
+        window.opener.postMessage(
+          { type: 'streamvoicer-payment-success', provider: provider || 'unknown' },
+          window.location.origin
+        )
+      } catch (_) {}
+      window.close()
+    }
+
+    const cleanPaymentQuery = () => {
+      try {
+        window.history.replaceState({}, document.title, window.location.pathname)
+      } catch (_) {}
+    }
+
+    ;(async () => {
+      try {
+        if (provider === 'paypal' && paypalOrderId) {
+          await capturePaypalOrder(API_URL, token, paypalOrderId)
+        } else {
+          await reconcileMercadoPagoPayments(API_URL, token)
+        }
+      } catch (error) {
+        console.error('[PAYMENT] Error completing payment callback:', error?.message || error)
+      } finally {
+        await refreshUser()
+        cleanPaymentQuery()
+        finishPopupIfNeeded()
+      }
+    })()
+  }, [])
+
+  useEffect(() => {
+    const handler = async (event) => {
+      if (event.origin !== window.location.origin) return
+      if (!event.data || event.data.type !== 'streamvoicer-payment-success') return
+
+      const token = getStoredToken()
+      if (!token) return
+
+      try {
+        const response = await fetch(`${API_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await response.json()
+        if (data?.success) {
+          setUser(data.user)
+          setTokens(data.user.tokens || 100)
+          localStorage.setItem('sv-user', JSON.stringify(data.user))
+        }
+      } catch (_) {}
+    }
+
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
   }, [])
 
   // Auth Page — también accesible por ?preview=auth en local
