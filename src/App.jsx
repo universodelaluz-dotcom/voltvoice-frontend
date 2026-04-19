@@ -997,10 +997,24 @@ export function App() {
     const params = new URLSearchParams(window.location.search)
     const paymentStatus = params.get('payment')
     if (paymentStatus !== 'success') return
-    const token = getStoredToken()
-    if (!token) return
     const provider = String(params.get('provider') || '').toLowerCase()
     const paypalOrderId = params.get('token') || params.get('orderId') || ''
+    const token = getStoredToken()
+
+    // En flujo popup de PayPal, esta ventana puede no tener sesiÃ³n.
+    // En ese caso, avisamos al opener para que capture desde la ventana principal.
+    if (provider === 'paypal' && paypalOrderId && window.opener && !window.opener.closed && !token) {
+      try {
+        window.opener.postMessage(
+          { type: 'streamvoicer-paypal-return', orderId: paypalOrderId },
+          window.location.origin
+        )
+      } catch (_) {}
+      window.close()
+      return
+    }
+
+    if (!token) return
 
     const refreshUser = async () => {
       try {
@@ -1053,7 +1067,20 @@ export function App() {
   useEffect(() => {
     const handler = async (event) => {
       if (event.origin !== window.location.origin) return
-      if (!event.data || event.data.type !== 'streamvoicer-payment-success') return
+      if (!event.data) return
+
+      if (event.data.type === 'streamvoicer-paypal-return') {
+        const token = getStoredToken()
+        const orderId = String(event.data.orderId || '')
+        if (!token || !orderId) return
+        try {
+          await capturePaypalOrder(API_URL, token, orderId)
+        } catch (error) {
+          console.error('[PAYMENT] Error capturing PayPal from opener:', error?.message || error)
+        }
+      } else if (event.data.type !== 'streamvoicer-payment-success') {
+        return
+      }
 
       const token = getStoredToken()
       if (!token) return
