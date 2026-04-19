@@ -1852,9 +1852,9 @@ export function App() {
               <h4 className="font-bold mb-4">Soporte</h4>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><button onClick={() => setShowContact(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">{t('landing.footer.contact')}</button></li>
-                <li><a href="/precios/" className="hover:text-cyan-400 transition">Precios</a></li>
-                <li><a href="/faq/" className="hover:text-cyan-400 transition">FAQ</a></li>
-                <li><a href="/como-funciona/" className="hover:text-cyan-400 transition">Cómo funciona</a></li>
+                <li><button onClick={() => window.location.assign('/precios/')} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Precios</button></li>
+                <li><button onClick={() => window.location.assign('/faq/')} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">FAQ</button></li>
+                <li><button onClick={() => window.location.assign('/como-funciona/')} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Cómo funciona</button></li>
               </ul>
             </div>
           </div>

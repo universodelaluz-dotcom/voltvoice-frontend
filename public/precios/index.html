@@ -59,6 +59,13 @@
     }
     h1 { margin: 0 0 8px; font-size: clamp(1.9rem, 3.7vw, 2.8rem); }
     .sub { margin: 0; color: var(--muted); max-width: 900px; }
+    .home-btn {
+      display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
+      padding: 10px 14px; border-radius: 10px; font-weight: 800; text-decoration: none;
+      color: #041723; background: linear-gradient(90deg, var(--c1), var(--c2));
+      border: 1px solid #7dd3fc;
+    }
+    .home-btn:hover { filter: brightness(1.05); text-decoration: none; }
     h2 { margin: 24px 0 12px; font-size: 1.2rem; color: #dbeafe; }
     .plans {
       display: grid; grid-template-columns: repeat(1, minmax(0,1fr)); gap: 14px;
@@ -124,6 +131,7 @@
       <span class="badge">PAQUETES COMPLETOS</span>
       <h1>Precios reales para crecer tu stream</h1>
       <p class="sub">Elige entre FREE, START, CREATOR y PRO. Combina voz esencial, voces premium y voces personalizadas para optimizar interacción, consumo y rendimiento en TikTok LIVE.</p>
+      <a class="home-btn" href="/">🏠 Ir a la página principal</a>
     </section>
 
     <h2>Planes mensuales</h2>

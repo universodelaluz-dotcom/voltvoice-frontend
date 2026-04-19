@@ -2,6 +2,11 @@
   "buildCommand": "vite build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "redirects": [
+    { "source": "/faq", "destination": "/faq/", "permanent": true },
+    { "source": "/precios", "destination": "/precios/", "permanent": true },
+    { "source": "/como-funciona", "destination": "/como-funciona/", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" }
   ],
