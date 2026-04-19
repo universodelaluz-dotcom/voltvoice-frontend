@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /api/
 
 Sitemap: https://streamvoicer.com/sitemap.xml
+Host: https://streamvoicer.com

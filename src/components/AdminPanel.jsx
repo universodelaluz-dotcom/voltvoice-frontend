@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+ï»¿import { useState, useEffect, useCallback } from 'react'
 import {
   Users, Zap, TrendingUp, Activity, Search, ChevronLeft,
   RefreshCw, Shield, Edit2, Check, X, Plus, BarChart2, Wifi, Tag, Trash2, PauseCircle, PlayCircle, KeyRound, Bell, AlertTriangle, Database, Download, Mic
@@ -114,7 +114,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [dashboardYear, setDashboardYear] = useState(new Date().getFullYear())
   const [dashboardMonth, setDashboardMonth] = useState(0) // 0 = todos
   const [monthSortKey, setMonthSortKey] = useState('monthKey')
-  const [monthSortDir, setMonthSortDir] = useState('desc') // más reciente primero
+  const [monthSortDir, setMonthSortDir] = useState('desc') // mÃ¡s reciente primero
 
     const [voicesUser, setVoicesUser] = useState(null)
   const [voicesList, setVoicesList] = useState([])
@@ -452,7 +452,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
   }
 
   const deleteUser = async (target) => {
-    if (!window.confirm(`Eliminar usuario ${target.email}? Esta accion es irreversible.`)) return
+    if (!window.confirm(`Eliminar usuario ${target.email}? Esta acciÃ³n es irreversible.`)) return
     try {
       const r = await fetch(`${API_URL}/api/admin/users/${target.id}`, {
         method: 'DELETE',
@@ -664,7 +664,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
   }
 
   const deleteBroadcast = async (broadcastId) => {
-    if (!window.confirm('¿Borrar comunicado? Esta accion no se puede deshacer.')) return
+    if (!window.confirm('Â¿Borrar comunicado? Esta acciÃ³n no se puede deshacer.')) return
     try {
       const r = await fetch(`${API_URL}/api/admin/broadcasts/${broadcastId}`, {
         method: 'DELETE',
@@ -863,7 +863,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
         {tab === 'dashboard' && loading && (
           <div className="flex items-center justify-center py-20">
             <RefreshCw className="w-6 h-6 animate-spin text-cyan-400 mr-3" />
-            <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Cargando estadísticas...</span>
+            <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Cargando estadÃ­sticas...</span>
           </div>
         )}
         {tab === 'dashboard' && !loading && !stats && (
@@ -871,7 +871,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
             <Shield className="w-10 h-10 text-red-400 mx-auto mb-4" />
             <p className={`font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Sin datos</p>
             <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              {usersError || 'No se pudieron cargar las estadísticas. Verifica que estés autenticado como admin.'}
+              {usersError || 'No se pudieron cargar las estadÃ­sticas. Verifica que estÃ©s autenticado como admin.'}
             </p>
             <button onClick={loadStats} className="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors">
               Reintentar
@@ -904,11 +904,11 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
           return (
             <div className="space-y-6">
 
-              {/* === Selector Año / Mes === */}
+              {/* === Selector AÃ±o / Mes === */}
               <div className={card}>
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Año</span>
+                    <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>AÃ±o</span>
                     <div className="flex gap-1">
                       {yearOptions.map(y => (
                         <button key={y} onClick={() => { setDashboardYear(y); setDashboardMonth(0) }}
@@ -929,7 +929,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                     </div>
                   </div>
                   <span className={`text-xs ml-auto hidden sm:block ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                    {dashboardYear}{dashboardMonth > 0 ? ` · ${MONTH_NAMES[dashboardMonth - 1]}` : ' · Todo el año'}
+                    {dashboardYear}{dashboardMonth > 0 ? ` Â· ${MONTH_NAMES[dashboardMonth - 1]}` : ' Â· Todo el aÃ±o'}
                   </span>
                 </div>
               </div>
@@ -938,9 +938,9 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                   { label: 'Total Usuarios', value: stats.totalUsers.toLocaleString(), icon: Users, color: 'text-cyan-400', sub: `+${stats.usersToday} hoy` },
-                  { label: 'En Línea Ahora', value: stats.onlineUsers.toLocaleString(), icon: Wifi, color: 'text-green-400', sub: 'Últimos 5 min', pulse: true },
+                  { label: 'En LÃ­nea Ahora', value: stats.onlineUsers.toLocaleString(), icon: Wifi, color: 'text-green-400', sub: 'Ãšltimos 5 min', pulse: true },
                   { label: 'Tokens Usados', value: fmtCompact(stats.totalTokensUsed), icon: Zap, color: 'text-yellow-400', sub: `${fmtCompact(stats.tokensUsedToday)} hoy` },
-                  { label: 'Transacciones', value: stats.totalTransactions.toLocaleString(), icon: TrendingUp, color: 'text-purple-400', sub: 'completadas' },
+                  { label: 'TransacciÃ³nes', value: stats.totalTransactions.toLocaleString(), icon: TrendingUp, color: 'text-purple-400', sub: 'completadas' },
                 ].map((k, i) => (
                   <div key={i} className={card}>
                     <div className="flex items-start justify-between mb-3">
@@ -956,12 +956,12 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 ))}
               </div>
 
-              {/* Financiero año seleccionado + mini gráficos */}
+              {/* Financiero aÃ±o seleccionado + mini grÃ¡ficos */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className={card}>
                   <p className={`text-xs font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ingresos {dashboardYear}</p>
                   <p className="text-xl font-black text-emerald-400 mt-1">{fmtUsd(stats.revenueYearUsd)}</p>
-                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual: {fmtUsd(stats.revenueMonthUsd)} · Total: {fmtUsd(stats.revenueTotalUsd)}</p>
+                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mes actual: {fmtUsd(stats.revenueMonthUsd)} Â· Total: {fmtUsd(stats.revenueTotalUsd)}</p>
                   <div className="flex items-end gap-0.5 h-10 mt-3">
                     {allMonths.map((m, i) => (
                       <div key={i} title={`${m.monthKey}: ${fmtUsd(m.revenueUsd)}`}
@@ -1017,7 +1017,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 </div>
               </div>
 
-              {/* Contadores período */}
+              {/* Contadores perÃ­odo */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className={card}>
                   <h3 className="font-bold mb-2">Usuarios registrados</h3>
@@ -1032,20 +1032,20 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                   <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{dashboardYear}: <span className="font-bold text-yellow-400">{fmtCompact(stats.tokensUsedYear)}</span></p>
                 </div>
                 <div className={card}>
-                  <h3 className="font-bold mb-2">Transacciones</h3>
+                  <h3 className="font-bold mb-2">TransacciÃ³nes</h3>
                   <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Mes actual: <span className="font-bold">{stats.transactionsMonth?.toLocaleString()}</span></p>
                   <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{dashboardYear}: <span className="font-bold text-purple-400">{stats.transactionsYear?.toLocaleString()}</span></p>
                   <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total: <span className="font-bold">{stats.totalTransactions?.toLocaleString()}</span></p>
                 </div>
               </div>
 
-              {/* Resumen mensual con gráfico + tabla ordenable */}
+              {/* Resumen mensual con grÃ¡fico + tabla ordenable */}
               <div className={card}>
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                  <h3 className="font-bold">Resumen mensual — {dashboardYear}{dashboardMonth > 0 ? ` · ${MONTH_NAMES[dashboardMonth - 1]}` : ''}</h3>
-                  <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{sortedMonths.length} {sortedMonths.length === 1 ? 'mes' : 'meses'} · clic columna para ordenar</span>
+                  <h3 className="font-bold">Resumen mensual â€” {dashboardYear}{dashboardMonth > 0 ? ` Â· ${MONTH_NAMES[dashboardMonth - 1]}` : ''}</h3>
+                  <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{sortedMonths.length} {sortedMonths.length === 1 ? 'mes' : 'meses'} Â· clic columna para ordenar</span>
                 </div>
-                {/* Gráfico de barras — tokens */}
+                {/* GrÃ¡fico de barras â€” tokens */}
                 <div className="mb-4">
                   <p className={`text-xs mb-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Tokens por mes (clic para filtrar)</p>
                   <div className="flex items-end gap-0.5 h-20">
@@ -1097,7 +1097,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                       ))}
                       {sortedMonths.length === 0 && (
                         <tr>
-                          <td colSpan={4} className={`py-4 text-center ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>Sin datos para este período</td>
+                          <td colSpan={4} className={`py-4 text-center ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>Sin datos para este perÃ­odo</td>
                         </tr>
                       )}
                     </tbody>
@@ -1105,13 +1105,13 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 </div>
               </div>
 
-              {/* Uso por horario y día de la semana */}
+              {/* Uso por horario y dÃ­a de la semana */}
               {(stats.hourlyUsage || stats.weekdayUsage) && (() => {
                 const hours   = stats.hourlyUsage  || []
                 const weekdays = stats.weekdayUsage || []
                 const maxHToken = Math.max(...hours.map(h => h.tokens), 1)
                 const maxWToken = Math.max(...weekdays.map(d => d.tokens), 1)
-                const DOW_NAMES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
+                const DOW_NAMES = ['Dom','Lun','Mar','MiÃ©','Jue','Vie','SÃ¡b']
                 const peakHour = hours.reduce((p, c) => c.tokens > p.tokens ? c : p, hours[0] || { hour: 0, tokens: 0 })
                 const peakDay  = weekdays.reduce((p, c) => c.tokens > p.tokens ? c : p, weekdays[0] || { dow: 0, tokens: 0 })
 
@@ -1128,7 +1128,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 return (
                   <div className={card}>
                     <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
-                      <h3 className="font-bold">Uso por Horario — {dashboardYear}</h3>
+                      <h3 className="font-bold">Uso por Horario â€” {dashboardYear}</h3>
                       <div className="flex gap-4 text-xs">
                         <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
                           Pico diario: <span className="text-cyan-400 font-bold">{peakHour.hour}:00h</span>
@@ -1139,8 +1139,8 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                       </div>
                     </div>
 
-                    {/* Gráfico de horas — 24 barras */}
-                    <p className={`text-xs mb-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Tokens por hora del día (hora México)</p>
+                    {/* GrÃ¡fico de horas â€” 24 barras */}
+                    <p className={`text-xs mb-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Tokens por hora del dÃ­a (hora MÃ©xico)</p>
                     <div className="flex items-end gap-px h-24 mb-1">
                       {hours.map((h) => {
                         const pct = Math.max(2, (h.tokens / maxHToken) * 100)
@@ -1151,7 +1151,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                             <div
                               className="w-full rounded-t-sm transition-all"
                               style={{ height: `${pct}%`, backgroundColor: isPeak ? '#facc15' : isNight ? '#6366f1' : '#22d3ee', opacity: isPeak ? 1 : 0.7 }}
-                              title={`${h.hour}:00h — ${fmtCompact(h.tokens)} tokens · ${h.messages.toLocaleString()} msgs`}
+                              title={`${h.hour}:00h â€” ${fmtCompact(h.tokens)} tokens Â· ${h.messages.toLocaleString()} msgs`}
                             />
                           </div>
                         )
@@ -1166,8 +1166,8 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                       ))}
                     </div>
 
-                    {/* Gráfico de días de semana — 7 barras grandes */}
-                    <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Tokens por día de la semana</p>
+                    {/* GrÃ¡fico de dÃ­as de semana â€” 7 barras grandes */}
+                    <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Tokens por dÃ­a de la semana</p>
                     <div className="grid grid-cols-7 gap-2">
                       {weekdays.map((d) => {
                         const pct = maxWToken > 0 ? Math.round((d.tokens / maxWToken) * 100) : 0
@@ -1183,7 +1183,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                               <div
                                 className="w-full rounded-lg transition-all"
                                 style={{ height: `${Math.max(4, pct)}%`, backgroundColor: barColor, opacity: 0.85 }}
-                                title={`${DOW_NAMES[d.dow]}: ${fmtCompact(d.tokens)} tokens · ${d.messages.toLocaleString()} msgs`}
+                                title={`${DOW_NAMES[d.dow]}: ${fmtCompact(d.tokens)} tokens Â· ${d.messages.toLocaleString()} msgs`}
                               />
                             </div>
                             <span className={`text-xs font-semibold ${isPeakD ? 'text-yellow-400' : isWeekend ? 'text-violet-400' : darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -1197,10 +1197,10 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
 
                     {/* Leyenda */}
                     <div className={`flex gap-4 mt-4 text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-yellow-400 inline-block" /> Hora/día pico</span>
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-cyan-400 inline-block" /> Días laborales</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-yellow-400 inline-block" /> Hora/dÃ­a pico</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-cyan-400 inline-block" /> DÃ­as laborales</span>
                       <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-violet-400 inline-block" /> Fin de semana</span>
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-indigo-400 inline-block" /> Noche (22h–6h)</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-indigo-400 inline-block" /> Noche (22hâ€“6h)</span>
                     </div>
                   </div>
                 )
@@ -1242,7 +1242,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
               <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                 <div className={card}>
                   <h3 className="font-bold mb-1">Top por Tokens Usados</h3>
-                  <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mayor a menor · histórico total</p>
+                  <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mayor a menor Â· histÃ³rico total</p>
                   <div className="space-y-2.5">
                     {[...stats.topUsers].sort((a, b) => Number(b.total_used) - Number(a.total_used)).slice(0, 10).map((u, i) => (
                       <div key={i} className="flex items-center justify-between gap-2">
@@ -1263,13 +1263,13 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
 
                 <div className={card}>
                   <h3 className="font-bold mb-1">Actividad Reciente</h3>
-                  <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Más reciente primero</p>
+                  <p className={`text-xs mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>MÃ¡s reciente primero</p>
                   <div className="space-y-2">
                     {[...stats.recentActivity].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10).map((a, i) => (
                       <div key={i} className={`flex items-center justify-between text-xs border-b last:border-0 pb-1.5 ${darkMode ? 'border-white/5' : 'border-gray-100'}`}>
                         <div className="min-w-0">
                           <span className={`truncate block max-w-[150px] ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{a.email}</span>
-                          <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>{a.action || 'síntesis'}</span>
+                          <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>{a.action || 'sÃ­ntesis'}</span>
                         </div>
                         <div className="text-right shrink-0 ml-2">
                           <span className="text-yellow-400 font-bold block">{a.tokens_used?.toLocaleString()}</span>
@@ -1395,7 +1395,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 <div>
                   <h3 className="font-bold">Log general de movimientos</h3>
                   <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Formato bruto: USUARIO hizo accion en fecha y hora.
+                    Formato bruto: USUARIO hizo acciÃ³n en fecha y hora.
                   </p>
                 </div>
                 <button
@@ -1780,7 +1780,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                       <th className="text-left px-4 py-3">Estado</th>
                       <th className="text-left px-4 py-3">Email</th>
                       <th className="text-left px-4 py-3">Plan</th>
-                      <th className="text-left px-4 py-3">Suscripción</th>
+                      <th className="text-left px-4 py-3">SuscripciÃ³n</th>
                       <th className="text-left px-4 py-3">Seguridad</th>
                       <th className="text-left px-4 py-3">Comprados</th>
                       <th className="text-left px-4 py-3">Restantes</th>
@@ -1956,7 +1956,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 </table>
               </div>
 
-              {/* Paginación */}
+              {/* PaginaciÃ³n */}
               {totalPages > 1 && (
                 <div className={`flex items-center justify-between px-4 py-3 border-t ${darkMode ? 'border-white/5' : 'border-gray-100'}`}>
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
@@ -2031,10 +2031,10 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 />
               </div>
               <div>
-                <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Contraseña inicial *</label>
+                <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>ContraseÃ±a inicial *</label>
                 <input
                   className={`${inp} w-full`}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="MÃ­nimo 6 caracteres"
                   value={createUserForm.password}
                   onChange={e => setCreateUserForm(p => ({ ...p, password: e.target.value }))}
                 />
@@ -2228,7 +2228,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                     </div>
                   </div>
                   <div className={card}>
-                    <h4 className="font-semibold mb-2">Transacciones ({(activityData.activity?.transactions || []).length})</h4>
+                    <h4 className="font-semibold mb-2">TransacciÃ³nes ({(activityData.activity?.transactions || []).length})</h4>
                     <div className="space-y-1 max-h-64 overflow-auto">
                       {(activityData.activity?.transactions || []).map((t, i) => (
                         <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -2266,6 +2266,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
     </div>
   )
 }
+
 
 
 

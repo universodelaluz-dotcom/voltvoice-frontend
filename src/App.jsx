@@ -1,19 +1,18 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react'
+﻿import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StripePayment } from './components/StripePayment'
-import { SynthesisStudio } from './components/SynthesisStudio'
-import VoiceWorkshopPanel from './components/VoiceCloningPanel'
-import { PricingPage } from './components/PricingPage'
 import { PricingCards } from './components/PricingCards'
 import { PricingComparison } from './components/PricingComparison'
-import { ControlPanel } from './components/ControlPanel'
-import { StatisticsDashboard } from './components/StatisticsDashboard'
-import { AuthPage } from './components/AuthPage'
-import BotPanel from './components/BotPanel'
-import AIRoleplayWorkshop from './components/AIRoleplayWorkshop'
-import AdminPanel from './components/AdminPanel'
 import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft, LogOut, ChevronDown, ChevronUp, RotateCcw, Loader2, TestTube2, Check } from 'lucide-react'
 
+const StripePayment = lazy(() => import('./components/StripePayment').then((m) => ({ default: m.StripePayment })))
+const SynthesisStudio = lazy(() => import('./components/SynthesisStudio').then((m) => ({ default: m.SynthesisStudio })))
+const VoiceWorkshopPanel = lazy(() => import('./components/VoiceCloningPanel'))
+const PricingPage = lazy(() => import('./components/PricingPage').then((m) => ({ default: m.PricingPage })))
+const ControlPanel = lazy(() => import('./components/ControlPanel').then((m) => ({ default: m.ControlPanel })))
+const StatisticsDashboard = lazy(() => import('./components/StatisticsDashboard').then((m) => ({ default: m.StatisticsDashboard })))
+const AuthPage = lazy(() => import('./components/AuthPage').then((m) => ({ default: m.AuthPage })))
+const AIRoleplayWorkshop = lazy(() => import('./components/AIRoleplayWorkshop'))
+const AdminPanel = lazy(() => import('./components/AdminPanel'))
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 const TOKEN_API_KEY = 'sv-token-api-v1'
 const TOKEN_STORAGE_KEY = 'sv-token'
@@ -21,6 +20,11 @@ const TOKEN_PERSIST_KEY = 'sv-token-persist'
 const LOCAL_CONFIG_CACHE_KEY = 'sv-config-cache-v1'
 const LOCAL_CONFIG_CACHE_KEY_PREFIX = 'sv-config-cache-v2'
 const COOKIE_CONSENT_KEY = 'cookieConsent'
+const LAZY_FALLBACK = (
+  <div className="min-h-[40vh] flex items-center justify-center text-sm text-gray-500">
+    Cargando...
+  </div>
+)
 
 const getApiFingerprint = () => {
   try {
@@ -425,7 +429,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
       onAssumeUser(data.user, data.token)
       setMessage(`Entraste como ${data.user.email}`)
     } catch (error) {
-      setMessage(error.message || 'Error al iniciar sesiÃ³n temporal.')
+      setMessage(error.message || 'Error al iniciar sesión temporal.')
     } finally {
       setAssumingId(null)
     }
@@ -441,8 +445,8 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
           <div className="flex items-center gap-3">
             <TestTube2 className="w-5 h-5 text-cyan-400" />
             <div>
-              <p className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>Panel rÃ¡pido de pruebas</p>
-              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Reset pÃºblico para Usuario 1, 2, 3 y 4</p>
+              <p className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>Panel rápido de pruebas</p>
+              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Reset público para Usuario 1, 2, 3 y 4</p>
             </div>
           </div>
           {isOpen ? <ChevronUp className="w-5 h-5 text-cyan-400" /> : <ChevronDown className="w-5 h-5 text-cyan-400" />}
@@ -451,7 +455,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
         {isOpen && (
           <div className={`px-4 pb-4 border-t ${darkMode ? 'border-white/10' : 'border-cyan-100'}`}>
             <div className="pt-3 flex items-center justify-between mb-2">
-              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cada reset deja: tokens en 0, membresÃ­a FREE y pagos borrados.</p>
+              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cada reset deja: tokens en 0, membresía FREE y pagos borrados.</p>
               <button
                 onClick={loadUsers}
                 className={`text-xs font-bold px-3 py-1.5 rounded-md ${darkMode ? 'bg-white/10 text-cyan-300 hover:bg-white/20' : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}`}
@@ -474,7 +478,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
                       {user ? (
                         <>
                           <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>ID: {user.id}</p>
-                          <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>MembresÃ­a actual: <span className="font-bold uppercase">{user.plan}</span></p>
+                          <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Membresía actual: <span className="font-bold uppercase">{user.plan}</span></p>
                           <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Tokens: <span className="font-bold">{Number(user.tokens || 0).toLocaleString()}</span></p>
                           <button
                             onClick={() => resetUser(user.id)}
@@ -494,7 +498,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
                           </button>
                         </>
                       ) : (
-                        <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>Sin usuario asignado todavÃ­a.</p>
+                        <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>Sin usuario asignado todavía.</p>
                       )}
                     </div>
                   )
@@ -637,7 +641,7 @@ export function App() {
     latestConfigRef.current = config
   }, [config])
 
-  // Restaurar sesiÃ³n al cargar
+  // Restaurar sesión al cargar
   useEffect(() => {
     const savedToken = getStoredToken()
     const savedUser = localStorage.getItem('sv-user')
@@ -687,11 +691,11 @@ export function App() {
     }
   }, [])
 
-  // Detectar ubicaciÃ³n y tipos de cambio
+  // Detectar ubicación y tipos de cambio
   useEffect(() => {
     const detectLocationAndExchangeRates = async () => {
       try {
-        // Detectar paÃ­s por navegador/zona horaria
+        // Detectar país por navegador/zona horaria
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''
         const lang = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : ''
         const isMexico = tz.includes('Mexico') || /-MX$/i.test(lang)
@@ -712,7 +716,7 @@ export function App() {
           setExchangeRates(ratesData.rates)
         }
       } catch (error) {
-        console.error('Error detectando ubicaciÃ³n/tipos de cambio:', error)
+        console.error('Error detectando ubicación/tipos de cambio:', error)
         // Fallback si hay error
         setExchangeRates({
           MXN: 20,
@@ -738,7 +742,7 @@ export function App() {
       const data = await res.json()
       if (data.success && data.config && Object.keys(data.config).length > 0) {
         setConfig(prev => ({ ...prev, ...data.config }))
-        console.log('[Config] ConfiguraciÃ³n del usuario cargada')
+        console.log('[Config] Configuración del usuario cargada')
       }
     } catch (err) {
       console.error('[Config] Error cargando config:', err)
@@ -768,7 +772,7 @@ export function App() {
         setConfig(mergedConfig)
         setDarkMode(mergedConfig.themeMode !== 'light')
         if (hasRemoteConfig && preferCached && Object.keys(cachedConfigRaw).length > 0) {
-          // Backfill asÃ­ncrono: solo si local es mas reciente que remoto.
+          // Backfill asíncrono: solo si local es mas reciente que remoto.
           persistConfigNow(token, mergedConfig).catch(() => {})
         }
         console.log('[Config] Configuracion del usuario cargada')
@@ -830,7 +834,7 @@ export function App() {
         keepalive: true
       })
       if (!response.ok) {
-        console.warn('[Config] Guardado inmediato fallÃ³ con estado:', response.status)
+        console.warn('[Config] Guardado inmediato falló con estado:', response.status)
         return false
       }
       const payload = await response.json().catch(() => ({ success: true }))
@@ -851,7 +855,7 @@ export function App() {
     try {
       const userKey = user?.id || user?.email || 'guest'
       localStorage.setItem(getConfigCacheKey(userKey), JSON.stringify(config))
-      // Mantener legado para evitar perder estado de usuarios previos en transiciÃ³n
+      // Mantener legado para evitar perder estado de usuarios previos en transición
       if (!user) {
         localStorage.setItem(LOCAL_CONFIG_CACHE_KEY, JSON.stringify(config))
       }
@@ -878,12 +882,12 @@ export function App() {
         }
         const payload = await response.json().catch(() => ({ success: true }))
         if (!payload?.success) {
-          console.warn('[Config] Guardado automÃ¡tico rechazado por API')
+          console.warn('[Config] Guardado automático rechazado por API')
           return
         }
-        console.log('[Config] Guardado automÃ¡tico')
+        console.log('[Config] Guardado automático')
       }).catch(() => {})
-    }, 2000) // Espera 2 segundos despuÃ©s del Ãºltimo cambio
+    }, 2000) // Espera 2 segundos después del último cambio
 
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
   }, [config, user, configReady])
@@ -929,7 +933,7 @@ export function App() {
     setCurrentPage('landing')
   }
 
-  // Detectar sesiÃ³n desplazada desde cualquier fetch de la app
+  // Detectar sesión desplazada desde cualquier fetch de la app
   useEffect(() => {
     const originalFetch = window.fetch
     window.fetch = async (...args) => {
@@ -955,7 +959,7 @@ export function App() {
             getStoredToken() &&
             (errText.includes('invalid token') || errText.includes('no token provided') || errText.includes('jwt'))
           ) {
-            // Token vencido / invÃ¡lido: limpiar sesiÃ³n para evitar bloqueos raros.
+            // Token vencido / inválido: limpiar sesión para evitar bloqueos raros.
             clearStoredAuthToken()
             localStorage.removeItem('sv-user')
             localStorage.removeItem(TOKEN_API_KEY)
@@ -964,7 +968,7 @@ export function App() {
             setCurrentPage('auth')
             setConfig(buildDefaultConfig())
             setTimeout(() => {
-              alert('Tu sesiÃ³n expirÃ³ o quedÃ³ invÃ¡lida. Inicia sesiÃ³n de nuevo.')
+          alert('Tu sesión expiró o quedó inválida. Inicia sesión de nuevo.')
             }, 100)
           }
         } catch (_) {}
@@ -1054,7 +1058,7 @@ export function App() {
     }
   }, [darkMode, user, configReady, config.themeMode])
 
-  // Scroll al top cuando carga la pÃ¡gina
+  // Scroll al top cuando carga la página
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
@@ -1220,12 +1224,14 @@ export function App() {
       </div>
     </div>
   ) : null
-  // Auth Page â€” tambiÃ©n accesible por ?preview=auth en local
+  // Auth Page - también accesible por ?preview=auth en local
   if (currentPage === 'auth' || window.location.search.includes('preview=auth')) {
     return (
       <>
         {paymentNoticeBanner}
-        <AuthPage onLogin={handleLogin} onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} />
+        <Suspense fallback={LAZY_FALLBACK}>
+          <AuthPage onLogin={handleLogin} onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} />
+        </Suspense>
       </>
     )
   }
@@ -1235,13 +1241,15 @@ export function App() {
     return (
       <>
         {paymentNoticeBanner}
-        <PricingPage onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} onPlanAction={handlePlanAction} />
-        <StripePayment
-          isOpen={isPaymentOpen}
-          onClose={() => setIsPaymentOpen(false)}
-          initialPackageTokens={selectedPaymentPackage}
-          initialCheckoutItem={selectedCheckoutItem}
-        />
+        <Suspense fallback={LAZY_FALLBACK}>
+          <PricingPage onGoHome={() => setCurrentPage('landing')} darkMode={darkMode} onPlanAction={handlePlanAction} />
+          <StripePayment
+            isOpen={isPaymentOpen}
+            onClose={() => setIsPaymentOpen(false)}
+            initialPackageTokens={selectedPaymentPackage}
+            initialCheckoutItem={selectedCheckoutItem}
+          />
+        </Suspense>
       </>
     )
   }
@@ -1251,13 +1259,15 @@ export function App() {
     return (
       <>
         {paymentNoticeBanner}
-        <AIRoleplayWorkshop
-          onClose={() => setCurrentPage('control-panel')}
-          darkMode={darkMode}
-          user={user}
-          config={config}
-          updateConfig={updateConfig}
-        />
+        <Suspense fallback={LAZY_FALLBACK}>
+          <AIRoleplayWorkshop
+            onClose={() => setCurrentPage('control-panel')}
+            darkMode={darkMode}
+            user={user}
+            config={config}
+            updateConfig={updateConfig}
+          />
+        </Suspense>
       </>
     )
   }
@@ -1268,50 +1278,52 @@ export function App() {
     return (
       <>
         {paymentNoticeBanner}
-        <div style={{ display: currentPage === 'studio' ? 'block' : 'none' }}>
-          <SynthesisStudio
-            onGoHome={() => setCurrentPage('landing')}
-            onGoVoiceCloning={() => setCurrentPage('voice-workshop')}
-            onGoControlPanel={() => setCurrentPage('control-panel')}
-            onGoStatistics={() => setCurrentPage('statistics')}
-            onGoAdmin={user?.role === 'admin' ? () => setCurrentPage('admin') : undefined}
-            onGoPricingPage={() => setCurrentPage('pricing')}
-            darkMode={darkMode}
-            setDarkMode={setDarkMode}
-            config={config}
-            updateConfig={updateConfig}
-            configReady={configReady}
-            user={user}
-          />
-        </div>
-        <div style={{ display: currentPage === 'control-panel' ? 'block' : 'none' }}>
-          <ControlPanel
-            onClose={() => setCurrentPage('studio')}
-            onGoAIRoleplay={() => setCurrentPage('ai-roleplay')}
-            onGoSynthesis={() => setCurrentPage('studio')}
-            darkMode={darkMode}
-            config={config}
-            updateConfig={updateConfig}
-            user={user}
-          />
-        </div>
-        <div style={{ display: currentPage === 'statistics' ? 'block' : 'none' }}>
-          <StatisticsDashboard
-            onGoHome={() => setCurrentPage('landing')}
-            onGoStudio={() => setCurrentPage('studio')}
-            darkMode={darkMode}
-            user={user}
-            authToken={authToken}
-          />
-        </div>
-        <div style={{ display: (currentPage === 'admin' && (user?.role === 'admin' || window.location.search.includes('preview=admin'))) ? 'block' : 'none' }}>
-          <AdminPanel
-            onClose={() => setCurrentPage('studio')}
-            darkMode={darkMode}
-            user={user}
-            authToken={authToken}
-          />
-        </div>
+        <Suspense fallback={LAZY_FALLBACK}>
+          <div style={{ display: currentPage === 'studio' ? 'block' : 'none' }}>
+            <SynthesisStudio
+              onGoHome={() => setCurrentPage('landing')}
+              onGoVoiceCloning={() => setCurrentPage('voice-workshop')}
+              onGoControlPanel={() => setCurrentPage('control-panel')}
+              onGoStatistics={() => setCurrentPage('statistics')}
+              onGoAdmin={user?.role === 'admin' ? () => setCurrentPage('admin') : undefined}
+              onGoPricingPage={() => setCurrentPage('pricing')}
+              darkMode={darkMode}
+              setDarkMode={setDarkMode}
+              config={config}
+              updateConfig={updateConfig}
+              configReady={configReady}
+              user={user}
+            />
+          </div>
+          <div style={{ display: currentPage === 'control-panel' ? 'block' : 'none' }}>
+            <ControlPanel
+              onClose={() => setCurrentPage('studio')}
+              onGoAIRoleplay={() => setCurrentPage('ai-roleplay')}
+              onGoSynthesis={() => setCurrentPage('studio')}
+              darkMode={darkMode}
+              config={config}
+              updateConfig={updateConfig}
+              user={user}
+            />
+          </div>
+          <div style={{ display: currentPage === 'statistics' ? 'block' : 'none' }}>
+            <StatisticsDashboard
+              onGoHome={() => setCurrentPage('landing')}
+              onGoStudio={() => setCurrentPage('studio')}
+              darkMode={darkMode}
+              user={user}
+              authToken={authToken}
+            />
+          </div>
+          <div style={{ display: (currentPage === 'admin' && (user?.role === 'admin' || window.location.search.includes('preview=admin'))) ? 'block' : 'none' }}>
+            <AdminPanel
+              onClose={() => setCurrentPage('studio')}
+              darkMode={darkMode}
+              user={user}
+              authToken={authToken}
+            />
+          </div>
+        </Suspense>
         {/* Voice Workshop Page */}
         <div style={{ display: currentPage === 'voice-workshop' ? 'block' : 'none' }}>
           <div className={darkMode ? "min-h-screen bg-gradient-to-b from-[#0f0f23] via-[#1a0033] to-[#0f0f23] text-white" : "min-h-screen bg-gradient-to-b from-[#eceff3] via-[#f7f8fa] to-[#e8ecf1] text-gray-900"}>
@@ -1343,7 +1355,9 @@ export function App() {
                 <p className={`text-lg mb-12 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                   {t('landing.voiceWorkshop.subtitle')}
                 </p>
-                <VoiceWorkshopPanel onCloneSuccess={() => {/* Success message shown in panel, no reload */}} darkModeOverride={darkMode} config={config} updateConfig={updateConfig} user={user} />
+                <Suspense fallback={LAZY_FALLBACK}>
+                  <VoiceWorkshopPanel onCloneSuccess={() => {/* Success message shown in panel, no reload */}} darkModeOverride={darkMode} config={config} updateConfig={updateConfig} user={user} />
+                </Suspense>
               </div>
             </div>
           </div>
@@ -1421,22 +1435,24 @@ export function App() {
             <div className="absolute top-1/2 right-0 w-[420px] h-[420px] bg-gradient-to-b from-orange-500/20 to-transparent rounded-full blur-3xl"></div>
           </div>
 
-          {/* Logo/TÃ­tulo de la app */}
+          {/* Logo/Título de la app */}
           <div className="mb-10 flex justify-center">
             <img
               src="/images/streamvoicer6.png"
-              alt="StreamVoicer"
+              alt="StreamVoicer - Lector de chat para TikTok Live con voz IA"
+              fetchPriority="high"
+              decoding="async"
               className="w-full max-w-4xl h-auto object-contain opacity-90"
             />
           </div>
 
-          <h2 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
+          <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
             {t('landing.hero.title')}
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-orange-400">
               {t('landing.hero.titleHighlight')}
             </span>
-          </h2>
+          </h1>
 
           <p className={"text-xl md:text-2xl mb-8 max-w-2xl mx-auto " + (darkMode ? "text-gray-300" : "text-gray-600")}>
               {t('landing.hero.subtitle')}
@@ -1836,6 +1852,9 @@ export function App() {
               <h4 className="font-bold mb-4">Soporte</h4>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><button onClick={() => setShowContact(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">{t('landing.footer.contact')}</button></li>
+                <li><a href="/precios/" className="hover:text-cyan-400 transition">Precios</a></li>
+                <li><a href="/faq/" className="hover:text-cyan-400 transition">FAQ</a></li>
+                <li><a href="/como-funciona/" className="hover:text-cyan-400 transition">Cómo funciona</a></li>
               </ul>
             </div>
           </div>
@@ -1847,52 +1866,65 @@ export function App() {
       </footer>
 
       {/* Payment Modal */}
-      <StripePayment
-        isOpen={isPaymentOpen}
-        onClose={() => setIsPaymentOpen(false)}
-        initialPackageTokens={selectedPaymentPackage}
-        initialCheckoutItem={selectedCheckoutItem}
-      />
+      <Suspense fallback={null}>
+        <StripePayment
+          isOpen={isPaymentOpen}
+          onClose={() => setIsPaymentOpen(false)}
+          initialPackageTokens={selectedPaymentPackage}
+          initialCheckoutItem={selectedCheckoutItem}
+        />
+      </Suspense>
 
-      {/* TÃ©rminos Modal */}
+      {/* Términos Modal */}
       {showTerms && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
           <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>TÃ©rminos de Servicio</h2>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Términos de Servicio</h2>
               <button onClick={() => setShowTerms(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
             </div>
             <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. AceptaciÃ³n de TÃ©rminos</h3>
-                <p>Al usar Stream Voicer, aceptas estos tÃ©rminos y condiciones. Si no estÃ¡s de acuerdo, no uses el servicio.</p>
+                <p><strong>Última actualización:</strong> 19 de abril de 2026</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. DescripciÃ³n del Servicio</h3>
-                <p>Stream Voicer es una plataforma de sÃ­ntesis de voz (TTS) para streamers. Proporciona caracterÃ­sticas para leer mensajes en vivo usando inteligencia artificial.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. Aceptación</h3>
+                <p>Al crear una cuenta o usar Stream Voicer, aceptas estos términos y nuestra política de privacidad. Si no estás de acuerdo, no utilices el servicio.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Uso Permitido</h3>
-                <p>Debes usar Stream Voicer solo para propÃ³sitos legales y Ã©ticos. Se prohÃ­be:</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. Descripción del servicio</h3>
+                <p>Stream Voicer es una plataforma de voz para creadores y streamers. Ofrece lectura de mensajes en vivo, voces TTS, funciones con IA y herramientas de configuración para contenido en directo.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Uso permitido</h3>
+                <p>Debes usar la plataforma de forma legal, ética y respetuosa. Queda prohibido:</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li>Contenido ofensivo, discriminatorio o ilegal</li>
-                  <li>Intentos de piraterÃ­a o acceso no autorizado</li>
+                  <li>Generar o difundir contenido ilegal, ofensivo o discriminatorio</li>
+                  <li>Intentar acceder sin autorización a cuentas, sistemas o datos</li>
                   <li>Spam o abuso del servicio</li>
-                  <li>ViolaciÃ³n de derechos de terceros</li>
+                  <li>Infringir derechos de terceros (propiedad intelectual, imagen, privacidad)</li>
                 </ul>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Suscripciones, Pagos y Reembolsos</h3>
-                <p>Los upgrades se aplican de inmediato con ajuste proporcional segÃºn tiempo restante y tiempo total del ciclo (calculado con timestamps exactos). Los downgrades se aplican en el siguiente ciclo de facturaciÃ³n. Puedes cancelar en cualquier momento y conservarÃ¡s acceso hasta el final del perÃ­odo actual. No hay reembolsos por uso parcial del perÃ­odo.</p>
-                <p className="mt-2"><strong>Paquetes de tokens:</strong> Los paquetes de tokens son productos digitales de consumo inmediato. Una vez procesada la compra, no aplican reembolsos ni devoluciones de ningÃºn tipo, independientemente del uso realizado. Al completar la compra, el usuario acepta expresamente esta polÃ­tica.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Cuenta y seguridad</h3>
+                <p>Eres responsable de mantener la confidencialidad de tu cuenta y credenciales. También eres responsable de la actividad realizada desde tu cuenta.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Limitaciones de Responsabilidad</h3>
-                <p>Stream Voicer se proporciona "tal cual". No garantizamos disponibilidad continua. No somos responsables por daÃ±os indirectos.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Suscripciones, pagos y tokens</h3>
+                <p>Los cambios de plan, renovaciones y cancelaciones se procesan según la configuración de tu cuenta y tu ciclo de facturación. Puedes cancelar cuando quieras y conservarás acceso hasta el cierre del periodo vigente.</p>
+                <p className="mt-2"><strong>Paquetes de tokens:</strong> Los tokens son bienes digitales de consumo inmediato dentro de la plataforma. Una vez acreditados, no son reembolsables salvo obligación legal aplicable o error de cobro verificable.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en los TÃ©rminos</h3>
-                <p>Nos reservamos el derecho de modificar estos tÃ©rminos. Te notificaremos de cambios significativos.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Disponibilidad y límites</h3>
+                <p>Nos esforzamos por mantener el servicio disponible, pero puede haber interrupciones, mantenimiento o cambios técnicos. El servicio se ofrece "tal cual", sin garantía de disponibilidad ininterrumpida.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>7. Terminación o suspensión</h3>
+                <p>Podemos suspender o finalizar cuentas que incumplan estos términos, representen riesgo de seguridad o hagan uso fraudulento de la plataforma.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>8. Cambios en estos términos</h3>
+                <p>Podemos actualizar estos términos para reflejar mejoras del producto, cambios legales o ajustes operativos. Si los cambios son relevantes, te avisaremos por medios razonables.</p>
               </section>
             </div>
             <button onClick={() => setShowTerms(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
@@ -1907,43 +1939,54 @@ export function App() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
           <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>PolÃ­tica de Privacidad</h2>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Política de Privacidad</h2>
               <button onClick={() => setShowPrivacy(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
             </div>
             <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. InformaciÃ³n que Recolectamos</h3>
-                <p>Recolectamos informaciÃ³n que voluntariamente proporcionas, como nombre, email, y datos de suscripciÃ³n.</p>
+                <p><strong>Última actualización:</strong> 19 de abril de 2026</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. CÃ³mo Usamos Tu InformaciÃ³n</h3>
-                <p>Usamos tu informaciÃ³n para:</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. Información que recopilamos</h3>
+                <p>Recopilamos datos que proporcionas al registrarte o usar la plataforma, como nombre, correo, plan, consumo de tokens y preferencias de configuración.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. Cómo usamos tu información</h3>
+                <p>Usamos tus datos para:</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li>Proporcionar y mejorar nuestros servicios</li>
-                  <li>Procesar pagos y suscripciones</li>
-                  <li>Enviarte actualizaciones importantes</li>
-                  <li>Personalizar tu experiencia</li>
+                  <li>Prestar y mejorar las funciones de voz, IA y configuración</li>
+                  <li>Administrar pagos, suscripciones y saldo de tokens</li>
+                  <li>Enviar avisos operativos, de seguridad o facturación</li>
+                  <li>Prevenir fraude, abuso y accesos no autorizados</li>
                 </ul>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Seguridad de Datos</h3>
-                <p>Implementamos medidas de seguridad estÃ¡ndar para proteger tu informaciÃ³n. Sin embargo, no podemos garantizar seguridad absoluta.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Base legal y conservación</h3>
+                <p>Tratamos tus datos para ejecutar el servicio, cumplir obligaciones legales y proteger intereses legítimos de seguridad y operación. Conservamos la información el tiempo necesario para estos fines.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Cookies y TecnologÃ­as Similares</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Compartición con terceros</h3>
+                <p>Podemos compartir datos con proveedores que nos ayudan a operar la plataforma (por ejemplo, autenticación, pagos, hosting, analítica o servicios de voz/IA), bajo medidas contractuales y de seguridad razonables.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Cookies y tecnologías similares</h3>
                 <p>{t('cookies.shortText')}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Derechos del Usuario</h3>
-                <p>Tienes derecho a acceder, modificar o eliminar tu informaciÃ³n personal. Contacta al correo de soporte para solicitar estos derechos.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Seguridad de datos</h3>
+                <p>Aplicamos medidas técnicas y organizativas razonables para proteger tu información. Ningún sistema es infalible, pero trabajamos para reducir riesgos de acceso indebido o pérdida de datos.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Cambios en la PolÃ­tica</h3>
-                <p>Nos reservamos el derecho de actualizar esta polÃ­tica. Los cambios serÃ¡n notificados en esta pÃ¡gina.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>7. Derechos del usuario</h3>
+                <p>Puedes solicitar acceso, corrección, actualización o eliminación de tus datos personales, así como retirar tu consentimiento cuando aplique. Para ejercer tus derechos, escríbenos al correo de soporte.</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>7. Contacto</h3>
-                <p>Para preguntas sobre privacidad, contÃ¡ctanos a: soporte@streamvoicer.com</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>8. Cambios en esta política</h3>
+                <p>Podemos actualizar esta política para reflejar cambios del servicio o requisitos legales. Publicaremos la versión vigente en esta misma sección.</p>
+              </section>
+              <section>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>9. Contacto</h3>
+                <p>Para consultas sobre privacidad, contáctanos en: soporte@streamvoicer.com</p>
               </section>
             </div>
             <button onClick={() => setShowPrivacy(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
@@ -2032,7 +2075,7 @@ export function App() {
           <div className={`rounded-2xl w-full max-w-4xl my-8 flex flex-col ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`} style={{maxHeight: 'calc(100vh - 64px)'}}>
             {/* Header */}
             <div className={`flex justify-between items-center p-8 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>PolÃ­tica de Cookies</h2>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Política de Cookies</h2>
               <button onClick={() => setShowCookies(false)} className="text-2xl opacity-50 hover:opacity-100 font-bold">×</button>
             </div>
 
@@ -2045,20 +2088,20 @@ export function App() {
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Tipos de Cookies que Usamos</h3>
                 <ul className="list-disc pl-5 space-y-2">
-                  <li><strong>Cookies Esenciales:</strong> Necesarias para el funcionamiento bÃ¡sico del sitio (autenticaciÃ³n, seguridad)</li>
-                  <li><strong>Cookies de Rendimiento:</strong> Nos ayudan a entender cÃ³mo usas el sitio y mejorarlo</li>
-                  <li><strong>Cookies de AnÃ¡lisis:</strong> Rastrean cÃ³mo interactÃºas con Stream Voicer para optimizar la experiencia</li>
-                  <li><strong>Cookies de Publicidad:</strong> Permiten mostrar anuncios relevantes segÃºn tus intereses</li>
+                  <li><strong>Cookies Esenciales:</strong> Necesarias para el funcionamiento básico del sitio (autenticación, seguridad)</li>
+                  <li><strong>Cookies de Rendimiento:</strong> Nos ayudan a entender cómo usas el sitio y mejorarlo</li>
+                  <li><strong>Cookies de Análisis:</strong> Rastrean cómo interactúas con Stream Voicer para optimizar la experiencia</li>
+                  <li><strong>Cookies de Publicidad:</strong> Permiten mostrar anuncios relevantes según tus intereses</li>
                 </ul>
               </section>
               <section>
                 <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{'\u00bfC\u00f3mo Usamos las Cookies?'}</h3>
                 <p>{t('cookies.weUse')}</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li>Mantener tu sesiÃ³n iniciada</li>
+                  <li>Mantener tu sesión iniciada</li>
                   <li>Recordar tus preferencias de idioma y tema</li>
-                  <li>Analizar el trÃ¡fico del sitio con Google Analytics</li>
-                  <li>Personalizar contenido segÃºn tu actividad</li>
+                  <li>Analizar el tráfico del sitio con Google Analytics</li>
+                  <li>Personalizar contenido según tu actividad</li>
                   <li>Prevenir fraude y mejorar la seguridad</li>
                 </ul>
               </section>
@@ -2071,12 +2114,12 @@ export function App() {
                 <p>{t('cookies.thirdParty')}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cambios en la PolÃ­tica</h3>
-                <p>Nos reservamos el derecho de actualizar esta polÃ­tica en cualquier momento. Te notificaremos de cambios significativos.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cambios en la Política</h3>
+                <p>Nos reservamos el derecho de actualizar esta política en cualquier momento. Te notificaremos de cambios significativos.</p>
               </section>
             </div>
 
-            {/* Footer con botÃ³n */}
+            {/* Footer con botón */}
             <div className={`p-8 border-t ${darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gray-50'}`}>
               <button onClick={() => setShowCookies(false)} className="w-full py-3 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-cyan-400/50 transition-all">
                 {'\u2705 Cerrar'}
@@ -2148,6 +2191,8 @@ export function App() {
   )
 }
 // Cache buster 1774553392
+
+
 
 
 
