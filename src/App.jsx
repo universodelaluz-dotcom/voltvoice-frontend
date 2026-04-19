@@ -997,23 +997,10 @@ export function App() {
     const params = new URLSearchParams(window.location.search)
     const paymentStatus = params.get('payment')
     if (paymentStatus !== 'success') return
+
     const provider = String(params.get('provider') || '').toLowerCase()
     const paypalOrderId = params.get('token') || params.get('orderId') || ''
     const token = getStoredToken()
-
-    // En flujo popup de PayPal, esta ventana puede no tener sesiÃ³n.
-    // En ese caso, avisamos al opener para que capture desde la ventana principal.
-    if (provider === 'paypal' && paypalOrderId && window.opener && !window.opener.closed && !token) {
-      try {
-        window.opener.postMessage(
-          { type: 'streamvoicer-paypal-return', orderId: paypalOrderId },
-          window.location.origin
-        )
-      } catch (_) {}
-      window.close()
-      return
-    }
-
     if (!token) return
 
     const refreshUser = async () => {
@@ -1028,17 +1015,6 @@ export function App() {
           localStorage.setItem('sv-user', JSON.stringify(data.user))
         }
       } catch (_) {}
-    }
-
-    const finishPopupIfNeeded = () => {
-      if (!window.opener || window.opener.closed) return
-      try {
-        window.opener.postMessage(
-          { type: 'streamvoicer-payment-success', provider: provider || 'unknown' },
-          window.location.origin
-        )
-      } catch (_) {}
-      window.close()
     }
 
     const cleanPaymentQuery = () => {
@@ -1059,47 +1035,8 @@ export function App() {
       } finally {
         await refreshUser()
         cleanPaymentQuery()
-        finishPopupIfNeeded()
       }
     })()
-  }, [])
-
-  useEffect(() => {
-    const handler = async (event) => {
-      if (event.origin !== window.location.origin) return
-      if (!event.data) return
-
-      if (event.data.type === 'streamvoicer-paypal-return') {
-        const token = getStoredToken()
-        const orderId = String(event.data.orderId || '')
-        if (!token || !orderId) return
-        try {
-          await capturePaypalOrder(API_URL, token, orderId)
-        } catch (error) {
-          console.error('[PAYMENT] Error capturing PayPal from opener:', error?.message || error)
-        }
-      } else if (event.data.type !== 'streamvoicer-payment-success') {
-        return
-      }
-
-      const token = getStoredToken()
-      if (!token) return
-
-      try {
-        const response = await fetch(`${API_URL}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const data = await response.json()
-        if (data?.success) {
-          setUser(data.user)
-          setTokens(data.user.tokens || 100)
-          localStorage.setItem('sv-user', JSON.stringify(data.user))
-        }
-      } catch (_) {}
-    }
-
-    window.addEventListener('message', handler)
-    return () => window.removeEventListener('message', handler)
   }, [])
 
   // Auth Page — también accesible por ?preview=auth en local
@@ -1973,6 +1910,7 @@ export function App() {
   )
 }
 // Cache buster 1774553392
+
 
 
 
