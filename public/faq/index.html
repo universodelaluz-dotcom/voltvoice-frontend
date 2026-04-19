@@ -3,53 +3,164 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>FAQ StreamVoicer | Preguntas frecuentes</title>
-  <meta name="description" content="Respuestas rápidas sobre StreamVoicer: conexión con TikTok Live, funcionamiento de voces IA, planes y uso de la plataforma.">
+  <title>FAQ StreamVoicer | Preguntas frecuentes de TikTok Live + Voz IA</title>
+  <meta name="description" content="Todas las preguntas frecuentes de StreamVoicer: tokens, planes, voces, seguridad, tiempos de lectura y configuración para TikTok Live.">
   <link rel="canonical" href="https://streamvoicer.com/faq/">
   <meta name="robots" content="index,follow">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="FAQ StreamVoicer">
-  <meta property="og:description" content="Preguntas frecuentes sobre StreamVoicer y TikTok Live.">
+  <meta property="og:title" content="FAQ StreamVoicer | Preguntas frecuentes">
+  <meta property="og:description" content="Resuelve dudas sobre funcionamiento, tokens, planes y seguridad en StreamVoicer.">
   <meta property="og:url" content="https://streamvoicer.com/faq/">
+  <meta property="og:image" content="https://streamvoicer.com/images/web1.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FAQ StreamVoicer">
+  <meta name="twitter:description" content="Guía de preguntas frecuentes para usar StreamVoicer en TikTok Live.">
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #0b1220; color: #e5e7eb; }
-    main { max-width: 880px; margin: 0 auto; padding: 40px 20px 56px; }
-    a { color: #22d3ee; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    details { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
-    summary { cursor: pointer; font-weight: 700; }
-    nav { display: flex; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
-    h1 { font-size: 2rem; margin: 0 0 10px; }
+    :root {
+      --bg: #070b16;
+      --panel: #0f172a;
+      --panel-2: #111c35;
+      --line: #27324b;
+      --text: #e5e7eb;
+      --muted: #a5b4cc;
+      --c1: #22d3ee;
+      --c2: #60a5fa;
+      --c3: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 500px at 10% -10%, #0e273d 0%, transparent 60%),
+        radial-gradient(900px 400px at 95% 0%, #3a1d4f 0%, transparent 50%),
+        var(--bg);
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 72px; }
+    .nav {
+      display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px;
+      background: rgba(15, 23, 42, .65); border: 1px solid var(--line); border-radius: 12px; padding: 10px;
+      backdrop-filter: blur(6px);
+    }
+    .nav a {
+      color: #dbeafe; text-decoration: none; font-weight: 700; font-size: .95rem;
+      padding: 8px 12px; border-radius: 9px; border: 1px solid transparent;
+    }
+    .nav a:hover { border-color: #335582; background: #0c1a31; }
+    .hero {
+      border: 1px solid var(--line); border-radius: 20px; padding: 28px;
+      background: linear-gradient(140deg, rgba(13,28,54,.95), rgba(15,23,42,.95));
+      margin-bottom: 24px;
+    }
+    .badge {
+      display: inline-block; font-size: .8rem; font-weight: 800; letter-spacing: .4px;
+      color: #041723; background: linear-gradient(90deg, var(--c1), var(--c2));
+      padding: 6px 10px; border-radius: 999px; margin-bottom: 14px;
+    }
+    h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 3.5vw, 2.7rem); }
+    .sub { margin: 0; color: var(--muted); max-width: 820px; }
+    .section-title {
+      margin: 30px 0 14px; font-size: 1.15rem; font-weight: 800;
+      color: #dbeafe; letter-spacing: .2px;
+    }
+    .grid {
+      display: grid; grid-template-columns: 1fr; gap: 12px;
+    }
+    details {
+      border: 1px solid var(--line); border-radius: 14px; background: linear-gradient(180deg, var(--panel), #0b1428);
+      overflow: hidden;
+    }
+    summary {
+      list-style: none; cursor: pointer; padding: 14px 16px; font-weight: 800;
+      display: flex; align-items: center; gap: 10px;
+    }
+    summary::-webkit-details-marker { display: none; }
+    .icon {
+      width: 28px; height: 28px; border-radius: 8px; flex: 0 0 28px;
+      display: grid; place-items: center; font-size: 14px;
+      background: linear-gradient(135deg, #102643, #1e3a6a);
+      border: 1px solid #355582;
+    }
+    .q { flex: 1; }
+    .chev { color: #7dd3fc; font-size: 13px; }
+    details[open] .chev { transform: rotate(180deg); }
+    details p {
+      margin: 0; color: #cdd7e7; padding: 0 16px 16px 54px;
+      border-top: 1px dashed #243757;
+      padding-top: 12px;
+    }
+    .tips {
+      margin-top: 28px; border: 1px solid #355582; border-radius: 16px; padding: 18px;
+      background: linear-gradient(145deg, rgba(8,30,48,.95), rgba(17,24,39,.95));
+    }
+    .tips h3 { margin: 0 0 10px; color: #dbeafe; }
+    .tips ul { margin: 0; padding-left: 18px; color: #b8c6dc; }
+    @media (min-width: 900px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+    }
   </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type":"Question","name":"¿Cómo funciona Stream Voicer?","acceptedAnswer":{"@type":"Answer","text":"Lee en tiempo real los mensajes de tu chat de TikTok LIVE y los reproduce con voz para mantener interacción constante."}},
+      {"@type":"Question","name":"¿Qué es un token?","acceptedAnswer":{"@type":"Answer","text":"1 token equivale a 1 carácter generado en voces premium o personalizadas."}},
+      {"@type":"Question","name":"¿Qué voces consumen tokens?","acceptedAnswer":{"@type":"Answer","text":"Las voces premium y personalizadas consumen tokens; la voz esencial no consume tokens."}},
+      {"@type":"Question","name":"¿Cómo funciona el plan FREE?","acceptedAnswer":{"@type":"Answer","text":"Incluye 1 voz esencial con 2 horas diarias. El contador se restablece cada 24 horas."}},
+      {"@type":"Question","name":"¿Puedo cambiar o cancelar mi plan cuando quiera?","acceptedAnswer":{"@type":"Answer","text":"Sí. Los upgrades se aplican de inmediato con ajuste proporcional; downgrades al siguiente ciclo; puedes cancelar cuando quieras."}}
+    ]
+  }
+  </script>
 </head>
 <body>
-  <main>
-    <nav>
+  <main class="wrap">
+    <nav class="nav">
       <a href="/">Inicio</a>
       <a href="/precios/">Precios</a>
       <a href="/como-funciona/">Cómo funciona</a>
     </nav>
-    <h1>Preguntas frecuentes</h1>
 
-    <details open>
-      <summary>¿Qué es StreamVoicer?</summary>
-      <p>Es una plataforma web para leer mensajes de TikTok Live con voz IA y mejorar la interacción en directo.</p>
-    </details>
+    <section class="hero">
+      <span class="badge">FAQ OFICIAL STREAMVOICER</span>
+      <h1>Preguntas frecuentes para dominar tu LIVE</h1>
+      <p class="sub">Aquí tienes todas las preguntas de portada y dudas clave sobre tokens, planes, voces IA, seguridad y configuración para TikTok LIVE.</p>
+    </section>
 
-    <details>
-      <summary>¿Necesito instalar algo?</summary>
-      <p>No. Funciona desde navegador.</p>
-    </details>
+    <h2 class="section-title">Preguntas de portada</h2>
+    <section class="grid">
+      <details open><summary><span class="icon">🔊</span><span class="q">¿Cómo funciona Stream Voicer?</span><span class="chev">▼</span></summary><p>Stream Voicer lee en tiempo real los mensajes de tu chat de TikTok LIVE y los reproduce con voz para mantener interacción constante en tu stream.</p></details>
+      <details><summary><span class="icon">🧩</span><span class="q">¿Qué es un token?</span><span class="chev">▼</span></summary><p>1 token equivale a 1 carácter generado. El consumo aplica cuando usas voces premium o voces personalizadas.</p></details>
+      <details><summary><span class="icon">🎙️</span><span class="q">¿Qué voces consumen tokens?</span><span class="chev">▼</span></summary><p>Las voces premium y las voces personalizadas consumen tokens. La voz esencial no consume tokens.</p></details>
+      <details><summary><span class="icon">♻️</span><span class="q">¿Si el audio sale de caché también se cobran tokens?</span><span class="chev">▼</span></summary><p>Sí. El caché optimiza rendimiento y costos internos de procesamiento, pero el consumo del usuario se mantiene según caracteres generados en voces premium o personalizadas.</p></details>
+      <details><summary><span class="icon">💳</span><span class="q">¿Qué hago si se me acaban los tokens?</span><span class="chev">▼</span></summary><p>Puedes recargar al instante desde la sección de recarga de tokens. Si no tienes tokens, las voces premium o personalizadas dejan de reproducirse hasta recargar.</p></details>
+      <details><summary><span class="icon">⏳</span><span class="q">¿Cómo funciona el plan FREE?</span><span class="chev">▼</span></summary><p>Incluye 1 voz esencial con 2 horas diarias. El contador se restablece cada 24 horas.</p></details>
+      <details><summary><span class="icon">🔁</span><span class="q">¿Puedo cambiar o cancelar mi plan cuando quiera?</span><span class="chev">▼</span></summary><p>Sí. Los upgrades se aplican de inmediato con ajuste proporcional al tiempo restante del ciclo. Los downgrades se aplican en el siguiente ciclo. Puedes cancelar cuando quieras.</p></details>
+      <details><summary><span class="icon">🌍</span><span class="q">¿Funciona con otros idiomas?</span><span class="chev">▼</span></summary><p>Actualmente Stream Voicer está optimizado para español. Próximamente se integrarán más idiomas.</p></details>
+      <details><summary><span class="icon">⚡</span><span class="q">¿Cuánto tarda en procesarse un mensaje?</span><span class="chev">▼</span></summary><p>En condiciones normales se procesa en tiempo real. Suele tardar entre 1 y 5 segundos según longitud del mensaje, voz elegida y carga del sistema.</p></details>
+      <details><summary><span class="icon">🔐</span><span class="q">¿Es seguro conectar mi TikTok?</span><span class="chev">▼</span></summary><p>Sí. Solo se usa el acceso necesario para leer la actividad pública de tu LIVE. No compartimos tus datos con terceros.</p></details>
+      <details><summary><span class="icon">🆓</span><span class="q">¿Hay prueba gratis?</span><span class="chev">▼</span></summary><p>Sí. Puedes empezar con FREE y subir a START, CREATOR o PRO cuando necesites más capacidad y más voces.</p></details>
+      <details><summary><span class="icon">🛠️</span><span class="q">¿Puedo crear y editar mis voces personalizadas?</span><span class="chev">▼</span></summary><p>Sí. Puedes gestionar voces personalizadas desde tu panel. La cantidad disponible depende de tu plan activo.</p></details>
+    </section>
 
-    <details>
-      <summary>¿Puedo empezar gratis?</summary>
-      <p>Sí, hay opción gratuita y planes de pago para funciones avanzadas.</p>
-    </details>
+    <h2 class="section-title">Más dudas frecuentes</h2>
+    <section class="grid">
+      <details><summary><span class="icon">⬆️</span><span class="q">¿Qué pasa si subo de plan (upgrade)?</span><span class="chev">▼</span></summary><p>El cambio se aplica de inmediato y pagas solo la diferencia proporcional del tiempo restante del ciclo de facturación.</p></details>
+      <details><summary><span class="icon">⬇️</span><span class="q">¿Qué pasa si bajo de plan (downgrade)?</span><span class="chev">▼</span></summary><p>Se aplica al inicio del siguiente ciclo de facturación. Hasta entonces mantienes tu plan actual.</p></details>
+      <details><summary><span class="icon">🎛️</span><span class="q">¿Puedo configurar tono y frecuencia del asistente IA?</span><span class="chev">▼</span></summary><p>Sí, puedes ajustar frecuencia, tono y longitud de respuesta para adaptar el comportamiento al estilo de tu stream.</p></details>
+      <details><summary><span class="icon">🔇</span><span class="q">¿Cómo silenciar o desbloquear a una persona?</span><span class="chev">▼</span></summary><p>Desde moderación puedes añadir usuarios a la lista de silenciados/baneados y retirarlos después cuando lo necesites.</p></details>
+    </section>
 
-    <details>
-      <summary>¿Es compatible con español?</summary>
-      <p>Sí, está preparado para español y otros idiomas.</p>
-    </details>
+    <section class="tips">
+      <h3>Tip rápido para mejor experiencia</h3>
+      <ul>
+        <li>Empieza con filtros básicos (repetidos, links y longitud mínima).</li>
+        <li>Usa voz esencial para continuidad y premium para momentos clave.</li>
+        <li>Ajusta reglas por tipo de usuario (donadores, moderadores, preguntas).</li>
+      </ul>
+    </section>
   </main>
 </body>
 </html>

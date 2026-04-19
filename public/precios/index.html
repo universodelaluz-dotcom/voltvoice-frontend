@@ -3,56 +3,285 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Precios de StreamVoicer | Planes para TikTok Live</title>
-  <meta name="description" content="Conoce los planes de StreamVoicer para leer chat de TikTok Live con voz IA. Opción gratuita y planes premium para más funciones.">
+  <title>Precios StreamVoicer | Planes completos para TikTok LIVE</title>
+  <meta name="description" content="Planes FREE, START, CREATOR y PRO de StreamVoicer. Compara voces, tokens, capacidades y recargas para optimizar tu stream en TikTok LIVE.">
   <link rel="canonical" href="https://streamvoicer.com/precios/">
   <meta name="robots" content="index,follow">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Precios de StreamVoicer">
-  <meta property="og:description" content="Planes de StreamVoicer para creadores y streamers.">
+  <meta property="og:title" content="Precios StreamVoicer | Planes completos">
+  <meta property="og:description" content="Compara planes mensual/anual y recargas de tokens para StreamVoicer.">
   <meta property="og:url" content="https://streamvoicer.com/precios/">
   <meta property="og:image" content="https://streamvoicer.com/images/web1.png">
+  <meta name="twitter:card" content="summary_large_image">
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #0b1220; color: #e5e7eb; }
-    main { max-width: 880px; margin: 0 auto; padding: 40px 20px 56px; }
-    a { color: #22d3ee; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .card { background: #111827; border: 1px solid #1f2937; border-radius: 14px; padding: 18px; margin-bottom: 14px; }
-    h1 { font-size: 2rem; margin: 0 0 10px; }
-    h2 { margin: 0 0 8px; font-size: 1.15rem; }
-    ul { margin: 8px 0 0 18px; }
-    nav { display: flex; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+    :root {
+      --bg: #070b16;
+      --panel: #0f172a;
+      --line: #27324b;
+      --text: #e5e7eb;
+      --muted: #a5b4cc;
+      --c1: #22d3ee;
+      --c2: #60a5fa;
+      --c3: #f59e0b;
+      --ok: #34d399;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(1100px 500px at 15% -15%, #112f3f 0%, transparent 60%),
+        radial-gradient(900px 420px at 95% 0%, #331b49 0%, transparent 50%),
+        var(--bg);
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 1220px; margin: 0 auto; padding: 28px 20px 70px; }
+    .nav {
+      display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px;
+      background: rgba(15, 23, 42, .65); border: 1px solid var(--line); border-radius: 12px; padding: 10px;
+      backdrop-filter: blur(6px);
+    }
+    .nav a {
+      color: #dbeafe; text-decoration: none; font-weight: 700; font-size: .95rem;
+      padding: 8px 12px; border-radius: 9px; border: 1px solid transparent;
+    }
+    .nav a:hover { border-color: #335582; background: #0c1a31; }
+    .hero {
+      border: 1px solid var(--line); border-radius: 20px; padding: 26px;
+      background: linear-gradient(140deg, rgba(13,28,54,.95), rgba(15,23,42,.95));
+      margin-bottom: 24px;
+    }
+    .badge {
+      display: inline-block; font-size: .8rem; font-weight: 800; letter-spacing: .4px;
+      color: #041723; background: linear-gradient(90deg, var(--c1), var(--c2));
+      padding: 6px 10px; border-radius: 999px; margin-bottom: 12px;
+    }
+    h1 { margin: 0 0 8px; font-size: clamp(1.9rem, 3.7vw, 2.8rem); }
+    .sub { margin: 0; color: var(--muted); max-width: 900px; }
+    h2 { margin: 24px 0 12px; font-size: 1.2rem; color: #dbeafe; }
+    .plans {
+      display: grid; grid-template-columns: repeat(1, minmax(0,1fr)); gap: 14px;
+    }
+    .plan {
+      border: 1px solid var(--line); border-radius: 16px; padding: 18px;
+      background: linear-gradient(180deg, #0f172a, #0b1428);
+      position: relative;
+    }
+    .plan.popular { border-color: #3b82f6; box-shadow: 0 0 0 1px #2d4f89, 0 8px 30px rgba(59,130,246,.15); }
+    .popular-badge {
+      position: absolute; top: 10px; right: 10px; font-size: .73rem; font-weight: 900;
+      color: #111827; background: linear-gradient(90deg, #f59e0b, #fbbf24); padding: 5px 9px; border-radius: 999px;
+    }
+    .name { font-size: 1.35rem; font-weight: 900; margin-bottom: 2px; }
+    .desc { color: var(--muted); margin-bottom: 8px; font-size: .95rem; }
+    .price { font-size: 1.8rem; font-weight: 900; margin: 0 0 10px; }
+    .meta { color: #93c5fd; font-size: .88rem; margin-bottom: 8px; }
+    ul { margin: 0; padding-left: 18px; }
+    li { margin-bottom: 6px; }
+    .ok { color: var(--ok); font-weight: 700; }
+    .note {
+      margin-top: 18px; border: 1px dashed #355582; border-radius: 14px; padding: 14px;
+      background: rgba(8,30,48,.5); color: #bfd0e8;
+    }
+    .annual {
+      display: grid; grid-template-columns: repeat(1, minmax(0,1fr)); gap: 14px;
+    }
+    .annual .plan { background: linear-gradient(180deg, #111827, #0f172a); }
+    .saving { color: #fcd34d; font-weight: 800; margin-bottom: 8px; }
+    .packs {
+      display: grid; grid-template-columns: repeat(1, minmax(0,1fr)); gap: 14px;
+    }
+    .pack {
+      border: 1px solid var(--line); border-radius: 14px; padding: 14px;
+      background: linear-gradient(180deg, #111827, #0b1428);
+    }
+    .pack h3 { margin: 0 0 6px; }
+    .comparison {
+      width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 14px;
+      border: 1px solid var(--line); background: #0f172a;
+    }
+    .comparison th, .comparison td { padding: 12px 10px; border-bottom: 1px solid #1d2a44; text-align: left; font-size: .93rem; }
+    .comparison th { background: #101c34; color: #c7d2fe; font-weight: 800; }
+    .comparison tr:last-child td { border-bottom: none; }
+    .small { font-size: .85rem; color: var(--muted); }
+    @media (min-width: 860px) {
+      .plans { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .annual { grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .packs { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    }
   </style>
 </head>
 <body>
-  <main>
-    <nav>
+  <main class="wrap">
+    <nav class="nav">
       <a href="/">Inicio</a>
-      <a href="/como-funciona/">Cómo funciona</a>
       <a href="/faq/">FAQ</a>
+      <a href="/como-funciona/">Cómo funciona</a>
     </nav>
-    <h1>Precios de StreamVoicer</h1>
-    <p>Elige el plan que mejor se adapte a tus directos en TikTok Live. Todos incluyen acceso web, sin instalación.</p>
 
-    <section class="card">
-      <h2>Plan Free</h2>
-      <ul>
-        <li>Acceso gratuito</li>
-        <li>Funciones base para probar el flujo completo</li>
-        <li>Ideal para empezar</li>
-      </ul>
+    <section class="hero">
+      <span class="badge">PAQUETES COMPLETOS</span>
+      <h1>Precios reales para crecer tu stream</h1>
+      <p class="sub">Elige entre FREE, START, CREATOR y PRO. Combina voz esencial, voces premium y voces personalizadas para optimizar interacción, consumo y rendimiento en TikTok LIVE.</p>
     </section>
 
-    <section class="card">
-      <h2>Planes Premium</h2>
-      <ul>
-        <li>Más capacidad y funciones avanzadas</li>
-        <li>Opciones para creadores con mayor volumen de chat</li>
-        <li>Pagos y gestión desde la plataforma</li>
-      </ul>
+    <h2>Planes mensuales</h2>
+    <section class="plans">
+      <article class="plan">
+        <div class="name">FREE</div>
+        <div class="desc">Excelente para probar plataforma</div>
+        <p class="price">$0 <span class="small">USD</span></p>
+        <p class="meta">Perfecto para experimentar con la plataforma</p>
+        <ul>
+          <li>1 voz esencial <span class="ok">(2 horas diarias)</span></li>
+          <li>Marcador de usuarios específicos</li>
+          <li>Chat visible y filtros básicos</li>
+          <li>Silenciar usuarios en un click</li>
+        </ul>
+      </article>
+
+      <article class="plan popular">
+        <span class="popular-badge">MÁS POPULAR</span>
+        <div class="name">START</div>
+        <div class="desc">Ideal para streams ligeros</div>
+        <p class="price">Suscripción mensual <span class="small">USD</span></p>
+        <p class="meta">Rinde aprox 2-4 horas de stream activo con voz premium</p>
+        <ul>
+          <li>1 voz personalizada por IA (reutilizable)</li>
+          <li>1 voz natural premium</li>
+          <li>1 voz esencial <span class="ok">(ilimitada)</span></li>
+          <li>200,000 caracteres (~tokens)</li>
+          <li>Lectura selectiva (preguntas, donadores, etc.)</li>
+          <li>Control de mensajes</li>
+        </ul>
+      </article>
+
+      <article class="plan">
+        <div class="name">CREATOR</div>
+        <div class="desc">Ideal para streams activos</div>
+        <p class="price">Suscripción mensual <span class="small">USD</span></p>
+        <p class="meta">Rinde aprox 5-8 horas de stream activo</p>
+        <ul>
+          <li>2 voces personalizadas por IA (reutilizables)</li>
+          <li>2 voces naturales premium</li>
+          <li>1 voz esencial <span class="ok">(ilimitada)</span></li>
+          <li>500,000 caracteres (~tokens)</li>
+          <li>Lectura inteligente del chat</li>
+          <li>Voces dinámicas por tipo de usuario</li>
+          <li>🎬 Extractor de audio</li>
+          <li>Control avanzado de mensajes</li>
+        </ul>
+      </article>
+
+      <article class="plan">
+        <div class="name">PRO</div>
+        <div class="desc">Ideal para interacción constante</div>
+        <p class="price">Suscripción mensual <span class="small">USD</span></p>
+        <p class="meta">Rinde aprox 10-15 horas de stream activo</p>
+        <ul>
+          <li>5 voces personalizadas por IA (reutilizables)</li>
+          <li>4 voces naturales premium</li>
+          <li>1 voz esencial <span class="ok">(ilimitada)</span></li>
+          <li>800,000 caracteres (~tokens)</li>
+          <li>Experiencia completa con IA</li>
+          <li>Sistema completo de filtrado</li>
+          <li>🎬 Extractor de audio</li>
+          <li>Control total del chat</li>
+          <li>Optimización máxima del consumo</li>
+        </ul>
+      </article>
     </section>
 
-    <p>Consulta los detalles actualizados dentro de la app en la sección de planes.</p>
+    <section class="note">
+      <strong>Nota importante:</strong> El consumo depende de la actividad del chat y la configuración. Puedes extender duración usando filtros inteligentes y lectura selectiva.
+    </section>
+
+    <h2>Planes anuales</h2>
+    <section class="annual">
+      <article class="plan">
+        <div class="name">START ANUAL</div>
+        <div class="saving">Ahorra ~$25 USD</div>
+        <ul>
+          <li>1 voz personalizada por IA (reutilizable)</li>
+          <li>1 voz natural premium</li>
+          <li>1 voz esencial (ilimitada)</li>
+          <li>200,000 caracteres (~tokens)</li>
+          <li>Rinde aprox 2-4 horas de stream activo</li>
+          <li>Lectura selectiva y control de mensajes</li>
+        </ul>
+      </article>
+
+      <article class="plan">
+        <div class="name">CREATOR ANUAL</div>
+        <div class="saving">Ahorra ~$46 USD</div>
+        <ul>
+          <li>2 voces personalizadas por IA (reutilizables)</li>
+          <li>2 voces naturales premium</li>
+          <li>1 voz esencial (ilimitada)</li>
+          <li>500,000 caracteres (~tokens)</li>
+          <li>Rinde aprox 5-8 horas de stream activo</li>
+          <li>Lectura inteligente, voces dinámicas y extractor</li>
+        </ul>
+      </article>
+
+      <article class="plan">
+        <div class="name">PRO ANUAL</div>
+        <div class="saving">Ahorra ~$67 USD</div>
+        <ul>
+          <li>5 voces personalizadas por IA (reutilizables)</li>
+          <li>4 voces naturales premium</li>
+          <li>1 voz esencial (ilimitada)</li>
+          <li>800,000 caracteres (~tokens)</li>
+          <li>Rinde aprox 10-15 horas de stream activo</li>
+          <li>Suite completa IA + control total del chat</li>
+        </ul>
+      </article>
+    </section>
+
+    <h2>Recargas de tokens (paquetes extra)</h2>
+    <section class="packs">
+      <article class="pack">
+        <h3>MINI BOOST</h3>
+        <p><strong>150,000</strong> caracteres</p>
+        <p><strong>$4.99 USD</strong></p>
+        <p class="small">Rinde aprox 1.5-3 horas</p>
+      </article>
+      <article class="pack">
+        <h3>POWER BOOST</h3>
+        <p><strong>350,000</strong> caracteres</p>
+        <p><strong>$9.99 USD</strong></p>
+        <p class="small">Rinde aprox 4-7 horas</p>
+      </article>
+      <article class="pack">
+        <h3>MAX BOOST</h3>
+        <p><strong>700,000</strong> caracteres</p>
+        <p><strong>$14.99 USD</strong></p>
+        <p class="small">Rinde aprox 8-12 horas</p>
+      </article>
+    </section>
+
+    <h2>Comparativa rápida</h2>
+    <table class="comparison" aria-label="Comparativa de planes StreamVoicer">
+      <thead>
+        <tr>
+          <th>Capacidad</th>
+          <th>FREE</th>
+          <th>START</th>
+          <th>CREATOR</th>
+          <th>PRO</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Voz esencial</td><td>2 horas diarias</td><td>Ilimitada</td><td>Ilimitada</td><td>Ilimitada</td></tr>
+        <tr><td>Voces personalizadas</td><td>—</td><td>1</td><td>2</td><td>5</td></tr>
+        <tr><td>Voces premium</td><td>—</td><td>1</td><td>2</td><td>4</td></tr>
+        <tr><td>Capacidad mensual</td><td>limitada</td><td>200,000</td><td>500,000</td><td>800,000</td></tr>
+        <tr><td>IA y automatización</td><td>básica</td><td>media</td><td>avanzada</td><td>completa</td></tr>
+      </tbody>
+    </table>
+
+    <p class="small" style="margin-top:12px;">Los importes en moneda local pueden variar según tipo de cambio del día y condiciones del proveedor de pago.</p>
   </main>
 </body>
 </html>
