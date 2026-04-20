@@ -2803,7 +2803,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
       {/* Selector de personalidad */}
       <div>
         <label className={`block text-xs font-bold mb-1 ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`}>
-          Personalidad
+          {t('bot.personality')}
         </label>
         <select
           value={selectedCharacterId || ''}
@@ -2826,7 +2826,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
       {/* Selector de voz */}
       <div>
         <label className={`block text-xs font-bold mb-1 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-          Voz a utilizar
+          {t('bot.voiceToUse')}
         </label>
         <select
           value={selectedRealtimeVoiceId}
@@ -2838,14 +2838,14 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
           }`}
         >
           <option value="">{t('bot.selectOne')}</option>
-          <optgroup label="Voces Premium">
-            <option value="Diego">Voz natural de Luis - Premium</option>
-            <option value="Lupita">Voz natural de Sofia - Premium</option>
-            <option value="Miguel">Voz natural de Gustavo - Premium</option>
-            <option value="Rafael">Voz natural de Leonel - Premium</option>
+          <optgroup label={t('bot.premiumVoices')}>
+            <option value="Diego">{t('voiceNames.diegoPremium')}</option>
+            <option value="Lupita">{t('voiceNames.lupitaPremium')}</option>
+            <option value="Miguel">{t('voiceNames.miguelPremium')}</option>
+            <option value="Rafael">{t('voiceNames.rafaelPremium')}</option>
           </optgroup>
           {userVoices.length > 0 && (
-            <optgroup label="Mis voces clonadas">
+            <optgroup label={t('bot.myClonedVoices')}>
               {userVoices.map((voice) => (
                 <option key={voice.id} value={voice.voice_id}>
                   {voice.voice_name}

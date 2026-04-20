@@ -29,6 +29,8 @@ const PLAN_PILL_LIGHT = {
 }
 
 const planStyle = (plan) => PLAN_STYLE[plan] || PLAN_STYLE.free
+const fmtNum = (value) => Number(value || 0).toLocaleString('en-US')
+const fmtUsd = (value) => `$${Number(value || 0).toFixed(2)}`
 
 export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [tab, setTab] = useState('dashboard')
@@ -90,21 +92,21 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [deployMonitorSaving, setDeployMonitorSaving] = useState(false)
   const [audioCacheSettings, setAudioCacheSettings] = useState({
     enabled: true,
-    maxCacheableChars: 120,
-    personalTtlSeconds: 86400,
-    globalTtlSeconds: 604800,
-    personalFreeTtlSeconds: 172800,
-    personalPaidTtlSeconds: 604800,
-    personalFreeMaxEntries: 200,
-    personalPaidMaxEntries: 1000,
-    globalMaxEntries: 1500,
-    globalInactiveDays: 30,
-    globalLowUsageThreshold: 8,
+    maxCacheableChars: 600,
+    personalTtlSeconds: 604800,
+    globalTtlSeconds: 2592000,
+    personalFreeTtlSeconds: 604800,
+    personalPaidTtlSeconds: 2592000,
+    personalFreeMaxEntries: 1500,
+    personalPaidMaxEntries: 10000,
+    globalMaxEntries: 20000,
+    globalInactiveDays: 120,
+    globalLowUsageThreshold: 0,
     subscriptionGraceDays: 15,
     purgePersonalizationAfterGrace: false,
-    hotCacheMaxEntries: 1500,
-    globalRepeatThreshold: 4,
-    lookupTimeoutMs: 35
+    hotCacheMaxEntries: 12000,
+    globalRepeatThreshold: 1,
+    lookupTimeoutMs: 60
   })
   const [audioCacheStats, setAudioCacheStats] = useState(null)
   const [audioCacheEntries, setAudioCacheEntries] = useState([])
@@ -1533,32 +1535,66 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
         {/* ===== AUDIO CACHE ===== */}
         {tab === 'cache' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className={card}>
                 <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Hot Cache</p>
-                <p className="text-2xl font-black text-cyan-400">{audioCacheStats?.hotCacheEntries || 0}</p>
+                <p className="text-2xl font-black text-cyan-400">{fmtNum(audioCacheStats?.hotCacheEntries || 0)}</p>
               </div>
               <div className={card}>
                 <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Global Entries</p>
-                <p className="text-2xl font-black text-purple-400">{audioCacheStats?.byScope?.global?.entries || 0}</p>
+                <p className="text-2xl font-black text-purple-400">{fmtNum(audioCacheStats?.byScope?.global?.entries || 0)}</p>
               </div>
               <div className={card}>
                 <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Personal Entries</p>
-                <p className="text-2xl font-black text-emerald-400">{audioCacheStats?.byScope?.personal?.entries || 0}</p>
+                <p className="text-2xl font-black text-emerald-400">{fmtNum(audioCacheStats?.byScope?.personal?.entries || 0)}</p>
               </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className={card}>
                 <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Hit Rate</p>
                 <p className="text-2xl font-black text-green-400">{Number(audioCacheStats?.runtime?.hit_rate_percent || 0).toFixed(2)}%</p>
               </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className={card}>
-                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Renders Ahorrados</p>
-                <p className="text-2xl font-black text-cyan-400">{Number(audioCacheStats?.runtime?.saved_render_count || 0).toLocaleString()}</p>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tokens Ahorrados 24h (real)</p>
+                <p className="text-2xl font-black text-yellow-400">{fmtNum(audioCacheStats?.realSavings?.tokensSaved24h || 0)}</p>
+                <p className={`text-[11px] ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>≈ {fmtUsd(audioCacheStats?.realSavings?.savedUsdMax24h || 0)} en MAX</p>
               </div>
               <div className={card}>
-                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tokens Ahorrados (est.)</p>
-                <p className="text-2xl font-black text-yellow-400">{Number(audioCacheStats?.runtime?.tokens_saved_estimate || 0).toLocaleString()}</p>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tokens Ahorrados 30d (real)</p>
+                <p className="text-2xl font-black text-orange-400">{fmtNum(audioCacheStats?.realSavings?.tokensSaved30d || 0)}</p>
+                <p className={`text-[11px] ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>≈ {fmtUsd(audioCacheStats?.realSavings?.savedUsdMax30d || 0)} en MAX</p>
+              </div>
+              <div className={card}>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Mes actual (real)</p>
+                <p className="text-2xl font-black text-cyan-400">{fmtNum(audioCacheStats?.realSavings?.tokensSavedMonth || 0)}</p>
+                <p className={`text-[11px] ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>≈ {fmtUsd(audioCacheStats?.realSavings?.savedUsdMaxMonth || 0)} en MAX</p>
+              </div>
+              <div className={card}>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Proyección mensual</p>
+                <p className="text-2xl font-black text-fuchsia-400">{fmtNum(audioCacheStats?.realSavings?.projectedTokensMonth || 0)}</p>
+                <p className={`text-[11px] ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>≈ {fmtUsd(audioCacheStats?.realSavings?.projectedSavedUsdMaxMonth || 0)} en MAX</p>
+              </div>
+            </div>
+            <div className={card}>
+              <h3 className="font-bold mb-2">Ahorro real del caché</h3>
+              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                {audioCacheStats?.realSavings?.methodology || 'Basado en eventos reales de token_logs con acciones de caché.'}
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                <div className={`rounded-lg border px-3 py-2 ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
+                  <p className={`text-[11px] ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Eventos caché 30d</p>
+                  <p className="text-lg font-black text-cyan-400">{fmtNum(audioCacheStats?.realSavings?.cacheEvents30d || 0)}</p>
+                </div>
+                <div className={`rounded-lg border px-3 py-2 ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
+                  <p className={`text-[11px] ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Chars ahorrados 30d</p>
+                  <p className="text-lg font-black text-emerald-400">{fmtNum(audioCacheStats?.realSavings?.charsSaved30d || 0)}</p>
+                </div>
+                <div className={`rounded-lg border px-3 py-2 ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
+                  <p className={`text-[11px] ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Precio usado</p>
+                  <p className="text-lg font-black text-yellow-400">
+                    MAX ${Number(audioCacheStats?.realSavings?.pricing?.maxPer1M || 0).toFixed(2)}/1M
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -1582,11 +1618,11 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 </label>
                 <label className="text-xs">
                   {cacheLabel('TTL personal FREE (horas)', 'Duracion del cache personal para usuarios free.')}
-                  <input type="number" min="1" className={`${inp} w-full mt-1`} value={secondsToHours(audioCacheSettings.personalFreeTtlSeconds, 48)} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalFreeTtlSeconds: hoursToSeconds(e.target.value, prev.personalFreeTtlSeconds || 172800) }))} />
+                  <input type="number" min="1" className={`${inp} w-full mt-1`} value={secondsToHours(audioCacheSettings.personalFreeTtlSeconds, 168)} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalFreeTtlSeconds: hoursToSeconds(e.target.value, prev.personalFreeTtlSeconds || 604800) }))} />
                 </label>
                 <label className="text-xs">
                   {cacheLabel('TTL personal PAID (horas)', 'Duracion del cache personal para usuarios de pago.')}
-                  <input type="number" min="1" className={`${inp} w-full mt-1`} value={secondsToHours(audioCacheSettings.personalPaidTtlSeconds, 168)} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalPaidTtlSeconds: hoursToSeconds(e.target.value, prev.personalPaidTtlSeconds || 604800) }))} />
+                  <input type="number" min="1" className={`${inp} w-full mt-1`} value={secondsToHours(audioCacheSettings.personalPaidTtlSeconds, 720)} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalPaidTtlSeconds: hoursToSeconds(e.target.value, prev.personalPaidTtlSeconds || 2592000) }))} />
                 </label>
                 <label className="text-xs">
                   {cacheLabel('Max entries personal FREE', 'Maximo de audios por usuario free.')}
@@ -1598,11 +1634,11 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 </label>
                 <label className="text-xs">
                   {cacheLabel('TTL personal legacy (horas)', 'Compatibilidad con reglas antiguas de personal.')}
-                  <input type="number" min="1" className={`${inp} w-full mt-1`} value={secondsToHours(audioCacheSettings.personalTtlSeconds, 24)} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalTtlSeconds: hoursToSeconds(e.target.value, prev.personalTtlSeconds || 86400) }))} />
+                  <input type="number" min="1" className={`${inp} w-full mt-1`} value={secondsToHours(audioCacheSettings.personalTtlSeconds, 168)} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, personalTtlSeconds: hoursToSeconds(e.target.value, prev.personalTtlSeconds || 604800) }))} />
                 </label>
                 <label className="text-xs">
                   {cacheLabel('TTL global legacy (horas)', 'Compatibilidad con reglas antiguas de global.')}
-                  <input type="number" min="1" className={`${inp} w-full mt-1`} value={secondsToHours(audioCacheSettings.globalTtlSeconds, 168)} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, globalTtlSeconds: hoursToSeconds(e.target.value, prev.globalTtlSeconds || 604800) }))} />
+                  <input type="number" min="1" className={`${inp} w-full mt-1`} value={secondsToHours(audioCacheSettings.globalTtlSeconds, 720)} onChange={(e) => setAudioCacheSettings(prev => ({ ...prev, globalTtlSeconds: hoursToSeconds(e.target.value, prev.globalTtlSeconds || 2592000) }))} />
                 </label>
                 <label className="text-xs">
                   {cacheLabel('Hot cache max entries', 'Capacidad maxima del cache rapido en memoria.')}
@@ -2216,7 +2252,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                 <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   Ventana: ultimas {activityData.filters?.hours || activityHours} horas | Limite: {activityData.filters?.limit || activityLimit} por bloque
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
                   <div className={card}>
                     <h4 className="font-semibold mb-2">Consumo / Token Logs ({(activityData.activity?.tokenLogs || []).length})</h4>
                     <div className="space-y-1 max-h-64 overflow-auto">
@@ -2253,6 +2289,17 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                       {(activityData.activity?.requestLogs || []).map((r, i) => (
                         <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                           {new Date(r.created_at).toLocaleString('es-MX')}  {r.method} {r.path}  {r.status_code}{r.error_message ? `  ${r.error_message}` : ''}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={card}>
+                    <h4 className="font-semibold mb-2">Logs Stream Runtime ({(activityData.activity?.streamRuntime || []).length})</h4>
+                    <div className="space-y-1 max-h-64 overflow-auto">
+                      {(activityData.activity?.streamRuntime || []).map((r, i) => (
+                        <div key={i} className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {new Date(r.created_at).toLocaleString('es-MX')} {r.stream_username ? ` @${r.stream_username}` : ''} {r.event_type}
+                          {r.message ? `  ${r.message}` : ''}
                         </div>
                       ))}
                     </div>

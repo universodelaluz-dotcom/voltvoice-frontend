@@ -724,6 +724,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const nextPreGeneratedRef = useRef({}) // { itemId, audioUrl } para guardar audio pre-generado
   const isPreGeneratingRef = useRef(false)
   const lastVoiceIdRef = useRef(null) // Rastrear cambios de voz sin re-render
+  const variedVoiceCycleRef = useRef([])
+  const variedVoiceSignatureRef = useRef('')
   const preGenIdRef = useRef(0) // ID para invalidar pre-generados antiguos
   const disconnectedRef = useRef(false)
   const isWaitingForLiveRef = useRef(false)
@@ -738,6 +740,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const resumeRequestedDuringSuppressionRef = useRef(false)
   const autoScrollPinnedRef = useRef(true) // Auto-scroll to keep new messages visible
   const liveRetryTimerRef = useRef(null)
+  const streamReconnectTimerRef = useRef(null)
+  const streamReconnectAttemptRef = useRef(0)
   const recentIncomingTimestampsRef = useRef([])
   const recentPlaybackDurationsRef = useRef([])
   const recentGiftSendersRef = useRef({})
@@ -821,6 +825,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       if (liveRetryTimerRef.current) {
         clearTimeout(liveRetryTimerRef.current)
       }
+      if (streamReconnectTimerRef.current) {
+        clearTimeout(streamReconnectTimerRef.current)
+        streamReconnectTimerRef.current = null
+      }
+      streamReconnectAttemptRef.current = 0
       if (wsHeartbeatIntervalRef.current) {
         clearInterval(wsHeartbeatIntervalRef.current)
         wsHeartbeatIntervalRef.current = null
@@ -848,12 +857,20 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     }
   }
 
+  const clearStreamReconnect = () => {
+    if (streamReconnectTimerRef.current) {
+      clearTimeout(streamReconnectTimerRef.current)
+      streamReconnectTimerRef.current = null
+    }
+    streamReconnectAttemptRef.current = 0
+  }
+
   const connectToTikTok = async (rawUsername, { fromAutoRetry = false } = {}) => {
     const normalizedUsername = normalizeTikTokUsername(rawUsername)
     const rawInputUsername = String(rawUsername || '').trim()
 
     if (!normalizedUsername) {
-      setError('Ingresa un usuario de TikTok valido')
+      setError(t('tiktok.connect.invalidUser'))
       return { success: false, cancelled: false }
     }
 
@@ -864,9 +881,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     }
 
     try {
+      const authToken = getAuthToken()
       const response = await fetch(`${API_URL}/api/tiktok/connect`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        },
         body: JSON.stringify({ username: normalizedUsername })
       })
 
@@ -874,6 +895,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
       if (response.ok && data.success) {
         disconnectedRef.current = false
+        clearStreamReconnect()
         connectedAtRef.current = Date.now()
         resetSessionTracking()
         setShowSessionSummary(false)
@@ -926,6 +948,35 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         scheduleLiveRetry(username)
       }
     }, 10000)
+  }
+
+  const scheduleStreamReconnect = (rawUsername, reason = 'stream_disconnected') => {
+    const normalizedUsername = normalizeTikTokUsername(rawUsername)
+    if (!normalizedUsername) return
+    if (disconnectedRef.current || manualWsCloseRef.current) return
+    if (streamReconnectTimerRef.current) return
+
+    streamReconnectAttemptRef.current += 1
+    const attempt = streamReconnectAttemptRef.current
+    const delay = Math.min(30000, 1000 * Math.pow(2, Math.max(0, attempt - 1)))
+    setError(`El live se desconecto. Reconectando (${attempt})...`)
+    console.warn(`[TikTok] Stream reconnection scheduled (${reason}) in ${delay}ms (attempt ${attempt})`)
+
+    streamReconnectTimerRef.current = setTimeout(async () => {
+      streamReconnectTimerRef.current = null
+      if (disconnectedRef.current || manualWsCloseRef.current) return
+
+      const result = await connectToTikTok(normalizedUsername, { fromAutoRetry: true })
+      if (result?.success) return
+      if (result?.notLive) {
+        setWaitingStatus('Aun no esta en linea. Seguimos intentando...')
+        scheduleLiveRetry(normalizedUsername)
+        streamReconnectAttemptRef.current = 0
+        return
+      }
+
+      scheduleStreamReconnect(normalizedUsername, 'connect_failed_after_disconnect')
+    }, delay)
   }
 
   // CRITICAL: Keep isWaitingForLiveRef in sync with state for scheduleLiveRetry callback
@@ -1232,7 +1283,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         if (data.type === 'pong') return
 
         if (data.type === 'stream_disconnected' || (data.type === 'message' && data.data?.type === 'stream_disconnected')) {
-          setError('El live se desconecto. Reconectando chat...')
+          const disconnectedUsername = normalizeTikTokUsername(data?.username || data?.data?.username || connectedTikTokUser)
+          setError('El live se desconecto. Reconectando stream...')
+          scheduleStreamReconnect(disconnectedUsername, 'connector_disconnect_event')
           try {
             ws.close(4001, 'stream-disconnected')
           } catch (err) {
@@ -1820,6 +1873,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   // NOTE: If "Modo voces variadas" is enabled but you only hear 2 of 3 selected voices,
   // one might be assigned to a priority category (e.g., Notification, Donor). Disable
   // those priority voices or use different voice IDs to fix this.
+  const shuffleVoicePool = (voices = []) => {
+    const pool = [...voices]
+    for (let i = pool.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1))
+      const tmp = pool[i]
+      pool[i] = pool[j]
+      pool[j] = tmp
+    }
+    return pool
+  }
+
   const resolveVoiceIdAtEnqueue = (item) => {
     const c = configRef.current || {}
     const username = item.username
@@ -1882,15 +1946,29 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
     // Modo voces variadas: si está enabled y hay voces seleccionadas, randomiza
     if (canUseAdvancedVoiceTools && c.variedVoicesEnabled && c.variedVoicesSelected && c.variedVoicesSelected.length > 0) {
-      const validVoices = c.variedVoicesSelected.filter(v => v && typeof v === 'string' && v.trim())
+      const validVoices = Array.from(new Set(
+        c.variedVoicesSelected
+          .filter(v => v && typeof v === 'string' && v.trim())
+          .map(v => v.trim())
+      ))
       if (validVoices.length > 0) {
-        const randomIndex = Math.floor(Math.random() * validVoices.length)
-        const randomVoice = validVoices[randomIndex]
-        console.log(`[Voice Debug] Selected voice #${randomIndex + 1}/${validVoices.length}: "${randomVoice}"`, {
+        const voiceSignature = validVoices.join('|')
+        if (variedVoiceSignatureRef.current !== voiceSignature || variedVoiceCycleRef.current.length === 0) {
+          variedVoiceSignatureRef.current = voiceSignature
+          variedVoiceCycleRef.current = shuffleVoicePool(validVoices)
+        }
+
+        const nextVoice = variedVoiceCycleRef.current.shift()
+        if (variedVoiceCycleRef.current.length === 0) {
+          variedVoiceCycleRef.current = shuffleVoicePool(validVoices)
+        }
+
+        console.log(`[Voice Debug] Rotating varied voice: "${nextVoice}"`, {
           allSelected: c.variedVoicesSelected,
-          afterFiltering: validVoices
+          uniqueValidVoices: validVoices,
+          pendingCycle: variedVoiceCycleRef.current
         })
-        return randomVoice
+        return nextVoice
       } else {
         console.warn('[Voice Debug] variedVoicesEnabled but NO valid voices after filtering:', c.variedVoicesSelected)
       }
@@ -2527,7 +2605,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
     const cleanUsername = normalizeTikTokUsername(tiktokUser)
     if (!cleanUsername) {
-      setError('Ingresa un usuario de TikTok válido')
+      setError(t('tiktok.connect.invalidUser'))
       return
     }
 
@@ -2538,9 +2616,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     setError(null)
 
     try {
+      const authToken = getAuthToken()
       const response = await fetch(`${API_URL}/api/tiktok/connect`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        },
         body: JSON.stringify({ username: cleanUsername })
       })
 
@@ -2732,6 +2814,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const handleDisconnect = async () => {
     try {
       cancelWaitingForLive({ clearError: true })
+      clearStreamReconnect()
       // Detener todo el audio inmediatamente
       disconnectedRef.current = true
       speakQueueRef.current = []
@@ -2740,7 +2823,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
       await fetch(`${API_URL}/api/tiktok/disconnect`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(getAuthToken() ? { 'Authorization': `Bearer ${getAuthToken()}` } : {})
+        },
         body: JSON.stringify({ username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser) })
       })
 
@@ -2980,7 +3066,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               type="text"
               value={tiktokUser}
               onChange={(e) => setTiktokUser(e.target.value)}
-              placeholder="Usuario de TikTok (ej: @mic)"
+              placeholder={t('tiktok.connect.placeholderWithExampleShort')}
               style={{ padding: '7px 12px', fontSize: '13px' }}
               className={darkMode ? "flex-1 min-w-0 bg-[#0f0f23] border border-cyan-400/30 rounded-lg text-white focus:outline-none focus:border-cyan-400" : "flex-1 min-w-0 bg-gray-50 border border-indigo-300 rounded-lg text-gray-900 focus:outline-none focus:border-indigo-500"}
               disabled={isConnecting || isWaitingForLive}
@@ -3001,7 +3087,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 className="bg-red-500/15 hover:bg-red-500/25 border border-red-500/50 text-red-300 font-semibold px-4 rounded-lg transition flex items-center justify-center gap-2 whitespace-nowrap"
               >
                 <X className="w-4 h-4" />
-                Cancelar
+                {t('common.cancel')}
               </button>
             )}
           </div>
@@ -3028,11 +3114,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           )}
 
           <p className="text-xs text-gray-400">
-            ✓ Lee comentarios del chat de TikTok en vivo
+            {t('tiktok.connect.bulletReadLive')}
             <br />
-            ✓ Sintetiza automáticamente a voz
+            {t('tiktok.connect.bulletSynthesize')}
             <br />
-            ✓ Reproduce mientras haces stream
+            {t('tiktok.connect.bulletPlayStreaming')}
           </p>
           <div className="flex items-center justify-end gap-2" />
           <div className="relative flex items-start gap-3">
@@ -3044,7 +3130,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 {messages.length === 0 ? (
                   <div className="text-center text-gray-400 py-8">
                     <MessageCircle className="w-6 h-6 mx-auto mb-2 text-cyan-400" />
-                    <p>Panel del chat disponible. Conecta TikTok para ver mensajes en vivo.</p>
+                    <p>{t('tiktok.panel.connectToChatHint')}</p>
                   </div>
                 ) : (
                   messages.slice(-12).map((msg, idx) => (
@@ -3063,7 +3149,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                               ? darkMode ? 'text-green-400' : 'text-green-600'
                               : darkMode ? 'text-gray-500 hover:text-cyan-400' : 'text-gray-400 hover:text-cyan-600'
                           }`}
-                          title="Copiar usuario"
+                          title={t('common.copyUser')}
                         >
                           {copiedUsername === msg.user ? (
                             <CheckCircle className="w-4 h-4" />
@@ -3092,7 +3178,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                   type="text"
                   value={tiktokUser}
                   onChange={(e) => setTiktokUser(e.target.value)}
-                  placeholder="Usuario de TikTok (ej: @micanal)"
+                  placeholder={t('tiktok.connect.placeholderWithExample')}
                   className={`flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none ${darkMode ? 'bg-[#0f0f23] border border-cyan-400/30 text-white' : 'bg-white border border-indigo-300 text-gray-900'}`}
                   disabled={isConnecting || isWaitingForLive}
                 />
@@ -3309,7 +3395,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                                 ? darkMode ? 'text-green-400' : 'text-green-600'
                                 : darkMode ? 'text-gray-400 hover:text-cyan-400' : 'text-gray-500 hover:text-cyan-600'
                             }`}
-                            title="Click para copiar usuario"
+                            title={t('common.copyUserClick')}
                           >
                             (@{msg.user})
                           </button>
@@ -3389,7 +3475,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                               ? darkMode ? 'text-green-400' : 'text-green-600'
                               : darkMode ? 'text-gray-500 hover:text-cyan-400' : 'text-gray-400 hover:text-cyan-600'
                           }`}
-                          title="Copiar usuario"
+                          title={t('common.copyUser')}
                         >
                           {copiedUsername === msg.user ? (
                             <CheckCircle className="w-3.5 h-3.5" />
@@ -3542,10 +3628,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 showFontPanel ? 'bg-slate-700 text-white hover:bg-slate-600'
                   : darkMode ? 'bg-slate-800 text-slate-200 hover:bg-slate-700 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
               }`}
-              title="Tamaño y colores del chat"
+              title={t('tiktok.controls.styleTitle')}
             >
               <span className="text-base font-black shrink-0 w-4 text-center leading-none">Aa</span>
-              <span>Estilo</span>
+              <span>{t('tiktok.controls.style')}</span>
             </button>
             {/* Nicks */}
             <button
@@ -3554,10 +3640,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 showNicksPanel ? 'bg-slate-700 text-white hover:bg-slate-600'
                   : darkMode ? 'bg-slate-800 text-slate-200 hover:bg-slate-700 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
               }`}
-              title="Ver y editar nicks guardados"
+              title={t('tiktok.controls.nicksTitle')}
             >
               <Users className="w-4 h-4 shrink-0" />
-              <span>Nicks</span>
+              <span>{t('tiktok.controls.nicks')}</span>
             </button>
             {/* VOL */}
             <div className={`col-span-3 px-4 py-3 border-b ${darkMode ? 'border-white/10' : 'border-slate-300'}`}>
@@ -3589,7 +3675,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             <div className="p-3 space-y-3">
               {/* Header */}
               <div className="flex items-center justify-between">
-                <span className={`text-[11px] font-black uppercase tracking-widest ${darkMode ? 'text-cyan-400' : 'text-slate-600'}`}>Estilo del Chat</span>
+                <span className={`text-[11px] font-black uppercase tracking-widest ${darkMode ? 'text-cyan-400' : 'text-slate-600'}`}>{t('tiktok.controls.chatStyle')}</span>
                 <button onClick={() => setShowFontPanel(false)} className={`p-1 rounded transition-colors ${darkMode ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}`}><X className="w-3.5 h-3.5" /></button>
               </div>
 
@@ -3787,7 +3873,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             }`}>
               <div className="flex items-center justify-between">
                 <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/80' : 'text-cyan-600'}`}>
-                  Nicks Guardados
+                  {t('tiktok.nicks.savedTitle')}
                 </span>
                 <button onClick={() => setShowNicksPanel(false)} className="text-gray-400 hover:text-gray-200"><X className="w-3.5 h-3.5" /></button>
               </div>
@@ -3795,14 +3881,14 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               {/* Tabla de nicks */}
               <div className="overflow-x-auto">
                 {Object.entries(nickOverrides).length === 0 ? (
-                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Sin nicks guardados</p>
+                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{t('tiktok.nicks.empty')}</p>
                 ) : (
                   <table className={`w-full text-xs ${darkMode ? 'border-gray-700' : 'border-cyan-200'}`}>
                     <thead>
                       <tr className={`border-b ${darkMode ? 'border-gray-700' : 'border-cyan-200'}`}>
-                        <th className="text-left px-2 py-2 font-semibold">Usuario</th>
-                        <th className="text-left px-2 py-2 font-semibold">Nick</th>
-                        <th className="text-center px-2 py-2 font-semibold">Acciones</th>
+                        <th className="text-left px-2 py-2 font-semibold">{t('tiktok.nicks.table.user')}</th>
+                        <th className="text-left px-2 py-2 font-semibold">{t('tiktok.nicks.table.nick')}</th>
+                        <th className="text-center px-2 py-2 font-semibold">{t('tiktok.nicks.table.actions')}</th>
                       </tr>
                     </thead>
                     <tbody>

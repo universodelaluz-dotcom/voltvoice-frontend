@@ -164,10 +164,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
     on_demand: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
   }
   const ALL_PREMIUM_VOICES = [
-    { id: "Diego", name: "Voz natural de Luis - Premium", category: "premium", engine: "inworld" },
-    { id: "Lupita", name: "Voz natural de Sofia - Premium", category: "premium", engine: "inworld" },
-    { id: "Miguel", name: "Voz natural de Gustavo - Premium", category: "premium", engine: "inworld" },
-    { id: "Rafael", name: "Voz natural de Leonel - Premium", category: "premium", engine: "inworld" },
+    { id: "Diego", name: t('voiceNames.diegoPremium'), category: "premium", engine: "inworld" },
+    { id: "Lupita", name: t('voiceNames.lupitaPremium'), category: "premium", engine: "inworld" },
+    { id: "Miguel", name: t('voiceNames.miguelPremium'), category: "premium", engine: "inworld" },
+    { id: "Rafael", name: t('voiceNames.rafaelPremium'), category: "premium", engine: "inworld" },
   ]
 
   // Cargar voces disponibles de Inworld AI + Google TTS + Voces del usuario
@@ -176,8 +176,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
     const allowedPremium = PREMIUM_BY_PLAN[userPlan] ?? []
     const allVoices = [
       // === VOCES LOCALES — incluidas en todos los planes, sin tokens ===
-      { id: "es-ES", name: `Voz Local Espanol${localVoiceLabelSuffix}`, category: "webspeech", engine: "webspeech" },
-      { id: "en-US", name: `Voz Local Ingles${localVoiceLabelSuffix}`, category: "webspeech", engine: "webspeech" },
+      { id: "es-ES", name: `${t('studio.voiceLocal.spanish')}${localVoiceLabelSuffix}`, category: "webspeech", engine: "webspeech" },
+      { id: "en-US", name: `${t('studio.voiceLocal.english')}${localVoiceLabelSuffix}`, category: "webspeech", engine: "webspeech" },
 
       // === Voces Premium — filtradas por plan ===
       ...ALL_PREMIUM_VOICES.filter(v => allowedPremium.includes(v.id)),
@@ -339,7 +339,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
     }
 
     if (!selectedVoice) {
-      setError('Por favor selecciona una voz')
+      setError(t('studio.errors.voiceRequired'))
       return
     }
 
@@ -379,7 +379,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
             const wait = formatResetWait(data?.details?.resetInSeconds)
             window.alert(`Llegaste al límite diario de 2 horas de voces locales en plan FREE.\nSe restablece en aproximadamente ${wait}.`)
           }
-          setError(data.error || "Error al sintetizar la voz básica")
+        setError(data.error || t('studio.errors.synthesis'))
         } else {
           setAudioUrl(data.audio)
           setAudioPlaybackNonce((prev) => prev + 1)
@@ -438,7 +438,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
           setSuccess(true)
           setTimeout(() => setSuccess(false), 3000)
         } else {
-          setError(data.error || "Error al sintetizar la voz")
+      setError(data.error || t('studio.errors.synthesis'))
         }
       }
     } catch (err) {
@@ -631,7 +631,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
               >
                 <Mic2 className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
                 <span className="truncate hidden xs:inline">{t('studio.nav.voiceWorkshop')}</span>
-                <span className="truncate xs:hidden">Voces</span>
+                <span className="truncate xs:hidden">{t('studio.nav.voiceShort')}</span>
                 {blocked && <Lock className="w-3.5 h-3.5 ml-1 opacity-70 shrink-0" />}
               </button>
             )

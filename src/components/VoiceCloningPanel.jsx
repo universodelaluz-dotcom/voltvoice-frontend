@@ -54,7 +54,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
   // Prueba de voz
   const [testVoiceId, setTestVoiceId] = useState(null)
-  const [testText, setTestText] = useState('Asi suena tu voz elegida')
+  const [testText, setTestText] = useState(t('voiceClone.test.placeholder'))
   const [testingVoice, setTestingVoice] = useState(false)
   const [testAudioUrl, setTestAudioUrl] = useState(null)
   const [shouldAutoPlayTestAudio, setShouldAutoPlayTestAudio] = useState(false)
@@ -94,13 +94,13 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   }, [studioPro.startMs, studioPro.endMs, studioPro.duration])
 
   const languageOptions = [
-    { code: 'es-ES', label: 'Voz en Español' },
-    { code: 'en-US', label: 'English (USA)' },
-    { code: 'en-GB', label: 'English (UK)' },
-    { code: 'pt-BR', label: 'Português (Brasil)' },
-    { code: 'fr-FR', label: 'Français' },
-    { code: 'de-DE', label: 'Deutsch' },
-    { code: 'it-IT', label: 'Italiano' }
+    { code: 'es-ES', label: t('voiceClone.languages.esES') },
+    { code: 'en-US', label: t('voiceClone.languages.enUS') },
+    { code: 'en-GB', label: t('voiceClone.languages.enGB') },
+    { code: 'pt-BR', label: t('voiceClone.languages.ptBR') },
+    { code: 'fr-FR', label: t('voiceClone.languages.frFR') },
+    { code: 'de-DE', label: t('voiceClone.languages.deDE') },
+    { code: 'it-IT', label: t('voiceClone.languages.itIT') }
   ]
 
   // Cargar voces del usuario al montar
@@ -406,7 +406,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
     const token = sessionStorage.getItem('sv-token')
     if (!token) {
-      setError('Debes iniciar sesión')
+      setError(t('voiceClone.errors.loginRequired'))
       return
     }
 
@@ -449,19 +449,19 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
   const handleStudioProExtract = async () => {
     if (!studioPro.fileId || !studioPro.voiceName) {
-      setError('Ingresa nombre de voz')
+      setError(t('voiceClone.errors.nameRequiredFirst'))
       return
     }
 
     const clipDuration = studioPro.endMs - studioPro.startMs
     if (clipDuration < 1000) {
-      setError('El clip debe tener al menos 1 segundo')
+      setError(t('voiceClone.errors.clipTooShort'))
       return
     }
 
     const token = sessionStorage.getItem('sv-token')
     if (!token) {
-      setError('Debes iniciar sesión')
+      setError(t('voiceClone.errors.loginRequired'))
       return
     }
 
@@ -509,7 +509,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         window.dispatchEvent(new CustomEvent('voice-added'))
         setTimeout(() => setMessage(null), 5000)
       } else {
-        setError(data.error || 'Error clonando voz')
+        setError(data.error || t('voiceClone.clone.error'))
         setStudioPro(prev => ({ ...prev, processing: false }))
       }
     } catch (err) {
@@ -522,18 +522,18 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     e.preventDefault()
 
     if (!voiceName.trim()) {
-      setError('Ingresa un nombre para la voz')
+      setError(t('voiceClone.errors.nameRequired'))
       return
     }
 
     if (!audioFile) {
-      setError('Selecciona un archivo de audio')
+      setError(t('voiceClone.errors.selectAudio'))
       return
     }
 
     const token = sessionStorage.getItem('sv-token')
     if (!token) {
-      setError('Debes iniciar sesión para clonar voces')
+      setError(t('voiceClone.errors.loginRequired'))
       return
     }
 
@@ -608,7 +608,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         </div>
       ) : voices.length === 0 ? (
         <p className={`text-sm py-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          Aún no tienes voces de este tipo. ¡Crea tu primera voz arriba!
+          {t('voiceClone.empty.createdVoices')}
         </p>
       ) : (
         <div className="space-y-2">
@@ -636,15 +636,15 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
               <div className="flex items-center gap-2">
                 {editingVoiceId === voice.id ? (
                   <>
-                    <button onClick={handleSaveVoiceEdit} className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded text-xs font-semibold transition-colors flex-shrink-0">Guardar</button>
-                    <button onClick={() => { setEditingVoiceId(null); setEditingVoiceName('') }} className="px-2 py-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 rounded text-xs font-semibold transition-colors flex-shrink-0">Cancelar</button>
+                    <button onClick={handleSaveVoiceEdit} className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded text-xs font-semibold transition-colors flex-shrink-0">{t('common.save')}</button>
+                    <button onClick={() => { setEditingVoiceId(null); setEditingVoiceName('') }} className="px-2 py-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 rounded text-xs font-semibold transition-colors flex-shrink-0">{t('common.cancel')}</button>
                   </>
                 ) : (
                   <>
-                    <button onClick={() => handleEditVoice(voice)} className="p-1.5 rounded hover:bg-cyan-500/20 transition-colors flex-shrink-0" title="Renombrar voz">
+                    <button onClick={() => handleEditVoice(voice)} className="p-1.5 rounded hover:bg-cyan-500/20 transition-colors flex-shrink-0" title={t('voiceClone.actions.rename')}>
                       <Edit2 className="w-4 h-4 text-cyan-400" />
                     </button>
-                    <button onClick={() => handleDeleteVoice(voice.id, voice.voice_name)} className="p-1.5 rounded hover:bg-red-500/20 transition-colors flex-shrink-0" title="Eliminar voz">
+                    <button onClick={() => handleDeleteVoice(voice.id, voice.voice_name)} className="p-1.5 rounded hover:bg-red-500/20 transition-colors flex-shrink-0" title={t('voiceClone.actions.delete')}>
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </button>
                   </>
@@ -662,7 +662,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       <div className={darkMode ? 'bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6' : 'bg-white border border-indigo-200 rounded-lg p-6 shadow-sm'}>
         <div className="flex items-center gap-3 mb-4">
           <Mic2 className="w-6 h-6 text-cyan-400" />
-          <h2 className={darkMode ? 'text-xl font-bold text-white' : 'text-xl font-bold text-gray-900'}>Probar Voz</h2>
+          <h2 className={darkMode ? 'text-xl font-bold text-white' : 'text-xl font-bold text-gray-900'}>{t('voiceClone.tabs.test')}</h2>
         </div>
         <div className="space-y-4">
           {voices.length === 0 && (
@@ -671,14 +671,14 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
             </p>
           )}
           <div>
-            <label className={darkMode ? 'block text-sm font-medium text-cyan-300 mb-2' : 'block text-sm font-medium text-indigo-600 mb-2'}>Selecciona una voz</label>
+            <label className={darkMode ? 'block text-sm font-medium text-cyan-300 mb-2' : 'block text-sm font-medium text-indigo-600 mb-2'}>{t('studio.voice.select')}</label>
             <select
               value={testVoiceId || ''}
               onChange={(e) => setTestVoiceId(e.target.value)}
               disabled={voices.length === 0}
               className={darkMode ? 'w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400' : 'w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500'}
             >
-              <option value="">-- Elige una voz --</option>
+              <option value="">{t('bot.selectOne')}</option>
               {voices.map(voice => (
                 <option key={voice.id} value={voice.voice_id}>{voice.voice_name}</option>
               ))}
@@ -689,7 +689,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
             <textarea
               value={testText}
               onChange={(e) => setTestText(e.target.value)}
-              placeholder="Asi suena tu voz elegida"
+              placeholder={t('voiceClone.test.placeholder')}
               disabled={voices.length === 0}
               className={darkMode ? 'w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 min-h-20' : 'w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 min-h-20'}
             />
@@ -746,7 +746,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           }`}
         >
           <Mic2 className="inline w-4 h-4 mr-2" />
-          Clonar Voz
+          {t('voiceClone.tabs.clone')}
         </button>
         <button
           onClick={() => handleTabChange('studio-pro')}
@@ -777,7 +777,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           } ${!canUseAIAssistant ? 'opacity-70' : ''}`}
         >
           <Bot className="inline w-4 h-4 mr-2" />
-          Asistente IA
+          {t('voiceClone.tabs.aiAssistant')}
           {!canUseAIAssistant && <Lock className="inline w-3.5 h-3.5 ml-2" />}
         </button>
       </div>
@@ -788,20 +788,20 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         <div className={darkMode ? "bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6" : "bg-white border border-indigo-200 rounded-lg p-6 shadow-sm"}>
           <div className="flex items-center gap-3 mb-4">
             <Zap className="w-6 h-6 text-cyan-400" />
-            <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>Clonar Nueva Voz</h2>
+            <h2 className={darkMode ? "text-xl font-bold text-white" : "text-xl font-bold text-gray-900"}>{t('voiceClone.cloneNewTitle')}</h2>
           </div>
 
         <form onSubmit={handleCloneVoice} className="space-y-4">
           {/* Nombre */}
           <div>
             <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
-              Nombre de la voz
+              {t('voiceClone.voiceName.label')}
             </label>
             <input
               type="text"
               value={voiceName}
               onChange={(e) => setVoiceName(e.target.value)}
-              placeholder="Ej: Mi voz, Voz profesional..."
+              placeholder={t('voiceClone.voiceName.placeholder')}
               className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400" : "w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500"}
               disabled={loading}
             />
@@ -810,7 +810,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           {/* Idioma */}
           <div>
             <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
-              Idioma de la voz
+              {t('voiceClone.languageLabel')}
             </label>
             <select
               value={voiceLanguage}
@@ -825,14 +825,14 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
               ))}
             </select>
             <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-              Selecciona el idioma del audio que vas a subir
+              {t('voiceClone.languageHint')}
             </p>
           </div>
 
           {/* File upload */}
           <div>
             <label className={darkMode ? "block text-sm font-medium text-cyan-300 mb-2" : "block text-sm font-medium text-indigo-600 mb-2"}>
-              Archivo de audio (MP3 o WAV, 10-15 seg ideal)
+              {t('voiceClone.audioFileLabel')}
             </label>
             <div className="relative">
               <input
@@ -849,7 +849,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
               >
                 <Upload className="w-5 h-5 text-cyan-400" />
                 <span className={darkMode ? "text-gray-300" : "text-gray-600"}>
-                  {audioFile ? audioFile.name : 'Clic para seleccionar archivo'}
+                  {audioFile ? audioFile.name : t('voiceClone.upload.btn')}
                 </span>
               </label>
             </div>
@@ -924,7 +924,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
             {/* Step 1: File Upload */}
             {!studioPro.fileId && (
               <div className={darkMode ? "bg-gray-800/40 border border-cyan-400/20 rounded-lg p-4" : "bg-gray-50 border border-orange-200 rounded-lg p-4"}>
-                <h3 className={`font-semibold mb-3 ${darkMode ? 'text-cyan-300' : 'text-orange-700'}`}>Paso 1: Sube tu archivo</h3>
+                <h3 className={`font-semibold mb-3 ${darkMode ? 'text-cyan-300' : 'text-orange-700'}`}>{t('voiceClone.extractor.step1')}</h3>
                 <div className="space-y-3">
                   <div>
                     <label className={darkMode ? "block text-sm font-medium text-gray-300 mb-2" : "block text-sm font-medium text-gray-700 mb-2"}>
@@ -945,7 +945,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                       >
                         <Upload className="w-5 h-5 text-orange-400" />
                         <span className={darkMode ? "text-gray-300" : "text-gray-600"}>
-                          {studioPro.file ? studioPro.file.name : 'Clic para seleccionar'}
+                          {studioPro.file ? studioPro.file.name : t('voiceClone.upload.btn')}
                         </span>
                       </label>
                     </div>
@@ -976,13 +976,13 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
             {/* Step 2: Timeline & Clip Selection */}
             {studioPro.fileId && (
               <div className={darkMode ? "bg-gray-800/40 border border-cyan-400/20 rounded-lg p-4" : "bg-gray-50 border border-orange-200 rounded-lg p-4"}>
-                <h3 className={`font-semibold mb-4 ${darkMode ? 'text-cyan-300' : 'text-orange-700'}`}>Paso 2: Selecciona tu clip (5-15 segundos recomendado)</h3>
+                <h3 className={`font-semibold mb-4 ${darkMode ? 'text-cyan-300' : 'text-orange-700'}`}>{t('voiceClone.extractor.step2')}</h3>
 
                 {/* Timeline Bar — YouTube-style trimmer */}
                 <div className="space-y-3">
                   <div className={darkMode ? "bg-gray-900/60 border border-gray-700 rounded-lg p-3" : "bg-white border border-gray-200 rounded-lg p-3"}>
                     <div className="flex items-center justify-between mb-3">
-                      <p className={`text-sm font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Línea de tiempo</p>
+                      <p className={`text-sm font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>{t('voiceClone.extractor.timeline')}</p>
                       <p className={`text-sm font-mono font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Total: {formatTimeMinutesSeconds(studioPro.duration)}</p>
                     </div>
 
@@ -1078,7 +1078,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                         {studioProPreview.loading ? (
                           <><Loader className="w-4 h-4 animate-spin" /> Cargando preview...</>
                         ) : (
-                          <><Play className="w-4 h-4" /> Escuchar clip seleccionado</>
+                          <><Play className="w-4 h-4" /> {t('voiceClone.extractor.listenClip')}</>
                         )}
                       </button>
                       {studioProPreview.audioUrl && (
@@ -1104,7 +1104,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                       : darkMode ? "bg-green-500/20 border border-green-500/30 text-green-300" : "bg-green-50 border border-green-200 text-green-700"
                   }`}>
                     <p className="text-sm font-medium">
-                      ⏱️ Duración del clip: <strong>{((studioPro.endMs - studioPro.startMs) / 1000).toFixed(1)}s</strong>
+                      {t('voiceClone.extractor.clipDuration')}: <strong>{((studioPro.endMs - studioPro.startMs) / 1000).toFixed(1)}s</strong>
                       {studioPro.endMs - studioPro.startMs < 5000 && " (Muy corto)"}
                       {studioPro.endMs - studioPro.startMs > 15000 && " (Largo)"}
                       {studioPro.endMs - studioPro.startMs >= 5000 && studioPro.endMs - studioPro.startMs <= 15000 && " (Ideal)"}
@@ -1115,13 +1115,13 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className={`block text-sm font-medium mb-1 ${!studioPro.voiceName ? 'text-red-400' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                        Nombre de la voz {!studioPro.voiceName && <span className="font-bold">← REQUERIDO</span>}
+                        {t('voiceClone.voiceName.label')} {!studioPro.voiceName && <span className="font-bold">← {t('voiceClone.required')}</span>}
                       </label>
                       <input
                         type="text"
                         value={studioPro.voiceName}
                         onChange={(e) => setStudioPro(prev => ({ ...prev, voiceName: e.target.value }))}
-                        placeholder="Ej: Mi voz clonada"
+                        placeholder={t('voiceClone.voiceName.placeholder')}
                         className={`w-full rounded px-3 py-2 text-sm focus:outline-none transition ${
                           !studioPro.voiceName
                             ? 'border-2 border-red-500 bg-red-500/10 text-white placeholder-red-400 focus:border-red-400'
@@ -1131,11 +1131,11 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                         }`}
                       />
                       {!studioPro.voiceName && (
-                        <p className="text-red-400 text-xs mt-1">⚠️ Pon un nombre a tu voz antes de continuar</p>
+                        <p className="text-red-400 text-xs mt-1">{t('voiceClone.errors.nameRequired')}</p>
                       )}
                     </div>
                     <div>
-                      <label className={darkMode ? "block text-sm font-medium text-gray-300 mb-1" : "block text-sm font-medium text-gray-700 mb-1"}>Idioma</label>
+                      <label className={darkMode ? "block text-sm font-medium text-gray-300 mb-1" : "block text-sm font-medium text-gray-700 mb-1"}>{t('voiceClone.languageLabel')}</label>
                       <select
                         value={studioPro.langCode}
                         onChange={(e) => setStudioPro(prev => ({ ...prev, langCode: e.target.value }))}
@@ -1156,7 +1156,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                   <button
                     onClick={() => {
                       if (!studioPro.voiceName.trim()) {
-                        setError('⚠️ Primero ponle un nombre a tu voz (campo "Nombre de la voz")')
+                        setError(t('voiceClone.errors.nameRequiredFirst'))
                         return
                       }
                       handleStudioProExtract()
@@ -1176,7 +1176,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                     ) : (
                       <>
                         <Zap className="w-5 h-5" />
-                        {studioPro.voiceName.trim() ? t('voiceClone.extractor.useClip') : 'Pon un nombre primero ↑'}
+                        {studioPro.voiceName.trim() ? t('voiceClone.extractor.useClip') : t('voiceClone.errors.nameFirst')}
                       </>
                     )}
                   </button>
@@ -1196,7 +1196,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                     })}
                     className={`w-full px-4 py-2 rounded-lg font-semibold transition ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                   >
-                    ← Subir otro archivo
+                    {t('voiceClone.extractor.uploadAnother')}
                   </button>
                 </div>
               </div>
@@ -1247,9 +1247,9 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           {!canUseAIAssistant && (
             <div className="absolute inset-0 rounded-lg backdrop-blur-[1px] bg-black/20 flex items-center justify-center p-4">
               <div className={`${darkMode ? 'bg-gray-900/90 border border-cyan-400/40 text-cyan-200' : 'bg-white/95 border border-cyan-300 text-cyan-700'} px-4 py-3 rounded-lg text-center text-sm font-semibold max-w-sm`}>
-                Asistente IA bloqueado en este plan.
+                {t('voiceClone.ai.locked')}
                 <br />
-                Disponible solo en plan Pro.
+                {t('voiceClone.ai.availablePro')}
               </div>
             </div>
           )}
@@ -1269,11 +1269,11 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                 : 'bg-gradient-to-br from-purple-200/60 to-purple-100/50 border border-purple-400/60'
             }`}>
               <h2 className={`text-2xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                Actualiza tu plan
+                {t('voiceClone.upgrade.title')}
               </h2>
               <p className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                Acceso al Taller de Voces disponible<br/>
-                <span className="font-semibold">desde el plan START</span>
+                {t('voiceClone.upgrade.workshopAccess')}<br/>
+                <span className="font-semibold">{t('voiceClone.upgrade.fromStart')}</span>
               </p>
             </div>
             <button
@@ -1284,7 +1284,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                   : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-lg'
               }`}
             >
-              Ver Planes
+              {t('voiceClone.upgrade.viewPlans')}
             </button>
           </div>
         </div>
@@ -1292,6 +1292,8 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     </div>
   )
 }
+
+
 
 
 

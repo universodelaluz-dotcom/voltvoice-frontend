@@ -4,15 +4,15 @@ import { useTranslation } from 'react-i18next'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 
-const getBaseVoices = (plan = 'free') => {
-  const suffix = String(plan || 'free').toLowerCase() === 'free' ? '' : ' (ilimitada)'
+const getBaseVoices = (t, plan = 'free') => {
+  const suffix = String(plan || 'free').toLowerCase() === 'free' ? '' : ` ${t('studio.voice.unlimited')}`
   return [
-    { id: 'es-ES', name: `Voz Básica Espanol${suffix}` },
-    { id: 'en-US', name: `Voz Básica Ingles${suffix}` },
-    { id: 'Diego',  name: 'Voz natural de Luis - Premium' },
-    { id: 'Lupita', name: 'Voz natural de Sofia - Premium' },
-    { id: 'Miguel', name: 'Voz natural de Gustavo - Premium' },
-    { id: 'Rafael', name: 'Voz natural de Leonel - Premium' },
+    { id: 'es-ES', name: `${t('studio.voiceLocal.spanish')}${suffix}` },
+    { id: 'en-US', name: `${t('studio.voiceLocal.english')}${suffix}` },
+    { id: 'Diego', name: t('voiceNames.diegoPremium') },
+    { id: 'Lupita', name: t('voiceNames.lupitaPremium') },
+    { id: 'Miguel', name: t('voiceNames.miguelPremium') },
+    { id: 'Rafael', name: t('voiceNames.rafaelPremium') },
   ]
 }
 
@@ -49,7 +49,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
       return 'free'
     }
   })()
-  const baseVoices = getBaseVoices(currentPlan)
+  const baseVoices = getBaseVoices(t, currentPlan)
 
   // Cargar personajes al montar
   useEffect(() => {
@@ -451,5 +451,6 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
     </div>
   )
 }
+
 
 

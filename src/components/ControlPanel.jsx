@@ -488,16 +488,16 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     on_demand: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
   }
   const allowedPremium = PREMIUM_BY_PLAN[userPlan] ?? []
-  const localVoiceLabelSuffix = userPlan === 'free' ? '' : ' (ilimitada)'
+  const localVoiceLabelSuffix = userPlan === 'free' ? '' : ` ${t('studio.voice.unlimited')}`
   const ALL_PREMIUM = [
-    { id: 'Diego', name: 'Voz natural de Luis - Premium' },
-    { id: 'Lupita', name: 'Voz natural de Sofia - Premium' },
-    { id: 'Miguel', name: 'Voz natural de Gustavo - Premium' },
-    { id: 'Rafael', name: 'Voz natural de Leonel - Premium' },
+    { id: 'Diego', name: t('voiceNames.diegoPremium') },
+    { id: 'Lupita', name: t('voiceNames.lupitaPremium') },
+    { id: 'Miguel', name: t('voiceNames.miguelPremium') },
+    { id: 'Rafael', name: t('voiceNames.rafaelPremium') },
   ]
   const premiumVoiceOptions = [
-    { id: 'es-ES', name: `Voz Básica Español${localVoiceLabelSuffix}` },
-    { id: 'en-US', name: `Voz Básica Inglés${localVoiceLabelSuffix}` },
+    { id: 'es-ES', name: `${t('studio.voiceLocal.spanish')}${localVoiceLabelSuffix}` },
+    { id: 'en-US', name: `${t('studio.voiceLocal.english')}${localVoiceLabelSuffix}` },
     ...ALL_PREMIUM.filter(v => allowedPremium.includes(v.id)),
     ...userVoices,
   ]
@@ -572,7 +572,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
       return
     }
     Object.entries(preset.data).forEach(([k, v]) => updateConfig(k, v))
-    setPresetStatus(`Preset ${index + 1} aplicado`)
+    setPresetStatus(t('control.preset.applied', { num: index + 1 }))
   }
 
   useEffect(() => {
@@ -588,7 +588,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
       }
     })
     setShowProfanityEditor(false)
-    setPresetStatus('Todas las opciones fueron limpiadas')
+    setPresetStatus(t('control.quickStart.cleared'))
   }
 
   const loadBotCharacters = async () => {
@@ -613,7 +613,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   const applyQuickBasic = () => {
     clearAllChecks()
     Object.entries(quickBasicChecks).forEach(([key, value]) => updateConfig(key, value))
-    setPresetStatus('Configuración básica aplicada')
+    setPresetStatus(t('control.quickStart.basicApplied'))
   }
 
   const removeFromModerationList = async (username) => {
@@ -645,7 +645,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100 shadow-sm'
           }`}>
             <ArrowLeft className="w-4 h-4" />
-            Volver
+            {t('common.back')}
           </button>
           <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500 pb-1">
             {t('control.title')}
@@ -661,14 +661,14 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
           <div className={`relative mb-4 rounded-2xl border p-4 ${
             darkMode ? 'border-cyan-500/20 bg-[#12122a]/70' : 'border-indigo-200 bg-white/80'
           }`}>
-            {isFeatureBlocked('presets', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Presets disponibles en plan START+" />}
+            {isFeatureBlocked('presets', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.presets.availableStart')} />}
             <div className={`${isFeatureBlocked('presets', userPlan) ? 'opacity-40 pointer-events-none' : ''}`}>
               <div className="flex items-center justify-between mb-3">
                 <h3 className={`text-sm font-black uppercase tracking-widest ${darkMode ? 'text-cyan-300' : 'text-indigo-700'}`}>
-                  Presets Rápidos
+                  {t('control.sections.presetsQuick')}
                 </h3>
                 <span className={`text-xs ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                  Guarda y aplica tu configuración al instante
+                  {t('control.preset.subtitle')}
                 </span>
               </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -685,7 +685,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     <div className="flex items-center justify-between mb-2">
                       <span className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-slate-800'}`}>Preset {idx + 1}</span>
                       <span className={`text-[11px] ${hasPreset ? (darkMode ? 'text-emerald-300' : 'text-emerald-700') : (darkMode ? 'text-slate-400' : 'text-slate-500')}`}>
-                        {hasPreset ? 'Guardado' : 'Vacío'}
+                        {hasPreset ? t('control.preset.savedState') : t('control.preset.emptyState')}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -697,7 +697,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                             : 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90 border border-cyan-500/40'
                         }`}
                       >
-                        Guardar
+                        {t('common.save')}
                       </button>
                       <button
                         onClick={() => applyPreset(idx)}
@@ -707,7 +707,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                             : 'bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white hover:opacity-90 border border-fuchsia-500/40'
                         }`}
                       >
-                        Aplicar
+                        {t('common.apply')}
                       </button>
                     </div>
                   </div>
@@ -724,14 +724,14 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
           <div className={`relative mb-4 rounded-2xl border p-4 ${
             darkMode ? 'border-fuchsia-500/20 bg-[#12122a]/70' : 'border-fuchsia-200 bg-white/80'
           }`}>
-            {isFeatureBlocked('quickStart', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Inicio rápido disponible en plan START+" />}
+            {isFeatureBlocked('quickStart', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.quickStart.availableStart')} />}
             <div className={`${isFeatureBlocked('quickStart', userPlan) ? 'opacity-40 pointer-events-none' : ''}`}>
             <div className="flex items-center justify-between mb-3">
               <h3 className={`text-sm font-black uppercase tracking-widest ${darkMode ? 'text-fuchsia-300' : 'text-fuchsia-700'}`}>
-                Inicio Rápido
+                {t('control.quickStart.title')}
               </h3>
               <span className={`text-xs ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                Aplica una base lista en un clic
+                {t('control.quickStart.subtitle')}
               </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -743,7 +743,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     : 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:opacity-90 border border-emerald-500/40'
                 }`}
               >
-                Básica
+                {t('control.quickStart.basic')}
               </button>
               <button
                 onClick={clearAllChecks}
@@ -753,7 +753,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     : 'bg-gradient-to-r from-rose-500 to-orange-500 text-white hover:opacity-90 border border-rose-500/40'
                 }`}
               >
-                Limpiar opciones
+                {t('control.quickStart.clear')}
               </button>
             </div>
             </div>
@@ -817,7 +817,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 {isFeatureBlocked('voicesGeneral', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.voiceSection.available')} />}
                 <div className={`${isFeatureBlocked('voicesGeneral', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`text-[15px] font-medium ${darkMode ? 'text-white' : 'text-slate-800'}`}>Voz general</span>
+                  <span className={`text-[15px] font-medium ${darkMode ? 'text-white' : 'text-slate-800'}`}>{t('control.voiceSection.general')}</span>
                 </div>
                   <select
                     value={config.generalVoiceId || 'es-ES'}
@@ -851,7 +851,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     }`}>
                       {config.donorVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                     </div>
-                    <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.donorVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz donadores<Hint text="Usa una voz diferente para quienes envAan regalos" darkMode={darkMode} /></span>
+                    <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.donorVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.donors')}<Hint text={t('control.voiceSection.donorsHint')} darkMode={darkMode} /></span>
                   </button>
                   {config.donorVoiceEnabled && (
                     <div className="mt-2 ml-8">
@@ -887,7 +887,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   }`}>
                     {config.modVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.modVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz moderadores<Hint text="Usa una voz diferente para los moderadores" darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.modVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.moderators')}<Hint text={t('control.voiceSection.moderatorsHint')} darkMode={darkMode} /></span>
                 </button>
                 {config.modVoiceEnabled && (
                   <div className="mt-2 ml-8">
@@ -924,7 +924,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   }`}>
                     {config.subscriberVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.subscriberVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz suscriptores<Hint text="Usa una voz diferente para usuarios suscritos" darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.subscriberVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.subscribers')}<Hint text={t('control.voiceSection.subscribersHint')} darkMode={darkMode} /></span>
                 </button>
                   {config.subscriberVoiceEnabled && (
                     <div className="mt-2 ml-8">
@@ -962,7 +962,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   }`}>
                     {config.communityMemberVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.communityMemberVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz miembros de comunidad<Hint text="Usa una voz diferente para Fan/SuperFan del live" darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.communityMemberVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.communityMembers')}<Hint text={t('control.voiceSection.communityMembersHint')} darkMode={darkMode} /></span>
                 </button>
                   {config.communityMemberVoiceEnabled && (
                     <div className="mt-2 ml-8">
@@ -1000,7 +1000,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   }`}>
                     {config.questionVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.questionVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz preguntas<Hint text="Usa una voz diferente cuando el mensaje sea una pregunta" darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.questionVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.questions')}<Hint text={t('control.voiceSection.questionsHint')} darkMode={darkMode} /></span>
                 </button>
                   {config.questionVoiceEnabled && (
                     <div className="mt-2 ml-8">
@@ -1038,7 +1038,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   }`}>
                     {config.notifVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.notifVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz notificaciones<Hint text="Usa una voz diferente para las notificaciones del live" darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.notifVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.notifications')}<Hint text={t('control.voiceSection.notificationsHint')} darkMode={darkMode} /></span>
                 </button>
                   {config.notifVoiceEnabled && (
                     <div className="mt-2 ml-8">
@@ -1080,11 +1080,11 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   }`}>
                     {config.variedVoicesEnabled && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.variedVoicesEnabled ? 'font-semibold' : 'font-medium'}`}>Modo voces variadas<Hint text="Randomiza las voces reproducidas en el chat" darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.variedVoicesEnabled ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.variedMode')}<Hint text={t('control.voiceSection.variedModeHint')} darkMode={darkMode} /></span>
                 </button>
                 {config.variedVoicesEnabled && (
                   <div className="mt-4 ml-0 space-y-2">
-                    <p className={`text-xs font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Selecciona las voces a usar:</p>
+                    <p className={`text-xs font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{t('control.voiceSection.selectVoices')}</p>
                     <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 rounded-lg bg-opacity-50" style={{backgroundColor: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)'}}>
                       {premiumVoiceOptions.map(voice => (
                         <label key={voice.id} className="flex items-center gap-2 cursor-pointer p-1.5 rounded hover:bg-opacity-50 transition-colors" style={{backgroundColor: config.variedVoicesSelected?.includes(voice.id) ? (darkMode ? 'rgba(6,182,212,0.15)' : 'rgba(6,182,212,0.1)') : 'transparent'}}>
@@ -1104,7 +1104,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                       ))}
                     </div>
                     {(!config.variedVoicesSelected || config.variedVoicesSelected.length === 0) && (
-                      <p className={`text-xs italic ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Selecciona al menos una voz</p>
+                      <p className={`text-xs italic ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{t('control.voiceSection.selectAtLeastOne')}</p>
                     )}
                     {config.variedVoicesSelected && config.variedVoicesSelected.length > 0 && (
                       <div className={`text-xs p-2 rounded mt-2 ${darkMode ? 'bg-cyan-900/20 text-cyan-300 border border-cyan-500/20' : 'bg-cyan-50/50 text-cyan-700 border border-cyan-200'}`}>
@@ -1138,18 +1138,18 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   }`}>
                     {showUserVoiceAssignments && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${showUserVoiceAssignments ? 'font-semibold' : 'font-medium'}`}>Voces personalizadas por usuario<Hint text="Asigna voces específicas a usuarios individuales" darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${showUserVoiceAssignments ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.customByUser')}<Hint text={t('control.voiceSection.customByUserHint')} darkMode={darkMode} /></span>
                   {userVoiceAssignments.length > 0 && <span className={`ml-auto text-xs font-semibold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{userVoiceAssignments.length}</span>}
                 </button>
                 {showUserVoiceAssignments && (
                   <div className="mt-4 ml-0 space-y-3">
                     {/* Agregar nuevo usuario */}
                     <div className="space-y-2 p-3 rounded-lg bg-opacity-50" style={{backgroundColor: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)'}}>
-                      <p className={`text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Agregar usuario:</p>
+                      <p className={`text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{t('control.voiceSection.addUser')}</p>
                       <div className="flex gap-2 flex-col">
                         <input
                           type="text"
-                          placeholder="Usuario con @ (ej: @karlitaaviles10, no el nick)"
+                          placeholder={t('control.voiceSection.userPlaceholder')}
                           value={newAssignmentUsername}
                           onChange={(e) => setNewAssignmentUsername(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && addUserVoiceAssignment()}
@@ -1164,7 +1164,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                             darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
                           }`}
                         >
-                          <option value="">Selecciona una voz</option>
+                          <option value="">{t('control.voiceSection.selectVoice')}</option>
                           {premiumVoiceOptions.map(v => (
                             <option key={v.id} value={v.id}>{v.name}</option>
                           ))}
@@ -1465,7 +1465,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
                   }`}>
                     <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
-                      Personalidad a elegir
+                      {t('control.assistant.personality')}
                     </label>
                     <select
                       value={config.botAssistantCharacterId || ''}
@@ -1474,7 +1474,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                         darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
                       }`}
                     >
-                      <option value="">Seleccionar uno</option>
+                      <option value="">{t('bot.selectOne')}</option>
                       {botCharacters.map((character) => (
                         <option key={character.id} value={character.id}>
                           {character.name}
@@ -1487,7 +1487,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
                   }`}>
                     <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
-                      Voz a utilizar
+                      {t('control.assistant.voiceToUse')}
                     </label>
                     <select
                       value={config.botAssistantVoiceId || ''}
@@ -1496,7 +1496,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                         darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
                       }`}
                     >
-                      <option value="">Seleccionar uno</option>
+                      <option value="">{t('bot.selectOne')}</option>
                       {premiumVoiceOptions.map((voice) => (
                         <option key={`bot-voice-${voice.id}`} value={voice.id}>
                           {voice.name}
@@ -1509,7 +1509,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
                   }`}>
                     <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
-                      Velocidad de la voz
+                      {t('control.assistant.voiceSpeed')}
                     </label>
                     <div className="flex items-center gap-3">
                       <input

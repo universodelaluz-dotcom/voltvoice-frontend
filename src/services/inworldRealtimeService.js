@@ -25,7 +25,7 @@ export class InworldRealtimeService {
     this.remoteAudioStream = null
     this.sessionInstructions = 'You are a helpful voice assistant. Respond in Spanish. Keep responses concise.'
     this.sessionVoice = 'Clive'
-    this.sessionOutputModel = 'inworld-tts-1.5-mini'
+    this.sessionOutputModel = 'inworld-tts-1.5-max'
     this.pendingAudioResponse = false
     this.pendingAudioResponseTimer = null
     this.pendingAudioComplete = false
@@ -194,12 +194,7 @@ export class InworldRealtimeService {
   }
 
   _getOutputTtsModelForVoice(voiceId = '') {
-    const normalized = String(voiceId || '').trim()
-    // Cloned voices are more stable with max model in long utterances.
-    if (normalized.includes('__')) {
-      return 'inworld-tts-1.5-max'
-    }
-    return 'inworld-tts-1.5-mini'
+    return 'inworld-tts-1.5-max'
   }
 
   _sendSessionUpdate() {
@@ -1706,7 +1701,7 @@ export class InworldRealtimeService {
     // Preserve voice during recovery if requested
     if (!options.preserveVoice) {
       this.sessionVoice = 'Clive'
-      this.sessionOutputModel = 'inworld-tts-1.5-mini'
+      this.sessionOutputModel = 'inworld-tts-1.5-max'
     }
 
     this.pendingAudioComplete = false
