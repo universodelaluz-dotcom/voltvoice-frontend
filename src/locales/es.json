@@ -121,17 +121,22 @@
         {
           "icon": "💳",
           "q": "¿Qué hago si se me acaban los tokens?",
-          "a": "Puedes recargar al instante desde la sección \"Recarga de Tokens\". Si no tienes tokens, las voces premium/personalizadas dejan de reproducirse hasta recargar."
+          "a": "Puedes añadir un Pack de voces clonadas (Lite, Pro o Max) desde la plataforma. Si no tienes tokens, las voces premium y clonadas dejan de reproducirse hasta recargar."
         },
         {
-          "icon": "⏳",
-          "q": "¿Cómo funciona el plan FREE?",
-          "a": "El plan FREE incluye 1 voz esencial con 2 horas diarias. El contador se restablece cada 24 horas."
+          "icon": "💰",
+          "q": "¿Cuánto cuesta el Plan Base?",
+          "a": "El Plan Base cuesta $9.99 USD/mes e incluye 2 voces esenciales ilimitadas, 2 voces premium, 20,000 caracteres mensuales y todas las funciones: filtros avanzados, smart filter, anti-spam y analytics."
+        },
+        {
+          "icon": "🎭",
+          "q": "¿Qué son los Packs de voces clonadas?",
+          "a": "Son compras adicionales al Plan Base que añaden personajes con voz clonada por IA: Pack Lite ($9.99, +1 voz, 50K tokens), Pack Pro ($24.99, +3 voces, 250K tokens) y Pack Max ($49.99, +6 voces, 500K tokens)."
         },
         {
           "icon": "🔄",
-          "q": "¿Puedo cambiar o cancelar mi plan cuando quiera?",
-          "a": "Sí. Los upgrades se aplican de inmediato con ajuste proporcional al tiempo restante del ciclo. Los downgrades se aplican en el siguiente ciclo. Puedes cancelar en cualquier momento."
+          "q": "¿Puedo cancelar mi Plan Base cuando quiera?",
+          "a": "Sí. Puedes cancelar en cualquier momento. Seguirás teniendo acceso hasta el final del periodo ya pagado."
         },
         {
           "icon": "🌍",
@@ -149,14 +154,9 @@
           "a": "Sí. Solo se usa el acceso necesario para leer la actividad pública de tu LIVE. No compartimos tus datos con terceros."
         },
         {
-          "icon": "🆓",
-          "q": "¿Hay prueba gratis?",
-          "a": "Sí. Puedes empezar con FREE y subir a START, CREATOR o PRO cuando necesites más capacidad y más voces."
-        },
-        {
           "icon": "🛠️",
-          "q": "¿Puedo crear y editar mis voces personalizadas?",
-          "a": "Sí. Puedes gestionar voces personalizadas desde tu panel. La cantidad disponible depende de tu plan activo."
+          "q": "¿Puedo crear y editar mis voces clonadas?",
+          "a": "Sí. Puedes gestionar tus voces clonadas desde el panel. La cantidad disponible depende del Pack que hayas añadido a tu Plan Base."
         }
       ]
     },
@@ -212,33 +212,33 @@
       }
     ],
     "packages": {
-      "badge": "💰 PAQUETES EXTRA (RECARGAS) →",
-      "title": "Recarga de Tokens",
-      "subtitle": "Si tu plan mensual se queda corto, recarga al instante sin esperar al siguiente mes.",
-      "popular": "🔥 MÁS POPULAR",
-      "characters": "🎙️ Caracteres",
+      "badge": "🎭 PACKS DE VOCES CLONADAS →",
+      "title": "Amplía con Packs de Voces",
+      "subtitle": "Añade personajes con voz clonada por IA a tu Plan Base. Combínalos para crear tu elenco.",
+      "popular": "⭐ RECOMENDADO",
+      "characters": "🎙️ Voces clonadas",
       "approxMxn": "Aprox. {{mxn}} MXN",
-      "buyNow": "Comprar ahora →",
-      "buyNowPopular": "🚀 Comprar ahora →",
-      "note": "🧠 NOTA: El consumo depende de la actividad del chat y la configuración. Puedes extender la duración usando filtros inteligentes y lectura selectiva.",
+      "buyNow": "Añadir Pack →",
+      "buyNowPopular": "🚀 Añadir Pack →",
+      "note": "🧠 NOTA: Los Packs son compras únicas que se suman a tu Plan Base mensual. Los tokens no caducan mientras el Plan Base esté activo.",
       "items": [
         {
-          "size": "MINI BOOST",
-          "tokens": "150,000",
-          "price": "$4.99",
-          "hours": "1.5–3 horas"
-        },
-        {
-          "size": "POWER BOOST",
-          "tokens": "350,000",
+          "size": "PACK LITE",
+          "tokens": "50,000",
           "price": "$9.99",
-          "hours": "4–7 horas"
+          "hours": "+1 voz clonada"
         },
         {
-          "size": "MAX BOOST",
-          "tokens": "700,000",
-          "price": "$14.99",
-          "hours": "8–12 horas"
+          "size": "PACK PRO",
+          "tokens": "250,000",
+          "price": "$24.99",
+          "hours": "+3 voces clonadas"
+        },
+        {
+          "size": "PACK MAX",
+          "tokens": "500,000",
+          "price": "$49.99",
+          "hours": "+6 voces clonadas"
         }
       ]
     },
@@ -319,7 +319,7 @@
       },
       {
         "title": "Tokens y consumo real",
-        "description": "Las voces premium y personalizadas consumen tokens por caracteres generados. La voz esencial del plan FREE no consume tokens, pero mantiene su ventana diaria de uso para cuidar estabilidad y costos."
+        "description": "Las voces premium y clonadas consumen tokens por caracteres generados. Las voces esenciales incluidas en el Plan Base no consumen tokens y son ilimitadas. Los tokens de los Packs no caducan mientras el Plan Base esté activo."
       },
       {
         "title": "Roles y prioridad de lectura",
@@ -508,7 +508,7 @@
       "textRequired": "Por favor escribe algo para sintetizar",
       "voiceRequired": "Por favor selecciona una voz",
       "textTooLong": "El texto de prueba supera el límite de 500 caracteres.",
-      "dailyLimit": "Llegaste al límite diario de 2 horas de voces locales en plan FREE.\nSe restablece en aproximadamente {{wait}}.",
+      "dailyLimit": "Llegaste al límite de voces esenciales por hoy.\nSe restablece en aproximadamente {{wait}}.",
       "synthesis": "Error al sintetizar la voz",
       "connection": "Error de conexión. Verifica tu conexión a internet."
     },
@@ -638,8 +638,8 @@
           "a": "Si no alcanzan los tokens para voz premium o personalizada, cambia a voz esencial."
         },
         {
-          "q": "¿Cómo funciona el plan FREE?",
-          "a": "Incluye voz esencial con 2 horas diarias. El contador se reinicia cada 24 horas."
+          "q": "¿Qué incluye el Plan Base?",
+          "a": "El Plan Base ($9.99 USD/mes) incluye 2 voces esenciales ilimitadas, 2 voces premium, 20,000 caracteres mensuales y todas las funciones: filtros avanzados, smart filter, anti-spam y analytics."
         },
         {
           "q": "¿Cómo crear una voz personalizada?",
@@ -647,23 +647,23 @@
         },
         {
           "q": "¿Cuántas voces clonadas puedo eliminar por día?",
-          "a": "En plan Start puedes eliminar hasta 3 voces por día. En Creator y Pro, hasta 6 por día."
+          "a": "Puedes eliminar voces clonadas desde tu panel. El límite diario depende del Pack activo. Consulta tu panel para ver el cupo actual."
         },
         {
           "q": "¿Cómo subir un audio ideal para clonar voz?",
           "a": "Usa una voz clara, sin ruido ni música de fondo. Recomendado: 10 a 15 segundos. Entre mejor calidad del audio, mejor resultado del clonado."
         },
         {
-          "q": "¿Cuáles límites tiene Extractor Pro?",
-          "a": "Creator: 4 usos por día. Pro: 7 usos por día. Se reinicia cada 24 horas."
+          "q": "¿Cuáles límites tiene el Extractor de Audio?",
+          "a": "El número de usos diarios depende de tu Pack activo. El contador se reinicia cada 24 horas."
         },
         {
           "q": "Asistente de IA: ¿para qué sirve?",
           "a": "Utiliza el contexto reciente del chat para responder preguntas breves con la personalidad y voz que configures."
         },
         {
-          "q": "Asistente de IA: ¿en qué plan está disponible?",
-          "a": "Disponible solo en Plan Pro."
+          "q": "Asistente de IA: ¿en qué pack está disponible?",
+          "a": "Disponible con Pack Pro o Pack Max añadido al Plan Base."
         },
         {
           "q": "¿Puedo configurar tono y frecuencia del asistente?",
@@ -702,12 +702,12 @@
           "a": "Sí, puedes cambiar de plan cuando quieras desde la configuración de tu cuenta."
         },
         {
-          "q": "¿Qué pasa si subo de plan (upgrade)?",
-          "a": "El cambio se aplica de inmediato y solo pagas la diferencia proporcional del tiempo restante en tu ciclo de facturación."
+          "q": "¿Qué pasa si añado un Pack adicional?",
+          "a": "Las voces y tokens del Pack se suman de inmediato a tu Plan Base. Puedes combinar varios Packs para ampliar tu elenco de personajes."
         },
         {
-          "q": "¿Qué pasa si bajo de plan (downgrade)?",
-          "a": "El cambio se aplicará al inicio del siguiente ciclo de facturación. Hasta entonces sigues disfrutando tu plan actual."
+          "q": "¿Los tokens de los Packs caducan?",
+          "a": "Los tokens de los Packs no caducan mientras mantengas tu Plan Base activo."
         },
         {
           "q": "¿Puedo cancelar mi plan en cualquier momento?",
@@ -839,12 +839,12 @@
     },
     "ai": {
       "locked": "El asistente IA est? bloqueado en este plan.",
-      "availablePro": "Disponible solo en plan Pro."
+      "availablePro": "Disponible con Pack Pro o Pack Max."
     },
     "upgrade": {
       "title": "Mejora tu plan",
       "workshopAccess": "Acceso al Taller de Voces disponible",
-      "fromStart": "desde el plan START",
+      "fromStart": "con el Plan Base",
       "viewPlans": "Ver planes"
     }
   },
@@ -1258,11 +1258,11 @@
       },
       "howWorks": "Cómo funciona",
       "howWorksList": [
-        "FREE incluye voz esencial con 2 horas diarias.",
-        "En planes de pago, la voz esencial es ilimitada.",
-        "Voces premium y personalizadas consumen tokens según uso real de audio.",
-        "Los tokens se renuevan cada mes automáticamente.",
-        "Puedes combinar voz esencial y voces premium para optimizar costo y rendimiento."
+        "El Plan Base incluye 2 voces esenciales ilimitadas y 2 voces premium.",
+        "Las voces esenciales del Plan Base no consumen tokens.",
+        "Voces premium y clonadas consumen tokens según uso real de audio.",
+        "Los tokens del Plan Base se renuevan cada mes. Los de los Packs no caducan.",
+        "Puedes combinar voz esencial y voces clonadas para optimizar costo y rendimiento."
       ]
     }
   },

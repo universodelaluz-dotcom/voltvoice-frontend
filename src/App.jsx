@@ -1494,7 +1494,7 @@ export function App() {
       </section>
 
       {/* Success Cases Section */}
-      <section className={`py-20 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <section id="como-funciona-section" className={`py-20 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h3 className={`text-4xl font-black mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -1641,9 +1641,9 @@ export function App() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing-section" className="pt-20 pb-8 px-4">
+      <section id="pricing-section" className="pt-12 pb-8 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-8">
             <h3 className="text-4xl font-black mb-4">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{t('landing.pricing.title')}</span>
             </h3>
@@ -1654,7 +1654,7 @@ export function App() {
       </section>
 
       {/* FAQ Section */}
-      <section className="pt-10 pb-20 px-4">
+      <section id="faq-section" className="pt-10 pb-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-black mb-4">
@@ -1676,112 +1676,6 @@ export function App() {
             ))}
           </div>
 
-        </div>
-      </section>
-
-      {/* Additional Packages Section */}
-      <section className={"py-24 px-4 relative overflow-hidden " + (darkMode ? "bg-[#0a0a1a]" : "bg-gray-50")}>
-        {/* Background glow */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-cyan-500/5 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/4 w-[300px] h-[300px] bg-purple-500/5 rounded-full blur-3xl" />
-        </div>
-
-        <div className="max-w-6xl mx-auto relative">
-          <div className="text-center mb-16">
-            <span className={"text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 inline-block " + (darkMode ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "bg-cyan-50 text-cyan-600 border border-cyan-200")}>
-              {t('landing.packages.badge')}
-            </span>
-            <h3 className="text-5xl font-black mt-4 mb-4">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500">
-                {t('landing.packages.title')}
-              </span>
-            </h3>
-            <p className={"text-xl font-medium " + (darkMode ? "text-gray-200" : "text-gray-700")}>{t('landing.packages.subtitle')}</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {additionalPackages.map((pkg, idx) => {
-              const gradients = ['from-cyan-500 to-blue-500', 'from-blue-500 to-purple-500', 'from-purple-500 to-pink-500']
-                const gradient = gradients[idx]
-                const icon = pkg.icon
-              const isPopular = idx === 1
-              return (
-              <div
-                key={idx}
-                className={"relative group rounded-2xl p-px transition-all duration-300 cursor-pointer " + (isPopular ? "scale-105 shadow-2xl shadow-purple-500/20" : "hover:scale-102 hover:shadow-xl")}
-                style={{ background: isPopular ? 'linear-gradient(135deg, #a855f7, #ec4899)' : undefined }}
-                onClick={() => {
-                  setSelectedCheckoutItem(null)
-                  const tokenPackageMap = { 'MINI BOOST': 150000, 'POWER BOOST': 350000, 'MAX BOOST': 700000 }
-                  setSelectedPaymentPackage(tokenPackageMap[pkg.size] || 350000)
-                  setIsPaymentOpen(true)
-                }}
-              >
-                <div className={"rounded-2xl p-6 h-full flex flex-col " + (darkMode ? "bg-[#0f0f23]" : "bg-white") + " " + (!isPopular ? ("border " + (darkMode ? "border-white/10" : "border-gray-200")) : "")}>
-
-                  {isPopular && (
-                    <div className={"text-[10px] font-black tracking-wider mb-4 px-3 py-1 rounded-full text-center w-full bg-gradient-to-r " + gradient + " text-white"}>
-                      {t('landing.packages.popular')}
-                    </div>
-                  )}
-                  {!isPopular && <div className="mb-4 h-6" />}
-
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-2xl">{icon}</span>
-                    <span className={"font-black text-2xl " + (darkMode ? "text-white" : "text-gray-800")}>{pkg.size}</span>
-                  </div>
-
-                  <div className="mb-4">
-                    <div className={"text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r " + gradient}>
-                      {pkg.price} <span className={"text-base font-bold " + (darkMode ? "text-gray-400" : "text-gray-500")}>USD</span>
-                    </div>
-                    {exchangeRates?.MXN && (
-                      <div className={"text-xs font-medium " + (darkMode ? "text-gray-500" : "text-gray-400")}>
-                        {(() => {
-                          const priceNum = parseFloat(pkg.price.replace('$', ''))
-                          const mxnAmount = priceNum * exchangeRates.MXN
-                          const mxnDisplay = new Intl.NumberFormat('es-MX', {
-                            style: 'currency',
-                            currency: 'MXN',
-                            maximumFractionDigits: 0
-                          }).format(mxnAmount)
-                          return t('landing.packages.approxMxn', { mxn: mxnDisplay })
-                        })()}
-                      </div>
-                    )}
-                  </div>
-
-                    <div className={"rounded-xl px-3 py-2 mb-4 " + (darkMode ? "bg-white/5" : "bg-gray-50")}>
-                      <div className={"text-xs " + (darkMode ? "text-gray-500" : "text-gray-400")}>{t('landing.packages.characters')}</div>
-                      <div className={"font-black text-lg text-transparent bg-clip-text bg-gradient-to-r " + gradient}>{pkg.tokens}</div>
-                    </div>
-
-                    <p className={"text-sm mb-2 " + (darkMode ? "text-gray-400" : "text-gray-500")}>Tiempo estimado: {pkg.hours}</p>
-
-                  {isPopular ? (
-                    <div className="relative mt-auto">
-                      <span className={"absolute -inset-1 rounded-xl pointer-events-none animate-ping opacity-50 bg-gradient-to-r " + gradient} />
-                      <button className={"relative z-10 w-full py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r animate-pulse transition-all shadow-lg " + gradient + " hover:opacity-90"}>
-                        {t('landing.packages.buyNowPopular')}
-                      </button>
-                      <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none z-20" />
-                    </div>
-                  ) : (
-                    <button className={"w-full py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r transition-all mt-auto " + gradient + " hover:opacity-90 hover:shadow-lg"}>
-                      {t('landing.packages.buyNow')}
-                    </button>
-                  )}
-                </div>
-              </div>
-              )
-            })}
-          </div>
-
-          {/* Bottom note */}
-          <p className={"text-center text-xs mt-10 " + (darkMode ? "text-gray-600" : "text-gray-400")}>
-            {t('landing.packages.note')}
-          </p>
         </div>
       </section>
 

@@ -440,3 +440,60 @@ body {
 .delay-500 { animation-delay: 500ms; }
 .delay-600 { animation-delay: 600ms; }
 .delay-700 { animation-delay: 700ms; }
+
+/* Pricing animations */
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+  }
+  50% {
+    opacity: 0.97;
+    box-shadow: 0 0 40px rgba(6, 182, 212, 0.6);
+  }
+}
+
+@keyframes button-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 6px 25px rgba(6, 182, 212, 0.5);
+  }
+}
+
+@keyframes addon-glow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(100, 100, 150, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(100, 100, 150, 0.6);
+  }
+}
+
+@keyframes shimmer-flash {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.92;
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
+}
+
+.animate-button-pulse {
+  animation: button-pulse 2s ease-in-out infinite;
+}
+
+.animate-addon-glow {
+  animation: addon-glow 2.5s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer-flash 2.5s ease-in-out infinite;
+}
