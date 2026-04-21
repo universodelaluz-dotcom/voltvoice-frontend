@@ -7,25 +7,49 @@ import CouponManager from './CouponManager'
 
 const API_URL = import.meta.env.VITE_API_URL || ((typeof window !== 'undefined' && ['localhost','127.0.0.1'].includes(window.location.hostname)) ? 'http://localhost:3000' : 'https://voltvoice-backend.onrender.com')
 
-const PLANS = ['all', 'free', 'start', 'creator', 'pro', 'admin']
+const PLANS = ['all', 'free', 'base', 'pack_lite', 'pack_pro', 'pack_max', 'admin']
 const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
+const PLAN_LABEL = {
+  all:      'Todos',
+  free:     'Sin plan',
+  base:     'Plan Base',
+  pack_lite:'Pack Lite',
+  pack_pro: 'Pack Pro',
+  pack_max: 'Pack Max',
+  admin:    'Admin',
+  // legacy fallback
+  start:    'Plan Base',
+  creator:  'Pack Pro',
+  pro:      'Pack Max',
+}
+
 const PLAN_STYLE = {
-  all:     { bg: 'bg-white/10',          text: 'text-gray-200',     dot: 'bg-white' },
-  free:    { bg: 'bg-gray-500/20',       text: 'text-gray-300',     dot: 'bg-gray-400' },
-  start:   { bg: 'bg-emerald-500/20',    text: 'text-emerald-300',  dot: 'bg-emerald-400' },
-  creator: { bg: 'bg-blue-500/20',       text: 'text-blue-300',     dot: 'bg-blue-400' },
-  pro:     { bg: 'bg-purple-500/20',     text: 'text-purple-300',   dot: 'bg-purple-400' },
-  admin:   { bg: 'bg-red-500/20',        text: 'text-red-300',      dot: 'bg-red-400' },
+  all:      { bg: 'bg-white/10',          text: 'text-gray-200',     dot: 'bg-white' },
+  free:     { bg: 'bg-gray-500/20',       text: 'text-gray-300',     dot: 'bg-gray-400' },
+  base:     { bg: 'bg-cyan-500/20',       text: 'text-cyan-300',     dot: 'bg-cyan-400' },
+  pack_lite:{ bg: 'bg-emerald-500/20',    text: 'text-emerald-300',  dot: 'bg-emerald-400' },
+  pack_pro: { bg: 'bg-pink-500/20',       text: 'text-pink-300',     dot: 'bg-pink-400' },
+  pack_max: { bg: 'bg-orange-500/20',     text: 'text-orange-300',   dot: 'bg-orange-400' },
+  admin:    { bg: 'bg-red-500/20',        text: 'text-red-300',      dot: 'bg-red-400' },
+  // legacy
+  start:    { bg: 'bg-cyan-500/20',       text: 'text-cyan-300',     dot: 'bg-cyan-400' },
+  creator:  { bg: 'bg-pink-500/20',       text: 'text-pink-300',     dot: 'bg-pink-400' },
+  pro:      { bg: 'bg-orange-500/20',     text: 'text-orange-300',   dot: 'bg-orange-400' },
 }
 
 const PLAN_PILL_LIGHT = {
-  free: 'bg-gray-200 text-gray-700',
-  start: 'bg-emerald-100 text-emerald-700',
-  creator: 'bg-blue-100 text-blue-700',
-  pro: 'bg-violet-100 text-violet-700',
-  admin: 'bg-red-100 text-red-700',
-  all: 'bg-gray-200 text-gray-700',
+  free:     'bg-gray-200 text-gray-700',
+  base:     'bg-cyan-100 text-cyan-700',
+  pack_lite:'bg-emerald-100 text-emerald-700',
+  pack_pro: 'bg-pink-100 text-pink-700',
+  pack_max: 'bg-orange-100 text-orange-700',
+  admin:    'bg-red-100 text-red-700',
+  all:      'bg-gray-200 text-gray-700',
+  // legacy
+  start:    'bg-cyan-100 text-cyan-700',
+  creator:  'bg-pink-100 text-pink-700',
+  pro:      'bg-orange-100 text-orange-700',
 }
 
 const planStyle = (plan) => PLAN_STYLE[plan] || PLAN_STYLE.free
@@ -60,7 +84,7 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [activityLoading, setActivityLoading] = useState(false)
   const [activityHours, setActivityHours] = useState(48)
   const [activityLimit, setActivityLimit] = useState(5000)
-  const [createUserForm, setCreateUserForm] = useState({ email: '', password: '', plan: 'start', tokens: 1000, role: 'user' })
+  const [createUserForm, setCreateUserForm] = useState({ email: '', password: '', plan: 'base', tokens: 1000, role: 'user' })
   const [showCreateUserModal, setShowCreateUserModal] = useState(false)
   const [suspendUserId, setSuspendUserId] = useState(null)
   const [suspendMinutes, setSuspendMinutes] = useState(60)
@@ -1214,8 +1238,8 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                   <h3 className="font-bold">Suscriptores por Plan</h3>
                   <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{stats.onlineUsers} online ahora</span>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  {['free', 'start', 'creator', 'pro', 'admin'].map(plan => {
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                  {['free', 'base', 'pack_lite', 'pack_pro', 'pack_max', 'admin'].map(plan => {
                     const s = planStyle(plan)
                     const count = planCount(plan)
                     const online = planOnline(plan)
@@ -1224,7 +1248,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                       <div key={plan} className={`rounded-xl p-4 ${s.bg} border ${darkMode ? 'border-white/10' : 'border-black/5'}`}>
                         <div className="flex items-center gap-1.5 mb-2">
                           <span className={`w-2 h-2 rounded-full ${s.dot}`} />
-                          <span className={`text-xs font-bold uppercase ${s.text}`}>{plan}</span>
+                          <span className={`text-xs font-bold uppercase ${s.text}`}>{PLAN_LABEL[plan]}</span>
                         </div>
                         <div className={`text-3xl font-black ${s.text}`}>{count}</div>
                         <div className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{pct}% del total</div>
@@ -1469,7 +1493,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                   <div className="grid grid-cols-3 gap-2">
                     <select className={inp} value={createUserForm.plan}
                       onChange={(e) => setCreateUserForm((prev) => ({ ...prev, plan: e.target.value }))}>
-                      {['free', 'start', 'creator', 'pro', 'admin'].map((p) => <option key={p} value={p}>{p}</option>)}
+                      {['free', 'base', 'pack_lite', 'pack_pro', 'pack_max', 'admin'].map((p) => <option key={p} value={p}>{PLAN_LABEL[p]}</option>)}
                     </select>
                     <input type="number" className={inp} value={createUserForm.tokens}
                       onChange={(e) => setCreateUserForm((prev) => ({ ...prev, tokens: parseInt(e.target.value || '0') }))} />
@@ -1751,7 +1775,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                       }`}
                     >
                       <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-                      <span className="uppercase">{plan === 'all' ? 'Todos' : plan}</span>
+                      <span className="uppercase">{PLAN_LABEL[plan] ?? plan}</span>
                       <span className={`font-black ${active ? (darkMode ? s.text : 'text-gray-800') : darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         {count}
                       </span>
