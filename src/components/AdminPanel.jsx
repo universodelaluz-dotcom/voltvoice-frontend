@@ -468,7 +468,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
       const d = await r.json().catch(() => ({}))
       if (!r.ok || !d.success) return showMsg(d.error || 'Error creando usuario', 'error')
       showMsg(`Usuario creado: ${d.user.email}`)
-      setCreateUserForm({ email: '', password: '', plan: 'start', tokens: 1000, role: 'user' })
+      setCreateUserForm({ email: '', password: '', plan: 'base', tokens: 1000, role: 'user' })
       setShowCreateUserModal(false)
       loadUsers()
       loadStats()
@@ -1897,13 +1897,13 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                             {editingUser === u.id ? (
                               <select className={inp} value={editValues.plan || u.plan}
                                 onChange={e => setEditValues(p => ({ ...p, plan: e.target.value }))}>
-                                {['free', 'start', 'creator', 'pro', 'admin'].map(p => (
-                                  <option key={p} value={p}>{p}</option>
+                                {['free', 'base', 'pack_lite', 'pack_pro', 'pack_max', 'admin'].map(p => (
+                                  <option key={p} value={p}>{PLAN_LABEL[p]}</option>
                                 ))}
                               </select>
                             ) : (
                               <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${pillClass}`}>
-                                {String(userPlan || 'free').toUpperCase()}
+                                {PLAN_LABEL[userPlan] ?? String(userPlan || 'free').toUpperCase()}
                               </span>
                             )}
                           </td>
@@ -2104,7 +2104,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                   <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Plan</label>
                   <select className={`${inp} w-full`} value={createUserForm.plan}
                     onChange={e => setCreateUserForm(p => ({ ...p, plan: e.target.value }))}>
-                    {['free', 'start', 'creator', 'pro', 'admin'].map(p => <option key={p} value={p}>{p}</option>)}
+                    {['free', 'base', 'pack_lite', 'pack_pro', 'pack_max', 'admin'].map(p => <option key={p} value={p}>{PLAN_LABEL[p]}</option>)}
                   </select>
                 </div>
                 <div>
