@@ -29,8 +29,9 @@ const getAddOns = (t) => [
     icon: '⚡',
     name: 'PACK LITE',
     price: 9.99,
-    tokens: '50,000 caracteres',
-    description: 'Ideal para creadores ocasionales',
+    tokens: '+1 Personaje',
+    tokensDesc: 'Clonado y reutilizable para tu stream',
+    description: 'Dale vida a UN personaje en tu stream',
     gradient: 'from-cyan-500 to-blue-500',
     buttonColor: 'bg-slate-700 hover:bg-slate-800'
   },
@@ -38,8 +39,9 @@ const getAddOns = (t) => [
     icon: '🔥',
     name: 'PACK PRO',
     price: 24.99,
-    tokens: '150,000 caracteres',
-    description: 'Para streamers profesionales',
+    tokens: '+2 Personajes',
+    tokensDesc: 'Clonados y reutilizables para tu stream',
+    description: 'Crea TODO un elenco de personajes para tu stream',
     gradient: 'from-pink-500 to-rose-500',
     buttonColor: 'bg-slate-600 hover:bg-slate-700',
     popular: true
@@ -48,8 +50,9 @@ const getAddOns = (t) => [
     icon: '⭐',
     name: 'PACK MAX',
     price: 49.99,
-    tokens: '500,000 caracteres',
-    description: 'Para streams masivos 24/7',
+    tokens: '+5 Personajes',
+    tokensDesc: 'Clonados y reutilizables para tu stream',
+    description: 'Un universo completo de personajes hablando en tu stream',
     gradient: 'from-orange-500 to-red-500',
     buttonColor: 'bg-orange-500 hover:bg-orange-600'
   }
@@ -221,13 +224,13 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                       </p>
                     </div>
 
-                    {/* Tokens */}
+                    {/* Personajes */}
                     <div className={`rounded-lg px-3 py-2 mb-4 ${darkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
-                      <div className={`text-xs font-bold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        TOKENS ADICIONALES
-                      </div>
                       <div className={`text-lg font-black text-transparent bg-clip-text bg-gradient-to-r ${addon.gradient}`}>
                         {addon.tokens}
+                      </div>
+                      <div className={`text-xs font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {addon.tokensDesc}
                       </div>
                     </div>
 
