@@ -5,43 +5,35 @@ import { useTranslation } from 'react-i18next'
 const getComparisonData = (t) => ({
   features: [
     {
-      category: t('pricing.comparison.categories.voices'),
+      category: 'Voces',
       items: [
-        { name: t('pricing.comparison.features.essentialVoice'), free: t('pricing.comparison.values.freeHours'), start: t('pricing.comparison.values.unlimited'), creator: t('pricing.comparison.values.unlimited'), pro: t('pricing.comparison.values.unlimited') },
-        { name: t('pricing.comparison.features.customVoices'), free: false, start: t('pricing.comparison.values.customVoices1'), creator: t('pricing.comparison.values.customVoices2'), pro: t('pricing.comparison.values.customVoices5') },
-        { name: t('pricing.comparison.features.premiumVoices'), free: false, start: t('pricing.comparison.values.premiumVoices1'), creator: t('pricing.comparison.values.premiumVoices2'), pro: t('pricing.comparison.values.premiumVoices4') }
+        { name: '2 Voces esenciales', base: true, lite: true, pro: true, max: true },
+        { name: '2 Voces premium', base: true, lite: true, pro: true, max: true }
       ]
     },
     {
-      category: t('pricing.comparison.categories.usage'),
+      category: 'Filtros & Controles',
       items: [
-        { name: t('pricing.comparison.features.monthlyCapacity'), free: '-', start: t('pricing.comparison.values.monthlyStart'), creator: t('pricing.comparison.values.monthlyCreator'), pro: t('pricing.comparison.values.monthlyPro') }
+        { name: 'Filtros avanzados', base: true, lite: true, pro: true, max: true },
+        { name: 'Smart filter', base: true, lite: true, pro: true, max: true },
+        { name: 'Cambiar nick', base: true, lite: true, pro: true, max: true },
+        { name: 'Silenciado', base: true, lite: true, pro: true, max: true },
+        { name: 'Anti-spam', base: true, lite: true, pro: true, max: true },
+        { name: 'Analytics', base: true, lite: true, pro: true, max: true }
       ]
     },
     {
-      category: t('pricing.comparison.categories.tools'),
+      category: 'Capacidad Mensual',
       items: [
-        { name: t('pricing.comparison.features.messageTools'), free: false, start: true, creator: true, pro: true },
-        { name: t('pricing.comparison.features.dynamicVoices'), free: false, start: t('pricing.comparison.values.limited'), creator: true, pro: true },
-        { name: t('pricing.comparison.features.audioExtractor'), free: false, start: false, creator: true, pro: true },
-        { name: t('pricing.comparison.features.basicFilters'), free: t('pricing.comparison.values.limited'), start: true, creator: true, pro: true },
-        { name: t('pricing.comparison.features.advancedControls'), free: false, start: true, creator: true, pro: true },
-        { name: t('pricing.comparison.features.smartReading'), free: false, start: false, creator: true, pro: true },
-      ]
-    },
-    {
-      category: t('pricing.comparison.categories.ai'),
-      items: [
-        { name: t('pricing.comparison.features.aiAssistant'), free: false, start: false, creator: false, pro: true },
-        { name: t('pricing.comparison.features.aiCommentator'), free: false, start: false, creator: false, pro: true }
+        { name: 'Caracteres incluidos', base: '20,000', lite: '70,000', pro: '170,000', max: '520,000' }
       ]
     }
   ],
   plans: [
-    { id: 'free', name: 'FREE', price: '$0', color: 'from-gray-400 to-gray-600', bgColor: 'bg-gray-50', borderColor: 'border-gray-300', textColor: 'text-gray-900', usage: 'Voz esencial: 2 horas diarias', cta: t('pricing.comparison.startFree') },
-    { id: 'start', name: 'START', price: '$6.99', color: 'from-green-400 to-emerald-600', bgColor: 'bg-gradient-to-br from-green-50 to-emerald-50', borderColor: 'border-green-300', textColor: 'text-gray-900', usage: '200,000 tokens (≈ 2-4 h)', cta: t('pricing.comparison.choosePlan') },
-    { id: 'creator', name: 'CREATOR', price: '$12.99', color: 'from-blue-400 to-indigo-600', bgColor: 'bg-gradient-to-br from-blue-50 to-indigo-50', borderColor: 'border-blue-300', textColor: 'text-gray-900', popular: true, usage: '500,000 tokens (≈ 5-8 h)', cta: t('pricing.comparison.choosePlan') },
-    { id: 'pro', name: 'PRO', price: '$17.99', color: 'from-orange-400 to-red-600', bgColor: 'bg-gradient-to-br from-orange-50 to-red-50', borderColor: 'border-orange-300', textColor: 'text-gray-900', usage: '800,000 tokens (≈ 10-15 h)', cta: t('pricing.comparison.choosePlan') }
+    { id: 'base', name: 'PLAN BASE', price: '$9.99', color: 'from-cyan-400 to-purple-500', bgColor: 'bg-gradient-to-br from-cyan-50 to-purple-50', borderColor: 'border-cyan-300', textColor: 'text-gray-900', popular: true, usage: '20,000 caracteres', cta: t('pricing.comparison.choosePlan') },
+    { id: 'lite', name: 'PACK LITE', price: '$9.99', color: 'from-cyan-500 to-blue-500', bgColor: 'bg-gradient-to-br from-cyan-50 to-blue-50', borderColor: 'border-cyan-300', textColor: 'text-gray-900', usage: '+50,000 caracteres', cta: t('pricing.comparison.choosePlan') },
+    { id: 'pro', name: 'PACK PRO', price: '$24.99', color: 'from-purple-500 to-pink-500', bgColor: 'bg-gradient-to-br from-purple-50 to-pink-50', borderColor: 'border-purple-300', textColor: 'text-gray-900', usage: '+150,000 caracteres', cta: t('pricing.comparison.choosePlan') },
+    { id: 'max', name: 'PACK MAX', price: '$49.99', color: 'from-orange-500 to-red-500', bgColor: 'bg-gradient-to-br from-orange-50 to-red-50', borderColor: 'border-orange-300', textColor: 'text-gray-900', usage: '+500,000 caracteres', cta: t('pricing.comparison.choosePlan') }
   ]
 })
 
@@ -83,19 +75,19 @@ export function PricingComparison({ darkMode, onPlanAction }) {
                       <div className="mt-2 flex items-end justify-center gap-1.5">
                         <span className={`text-[36px] leading-none font-bold tracking-[-0.01em] ${
                           darkMode
-                            ? (plan.id === 'free'
-                              ? 'text-slate-300'
-                              : plan.id === 'start'
-                                ? 'text-emerald-300'
-                                : plan.id === 'creator'
-                                  ? 'text-blue-300'
+                            ? (plan.id === 'base'
+                              ? 'text-cyan-300'
+                              : plan.id === 'lite'
+                                ? 'text-cyan-300'
+                                : plan.id === 'pro'
+                                  ? 'text-purple-300'
                                   : 'text-orange-300')
-                            : (plan.id === 'free'
-                              ? 'text-slate-500'
-                              : plan.id === 'start'
-                                ? 'text-emerald-600'
-                                : plan.id === 'creator'
-                                  ? 'text-blue-600'
+                            : (plan.id === 'base'
+                              ? 'text-cyan-600'
+                              : plan.id === 'lite'
+                                ? 'text-cyan-600'
+                                : plan.id === 'pro'
+                                  ? 'text-purple-600'
                                   : 'text-orange-600')
                         }`}>
                           {plan.price}
@@ -125,14 +117,16 @@ export function PricingComparison({ darkMode, onPlanAction }) {
                           <button
                             onClick={() => onPlanAction?.({ name: plan.name, price: parseFloat(plan.price.replace('$', '')) })}
                             className={`relative w-full px-5 py-2.5 rounded-xl text-sm font-black text-white transition-all hover:scale-[1.03] hover:opacity-90 shadow-md flex items-center justify-center gap-1.5 bg-gradient-to-r ${
-                              plan.id === 'free'
-                                ? 'from-gray-500 to-gray-600 shadow-gray-500/20'
-                                : plan.id === 'start'
-                                ? 'from-emerald-400 to-green-500 shadow-emerald-500/20'
-                                : 'from-orange-400 to-red-500 shadow-orange-500/20'
+                              plan.id === 'base'
+                                ? 'from-cyan-400 to-purple-500 shadow-cyan-500/20'
+                                : plan.id === 'lite'
+                                ? 'from-cyan-500 to-blue-500 shadow-cyan-500/20'
+                                : plan.id === 'pro'
+                                ? 'from-purple-500 to-pink-500 shadow-purple-500/20'
+                                : 'from-orange-500 to-red-500 shadow-orange-500/20'
                             }`}
                           >
-                            {plan.id === 'free' ? '⭐' : plan.id === 'start' ? '🟢' : '⚡'} {plan.cta}
+                            {plan.id === 'base' ? '🎯' : plan.id === 'lite' ? '⚡' : plan.id === 'pro' ? '🔥' : '⭐'} {plan.cta}
                           </button>
                         )}
                       </div>

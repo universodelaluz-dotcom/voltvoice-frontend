@@ -7,7 +7,11 @@
       "Bash(taskkill /F /IM node.exe)",
       "Bash(node create-admin.js)",
       "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -d \"{\\\\\"email\\\\\":\\\\\"alainsh@gmail.com\\\\\",\\\\\"password\\\\\":\\\\\"Admin1234\\\\\"}\")",
-      "Bash(curl -s http://localhost:5173)"
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(find \"C:\\\\Nueva carpeta\\\\VOLTVOICE CON SERVER M25\\\\VOLTVOICE\\\\backend\" -name \"package.json\" -not -path \"*/node_modules/*\" -exec head -50 {} +)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }

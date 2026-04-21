@@ -720,6 +720,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const speakQueueRef = useRef([])
   const isProcessingRef = useRef(false)
   const lastMessageRef = useRef({}) // { username: lastText }
+  const recentGlobalTextsRef = useRef([]) // [{ text: normalizedText, ts: timestamp }] ventana 60s cross-user
   const currentAudioRef = useRef(null)
   const nextPreGeneratedRef = useRef({}) // { itemId, audioUrl } para guardar audio pre-generado
   const isPreGeneratingRef = useRef(false)
@@ -1517,10 +1518,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             if (containsProfanity(msg.text, profanityWords)) { markFilteredMessage(); return }
           }
 
-          // Filtro: saltar repetidos (por usuario, no global)
-          const normalizedText = msg.text.trim().toLowerCase()
-          if (c.skipRepeated && normalizedText === lastMessageRef.current[msg.username]) { markFilteredMessage(); return }
+          // Filtro: saltar repetidos — mismo usuario consecutivo Y cross-user (anti-multicuenta, ventana 60s)
+          const normalizedText = normalizeMessageForMatching(msg.text)
+          if (c.skipRepeated) {
+            const isSameUserRepeat = normalizedText === lastMessageRef.current[msg.username]
+            const isCrossUserDuplicate = isGlobalDuplicateText(normalizedText)
+            if (isSameUserRepeat || isCrossUserDuplicate) { markFilteredMessage(); return }
+          }
           lastMessageRef.current[msg.username] = normalizedText
+          recordGlobalText(normalizedText)
 
           // Filtro: ignorar enlaces
           if (c.ignoreLinks && hasLinks(msg.text)) { markFilteredMessage(); return }
@@ -1722,6 +1728,42 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     if (metrics.pressure <= 1.05) return 0
     const overflow = Math.max(0, metrics.incomingPerMinute - metrics.readCapacityPerMinute)
     return Math.max(0, Math.round(overflow / Math.max(1, metrics.readCapacityPerMinute / 3)))
+  }
+
+  // Detecta mensajes duplicados o muy similares entre distintos usuarios (anti-multicuenta)
+  const isGlobalDuplicateText = (normalizedText) => {
+    if (!normalizedText || normalizedText.length < 3) return false
+    const now = Date.now()
+    const cutoff = now - 60000
+    // Limpiar entradas expiradas
+    recentGlobalTextsRef.current = recentGlobalTextsRef.current.filter(e => e.ts >= cutoff)
+    const recent = recentGlobalTextsRef.current
+
+    const useFuzzy = normalizedText.length >= 10
+    for (const entry of recent) {
+      // Coincidencia exacta tras normalización
+      if (entry.text === normalizedText) return true
+      // Coincidencia difusa por bigramas (Dice ≥ 0.75) para textos largos
+      if (useFuzzy && entry.text.length >= 10) {
+        const intersection = getBigramIntersection(normalizedText, entry.text)
+        const dice = (2 * intersection) / (normalizedText.length - 1 + entry.text.length - 1)
+        if (dice >= 0.75) return true
+      }
+    }
+    return false
+  }
+
+  const getBigramIntersection = (a, b) => {
+    const bigramsB = new Set()
+    for (let i = 0; i < b.length - 1; i++) bigramsB.add(b.slice(i, i + 2))
+    let count = 0
+    for (let i = 0; i < a.length - 1; i++) { if (bigramsB.has(a.slice(i, i + 2))) count++ }
+    return count
+  }
+
+  const recordGlobalText = (normalizedText) => {
+    if (!normalizedText || normalizedText.length < 3) return
+    recentGlobalTextsRef.current.push({ text: normalizedText, ts: Date.now() })
   }
 
   // PUNTO 1: Anti-spam por usuario — ignora temporalmente si envía >5 msgs en 10s

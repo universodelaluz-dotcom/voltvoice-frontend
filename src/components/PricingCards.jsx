@@ -1,95 +1,66 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-const getMonthlyPlans = (t) => [
+const getBasePlan = (t) => ({
+  icon: '🎯',
+  name: 'PLAN BASE',
+  price: 9.99,
+  description: 'El plan perfecto para empezar a streamear con IA',
+  tokens: '20,000 caracteres',
+  voices: [
+    '2 voces esenciales ilimitadas',
+    '2 voces premium',
+    'Control de calidad de audio',
+    'Soporte prioritario'
+  ],
+  features: [
+    { icon: '🎨', label: 'Filtros avanzados' },
+    { icon: '🤖', label: 'Smart filter' },
+    { icon: '👤', label: 'Cambiar nick' },
+    { icon: '🔇', label: 'Silenciado' },
+    { icon: '🛡️', label: 'Anti-spam' },
+    { icon: '📊', label: 'Analytics' }
+  ]
+})
+
+const getAddOns = (t) => [
+  {
+    icon: '⚡',
+    name: 'PACK LITE',
+    price: 9.99,
+    tokens: '50,000 caracteres',
+    description: 'Ideal para creadores ocasionales',
+    gradient: 'from-cyan-500 to-blue-500',
+    buttonColor: 'bg-slate-700 hover:bg-slate-800'
+  },
+  {
+    icon: '🔥',
+    name: 'PACK PRO',
+    price: 24.99,
+    tokens: '150,000 caracteres',
+    description: 'Para streamers profesionales',
+    gradient: 'from-pink-500 to-rose-500',
+    buttonColor: 'bg-slate-600 hover:bg-slate-700',
+    popular: true
+  },
   {
     icon: '⭐',
-    name: 'FREE',
-    price: 0,
-    description: t('pricing.plans.free.description'),
-    cta: t('pricing.plans.free.cta'),
-    popular: false,
-    voices: t('pricing.plans.free.voices', { returnObjects: true }),
-    stream: t('pricing.plans.free.stream'),
-    compatibility: t('pricing.plans.free.compatibility', { returnObjects: true }),
-    extension: t('pricing.plans.free.extension'),
-  },
-  {
-    icon: '🟢',
-    name: 'START',
-    price: 6.99,
-    description: t('pricing.plans.start.description'),
-    cta: t('pricing.plans.start.cta'),
-    popular: false,
-    voices: t('pricing.plans.start.voices', { returnObjects: true }),
-    stream: t('pricing.plans.start.stream'),
-    compatibility: t('pricing.plans.start.compatibility', { returnObjects: true }),
-    extension: t('pricing.plans.start.extension'),
-  },
-  {
-    icon: '🔵',
-    name: 'CREATOR',
-    price: 12.99,
-    description: t('pricing.plans.creator.description'),
-    cta: t('pricing.plans.creator.cta'),
-    popular: true,
-    voices: t('pricing.plans.creator.voices', { returnObjects: true }),
-    stream: t('pricing.plans.creator.stream'),
-    compatibility: t('pricing.plans.creator.compatibility', { returnObjects: true }),
-    extension: t('pricing.plans.creator.extension'),
-  },
-  {
-    icon: '🔥',
-    name: 'PRO',
-    price: 17.99,
-    description: t('pricing.plans.pro.description'),
-    cta: t('pricing.plans.pro.cta'),
-    popular: false,
-    voices: t('pricing.plans.pro.voices', { returnObjects: true }),
-    stream: t('pricing.plans.pro.stream'),
-    compatibility: t('pricing.plans.pro.compatibility', { returnObjects: true }),
-    experience: t('pricing.plans.pro.experience'),
-  },
-]
-
-const getAnnualPlans = (t) => [
-  {
-    icon: '🟢',
-    name: t('pricing.annual.start.name'),
-    price: 59,
-    saving: t('pricing.annual.start.saving'),
-    planName: 'START',
-    benefits: t('pricing.annual.start.benefits', { returnObjects: true }),
-  },
-  {
-    icon: '🔵',
-    name: t('pricing.annual.creator.name'),
-    price: 109,
-    saving: t('pricing.annual.creator.saving'),
-    hot: true,
-    planName: 'CREATOR',
-    benefits: t('pricing.annual.creator.benefits', { returnObjects: true }),
-  },
-  {
-    icon: '🔥',
-    name: t('pricing.annual.pro.name'),
-    price: 149,
-    saving: t('pricing.annual.pro.saving'),
-    fast: true,
-    planName: 'PRO',
-    benefits: t('pricing.annual.pro.benefits', { returnObjects: true }),
-  },
+    name: 'PACK MAX',
+    price: 49.99,
+    tokens: '500,000 caracteres',
+    description: 'Para streams masivos 24/7',
+    gradient: 'from-orange-500 to-red-500',
+    buttonColor: 'bg-orange-500 hover:bg-orange-600'
+  }
 ]
 
 export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
   const { t } = useTranslation()
-  const [billingCycle, setBillingCycle] = useState('monthly')
-  const [usdMxn, setUsdMxn] = useState(17)
+  const [usdMxn, setUsdMxn] = useState(18)
 
   useEffect(() => {
     let active = true
-
     const loadRate = async () => {
       try {
         const res = await fetch('https://open.er-api.com/v6/latest/USD')
@@ -99,14 +70,11 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
           setUsdMxn(nextRate)
         }
       } catch {
-        // fallback
+        // fallback to 18
       }
     }
-
     loadRate()
-    return () => {
-      active = false
-    }
+    return () => { active = false }
   }, [])
 
   const formatMxnApprox = (usdPrice) =>
@@ -116,231 +84,167 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
       maximumFractionDigits: 0,
     }).format(usdPrice * usdMxn)
 
+  const basePlan = getBasePlan(t)
+  const addOns = getAddOns(t)
+
   return (
     <div>
-      {showToggle && (
-        <div className="flex justify-center mb-12">
-          <div className={`inline-flex rounded-full p-1 ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>
+      <div className="max-w-6xl mx-auto">
+        {/* Main Grid: Base Plan + Add-ons */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          {/* BASE PLAN - Left Column */}
+          <div className={`rounded-2xl p-8 transition-all duration-300 flex flex-col ${
+            darkMode
+              ? 'bg-gradient-to-br from-gray-800/50 to-gray-900/50 border-2 border-cyan-400/50'
+              : 'bg-white border-2 border-cyan-300 shadow-lg'
+          }`}>
+
+            {/* Badge */}
+            <div className="mb-4">
+              <span className="inline-block text-xs font-black tracking-wider px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white">
+                ✨ EL MÁS POPULAR
+              </span>
+            </div>
+
+            {/* Title */}
+            <h3 className="text-2xl font-black mb-1">{basePlan.icon} {basePlan.name}</h3>
+            <p className={`text-xs mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              {basePlan.description}
+            </p>
+
+            {/* Price */}
+            <div className="mb-5">
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+                  ${basePlan.price.toFixed(2)}
+                </span>
+                <span className={`text-sm font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>/mes</span>
+              </div>
+              <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                ≈ {formatMxnApprox(basePlan.price)}
+              </p>
+            </div>
+
+            {/* Tokens Badge */}
+            <div className={`rounded-lg px-3 py-2 mb-4 ${darkMode ? 'bg-white/5' : 'bg-cyan-50'}`}>
+              <div className={`text-xs font-bold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
+                TOKENS MENSUALES
+              </div>
+              <div className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+                {basePlan.tokens}
+              </div>
+            </div>
+
+            {/* Voices */}
+            <div className="space-y-2 mb-4">
+              <div className={`text-xs font-bold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>🎙️ VOCES</div>
+              {basePlan.voices.map((voice, idx) => (
+                <div key={idx} className="flex items-start gap-2">
+                  <Check className="w-4 h-4 mt-0.5 text-green-500 flex-shrink-0" />
+                  <span className={`text-xs ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{voice}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Features Grid */}
+            <div className="mb-5">
+              <div className={`text-xs font-bold mb-2 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>✨ FUNCIONES</div>
+              <div className="grid grid-cols-2 gap-2">
+                {basePlan.features.map((feature, idx) => (
+                  <div key={idx} className={`rounded p-2 text-center ${darkMode ? 'bg-white/5' : 'bg-cyan-50'}`}>
+                    <span className="text-lg">{feature.icon}</span>
+                    <div className={`text-xs font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                      {feature.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* CTA Button */}
             <button
-              onClick={() => setBillingCycle('monthly')}
-              className={`px-6 py-2 rounded-full font-semibold transition-all ${
-                billingCycle === 'monthly'
-                  ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white'
-                  : darkMode ? 'text-gray-400' : 'text-gray-600'
-              }`}
+              onClick={() => onPlanAction?.(basePlan, { billingCycle: 'monthly' })}
+              className="w-full py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 transition-all shadow-lg mt-auto"
             >
-              {t('pricing.toggle.monthly')}
+              🚀 ACTIVAR PLAN
             </button>
-            <button
-              onClick={() => setBillingCycle('annual')}
-              className={`px-6 py-2 rounded-full font-semibold transition-all ${
-                billingCycle === 'annual'
-                  ? 'bg-gradient-to-r from-cyan-400 to-purple-500 text-white'
-                  : darkMode ? 'text-gray-400' : 'text-gray-600'
-              }`}
-            >
-              {t('pricing.toggle.annual')}
-            </button>
+          </div>
+
+          {/* ADD-ONS - Right Column (2 cols) */}
+          <div className="lg:col-span-2">
+            <div className="text-center mb-6">
+              <p className={`text-sm font-bold tracking-wider ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
+                📦 AMPLÍA TUS LÍMITES
+              </p>
+              <h4 className={`text-xl font-black mt-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Packs de Tokens Adicionales
+              </h4>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {addOns.map((addon, idx) => (
+                <div
+                  key={addon.name}
+                  className={`rounded-xl p-5 transition-all duration-300 flex flex-col relative ${
+                    addon.popular
+                      ? darkMode
+                        ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-pink-400/50 shadow-lg shadow-pink-400/20 scale-105'
+                        : 'bg-white border-2 border-pink-400 shadow-xl scale-105'
+                      : darkMode
+                        ? 'bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-700'
+                        : 'bg-white border border-gray-200 shadow-md'
+                  }`}
+                >
+                  {/* Badge */}
+                  {addon.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span className="inline-block text-xs font-black px-3 py-1 rounded-full bg-gradient-to-r from-pink-400 to-rose-500 text-white">
+                        ⭐ RECOMENDADO
+                      </span>
+                    </div>
+                  )}
+
+                  <div className={addon.popular ? 'mt-3' : ''}>
+                    {/* Header */}
+                    <h3 className="text-lg font-black">{addon.icon} {addon.name}</h3>
+                    <p className={`text-xs mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {addon.description}
+                    </p>
+
+                    {/* Price */}
+                    <div className="mb-3">
+                      <div className={`text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r ${addon.gradient}`}>
+                        ${addon.price.toFixed(2)}
+                      </div>
+                      <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                        ≈ {formatMxnApprox(addon.price)}
+                      </p>
+                    </div>
+
+                    {/* Tokens */}
+                    <div className={`rounded-lg px-3 py-2 mb-4 ${darkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
+                      <div className={`text-xs font-bold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        TOKENS ADICIONALES
+                      </div>
+                      <div className={`text-lg font-black text-transparent bg-clip-text bg-gradient-to-r ${addon.gradient}`}>
+                        {addon.tokens}
+                      </div>
+                    </div>
+
+                    {/* CTA Button */}
+                    <button
+                      onClick={() => onPlanAction?.(addon, { billingCycle: 'monthly', isAddOn: true })}
+                      className={`w-full py-2.5 rounded-lg font-black text-sm text-white transition-all ${addon.buttonColor} shadow-md mt-auto`}
+                    >
+                      ✨ AGREGAR
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      )}
-
-      {billingCycle === 'monthly' && (
-        <>
-          <div className="text-center mb-8">
-            <p className={`text-sm font-bold tracking-wider ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
-              {t('pricing.header')}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {getMonthlyPlans(t).map((plan) => (
-              <div
-                key={plan.name}
-                className={`rounded-lg p-8 transition-all duration-300 flex flex-col ${
-                  plan.popular
-                    ? darkMode
-                      ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-cyan-400 shadow-2xl shadow-cyan-400/30 scale-105'
-                      : 'bg-white border-2 border-cyan-400 shadow-2xl scale-105'
-                    : darkMode
-                      ? 'bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-700'
-                      : 'bg-white border border-gray-200'
-                }`}
-              >
-                {plan.popular && (
-                  <div className="mb-3">
-                    <span className="inline-block text-xs font-black tracking-wider px-3 py-1 rounded-full bg-gradient-to-r from-orange-400 to-pink-500 text-white">
-                      {t('pricing.popular')}
-                    </span>
-                  </div>
-                )}
-                <h3 className="text-2xl font-black mb-1">{plan.icon} {plan.name}</h3>
-                <div className="mb-4">
-                  <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-                    ${plan.price.toFixed(2)}
-                  </span>
-                  <span className={`ml-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('pricing.perMonth')}</span>
-                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {t('payment.approxMxn', { mxn: formatMxnApprox(plan.price) })}
-                  </p>
-                </div>
-
-                <p className={`text-sm mb-5 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>⚡ {plan.description}</p>
-
-                <div className="space-y-2 mb-4">
-                  {plan.voices.map((line, idx) => (
-                    <div key={idx} className="flex items-start gap-2">
-                      <span>🎙️</span>
-                      <span className={darkMode ? 'text-gray-100' : 'text-gray-700'}>{line}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <p className={`text-sm mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>⏱️ {plan.stream}</p>
-                {plan.experience && (
-                  <p className={`text-sm mb-2 font-semibold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>🧠 {plan.experience}</p>
-                )}
-
-                <p className={`text-sm font-bold mt-4 mb-2 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>🛠️ {t('pricing.compatible')}</p>
-                <div className="space-y-2 mb-4">
-                  {plan.compatibility.map((line, idx) => (
-                    <div key={idx} className="flex items-start gap-2">
-                      <Check className="w-4 h-4 mt-0.5 text-green-400" />
-                      <span className={darkMode ? 'text-gray-200' : 'text-gray-700'}>{line}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {plan.extension && (
-                  <p className={`text-sm mb-6 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>👉 {plan.extension}</p>
-                )}
-
-                {plan.popular ? (
-                  <div className="relative mt-auto">
-                    {/* Ping ring exterior */}
-                    <span className="absolute -inset-1 rounded-xl pointer-events-none animate-ping opacity-50 bg-gradient-to-r from-cyan-400/40 to-purple-500/40" />
-                    <button
-                      onClick={() => onPlanAction?.(plan, { billingCycle: 'monthly' })}
-                      className="relative z-10 w-full py-4 rounded-xl font-black text-base text-white bg-gradient-to-r from-cyan-400 to-purple-500 animate-pulse hover:from-cyan-300 hover:to-purple-400 transition-all shadow-xl shadow-cyan-500/40 hover:shadow-cyan-400/60 hover:scale-[1.02] flex items-center justify-center gap-2"
-                    >
-                      🚀 {plan.cta}
-                    </button>
-                    {/* Punto naranja esquina */}
-                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none z-20" />
-                  </div>
-                ) : (
-                  <div className="relative mt-auto">
-                    <span className={`absolute -inset-0.5 rounded-xl blur-sm animate-pulse pointer-events-none opacity-40 ${
-                      plan.name === 'FREE' ? 'bg-gradient-to-r from-gray-400 to-gray-500' :
-                      plan.name === 'START' ? 'bg-gradient-to-r from-emerald-400 to-green-500' :
-                      'bg-gradient-to-r from-orange-400 to-red-500'
-                    }`} />
-                    <button
-                      onClick={() => onPlanAction?.(plan, { billingCycle: 'monthly' })}
-                      className={`relative w-full py-3.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] hover:opacity-90 flex items-center justify-center gap-2 shadow-lg ${
-                        plan.name === 'FREE'
-                          ? 'bg-gradient-to-r from-gray-500 to-gray-600 shadow-gray-500/30'
-                          : plan.name === 'START'
-                          ? 'bg-gradient-to-r from-emerald-400 to-green-500 shadow-emerald-500/30'
-                          : 'bg-gradient-to-r from-orange-400 to-red-500 shadow-orange-500/30'
-                      }`}
-                    >
-                      {plan.name === 'FREE' ? '⭐' : plan.name === 'START' ? '🟢' : '⚡'} {plan.cta}
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {billingCycle === 'annual' && (
-        <>
-          <div className="text-center mb-8">
-            <p className={`text-sm font-bold tracking-wider ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
-              💎 {t('pricing.toggle.annual')}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {getAnnualPlans(t).map((plan) => (
-              <div key={plan.name} className={`rounded-lg p-8 flex flex-col ${darkMode ? 'bg-gradient-to-br from-gray-800/70 to-gray-900/70 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-                {plan.hot && (
-                  <div className="mb-3">
-                    <span className="inline-block text-xs font-black tracking-wider px-3 py-1 rounded-full bg-gradient-to-r from-orange-400 to-pink-500 text-white">
-                      {t('pricing.popular')}
-                    </span>
-                  </div>
-                )}
-                <h3 className="text-2xl font-black mb-2">{plan.icon} {plan.name}{plan.hot ? ' 🔥' : ''}{plan.fast ? ' ⚡' : ''}</h3>
-                <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2">
-                  ${plan.price}
-                </p>
-                <p className={darkMode ? 'text-gray-300 mb-1' : 'text-gray-700 mb-1'}>{t('pricing.perYear')}</p>
-                <p className={darkMode ? 'text-[11px] font-bold text-cyan-300 mb-1' : 'text-[11px] font-bold text-cyan-700 mb-1'}>
-                  {t('pricing.approxMonth', { price: (plan.price / 12).toFixed(2) })}
-                </p>
-                <p className={`text-xs ${darkMode ? 'text-gray-400 mb-1' : 'text-gray-500 mb-1'}`}>
-                  {t('payment.approxMxn', { mxn: formatMxnApprox(plan.price) })}
-                </p>
-                <p className="text-sm text-green-400">({plan.saving})</p>
-                <div className="space-y-2 mt-4 mb-4">
-                  {plan.benefits.map((benefit, idx) => (
-                    <div key={idx} className="flex items-start gap-2">
-                      <Check className="w-4 h-4 mt-0.5 text-green-400" />
-                      <span className={darkMode ? 'text-gray-200 text-sm' : 'text-gray-700 text-sm'}>{benefit}</span>
-                    </div>
-                  ))}
-                </div>
-                {plan.hot ? (
-                  <div className="relative mt-6">
-                    <span className="absolute -inset-1 rounded-xl pointer-events-none animate-ping opacity-50 bg-gradient-to-r from-cyan-400/40 to-purple-500/40" />
-                    <button
-                      onClick={() => onPlanAction?.({ name: plan.planName || plan.name.replace(' ANUAL', ''), price: plan.price }, { billingCycle: 'annual' })}
-                      className="relative z-10 w-full py-4 rounded-xl font-black text-base text-white bg-gradient-to-r from-cyan-400 to-purple-500 animate-pulse hover:from-cyan-300 hover:to-purple-400 transition-all shadow-xl shadow-cyan-500/40 hover:scale-[1.02] flex items-center justify-center gap-2"
-                    >
-                      🚀 {t('pricing.annual.buyPlan', { name: plan.name })}
-                    </button>
-                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none z-20" />
-                  </div>
-                ) : (
-                  <div className="relative mt-6">
-                    <span className={`absolute -inset-0.5 rounded-xl blur-sm animate-pulse pointer-events-none opacity-40 ${
-                      plan.planName === 'START' ? 'bg-gradient-to-r from-emerald-400 to-green-500' : 'bg-gradient-to-r from-orange-400 to-red-500'
-                    }`} />
-                    <button
-                      onClick={() => onPlanAction?.({ name: plan.planName || plan.name.replace(' ANUAL', '').replace(' ANNUAL', ''), price: plan.price }, { billingCycle: 'annual' })}
-                      className={`relative w-full py-3.5 rounded-xl font-bold text-sm text-white transition-all hover:scale-[1.02] hover:opacity-90 flex items-center justify-center gap-2 shadow-lg ${
-                        plan.planName === 'START'
-                          ? 'bg-gradient-to-r from-emerald-400 to-green-500 shadow-emerald-500/30'
-                          : 'bg-gradient-to-r from-orange-400 to-red-500 shadow-orange-500/30'
-                      }`}
-                    >
-                      {plan.planName === 'START' ? '🟢' : '⚡'} {t('pricing.annual.buyPlan', { name: plan.name })}
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 text-center">
-            <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t('pricing.note')}</p>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              {t('pricing.noteText1')}
-            </p>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              {t('pricing.noteText2')}
-            </p>
-            <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-              {t('pricing.noteRef')}
-            </p>
-          </div>
-        </>
-      )}
+      </div>
     </div>
   )
 }
-
-

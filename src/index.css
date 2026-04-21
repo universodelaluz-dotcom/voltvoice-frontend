@@ -59,6 +59,7 @@ body {
   font-family: 'Segoe UI Variable', 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
 }
 
 :root:not(.dark) {

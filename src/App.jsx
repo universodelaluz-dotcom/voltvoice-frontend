@@ -1063,18 +1063,19 @@ export function App() {
     window.scrollTo(0, 0)
   }, [])
 
-  // Bloquear scroll si no hay consentimiento de cookies
+  // Bloquear scroll si no hay consentimiento de cookies, o en páginas tipo app (studio)
   useEffect(() => {
     const shouldLockForCookies = !cookieConsent && currentPage === 'landing'
-    if (shouldLockForCookies) {
+    const isAppPage = ['studio', 'control-panel', 'statistics', 'admin', 'voice-workshop'].includes(currentPage)
+    if (shouldLockForCookies || isAppPage) {
       document.body.style.overflow = 'hidden'
       return () => {
-        document.body.style.overflow = 'unset'
+        document.body.style.overflow = ''
       }
     }
-    document.body.style.overflow = 'unset'
+    document.body.style.overflow = ''
     return () => {
-      document.body.style.overflow = 'unset'
+      document.body.style.overflow = ''
     }
   }, [cookieConsent, currentPage])
 
@@ -1649,18 +1650,6 @@ export function App() {
             <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{t('landing.pricing.subtitle')}</p>
           </div>
           <PricingCards darkMode={darkMode} showToggle={true} onPlanAction={handlePlanAction} />
-
-          {/* Divider */}
-          <div className="my-20 flex items-center gap-4">
-            <div className={`flex-1 h-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
-            <span className={`text-sm font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              {t('landing.pricing.comparison')}
-            </span>
-            <div className={`flex-1 h-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
-          </div>
-
-          {/* Pricing Comparison */}
-          <PricingComparison darkMode={darkMode} onPlanAction={handlePlanAction} />
         </div>
       </section>
 
