@@ -1066,7 +1066,7 @@ export function App() {
   // Bloquear scroll si no hay consentimiento de cookies, o en páginas tipo app (studio)
   useEffect(() => {
     const shouldLockForCookies = !cookieConsent && currentPage === 'landing'
-    const isAppPage = ['studio', 'control-panel', 'voice-workshop'].includes(currentPage)
+    const isAppPage = ['control-panel', 'voice-workshop'].includes(currentPage)
     if (shouldLockForCookies || isAppPage) {
       document.body.style.overflow = 'hidden'
       return () => {
