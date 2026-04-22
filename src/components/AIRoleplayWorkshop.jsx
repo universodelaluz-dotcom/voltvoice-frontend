@@ -1,8 +1,27 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Edit2, CheckCircle, AlertCircle, Loader } from 'lucide-react'
+import { Plus, Trash2, Edit2, CheckCircle, AlertCircle, Loader, Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+
+function FeatureLockedOverlay({ darkMode, message = 'Función no disponible', showIcon = false, showMessage = false }) {
+  const glassClasses = darkMode
+    ? 'bg-gradient-to-br from-slate-950/20 via-slate-900/14 to-slate-800/10 border border-cyan-300/14 backdrop-blur-[0.7px]'
+    : 'bg-slate-900/8 border border-slate-500/20 backdrop-blur-[0.35px]'
+
+  return (
+    <div className={`absolute inset-0 rounded-xl flex items-center justify-center pointer-events-none ${glassClasses}`}>
+      <div className={`flex flex-col items-center pointer-events-auto ${showMessage || showIcon ? 'gap-2' : 'gap-0'}`}>
+        {showIcon && <Lock className={`w-5 h-5 ${darkMode ? 'text-gray-500' : 'text-gray-600'}`} />}
+        {showMessage && (
+          <span className={`text-xs font-semibold text-center ${darkMode ? 'text-gray-400' : 'text-gray-700'}`}>
+            {message}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
 
 const getBaseVoices = (t, plan = 'free') => {
   const suffix = String(plan || 'free').toLowerCase() === 'free' ? '' : ` ${t('studio.voice.unlimited')}`
@@ -49,6 +68,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
       return 'free'
     }
   })()
+  const hasPack = currentPlan.includes('pack')
   const baseVoices = getBaseVoices(t, currentPlan)
 
   // Cargar personajes al montar
@@ -256,12 +276,15 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
 
       {/* Crear formulario */}
       {showCreateForm && (
-        <div className={`p-6 rounded-lg border-2 ${darkMode ? 'bg-gray-800/50 border-purple-500/50' : 'bg-white border-purple-300'}`}>
+        <div className={`relative p-6 rounded-lg border-2 ${darkMode ? 'bg-gray-800/50 border-purple-500/50' : 'bg-white border-purple-300'}`}>
+          {!hasPack && (
+            <FeatureLockedOverlay darkMode={darkMode} message="Disponible con pack" showIcon showMessage />
+          )}
           <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
             {t('aiWorkshop.form.title')}
           </h3>
 
-          <form onSubmit={handleCreateCharacter} className="space-y-4">
+          <form onSubmit={handleCreateCharacter} className={`space-y-4 ${!hasPack ? 'opacity-50 pointer-events-none' : ''}`}>
             <input
               type="text"
               value={name}

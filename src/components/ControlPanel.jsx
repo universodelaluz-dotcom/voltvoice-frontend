@@ -498,6 +498,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   }, [user?.email])
 
   const userPlan = normalizeUserPlan(user?.plan || 'free')
+  const hasPack = String(user?.plan || '').toLowerCase().includes('pack')
   useEffect(() => {
     if (userPlan !== 'free') return
 
@@ -863,7 +864,10 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               )}
 
               {/* SECCIÓN VOCES */}
-              <div className={`relative ${userPlan === 'free' ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
+              <div className={`relative ${(userPlan === 'free' || (!hasPack && userPlan !== 'pro')) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
+                {!hasPack && userPlan !== 'pro' && userPlan !== 'free' && (
+                  <FeatureLockedOverlay darkMode={darkMode} message="Voces disponibles en START+" showIcon showMessage />
+                )}
                 <SectionHeader title={t('control.sections.voice')} tone="voces" darkMode={darkMode} />
               {/* Voz general */}
               <div className={`relative mb-2 rounded-xl px-4 py-3 border ${
@@ -1520,8 +1524,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               </div>
 
               {/* ASISTENTE DE IA - BLOQUEADO EN FREE, START Y CREATOR */}
-              <div className={`relative ${isFeatureBlocked('aiAssistant', userPlan) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
-                {isFeatureBlocked('aiAssistant', userPlan) && (
+              <div className={`relative ${(isFeatureBlocked('aiAssistant', userPlan) && !hasPack) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
+                {isFeatureBlocked('aiAssistant', userPlan) && !hasPack && (
                   <FeatureLockedOverlay
                     darkMode={darkMode}
                     message="Asistente disponible en plan PRO"

@@ -911,6 +911,9 @@
       "title": "Reading",
       "onlyMessage": "Read messages only (no name)",
       "onlyMessageHint": "Reads the message without mentioning who wrote it",
+      "byCommand": "Read messages by command",
+      "byCommandHint": "Only messages that start with the configured command will be read (e.g. bot/ hello)",
+      "byCommandPlaceholder": "Command (e.g. bot/)",
       "skipRepeated": "Skip repeated messages",
       "onlyQuestions": "Read questions only",
       "onlyQuestionsHint": "Only reads messages containing question marks",
@@ -945,6 +948,8 @@
       "selectVoice": "Select a voice",
       "questions": "Questions voice",
       "questionsHint": "Use a different voice when a message is a question",
+      "commands": "Commands voice",
+      "commandsHint": "Use a different voice when the message is read by command",
       "notifications": "Notifications voice",
       "notificationsHint": "Use a different voice for live notifications"
     },

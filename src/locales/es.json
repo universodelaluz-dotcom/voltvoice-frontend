@@ -914,6 +914,9 @@
       "title": "Lectura",
       "onlyMessage": "Leer solo mensajes (sin nombre)",
       "onlyMessageHint": "Lee el mensaje sin mencionar quién lo escribió",
+      "byCommand": "Leer mensajes por comando",
+      "byCommandHint": "Solo leerá mensajes que empiecen con el comando indicado (ej: bot/ hola)",
+      "byCommandPlaceholder": "Comando (ej: bot/)",
       "skipRepeated": "Saltar mensajes repetidos",
       "onlyQuestions": "Leer solo preguntas",
       "onlyQuestionsHint": "Solo lee mensajes que contengan signos de interrogación",
@@ -948,6 +951,8 @@
       "selectVoice": "Selecciona una voz",
       "questions": "Voz preguntas",
       "questionsHint": "Usa una voz diferente cuando el mensaje sea una pregunta",
+      "commands": "Voz comandos",
+      "commandsHint": "Usa una voz diferente cuando el mensaje se lea por comando",
       "notifications": "Voz notificaciones",
       "notificationsHint": "Usa una voz diferente para las notificaciones del live"
     },
