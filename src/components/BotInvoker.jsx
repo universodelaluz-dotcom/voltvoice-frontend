@@ -2765,8 +2765,17 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
   const missingAssistantSetup = !selectedCharacterId || !selectedRealtimeVoiceId
 
   // Feature access control: Only PRO users can use the assistant
-  const userPlan = user?.plan || 'free'
-  const isPROUser = userPlan === 'pro' || userPlan === 'premium' || userPlan === 'elite' || userPlan === 'admin' || userPlan === 'on_demand'
+  // Get actual plan, preferring subscription.backendPlan if available
+  const getActualPlan = (userObj) => {
+    const mainPlan = String(userObj?.plan || 'free').toLowerCase()
+    const backendPlan = String(userObj?.subscription?.backendPlan || '').toLowerCase()
+    if (mainPlan === 'free' && backendPlan && backendPlan !== 'free') {
+      return backendPlan
+    }
+    return mainPlan
+  }
+  const userPlan = getActualPlan(user)
+  const isPROUser = ['pro', 'premium', 'elite', 'admin', 'on_demand', 'pack_pro', 'pack_lite', 'pack_max'].includes(userPlan)
   const isFeatureLockedForUser = !isPROUser
 
   return (
