@@ -241,10 +241,19 @@ const clearStoredAuthToken = () => {
 const reconcileMercadoPagoPayments = async (apiUrl, token) => {
   if (!apiUrl || !token) return
   try {
+    // Reconcile any pending payments
     await fetch(`${apiUrl}/api/mercadopago/reconcile`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` }
     })
+    // Fetch fresh user data to get updated plan
+    const response = await fetch(`${apiUrl}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const data = await response.json()
+    if (data.success) {
+      localStorage.setItem('sv-user', JSON.stringify(data.user))
+    }
   } catch (_) {}
 }
 
@@ -264,6 +273,18 @@ const capturePaypalOrder = async (apiUrl, token, orderId) => {
   const data = await response.json().catch(() => ({}))
   if (!response.ok || !data?.success) {
     throw new Error(data?.error || 'No se pudo capturar el pago de PayPal')
+  }
+  // Fetch fresh user data to get updated plan
+  if (token) {
+    try {
+      const userResponse = await fetch(`${apiUrl}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const userData = await userResponse.json()
+      if (userData.success) {
+        localStorage.setItem('sv-user', JSON.stringify(userData.user))
+      }
+    } catch (_) {}
   }
 }
 

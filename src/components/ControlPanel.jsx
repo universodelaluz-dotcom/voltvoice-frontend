@@ -502,8 +502,19 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     return () => window.removeEventListener('voice-added', handleVoiceAdded)
   }, [user?.email])
 
-  const rawPlan = String(user?.plan || '').toLowerCase()
-  const userPlan = normalizeUserPlan(user?.plan || 'free')
+  // Get the actual plan, preferring subscription.backendPlan if available
+  const getActualPlan = (userObj) => {
+    const mainPlan = String(userObj?.plan || '').toLowerCase()
+    const backendPlan = String(userObj?.subscription?.backendPlan || '').toLowerCase()
+    // If main plan is free but subscription has backendPlan, use backendPlan
+    if (mainPlan === 'free' && backendPlan && backendPlan !== 'free') {
+      return backendPlan
+    }
+    return mainPlan
+  }
+
+  const rawPlan = getActualPlan(user)
+  const userPlan = normalizeUserPlan(rawPlan)
   const isBasePlan = rawPlan === 'base' || rawPlan === 'plan base'
   useEffect(() => {
     if (userPlan !== 'free') return

@@ -63,7 +63,14 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
   const [userVoices, setUserVoices] = useState([])
   const currentPlan = (() => {
     try {
-      return String(JSON.parse(localStorage.getItem('sv-user') || '{}')?.plan || 'free').toLowerCase()
+      const userData = JSON.parse(localStorage.getItem('sv-user') || '{}')
+      const mainPlan = String(userData?.plan || 'free').toLowerCase()
+      const backendPlan = String(userData?.subscription?.backendPlan || '').toLowerCase()
+      // If main plan is free but subscription has backendPlan, use backendPlan
+      if (mainPlan === 'free' && backendPlan && backendPlan !== 'free') {
+        return backendPlan
+      }
+      return mainPlan
     } catch {
       return 'free'
     }

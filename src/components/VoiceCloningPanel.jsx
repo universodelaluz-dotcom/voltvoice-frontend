@@ -15,7 +15,16 @@ const formatTimeMinutesSeconds = (ms) => {
 
 export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, config, updateConfig, user }) {
   const { t } = useTranslation()
-  const planKey = String(user?.plan || 'free').toLowerCase()
+  // Get actual plan, preferring subscription.backendPlan if available
+  const getActualPlan = (userObj) => {
+    const mainPlan = String(userObj?.plan || 'free').toLowerCase()
+    const backendPlan = String(userObj?.subscription?.backendPlan || '').toLowerCase()
+    if (mainPlan === 'free' && backendPlan && backendPlan !== 'free') {
+      return backendPlan
+    }
+    return mainPlan
+  }
+  const planKey = getActualPlan(user)
   const PLAN_MAX_CLONED_VOICES = {
     free: 0,
     start: 1,
@@ -724,10 +733,10 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   )
 
   // Feature access control
-  const userPlan = String(user?.plan || 'free').toLowerCase()
+  const userPlan = getActualPlan(user)
   const isFreeUser = userPlan === 'free'
-  const canUseAIAssistant = user?.role === 'admin' || ['pro', 'premium', 'elite', 'on_demand'].includes(userPlan)
-  const canUseExtractorPro = user?.role === 'admin' || ['creator', 'pro'].includes(userPlan)
+  const canUseAIAssistant = user?.role === 'admin' || ['pro', 'premium', 'elite', 'on_demand', 'pack_pro', 'pack_lite', 'pack_max'].includes(userPlan)
+  const canUseExtractorPro = user?.role === 'admin' || ['creator', 'pro', 'pack_pro', 'pack_lite', 'pack_max'].includes(userPlan)
 
   return (
     <div className={`relative space-y-6 ${isFreeUser ? 'opacity-50 pointer-events-none' : ''}`}>
