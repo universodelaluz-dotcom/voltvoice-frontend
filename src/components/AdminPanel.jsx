@@ -472,7 +472,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
       const r = await fetch(`${API_URL}/api/admin/users`, {
         method: 'POST',
         headers: buildHeaders(),
-        body: JSON.stringify(createUserForm)
+        body: JSON.stringify({ ...createUserForm, plan: toBackendPlan(createUserForm.plan) })
       })
       const d = await r.json().catch(() => ({}))
       if (!r.ok || !d.success) return showMsg(d.error || 'Error creando usuario', 'error')
