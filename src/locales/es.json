@@ -1,4 +1,4 @@
-{
+﻿{
   "landing": {
     "nav": {
       "features": "Características",
@@ -115,8 +115,8 @@
         },
         {
           "icon": "♻️",
-          "q": "¿Si el audio sale de caché también se cobran tokens?",
-          "a": "Sí. El caché optimiza rendimiento y costos internos de procesamiento, pero el consumo de tokens del usuario se mantiene según caracteres generados en voces premium/personalizadas."
+          "q": "👉 ¿Stream Voicer realmente aumenta la interacción y retención en mis lives?",
+          "a": "Sí. Al leer mensajes en tiempo real con voz, mantienes el chat activo, haces que más usuarios participen y reduces el silencio en tus transmisiones. Esto genera mayor retención, más comentarios y una experiencia más dinámica para tu audiencia."
         },
         {
           "icon": "💳",
@@ -131,7 +131,7 @@
         {
           "icon": "🎭",
           "q": "¿Qué son los Packs de voces clonadas?",
-          "a": "Son compras adicionales al Plan Base que añaden personajes con voz clonada por IA: Pack Lite ($9.99, +1 voz, 50K tokens), Pack Pro ($24.99, +3 voces, 250K tokens) y Pack Max ($49.99, +6 voces, 500K tokens)."
+          "a": "Son compras adicionales al Plan Base que amplían tu capacidad para crear tus propias voces clonadas con IA. No incluyen personajes prehechos: tú subes y clonas tus voces. Pack Lite ($9.99, +1 voz, 50K tokens), Pack Pro ($24.99, +3 voces, 250K tokens) y Pack Max ($49.99, +6 voces, 500K tokens)."
         },
         {
           "icon": "🔄",
@@ -141,12 +141,12 @@
         {
           "icon": "🌍",
           "q": "¿Funciona con otros idiomas?",
-          "a": "Actualmente Stream Voicer está optimizado para español. Próximamente se integrarán más idiomas."
+          "a": "Actualmente Stream Voicer está optimizado para español e inglés. Próximamente se integrarán más idiomas."
         },
         {
           "icon": "⚡",
           "q": "¿Cuánto tarda en procesarse un mensaje?",
-          "a": "Se procesa en tiempo real. Normalmente tarda entre 1 y 5 segundos según longitud del mensaje, voz elegida y carga del sistema."
+          "a": "Se procesa en tiempo real. Normalmente tarda entre 1 y 3 segundos según longitud del mensaje, voz elegida y carga del sistema."
         },
         {
           "icon": "🔐",
@@ -539,9 +539,9 @@
       "placeholderWithExampleShort": "Usuario de TikTok (ej. @micanal)",
       "placeholderWithExample": "Usuario de TikTok (ej. @micanalvivo)",
       "bulletReadLive": "Lee comentarios del LIVE de TikTok",
-      "bulletSynthesize": "Convierte texto a voz autom?ticamente",
+      "bulletSynthesize": "Convierte texto a voz automáticamente",
       "bulletPlayStreaming": "Se reproduce mientras haces stream",
-      "invalidUser": "Ingresa un usuario v?lido de TikTok"
+      "invalidUser": "Ingresa un usuario válido de TikTok"
     },
     "chat": {
       "title": "Chat en vivo",
@@ -591,7 +591,7 @@
       "vol": "VOL",
       "vel": "VEL",
       "style": "Estilo",
-      "styleTitle": "Tama?o y colores del chat",
+      "styleTitle": "Tamaño y colores del chat",
       "nicks": "Nicks",
       "nicksTitle": "Ver y editar nicks guardados",
       "chatStyle": "Estilo de chat"
@@ -647,7 +647,7 @@
         },
         {
           "q": "¿Cuántas voces clonadas puedo eliminar por día?",
-          "a": "Puedes eliminar voces clonadas desde tu panel. El límite diario depende del Pack activo. Consulta tu panel para ver el cupo actual."
+          "a": "Puedes cambiar la voz de cada slot de clonación hasta 3 veces al día gratis. A partir del cuarto cambio en el mismo día, crear una voz nueva tiene un costo de 500 tokens."
         },
         {
           "q": "¿Cómo subir un audio ideal para clonar voz?",
@@ -794,7 +794,7 @@
       "nameRequired": "Ingresa un nombre para tu voz",
       "nameRequiredFirst": "Define un nombre de voz antes de continuar",
       "nameFirst": "Primero define un nombre",
-      "loginRequired": "Debes iniciar sesi?n",
+      "loginRequired": "Debes iniciar sesión",
       "selectAudio": "Selecciona un archivo de audio",
       "clipTooShort": "El clip debe durar al menos 1 segundo"
     },
@@ -811,27 +811,27 @@
       "usesLeft": "Te quedan {{n}} usos por hoy, se renueva cada 24 hrs.",
       "step1": "Paso 1: Sube tu archivo",
       "step2": "Paso 2: Selecciona tu clip (recomendado 5-15 segundos)",
-      "timeline": "L?nea de tiempo",
+      "timeline": "Línea de tiempo",
       "listenClip": "Escuchar clip seleccionado",
-      "clipDuration": "Duraci?n del clip",
+      "clipDuration": "Duración del clip",
       "uploadAnother": "Subir otro archivo"
     },
     "cloneNewTitle": "Clonar nueva voz",
     "languageLabel": "Idioma de la voz",
-    "languageHint": "Selecciona el idioma del audio que subir?s",
+    "languageHint": "Selecciona el idioma del audio que subirás",
     "audioFileLabel": "Archivo de audio (MP3 o WAV, ideal 10-15 s)",
     "required": "REQUERIDO",
     "languages": {
-      "esES": "Voz en espa?ol",
-      "enUS": "Ingl?s (EE. UU.)",
-      "enGB": "Ingl?s (Reino Unido)",
-      "ptBR": "Portugu?s (Brasil)",
-      "frFR": "Franc?s",
-      "deDE": "Alem?n",
+      "esES": "Voz en español",
+      "enUS": "Inglés (EE. UU.)",
+      "enGB": "Inglés (Reino Unido)",
+      "ptBR": "Portugués (Brasil)",
+      "frFR": "Francés",
+      "deDE": "Alemán",
       "itIT": "Italiano"
     },
     "empty": {
-      "createdVoices": "A?n no tienes voces de este tipo. Crea tu primera voz arriba."
+      "createdVoices": "Aún no tienes voces de este tipo. Crea tu primera voz arriba."
     },
     "actions": {
       "rename": "Renombrar voz",
@@ -1320,7 +1320,7 @@
   },
   "voiceNames": {
     "diegoPremium": "Voz natural Luis - Premium",
-    "lupitaPremium": "Voz natural Sof?a - Premium",
+      "lupitaPremium": "Voz natural Sofía - Premium",
     "miguelPremium": "Voz natural Gustavo - Premium",
     "rafaelPremium": "Voz natural Leonel - Premium"
   }

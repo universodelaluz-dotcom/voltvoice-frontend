@@ -1005,29 +1005,51 @@ export function App() {
       return
     }
 
-    const planMapping = {
-      START: 'start',
-      CREATOR: 'creator',
-      PRO: 'pro',
+    const normalizedPlanName = String(plan.name || '').trim().toLowerCase()
+    const planAliases = {
+      start: 'start',
+      creator: 'creator',
+      pro: 'pro',
+      'plan base': 'start',
+      base: 'start',
+      'pack lite': 'creator',
+      lite: 'creator',
+      'pack pro': 'pro',
+      'pack max': 'pro',
+      max: 'pro',
+    }
+    const requestedPlanId = String(meta.planId || plan.planId || planAliases[normalizedPlanName] || '')
+      .trim()
+      .toLowerCase()
+
+    const allowedPlanIds = new Set(['start', 'creator', 'pro'])
+    if (!allowedPlanIds.has(requestedPlanId)) {
+      alert('Este plan todavia no esta disponible para checkout. Elige otro por ahora.')
+      return
     }
 
     const planPrice = Number(plan.price)
     const inferredAnnualPrices = new Set([59, 109, 149])
     const inferredBillingCycle = inferredAnnualPrices.has(planPrice) ? 'annual' : 'monthly'
     const billingCycle = meta.billingCycle || inferredBillingCycle
-    const recommendedPackages = {
-      START: 150000,
-      CREATOR: 350000,
-      PRO: 700000,
+    const recommendedPackagesByPlan = {
+      start: 150000,
+      creator: 350000,
+      pro: 700000,
+    }
+    const checkoutPriceByPlan = {
+      start: 6.99,
+      creator: 12.99,
+      pro: 17.99,
     }
 
-    setSelectedPaymentPackage(recommendedPackages[plan.name] || 350000)
+    setSelectedPaymentPackage(recommendedPackagesByPlan[requestedPlanId] || 350000)
     setSelectedCheckoutItem({
       type: 'plan',
-      planId: planMapping[plan.name] || plan.name.toLowerCase(),
+      planId: requestedPlanId,
       billingCycle,
       label: `${plan.name} ${billingCycle === 'annual' ? 'Anual' : 'Mensual'}`,
-      price: billingCycle === 'monthly' ? Number(plan.price).toFixed(2) : Number(plan.price).toFixed(2),
+      price: Number(checkoutPriceByPlan[requestedPlanId] || plan.price).toFixed(2),
     })
     setIsPaymentOpen(true)
   }
@@ -1063,11 +1085,10 @@ export function App() {
     window.scrollTo(0, 0)
   }, [])
 
-  // Bloquear scroll si no hay consentimiento de cookies, o en páginas tipo app (studio)
+  // Bloquear scroll solo cuando falta consentimiento de cookies en landing.
   useEffect(() => {
     const shouldLockForCookies = !cookieConsent && currentPage === 'landing'
-    const isAppPage = ['control-panel', 'voice-workshop'].includes(currentPage)
-    if (shouldLockForCookies || isAppPage) {
+    if (shouldLockForCookies) {
       document.body.style.overflow = 'hidden'
       return () => {
         document.body.style.overflow = ''
@@ -1428,7 +1449,7 @@ export function App() {
 
 
       {/* Hero Section */}
-      <section className="pt-10 pb-16 px-4 relative overflow-hidden">
+      <section className="pt-4 pb-14 px-4 relative overflow-hidden">
         <div className="max-w-7xl mx-auto text-center">
           {/* Background glow */}
           <div className="absolute inset-0 -z-10">
@@ -1436,8 +1457,7 @@ export function App() {
             <div className="absolute top-1/2 right-0 w-[420px] h-[420px] bg-gradient-to-b from-orange-500/20 to-transparent rounded-full blur-3xl"></div>
           </div>
 
-          {/* Logo/Título de la app */}
-          <div className="mb-10 flex justify-center">
+          <div className="mb-2 md:mb-3 flex justify-center">
             <img
               src="/images/streamvoicer6.png"
               alt="StreamVoicer - Lector de chat para TikTok Live con voz IA"
@@ -1447,7 +1467,7 @@ export function App() {
             />
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
+          <h1 className="relative -top-8 md:-top-10 text-5xl md:text-7xl font-black mb-8 md:mb-10 leading-tight">
             {t('landing.hero.title')}
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-orange-400">

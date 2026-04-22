@@ -28,13 +28,11 @@
     :root {
       --bg: #070b16;
       --panel: #0f172a;
-      --panel-2: #111c35;
       --line: #27324b;
       --text: #e5e7eb;
       --muted: #a5b4cc;
       --c1: #22d3ee;
       --c2: #60a5fa;
-      --c3: #f59e0b;
     }
     * { box-sizing: border-box; }
     body {
@@ -58,6 +56,11 @@
       padding: 8px 12px; border-radius: 9px; border: 1px solid transparent;
     }
     .nav a:hover { border-color: #335582; background: #0c1a31; }
+    .theme-toggle {
+      margin-left: auto; border: 1px solid #3a4c6b; background: #0d1b33; color: #dbeafe;
+      border-radius: 9px; padding: 8px 12px; font-weight: 700; cursor: pointer;
+    }
+    .theme-toggle:hover { background: #11254a; }
     .hero {
       border: 1px solid var(--line); border-radius: 20px; padding: 28px;
       background: linear-gradient(140deg, rgba(13,28,54,.95), rgba(15,23,42,.95));
@@ -78,52 +81,26 @@
     }
     .home-btn:hover { filter: brightness(1.05); text-decoration: none; }
     .section-title {
-      margin: 30px 0 14px; font-size: 1.15rem; font-weight: 800;
-      color: #dbeafe; letter-spacing: .2px;
+      margin: 30px 0 14px; font-size: 1.15rem; font-weight: 800; color: #dbeafe; letter-spacing: .2px;
     }
-    .grid {
-      display: grid; grid-template-columns: 1fr; gap: 12px;
-    }
-    details {
+    .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .faq-card {
       border: 1px solid var(--line); border-radius: 14px; background: linear-gradient(180deg, var(--panel), #0b1428);
-      overflow: hidden;
+      padding: 14px 16px;
     }
-    summary {
-      list-style: none; cursor: pointer; padding: 14px 16px; font-weight: 800;
-      display: flex; align-items: center; gap: 10px;
-    }
-    summary::-webkit-details-marker { display: none; }
+    .faq-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
     .icon {
-      width: 28px; height: 28px; border-radius: 8px; flex: 0 0 28px;
-      display: grid; place-items: center; font-size: 14px;
-      background: linear-gradient(135deg, #102643, #1e3a6a);
-      border: 1px solid #355582;
+      width: 28px; height: 28px; border-radius: 8px; flex: 0 0 28px; display: grid; place-items: center; font-size: 14px;
+      background: linear-gradient(135deg, #102643, #1e3a6a); border: 1px solid #355582;
     }
-    .q { flex: 1; }
-    .chev { color: #7dd3fc; font-size: 13px; }
-    details[open] .chev { transform: rotate(180deg); }
-    details p {
-      margin: 0; color: #cdd7e7; padding: 0 16px 16px 54px;
-      border-top: 1px dashed #243757;
-      padding-top: 12px;
-    }
+    .faq-q { margin: 0; font-weight: 800; color: #e5edff; }
+    .faq-a { margin: 0; color: #cdd7e7; padding-left: 38px; }
     .tips {
       margin-top: 28px; border: 1px solid #355582; border-radius: 16px; padding: 18px;
       background: linear-gradient(145deg, rgba(8,30,48,.95), rgba(17,24,39,.95));
     }
     .tips h3 { margin: 0 0 10px; color: #dbeafe; }
     .tips ul { margin: 0; padding-left: 18px; color: #b8c6dc; }
-    .theme-toggle {
-      margin-left: auto;
-      border: 1px solid #3a4c6b;
-      background: #0d1b33;
-      color: #dbeafe;
-      border-radius: 9px;
-      padding: 8px 12px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .theme-toggle:hover { background: #11254a; }
     html[data-theme="light"] body {
       color: #0f172a;
       background:
@@ -136,14 +113,12 @@
     html[data-theme="light"] .nav a:hover { background: #e8f0ff; border-color: #c7d6ee; }
     html[data-theme="light"] .theme-toggle { background: #ffffff; color: #0f172a; border-color: #c8d5ea; }
     html[data-theme="light"] .hero { background: linear-gradient(140deg, rgba(255,255,255,.96), rgba(242,248,255,.96)); border-color: #d6e0ed; }
-    html[data-theme="light"] .sub, html[data-theme="light"] details p, html[data-theme="light"] .tips ul { color: #334155; }
+    html[data-theme="light"] .sub, html[data-theme="light"] .faq-a, html[data-theme="light"] .tips ul { color: #334155; }
     html[data-theme="light"] .section-title, html[data-theme="light"] .tips h3, html[data-theme="light"] h1 { color: #0f172a; }
-    html[data-theme="light"] details { background: linear-gradient(180deg, #ffffff, #f8fbff); border-color: #d6e0ed; }
-    html[data-theme="light"] details p { border-top-color: #d6e0ed; }
+    html[data-theme="light"] .faq-card { background: linear-gradient(180deg, #ffffff, #f8fbff); border-color: #d6e0ed; }
+    html[data-theme="light"] .faq-q { color: #0f172a; }
     html[data-theme="light"] .tips { background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(244,248,255,.98)); border-color: #d6e0ed; }
-    @media (min-width: 900px) {
-      .grid { grid-template-columns: 1fr 1fr; }
-    }
+    @media (min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
   </style>
   <script type="application/ld+json">
   {
@@ -153,9 +128,8 @@
       {"@type":"Question","name":"¿Cómo funciona Stream Voicer?","acceptedAnswer":{"@type":"Answer","text":"Lee en tiempo real los mensajes de tu chat de TikTok LIVE y los reproduce con voz para mantener interacción constante."}},
       {"@type":"Question","name":"¿Qué es un token?","acceptedAnswer":{"@type":"Answer","text":"1 token equivale a 1 carácter generado en voces premium o personalizadas."}},
       {"@type":"Question","name":"¿Qué voces consumen tokens?","acceptedAnswer":{"@type":"Answer","text":"Las voces premium y personalizadas consumen tokens; la voz esencial no consume tokens."}},
-      {"@type":"Question","name":"¿Cuánto cuesta el Plan Base?","acceptedAnswer":{"@type":"Answer","text":"El Plan Base cuesta $9.99 USD al mes e incluye 2 voces esenciales ilimitadas, 2 voces premium, 20,000 caracteres y todas las funciones de filtrado e IA."}},
-      {"@type":"Question","name":"¿Qué son los Packs de voces clonadas?","acceptedAnswer":{"@type":"Answer","text":"Son compras adicionales al Plan Base que añaden personajes con voz clonada por IA: Pack Lite ($9.99, +1 voz, 50K tokens), Pack Pro ($24.99, +3 voces, 250K tokens) y Pack Max ($49.99, +6 voces, 500K tokens)."}},
-      {"@type":"Question","name":"¿Puedo cambiar o cancelar mi plan cuando quiera?","acceptedAnswer":{"@type":"Answer","text":"Sí. Los upgrades se aplican de inmediato con ajuste proporcional; puedes cancelar cuando quieras."}}
+      {"@type":"Question","name":"¿Cuánto tarda en procesarse un mensaje?","acceptedAnswer":{"@type":"Answer","text":"Normalmente tarda entre 1 y 3 segundos según longitud del mensaje, voz elegida y carga del sistema."}},
+      {"@type":"Question","name":"¿Funciona con otros idiomas?","acceptedAnswer":{"@type":"Answer","text":"Actualmente Stream Voicer está optimizado para español e inglés. Próximamente se integrarán más idiomas."}}
     ]
   }
   </script>
@@ -172,32 +146,32 @@
     <section class="hero">
       <span class="badge">FAQ OFICIAL STREAMVOICER</span>
       <h1>Preguntas frecuentes para dominar tu LIVE</h1>
-      <p class="sub">Aquí tienes todas las dudas clave sobre tokens, Plan Base, packs de voces clonadas, seguridad y configuración para TikTok LIVE.</p>
+      <p class="sub">Aquí tienes dudas clave sobre tokens, Plan Base, packs de voces clonadas, seguridad y configuración para TikTok LIVE.</p>
       <a class="home-btn" href="/">🏠 Ir a la página principal</a>
     </section>
 
     <h2 class="section-title">Preguntas de portada</h2>
     <section class="grid">
-      <details open><summary><span class="icon">🔊</span><span class="q">¿Cómo funciona Stream Voicer?</span><span class="chev">▼</span></summary><p>Stream Voicer lee en tiempo real los mensajes de tu chat de TikTok LIVE y los reproduce con voz para mantener interacción constante en tu stream.</p></details>
-      <details><summary><span class="icon">🧩</span><span class="q">¿Qué es un token?</span><span class="chev">▼</span></summary><p>1 token equivale a 1 carácter generado. El consumo aplica cuando usas voces premium o voces personalizadas clonadas.</p></details>
-      <details><summary><span class="icon">🎙️</span><span class="q">¿Qué voces consumen tokens?</span><span class="chev">▼</span></summary><p>Las voces premium y las voces personalizadas clonadas consumen tokens. Las voces esenciales no consumen tokens.</p></details>
-      <details><summary><span class="icon">♻️</span><span class="q">¿Si el audio sale de caché también se cobran tokens?</span><span class="chev">▼</span></summary><p>Sí. El caché optimiza rendimiento y costos internos de procesamiento, pero el consumo del usuario se mantiene según caracteres generados en voces premium o personalizadas.</p></details>
-      <details><summary><span class="icon">💳</span><span class="q">¿Qué hago si se me acaban los tokens?</span><span class="chev">▼</span></summary><p>Puedes añadir un Pack de voces clonadas desde la plataforma. Si no tienes tokens disponibles, las voces premium o personalizadas dejan de reproducirse hasta recargar.</p></details>
-      <details><summary><span class="icon">💰</span><span class="q">¿Cuánto cuesta el Plan Base?</span><span class="chev">▼</span></summary><p>El Plan Base cuesta <strong>$9.99 USD al mes</strong> e incluye 2 voces esenciales ilimitadas, 2 voces premium, 20,000 caracteres mensuales y todas las funciones: filtros avanzados, smart filter, anti-spam y analytics.</p></details>
-      <details><summary><span class="icon">🎭</span><span class="q">¿Qué son los Packs de voces clonadas?</span><span class="chev">▼</span></summary><p>Son compras adicionales al Plan Base que añaden personajes con voz clonada por IA a tu stream: <strong>Pack Lite</strong> ($9.99 — +1 voz, 50K tokens), <strong>Pack Pro</strong> ($24.99 — +3 voces, 250K tokens) y <strong>Pack Max</strong> ($49.99 — +6 voces, 500K tokens).</p></details>
-      <details><summary><span class="icon">🔁</span><span class="q">¿Puedo cambiar o cancelar mi plan cuando quiera?</span><span class="chev">▼</span></summary><p>Sí. Los upgrades se aplican de inmediato con ajuste proporcional al tiempo restante del ciclo. Puedes cancelar cuando quieras.</p></details>
-      <details><summary><span class="icon">🌍</span><span class="q">¿Funciona con otros idiomas?</span><span class="chev">▼</span></summary><p>Actualmente Stream Voicer está optimizado para español. Próximamente se integrarán más idiomas.</p></details>
-      <details><summary><span class="icon">⚡</span><span class="q">¿Cuánto tarda en procesarse un mensaje?</span><span class="chev">▼</span></summary><p>En condiciones normales se procesa en tiempo real. Suele tardar entre 1 y 5 segundos según longitud del mensaje, voz elegida y carga del sistema.</p></details>
-      <details><summary><span class="icon">🔐</span><span class="q">¿Es seguro conectar mi TikTok?</span><span class="chev">▼</span></summary><p>Sí. Solo se usa el acceso necesario para leer la actividad pública de tu LIVE. No compartimos tus datos con terceros.</p></details>
-      <details><summary><span class="icon">🛠️</span><span class="q">¿Puedo crear y editar mis voces personalizadas?</span><span class="chev">▼</span></summary><p>Sí. Puedes gestionar voces personalizadas clonadas desde tu panel. La cantidad disponible depende del Pack que hayas añadido a tu Plan Base.</p></details>
+      <div class="faq-card"><div class="faq-head"><span class="icon">🔊</span><p class="faq-q">¿Cómo funciona Stream Voicer?</p></div><p class="faq-a">Stream Voicer lee en tiempo real los mensajes de tu chat de TikTok LIVE y los reproduce con voz para mantener interacción constante en tu stream.</p></div>
+      <div class="faq-card"><div class="faq-head"><span class="icon">🧩</span><p class="faq-q">¿Qué es un token?</p></div><p class="faq-a">1 token equivale a 1 carácter generado. El consumo aplica cuando usas voces premium o voces personalizadas clonadas.</p></div>
+      <div class="faq-card"><div class="faq-head"><span class="icon">🎙️</span><p class="faq-q">¿Qué voces consumen tokens?</p></div><p class="faq-a">Las voces premium y las voces personalizadas clonadas consumen tokens. Las voces esenciales no consumen tokens.</p></div>
+      <div class="faq-card"><div class="faq-head"><span class="icon">♻️</span><p class="faq-q">👉 ¿Stream Voicer realmente aumenta la interacción y retención en mis lives?</p></div><p class="faq-a">Sí. Al leer mensajes en tiempo real con voz, mantienes el chat activo, haces que más usuarios participen y reduces el silencio en tus transmisiones. Esto genera mayor retención, más comentarios y una experiencia más dinámica para tu audiencia.</p></div>
+      <div class="faq-card"><div class="faq-head"><span class="icon">💳</span><p class="faq-q">¿Qué hago si se me acaban los tokens?</p></div><p class="faq-a">Puedes añadir un Pack de voces clonadas desde la plataforma. Si no tienes tokens disponibles, las voces premium o personalizadas dejan de reproducirse hasta recargar.</p></div>
+      <div class="faq-card"><div class="faq-head"><span class="icon">💰</span><p class="faq-q">¿Cuánto cuesta el Plan Base?</p></div><p class="faq-a">El Plan Base cuesta <strong>$9.99 USD al mes</strong> e incluye 2 voces esenciales ilimitadas, 2 voces premium, 20,000 caracteres mensuales y funciones como filtros avanzados, smart filter, anti-spam y analytics.</p></div>
+      <div class="faq-card"><div class="faq-head"><span class="icon">🎭</span><p class="faq-q">¿Qué son los Packs de voces clonadas?</p></div><p class="faq-a">Son compras adicionales al Plan Base que amplían tu capacidad para crear tus propias voces clonadas con IA. No incluyen personajes prehechos: tú subes y clonas tus voces. Pack Lite ($9.99, +1 voz, 50K tokens), Pack Pro ($24.99, +3 voces, 250K tokens) y Pack Max ($49.99, +6 voces, 500K tokens).</p></div>
+      <div class="faq-card"><div class="faq-head"><span class="icon">🔁</span><p class="faq-q">¿Puedo cambiar o cancelar mi plan cuando quiera?</p></div><p class="faq-a">Sí. Los upgrades se aplican de inmediato con ajuste proporcional al tiempo restante del ciclo. Puedes cancelar cuando quieras.</p></div>
+      <div class="faq-card"><div class="faq-head"><span class="icon">🌍</span><p class="faq-q">¿Funciona con otros idiomas?</p></div><p class="faq-a">Actualmente Stream Voicer está optimizado para español e inglés. Próximamente se integrarán más idiomas.</p></div>
+      <div class="faq-card"><div class="faq-head"><span class="icon">⚡</span><p class="faq-q">¿Cuánto tarda en procesarse un mensaje?</p></div><p class="faq-a">En condiciones normales se procesa en tiempo real. Suele tardar entre 1 y 3 segundos según longitud del mensaje, voz elegida y carga del sistema.</p></div>
+      <div class="faq-card"><div class="faq-head"><span class="icon">🔐</span><p class="faq-q">¿Es seguro conectar mi TikTok?</p></div><p class="faq-a">Sí. Solo se usa el acceso necesario para leer la actividad pública de tu LIVE. No compartimos tus datos con terceros.</p></div>
+      <div class="faq-card"><div class="faq-head"><span class="icon">🛠️</span><p class="faq-q">¿Puedo crear y editar mis voces personalizadas?</p></div><p class="faq-a">Sí. Puedes gestionar voces personalizadas clonadas desde tu panel. La cantidad disponible depende del Pack que hayas añadido a tu Plan Base.</p></div>
     </section>
 
     <h2 class="section-title">Más dudas frecuentes</h2>
     <section class="grid">
-      <details><summary><span class="icon">⬆️</span><span class="q">¿Qué pasa si añado un Pack adicional?</span><span class="chev">▼</span></summary><p>Las voces y tokens del Pack se suman de inmediato a tu Plan Base. Puedes combinar varios packs para ampliar tu elenco de personajes.</p></details>
-      <details><summary><span class="icon">⬇️</span><span class="q">¿Los tokens de los Packs caducan?</span><span class="chev">▼</span></summary><p>Los tokens de los packs de voces clonadas no caducan mientras mantengas tu Plan Base activo.</p></details>
-      <details><summary><span class="icon">🎛️</span><span class="q">¿Puedo configurar tono y frecuencia del asistente IA?</span><span class="chev">▼</span></summary><p>Sí, puedes ajustar frecuencia, tono y longitud de respuesta para adaptar el comportamiento al estilo de tu stream.</p></details>
-      <details><summary><span class="icon">🔇</span><span class="q">¿Cómo silenciar o desbloquear a una persona?</span><span class="chev">▼</span></summary><p>Desde moderación puedes añadir usuarios a la lista de silenciados/baneados y retirarlos después cuando lo necesites.</p></details>
+      <div class="faq-card"><div class="faq-head"><span class="icon">⬆️</span><p class="faq-q">¿Qué pasa si añado un Pack adicional?</p></div><p class="faq-a">Las voces y tokens del Pack se suman de inmediato a tu Plan Base. Puedes combinar varios packs para ampliar tu elenco de personajes.</p></div>
+      <div class="faq-card"><div class="faq-head"><span class="icon">⬇️</span><p class="faq-q">¿Los tokens de los Packs caducan?</p></div><p class="faq-a">Los tokens de los packs de voces clonadas no caducan mientras mantengas tu Plan Base activo.</p></div>
+      <div class="faq-card"><div class="faq-head"><span class="icon">🎛️</span><p class="faq-q">¿Puedo configurar tono y frecuencia del asistente IA?</p></div><p class="faq-a">Sí, puedes ajustar frecuencia, tono y longitud de respuesta para adaptar el comportamiento al estilo de tu stream.</p></div>
+      <div class="faq-card"><div class="faq-head"><span class="icon">🔇</span><p class="faq-q">¿Cómo silenciar o desbloquear a una persona?</p></div><p class="faq-a">Haz clic derecho sobre su nick en el chat para bloquear o desbloquear rápidamente. También puedes desbloquear desde Configuración en la sección de moderación.</p></div>
     </section>
 
     <section class="tips">
