@@ -147,9 +147,14 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [voicesLoading, setVoicesLoading] = useState(false)
 const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' })
 
-  // Mapea los nuevos nombres de plan al valor que espera el backend
+  // Nuevo nombre → valor que espera el backend (legacy)
   const toBackendPlan = (plan) => {
     const map = { base: 'start', pack_lite: 'start', pack_pro: 'creator', pack_max: 'pro' }
+    return map[plan] ?? plan
+  }
+  // Valor legacy del backend → nuevo nombre para el frontend
+  const toFrontendPlan = (plan) => {
+    const map = { start: 'base', creator: 'pack_pro', pro: 'pack_max' }
     return map[plan] ?? plan
   }
   const secondsToHours = (seconds, fallbackHours = 1) => {
@@ -1979,7 +1984,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
                                 </>
                               ) : (
                                 <>
-                                  <button onClick={() => { setEditingUser(u.id); setEditValues({ plan: userPlan, tokens: u.tokens }) }}
+                                  <button onClick={() => { setEditingUser(u.id); setEditValues({ plan: toFrontendPlan(userPlan), tokens: u.tokens }) }}
                                     className={`p-1 rounded ${darkMode ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`} title="Editar">
                                     <Edit2 className="w-3.5 h-3.5" />
                                   </button>
