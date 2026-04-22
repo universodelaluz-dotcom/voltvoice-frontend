@@ -68,7 +68,7 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
       return 'free'
     }
   })()
-  const hasPack = currentPlan.includes('pack')
+  const isBasePlan = currentPlan === 'base' || currentPlan === 'plan base'
   const baseVoices = getBaseVoices(t, currentPlan)
 
   // Cargar personajes al montar
@@ -277,14 +277,14 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
       {/* Crear formulario */}
       {showCreateForm && (
         <div className={`relative p-6 rounded-lg border-2 ${darkMode ? 'bg-gray-800/50 border-purple-500/50' : 'bg-white border-purple-300'}`}>
-          {!hasPack && (
+          {isBasePlan && (
             <FeatureLockedOverlay darkMode={darkMode} message="Disponible con pack" showIcon showMessage />
           )}
           <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
             {t('aiWorkshop.form.title')}
           </h3>
 
-          <form onSubmit={handleCreateCharacter} className={`space-y-4 ${!hasPack ? 'opacity-50 pointer-events-none' : ''}`}>
+          <form onSubmit={handleCreateCharacter} className={`space-y-4 ${isBasePlan ? 'opacity-50 pointer-events-none' : ''}`}>
             <input
               type="text"
               value={name}

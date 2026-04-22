@@ -498,7 +498,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   }, [user?.email])
 
   const userPlan = normalizeUserPlan(user?.plan || 'free')
-  const hasPack = String(user?.plan || '').toLowerCase().includes('pack')
+  const rawPlan = String(user?.plan || '').toLowerCase()
+  const isBasePlan = rawPlan === 'base' || rawPlan === 'plan base'
   useEffect(() => {
     if (userPlan !== 'free') return
 
@@ -864,9 +865,9 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               )}
 
               {/* SECCIÓN VOCES */}
-              <div className={`relative ${(userPlan === 'free' || (!hasPack && userPlan !== 'pro')) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
-                {!hasPack && userPlan !== 'pro' && userPlan !== 'free' && (
-                  <FeatureLockedOverlay darkMode={darkMode} message="Voces disponibles en START+" showIcon showMessage />
+              <div className={`relative ${(userPlan === 'free' || isBasePlan) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
+                {isBasePlan && (
+                  <FeatureLockedOverlay darkMode={darkMode} message="Voces disponibles en packs" showIcon showMessage />
                 )}
                 <SectionHeader title={t('control.sections.voice')} tone="voces" darkMode={darkMode} />
               {/* Voz general */}
@@ -1524,11 +1525,11 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               </div>
 
               {/* ASISTENTE DE IA - BLOQUEADO EN FREE, START Y CREATOR */}
-              <div className={`relative ${(isFeatureBlocked('aiAssistant', userPlan) && !hasPack) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
-                {isFeatureBlocked('aiAssistant', userPlan) && !hasPack && (
+              <div className={`relative ${(isFeatureBlocked('aiAssistant', userPlan) && isBasePlan) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
+                {isFeatureBlocked('aiAssistant', userPlan) && isBasePlan && (
                   <FeatureLockedOverlay
                     darkMode={darkMode}
-                    message="Asistente disponible en plan PRO"
+                    message="Asistente disponible en packs"
                     showIcon
                     showMessage
                   />
