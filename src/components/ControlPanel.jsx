@@ -3,8 +3,13 @@ import { ArrowLeft, Check, HelpCircle, Keyboard, ChevronRight, Ban, Lock } from 
 import { useTranslation } from 'react-i18next'
 
 // Determina si una feature estA bloqueada segAon el plan del usuario
-const isFeatureBlocked = (feature, userPlan) => {
+const isFeatureBlocked = (feature, userPlan, rawPlan = '') => {
   const plan = userPlan?.toLowerCase() || 'free'
+
+  // Si el usuario tiene pack, TODO está desbloqueado
+  if (String(rawPlan || '').toLowerCase().includes('pack')) {
+    return false
+  }
 
   const blockedByPlan = {
     free: {
@@ -497,8 +502,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     return () => window.removeEventListener('voice-added', handleVoiceAdded)
   }, [user?.email])
 
-  const userPlan = normalizeUserPlan(user?.plan || 'free')
   const rawPlan = String(user?.plan || '').toLowerCase()
+  const userPlan = normalizeUserPlan(user?.plan || 'free')
   const isBasePlan = rawPlan === 'base' || rawPlan === 'plan base'
   useEffect(() => {
     if (userPlan !== 'free') return
@@ -1525,8 +1530,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               </div>
 
               {/* ASISTENTE DE IA - BLOQUEADO EN FREE, START Y CREATOR */}
-              <div className={`relative ${(isFeatureBlocked('aiAssistant', userPlan) && isBasePlan) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
-                {isFeatureBlocked('aiAssistant', userPlan) && isBasePlan && (
+              <div className={`relative ${(isFeatureBlocked('aiAssistant', userPlan, rawPlan) && isBasePlan) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
+                {isFeatureBlocked('aiAssistant', userPlan, rawPlan) && isBasePlan && (
                   <FeatureLockedOverlay
                     darkMode={darkMode}
                     message="Asistente disponible en packs"
