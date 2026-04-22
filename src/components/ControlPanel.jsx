@@ -17,6 +17,7 @@ const isFeatureBlocked = (feature, userPlan) => {
       voicesSubscriber: true,
       voicesCommunity: true,
       voicesQuestion: true,
+      voicesCommand: true,
       voicesNotif: true,
       voicesModerator: true, // TAMBIAN BLOQUEADA (cambio importante)
       // FILTROS - BLOQUEADOS
@@ -52,6 +53,7 @@ const isFeatureBlocked = (feature, userPlan) => {
       voicesSubscriber: true,
       voicesCommunity: true,
       voicesQuestion: true,
+      voicesCommand: true,
       voicesNotif: true,
       voicesModerator: true, // BLOQUEADA
       // FILTROS AVANZADOS - BLOQUEADOS
@@ -84,6 +86,7 @@ const isFeatureBlocked = (feature, userPlan) => {
       voicesSubscriber: false,
       voicesCommunity: false,
       voicesQuestion: false,
+      voicesCommand: false,
       voicesNotif: false,
       voicesModerator: false,
       excessiveEmojis: false,
@@ -235,6 +238,47 @@ function CheckWithInput({ label, checked, onToggle, value, onValueChange, placeh
             onChange={(e) => onValueChange(parseInt(e.target.value) || 0)}
             placeholder={placeholder}
             className={`w-24 px-3 py-1.5 text-sm rounded-lg border ${
+              darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+            }`}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CheckWithTextInput({ label, checked, onToggle, value, onValueChange, placeholder, darkMode, hint }) {
+  return (
+    <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
+      darkMode
+        ? checked
+          ? 'bg-cyan-500/10 border-cyan-400/40'
+          : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
+        : checked
+          ? 'bg-slate-100 border-slate-400 shadow-sm'
+          : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
+    }`}>
+      <button onClick={onToggle} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+        <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+          checked
+            ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800')
+            : (darkMode ? 'border-gray-400' : 'border-slate-500 bg-white')
+        }`}>
+          {checked && <Check className={`w-4 h-4 ${darkMode ? 'text-white' : 'text-white'}`} />}
+        </div>
+        <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${checked ? 'font-semibold' : 'font-medium'}`}>
+          {label}
+          {hint && <Hint text={hint} darkMode={darkMode} />}
+        </span>
+      </button>
+      {checked && (
+        <div className="mt-1 ml-8">
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => onValueChange(e.target.value)}
+            placeholder={placeholder}
+            className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
               darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
             }`}
           />
@@ -661,8 +705,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
           <div className={`relative mb-4 rounded-2xl border p-4 ${
             darkMode ? 'border-cyan-500/20 bg-[#12122a]/70' : 'border-indigo-200 bg-white/80'
           }`}>
-            {isFeatureBlocked('presets', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.presets.availableStart')} />}
-            <div className={`${isFeatureBlocked('presets', userPlan) ? 'opacity-40 pointer-events-none' : ''}`}>
+            <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className={`text-sm font-black uppercase tracking-widest ${darkMode ? 'text-cyan-300' : 'text-indigo-700'}`}>
                   {t('control.sections.presetsQuick')}
@@ -724,8 +767,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
           <div className={`relative mb-4 rounded-2xl border p-4 ${
             darkMode ? 'border-fuchsia-500/20 bg-[#12122a]/70' : 'border-fuchsia-200 bg-white/80'
           }`}>
-            {isFeatureBlocked('quickStart', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.quickStart.availableStart')} />}
-            <div className={`${isFeatureBlocked('quickStart', userPlan) ? 'opacity-40 pointer-events-none' : ''}`}>
+            <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className={`text-sm font-black uppercase tracking-widest ${darkMode ? 'text-fuchsia-300' : 'text-fuchsia-700'}`}>
                 {t('control.quickStart.title')}
@@ -777,6 +819,23 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 <CheckOption label={t('control.reading.onlyMessage')} checked={config.readOnlyMessage} onChange={() => updateConfig('readOnlyMessage', !config.readOnlyMessage)} darkMode={darkMode} hint={t('control.reading.onlyMessageHint')} />
               )}
 
+              <CheckWithTextInput
+                label={t('control.reading.byCommand')}
+                checked={config.readByCommandEnabled}
+                onToggle={() => {
+                  const next = !config.readByCommandEnabled
+                  updateConfig('readByCommandEnabled', next)
+                  if (next && !String(config.readByCommandPrefix || '').trim()) {
+                    updateConfig('readByCommandPrefix', 'bot/')
+                  }
+                }}
+                value={config.readByCommandPrefix || 'bot/'}
+                onValueChange={(nextValue) => updateConfig('readByCommandPrefix', nextValue)}
+                placeholder={t('control.reading.byCommandPlaceholder')}
+                darkMode={darkMode}
+                hint={t('control.reading.byCommandHint')}
+              />
+
               {/* SIEMPRE LIBRE EN TODOS LOS PLANES */}
               <CheckOption label={t('control.reading.skipRepeated')} checked={config.skipRepeated} onChange={() => updateConfig('skipRepeated', !config.skipRepeated)} darkMode={darkMode} hint="Ignora mensajes idAnticos consecutivos para evitar spam" />
 
@@ -785,7 +844,6 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
                   darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
                 }`}>
-                  <FeatureLockedOverlay darkMode={darkMode} message="Opciones avanzadas de lectura disponibles en START+" showIcon showMessage />
                   <div>
                     <CheckOption label={t('control.reading.onlyQuestions')} checked={config.onlyQuestions} onChange={() => {}} darkMode={darkMode} />
                     <CheckOption label={t('control.reading.onlyDonors')} checked={config.onlyDonors} onChange={() => {}} darkMode={darkMode} />
@@ -806,16 +864,12 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
 
               {/* SECCIÓN VOCES */}
               <div className={`relative ${userPlan === 'free' ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
-                {userPlan === 'free' && (
-                  <FeatureLockedOverlay darkMode={darkMode} message="Voces disponibles en START+" showIcon showMessage />
-                )}
                 <SectionHeader title={t('control.sections.voice')} tone="voces" darkMode={darkMode} />
               {/* Voz general */}
               <div className={`relative mb-2 rounded-xl px-4 py-3 border ${
                 darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
               }`}>
-                {isFeatureBlocked('voicesGeneral', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.voiceSection.available')} />}
-                <div className={`${isFeatureBlocked('voicesGeneral', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-[15px] font-medium ${darkMode ? 'text-white' : 'text-slate-800'}`}>{t('control.voiceSection.general')}</span>
                 </div>
@@ -843,8 +897,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                     : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                {isFeatureBlocked('voicesDonor', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.voiceSection.available')} />}
-                <div className={`${isFeatureBlocked('voicesDonor', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div>
                   <button onClick={() => updateConfig('donorVoiceEnabled', !config.donorVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                     <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                       config.donorVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
@@ -916,8 +969,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                     : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                {isFeatureBlocked('voicesSubscriber', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.voiceSection.available')} />}
-                <div className={`${isFeatureBlocked('voicesSubscriber', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div>
                   <button onClick={() => updateConfig('subscriberVoiceEnabled', !config.subscriberVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                     config.subscriberVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
@@ -954,8 +1006,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                     : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                {isFeatureBlocked('voicesCommunity', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.voiceSection.available')} />}
-                <div className={`${isFeatureBlocked('voicesCommunity', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div>
                   <button onClick={() => updateConfig('communityMemberVoiceEnabled', !config.communityMemberVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                     config.communityMemberVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
@@ -992,8 +1043,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                     : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                {isFeatureBlocked('voicesQuestion', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.voiceSection.available')} />}
-                <div className={`${isFeatureBlocked('voicesQuestion', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div>
                   <button onClick={() => updateConfig('questionVoiceEnabled', !config.questionVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                     config.questionVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
@@ -1023,6 +1073,43 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               {/* Voz notificaciones - BLOQUEADA */}
               <div className={`relative mb-2 rounded-xl px-4 py-3 border transition-colors ${
                 darkMode
+                  ? config.commandVoiceEnabled
+                    ? 'bg-cyan-500/10 border-cyan-400/40'
+                    : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
+                  : config.commandVoiceEnabled
+                    ? 'bg-slate-100 border-slate-400 shadow-sm'
+                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
+              }`}>
+                <div>
+                  <button onClick={() => updateConfig('commandVoiceEnabled', !config.commandVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+                    <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                      config.commandVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
+                    }`}>
+                      {config.commandVoiceEnabled && <Check className="w-4 h-4 text-white" />}
+                    </div>
+                    <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.commandVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.commands')}<Hint text={t('control.voiceSection.commandsHint')} darkMode={darkMode} /></span>
+                  </button>
+                  {config.commandVoiceEnabled && (
+                    <div className="mt-2 ml-8">
+                      <select
+                        value={config.commandVoiceId || 'Lupita'}
+                        onChange={(e) => updateConfig('commandVoiceId', e.target.value)}
+                        className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
+                          darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                        }`}
+                      >
+                        {premiumVoiceOptions.map(v => (
+                          <option key={v.id} value={v.id}>{v.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Voz notificaciones - BLOQUEADA */}
+              <div className={`relative mb-2 rounded-xl px-4 py-3 border transition-colors ${
+                darkMode
                   ? config.notifVoiceEnabled
                     ? 'bg-cyan-500/10 border-cyan-400/40'
                     : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
@@ -1030,8 +1117,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                     : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                {isFeatureBlocked('voicesNotif', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message={t('control.voiceSection.available')} />}
-                <div className={`${isFeatureBlocked('voicesNotif', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div>
                   <button onClick={() => updateConfig('notifVoiceEnabled', !config.notifVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                     config.notifVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
@@ -1070,10 +1156,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                   : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                {isFeatureBlocked('advancedVoiceTools', userPlan) && (
-                  <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR y PRO" />
-                )}
-                <div className={`${isFeatureBlocked('advancedVoiceTools', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div>
                 <button onClick={() => updateConfig('variedVoicesEnabled', !config.variedVoicesEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                     config.variedVoicesEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
@@ -1128,10 +1211,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                   : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
               }`}>
-                {isFeatureBlocked('advancedVoiceTools', userPlan) && (
-                  <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR y PRO" />
-                )}
-                <div className={`${isFeatureBlocked('advancedVoiceTools', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div>
                 <button onClick={() => setShowUserVoiceAssignments(!showUserVoiceAssignments)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                     showUserVoiceAssignments ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
@@ -1225,15 +1305,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
 
               {/* LEFT COLUMN - BLOQUE INDEPENDIENTE DE NOTIFICACIONES */}
               <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-rose-400/25' : 'bg-white border-slate-200'}`}>
-                <div className={`relative ${isFeatureBlocked('notifications', userPlan) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
-                  {isFeatureBlocked('notifications', userPlan) && (
-                    <FeatureLockedOverlay
-                      darkMode={darkMode}
-                      message="Notificaciones disponibles en CREATOR+"
-                      showIcon
-                      showMessage
-                    />
-                  )}
+                <div className={`relative`}>
                   <SectionHeader title="Notificaciones en Vivo" tone="notificaciones" darkMode={darkMode} />
 
                   <CheckWithInput label={t('control.announcements.followers')} checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} hint={t('control.announcements.followersHint')} />
@@ -1259,7 +1331,6 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   <div className={`relative mb-2 rounded-xl px-4 py-3 border opacity-50 pointer-events-none ${
                     darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
                   }`}>
-                    <FeatureLockedOverlay darkMode={darkMode} message="Filtros avanzados disponibles en START+" showIcon showMessage />
                     <div>
                       <CheckOption label="Ignorar enlaces/URLs" checked={false} onChange={() => {}} darkMode={darkMode} />
                       <CheckOption label={t('control.filterSection.profanity')} checked={false} onChange={() => {}} darkMode={darkMode} />
@@ -1274,8 +1345,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 <>
                   {/* FILTROS EN START+ */}
                   <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} hint="No lee links ni URLs en los mensajes" />
-                  <div className={`relative ${isFeatureBlocked('profanityFilterEnabled', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                    {isFeatureBlocked('profanityFilterEnabled', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
+                  <div className={`relative`}>
+                    
                     <CheckOption
                       label={t('control.filterSection.profanity')}
                       checked={config.profanityFilterEnabled}
@@ -1324,8 +1395,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   <CheckOption label={t('control.filterSection.cleanNicks')} checked={config.onlyPlainNicks} onChange={() => updateConfig('onlyPlainNicks', !config.onlyPlainNicks)} darkMode={darkMode} hint={t('control.filterSection.cleanNicksHint')} />
                   <CheckOption label={t('control.filterSection.noEmojis')} checked={config.stripChatEmojis} onChange={() => updateConfig('stripChatEmojis', !config.stripChatEmojis)} darkMode={darkMode} hint={t('control.filterSection.noEmojisHint')} />
                   {/* IGNORAR EMOJIS EXCESIVOS - BLOQUEADO EN FREE Y START */}
-                  <div className={`relative ${isFeatureBlocked('excessiveEmojis', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                    {isFeatureBlocked('excessiveEmojis', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
+                  <div className={`relative`}>
+                    
                     <CheckWithInput
                       label="Ignorar emojis excesivos del chat a cantidad máxima permitida:"
                       checked={config.ignoreExcessiveEmojis}
@@ -1339,8 +1410,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   </div>
 
                   {/* IGNORAR MENSAJES MUY CORTOS - BLOQUEADO EN FREE Y START */}
-                  <div className={`relative ${isFeatureBlocked('minMessageLength', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                    {isFeatureBlocked('minMessageLength', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
+                  <div className={`relative`}>
+                    
                     <CheckWithInput
                       label="Ignorar mensajes muy cortos (mínimo de caracteres)"
                       checked={config.minMessageLengthEnabled}
@@ -1354,8 +1425,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   </div>
 
                   {/* LÍMITE DE CARACTERES - BLOQUEADO EN FREE Y START */}
-                  <div className={`relative ${isFeatureBlocked('charLimit', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                    {isFeatureBlocked('charLimit', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
+                  <div className={`relative`}>
+                    
                     <CheckWithInput
                       label="Límite de caracteres en todos los mensajes (máximo)"
                       checked={config.donorCharLimitEnabled}
@@ -1369,8 +1440,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   </div>
 
                   {/* LÍMITE DE MENSAJES EN ESPERA - BLOQUEADO EN FREE Y START */}
-                  <div className={`relative ${isFeatureBlocked('maxQueue', userPlan) ? 'opacity-50 pointer-events-none' : ''}`}>
-                    {isFeatureBlocked('maxQueue', userPlan) && <FeatureLockedOverlay darkMode={darkMode} message="Disponible en CREATOR+" />}
+                  <div className={`relative`}>
+                    
                     <CheckWithInput
                       label="Límite de mensajes en espera (descarta nuevos si se llena)"
                       checked={config.maxQueueEnabled}
