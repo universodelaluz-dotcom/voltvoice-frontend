@@ -149,13 +149,14 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
 
   // Nuevo nombre → valor que espera el backend (legacy)
   const toBackendPlan = (plan) => {
-    const map = { base: 'start', pack_lite: 'start', pack_pro: 'creator', pack_max: 'pro' }
-    return map[plan] ?? plan
+    // New names pass through directly; only map legacy values just in case
+    const legacy = { start: 'base', creator: 'pack_lite', pro: 'pack_pro' }
+    return legacy[plan] ?? plan
   }
-  // Valor legacy del backend → nuevo nombre para el frontend
   const toFrontendPlan = (plan) => {
-    const map = { start: 'base', creator: 'pack_pro', pro: 'pack_max' }
-    return map[plan] ?? plan
+    // Backend now stores new names directly; legacy fallback for old DB rows
+    const legacy = { start: 'base', creator: 'pack_lite', pro: 'pack_pro', elite: 'pack_pro', premium: 'pack_lite', on_demand: 'pack_pro' }
+    return legacy[plan] ?? plan
   }
   const secondsToHours = (seconds, fallbackHours = 1) => {
     const sec = Number(seconds)
