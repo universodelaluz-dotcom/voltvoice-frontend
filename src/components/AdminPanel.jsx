@@ -146,6 +146,12 @@ export default function AdminPanel({ onClose, darkMode, user, authToken }) {
   const [voicesList, setVoicesList] = useState([])
   const [voicesLoading, setVoicesLoading] = useState(false)
 const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' })
+
+  // Mapea los nuevos nombres de plan al valor que espera el backend
+  const toBackendPlan = (plan) => {
+    const map = { base: 'start', pack_lite: 'start', pack_pro: 'creator', pack_max: 'pro' }
+    return map[plan] ?? plan
+  }
   const secondsToHours = (seconds, fallbackHours = 1) => {
     const sec = Number(seconds)
     if (!Number.isFinite(sec) || sec <= 0) return fallbackHours
@@ -198,7 +204,7 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
       const params = new URLSearchParams({
         page, limit: 25,
         search,
-        plan: planFilter
+        plan: toBackendPlan(planFilter)
       })
       const r = await fetch(`${API_URL}/api/admin/users?${params}`, { headers: buildHeaders() })
       const d = await r.json().catch(() => ({}))
@@ -224,17 +230,20 @@ const buildHeaders = () => ({ 'Authorization': `Bearer ${authToken}`, 'Content-T
 
   const saveUser = async (userId) => {
     try {
+      const payload = { ...editValues, plan: toBackendPlan(editValues.plan) }
       const r = await fetch(`${API_URL}/api/admin/users/${userId}`, {
         method: 'PUT', headers: buildHeaders(),
-        body: JSON.stringify(editValues)
+        body: JSON.stringify(payload)
       })
-      const d = await r.json()
-      if (d.success) {
-        setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...d.user } : u))
+      const d = await r.json().catch(() => ({}))
+      if (r.ok && (d.success || d.user)) {
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...(d.user || {}), plan: editValues.plan } : u))
         setEditingUser(null)
         showMsg('Guardado')
+      } else {
+        showMsg(d.error || d.message || `Error ${r.status}`, 'error')
       }
-    } catch { showMsg('Error', 'error') }
+    } catch { showMsg('Error de conexión', 'error') }
   }
 
   const addTokens = async (userId) => {
