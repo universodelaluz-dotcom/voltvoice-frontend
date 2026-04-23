@@ -420,8 +420,9 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
   const USER_SLOTS = [
     { slot: 1, label: 'USUARIO FREE' },
     { slot: 2, label: 'USUARIO BASE' },
-    { slot: 3, label: 'USUARIO PRO' },
-    { slot: 4, label: 'USUARIO MAXX' },
+    { slot: 3, label: 'USUARIO LITE' },
+    { slot: 4, label: 'USUARIO PRO' },
+    { slot: 5, label: 'USUARIO MAXX' },
   ]
 
   const loadUsers = useCallback(async () => {
@@ -486,7 +487,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
             <TestTube2 className="w-5 h-5 text-cyan-400" />
             <div>
               <p className={`font-black text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>TARJETA DE TESTS</p>
-              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cambiar entre FREE, BASE, PRO y MAXX + reset rápido de tokens.</p>
+              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cambiar entre FREE, BASE, LITE, PRO y MAXX + reset rápido de tokens.</p>
             </div>
           </div>
           <button
