@@ -1429,6 +1429,56 @@ export function App() {
     )
   }
 
+  // Auto-process pending payments when entering studio
+  useEffect(() => {
+    if (currentPage !== 'studio') return
+    const token = getStoredToken()
+    if (!token) return
+    let pending = null
+    try {
+      pending = JSON.parse(localStorage.getItem(PAYMENT_PENDING_KEY) || 'null')
+    } catch { }
+    if (!pending) return
+    const startedAt = Number(pending?.startedAt || 0)
+    const maxAgeMs = 2 * 60 * 60 * 1000
+    if (!Number.isFinite(startedAt) || (Date.now() - startedAt) > maxAgeMs) {
+      localStorage.removeItem(PAYMENT_PENDING_KEY)
+      return
+    }
+    setPaymentNotice({
+      title: 'Procesando pago...',
+      message: 'Completando tu compra...',
+      status: 'processing'
+    })
+    ;(async () => {
+      try {
+        await reconcileMercadoPagoPayments(API_URL, token)
+        const response = await fetch(`${API_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await response.json()
+        if (data?.success) {
+          setUser(data.user)
+          setTokens(data.user.tokens || 100)
+          localStorage.setItem('sv-user', JSON.stringify(data.user))
+        }
+        localStorage.removeItem(PAYMENT_PENDING_KEY)
+        setPaymentNotice({
+          title: '✓ Pago Realizado',
+          message: `Tu compra se procesó correctamente. Tokens actualizados: ${data.user?.tokens || tokens}. Ya tienes acceso a todos tus beneficios.`,
+          status: 'success'
+        })
+      } catch (error) {
+        console.error('[PAYMENT] auto-process error:', error?.message || error)
+        setPaymentNotice({
+          title: 'No se pudo acreditar el pago',
+          message: 'Intenta recargar la página en unos segundos.',
+          status: 'error'
+        })
+      }
+    })()
+  }, [currentPage])
+
   // Studio + Voice Workshop + paneles secundarios: todos en el mismo bloque con display:none/block
   // para que SynthesisStudio nunca se desmonte (manteniendo el WebSocket de TikTok vivo al navegar a voice-workshop)
   if (['studio', 'control-panel', 'statistics', 'admin', 'voice-workshop'].includes(currentPage)) {

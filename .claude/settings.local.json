@@ -19,7 +19,8 @@
       "mcp__Claude_in_Chrome__javascript_tool",
       "mcp__Claude_in_Chrome__find",
       "mcp__Claude_in_Chrome__read_page",
-      "Bash(grep -n \"&#\\\\|\\\\\\\\\\\\\\\\u\\\\|icon\\\\|Icon\" \"/c/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE/frontend/src/App.jsx\")"
+      "Bash(grep -n \"&#\\\\|\\\\\\\\\\\\\\\\u\\\\|icon\\\\|Icon\" \"/c/Nueva carpeta/VOLTVOICE CON SERVER M25/VOLTVOICE/frontend/src/App.jsx\")",
+      "mcp__Claude_in_Chrome__read_network_requests"
     ]
   }
 }
