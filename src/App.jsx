@@ -1189,6 +1189,9 @@ export function App() {
     const isPaypalCallback = provider === 'paypal' && Boolean(paypalOrderId)
     if (!isPaypalCallback && !token) return
 
+    const previousTokens = Number(user?.tokens || 0)
+    const previousPlan = String(user?.plan || 'free').toLowerCase()
+
     const refreshUser = async () => {
       if (!token) return
       try {
@@ -1200,8 +1203,10 @@ export function App() {
           setUser(data.user)
           setTokens(data.user.tokens || 100)
           localStorage.setItem('sv-user', JSON.stringify(data.user))
+          return data.user
         }
       } catch (_) {}
+      return null
     }
 
     const cleanPaymentQuery = () => {
@@ -1242,15 +1247,35 @@ export function App() {
           if (!token) throw new Error('Sesion no disponible para reconciliar el pago')
           await reconcileMercadoPagoPayments(API_URL, token)
         }
+        const refreshedUser = await refreshUser()
         completed = true
         sessionStorage.setItem(callbackKey, 'done')
         localStorage.removeItem(PAYMENT_PENDING_KEY)
         setPaymentNotice({
           title: '✓ Pago Realizado',
-          message: `Tu compra se procesó correctamente. Tokens actualizados: ${data.user?.tokens || tokens}. Ya tienes acceso a todos tus beneficios.`,
+          message: `Tu compra se procesó correctamente. Tokens actualizados: ${Number(refreshedUser?.tokens ?? previousTokens).toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
           status: 'success'
         })
       } catch (error) {
+        const refreshedUser = await refreshUser()
+        const refreshedTokens = Number(refreshedUser?.tokens || 0)
+        const refreshedPlan = String(refreshedUser?.plan || 'free').toLowerCase()
+        const paymentSeemsApplied = Boolean(
+          refreshedUser && (
+            refreshedTokens > previousTokens ||
+            refreshedPlan !== previousPlan
+          )
+        )
+        if (paymentSeemsApplied) {
+          sessionStorage.setItem(callbackKey, 'done')
+          localStorage.removeItem(PAYMENT_PENDING_KEY)
+          setPaymentNotice({
+            title: '✓ Pago Realizado',
+            message: `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
+            status: 'success'
+          })
+          return
+        }
         sessionStorage.removeItem(callbackKey)
         console.error('[PAYMENT] Error completing payment callback:', error?.message || error)
         setPaymentNotice({
@@ -1259,7 +1284,6 @@ export function App() {
           status: 'error'
         })
       } finally {
-        await refreshUser()
         cleanPaymentQuery()
       }
     })()
@@ -1288,6 +1312,9 @@ export function App() {
       return
     }
 
+    const previousTokens = Number(user?.tokens || 0)
+    const previousPlan = String(user?.plan || 'free').toLowerCase()
+
     const refreshUser = async () => {
       try {
         const response = await fetch(`${API_URL}/api/auth/me`, {
@@ -1298,8 +1325,10 @@ export function App() {
           setUser(data.user)
           setTokens(data.user.tokens || 100)
           localStorage.setItem('sv-user', JSON.stringify(data.user))
+          return data.user
         }
       } catch (_) {}
+      return null
     }
 
     setCurrentPage('studio')
@@ -1312,14 +1341,32 @@ export function App() {
     ;(async () => {
       try {
         await reconcileMercadoPagoPayments(API_URL, token)
-        await refreshUser()
+        const refreshedUser = await refreshUser()
         localStorage.removeItem(PAYMENT_PENDING_KEY)
         setPaymentNotice({
           title: '✓ Pago Realizado',
-          message: `Tu compra se procesó correctamente. Tokens actualizados: ${data.user?.tokens || tokens}. Ya tienes acceso a todos tus beneficios.`,
+          message: `Tu compra se procesó correctamente. Tokens actualizados: ${Number(refreshedUser?.tokens ?? previousTokens).toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
           status: 'success'
         })
       } catch (error) {
+        const refreshedUser = await refreshUser()
+        const refreshedTokens = Number(refreshedUser?.tokens || 0)
+        const refreshedPlan = String(refreshedUser?.plan || 'free').toLowerCase()
+        const paymentSeemsApplied = Boolean(
+          refreshedUser && (
+            refreshedTokens > previousTokens ||
+            refreshedPlan !== previousPlan
+          )
+        )
+        if (paymentSeemsApplied) {
+          localStorage.removeItem(PAYMENT_PENDING_KEY)
+          setPaymentNotice({
+            title: '✓ Pago Realizado',
+            message: `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
+            status: 'success'
+          })
+          return
+        }
         console.error('[PAYMENT] pending reconcile error:', error?.message || error)
         setPaymentNotice({
           title: 'No se pudo acreditar el pago',
