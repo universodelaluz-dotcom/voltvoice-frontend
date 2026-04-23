@@ -451,12 +451,6 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
 
   // Get the actual plan, preferring subscription.backendPlan if available
   const getActualPlan = (userObj) => {
-    const email = String(userObj?.email || '').trim().toLowerCase()
-    if (email === 'test.user1@streamvoicer.local') return 'free'
-    if (email === 'test.user2@streamvoicer.local') return 'base'
-    if (email === 'test.user3@streamvoicer.local') return 'pack_pro'
-    if (email === 'test.user4@streamvoicer.local') return 'pack_max'
-
     const mainPlan = String(userObj?.plan || '').toLowerCase()
     const backendPlan = String(userObj?.subscription?.backendPlan || '').toLowerCase()
     const subscriptionPlan = String(userObj?.subscription?.plan || '').toLowerCase()

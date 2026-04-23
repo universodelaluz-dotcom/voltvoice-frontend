@@ -418,10 +418,10 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
   const [message, setMessage] = useState('')
   const [assumingId, setAssumingId] = useState(null)
   const USER_SLOTS = [
-    { slot: 1, label: 'USUARIO FREE', planKey: 'free' },
-    { slot: 2, label: 'USUARIO BASE', planKey: 'base' },
-    { slot: 3, label: 'USUARIO PRO', planKey: 'pack_pro' },
-    { slot: 4, label: 'USUARIO MAXX', planKey: 'pack_max' },
+    { slot: 1, label: 'USUARIO FREE' },
+    { slot: 2, label: 'USUARIO BASE' },
+    { slot: 3, label: 'USUARIO PRO' },
+    { slot: 4, label: 'USUARIO MAXX' },
   ]
 
   const loadUsers = useCallback(async () => {
@@ -459,7 +459,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
     }
   }
 
-  const assumeUser = async (userId, forcedPlanKey = '') => {
+  const assumeUser = async (userId) => {
     if (!onAssumeUser) return
     setAssumingId(userId)
     setMessage('')
@@ -469,18 +469,8 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
       if (!data?.success || !data?.token || !data?.user) {
         throw new Error(data?.error || 'No se pudo tomar el rol del usuario.')
       }
-      const effectivePlan = String(forcedPlanKey || data.user.plan || 'free').toLowerCase()
-      const normalizedUser = {
-        ...data.user,
-        plan: effectivePlan,
-        subscription: {
-          ...(data.user?.subscription || {}),
-          backendPlan: effectivePlan,
-          currentPlanKey: effectivePlan,
-        },
-      }
-      onAssumeUser(normalizedUser, data.token)
-      setMessage(`Entraste como ${normalizedUser.email} (${String(normalizedUser.plan || 'free').toUpperCase()})`)
+      onAssumeUser(data.user, data.token)
+      setMessage(`Entraste como ${data.user.email} (${String(data.user.plan || 'free').toUpperCase()})`)
     } catch (error) {
       setMessage(error.message || 'Error al iniciar sesión temporal.')
     } finally {
@@ -524,7 +514,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
                       <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Plan actual: <span className="font-bold uppercase">{user.plan}</span></p>
                       <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Tokens: <span className="font-bold">{Number(user.tokens || 0).toLocaleString()}</span></p>
                       <button
-                        onClick={() => assumeUser(user.id, slotSpec.planKey)}
+                        onClick={() => assumeUser(user.id)}
                         disabled={assumingId === user.id}
                         className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-black text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:opacity-90 disabled:opacity-70"
                       >
