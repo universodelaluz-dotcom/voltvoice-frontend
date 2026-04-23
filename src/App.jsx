@@ -418,10 +418,10 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
   const [message, setMessage] = useState('')
   const [assumingId, setAssumingId] = useState(null)
   const USER_SLOTS = [
-    { slot: 1, label: 'USUARIO FREE' },
-    { slot: 2, label: 'USUARIO BASE' },
-    { slot: 3, label: 'USUARIO PRO' },
-    { slot: 4, label: 'USUARIO MAXX' },
+    { slot: 1, label: 'USUARIO FREE', planKey: 'free' },
+    { slot: 2, label: 'USUARIO BASE', planKey: 'base' },
+    { slot: 3, label: 'USUARIO PRO', planKey: 'pack_pro' },
+    { slot: 4, label: 'USUARIO MAXX', planKey: 'pack_max' },
   ]
 
   const loadUsers = useCallback(async () => {
@@ -459,7 +459,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
     }
   }
 
-  const assumeUser = async (userId) => {
+  const assumeUser = async (userId, forcedPlanKey = '') => {
     if (!onAssumeUser) return
     setAssumingId(userId)
     setMessage('')
@@ -469,8 +469,18 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
       if (!data?.success || !data?.token || !data?.user) {
         throw new Error(data?.error || 'No se pudo tomar el rol del usuario.')
       }
-      onAssumeUser(data.user, data.token)
-      setMessage(`Entraste como ${data.user.email} (${String(data.user.plan || 'free').toUpperCase()})`)
+      const effectivePlan = String(forcedPlanKey || data.user.plan || 'free').toLowerCase()
+      const normalizedUser = {
+        ...data.user,
+        plan: effectivePlan,
+        subscription: {
+          ...(data.user?.subscription || {}),
+          backendPlan: effectivePlan,
+          currentPlanKey: effectivePlan,
+        },
+      }
+      onAssumeUser(normalizedUser, data.token)
+      setMessage(`Entraste como ${normalizedUser.email} (${String(normalizedUser.plan || 'free').toUpperCase()})`)
     } catch (error) {
       setMessage(error.message || 'Error al iniciar sesión temporal.')
     } finally {
@@ -514,7 +524,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
                       <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Plan actual: <span className="font-bold uppercase">{user.plan}</span></p>
                       <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Tokens: <span className="font-bold">{Number(user.tokens || 0).toLocaleString()}</span></p>
                       <button
-                        onClick={() => assumeUser(user.id)}
+                        onClick={() => assumeUser(user.id, slotSpec.planKey)}
                         disabled={assumingId === user.id}
                         className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-black text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:opacity-90 disabled:opacity-70"
                       >
@@ -527,7 +537,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
                         className="mt-1.5 w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-black text-white bg-gradient-to-r from-red-500 to-orange-500 hover:opacity-90 disabled:opacity-70"
                       >
                         {resettingId === user.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-                        RESET TOKENS
+                        RESET USUARIO
                       </button>
                     </>
                   ) : (
@@ -539,7 +549,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
           </div>
         )}
 
-        <p className={`mt-3 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Nota: RESET TOKENS reinicia saldo a 0 y mantiene el plan del usuario.</p>
+        <p className={`mt-3 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Nota: RESET USUARIO reinicia tokens, limpia pagos de prueba y restaura el plan base de ese slot.</p>
         {message && (
           <p className={`mt-2 text-xs font-semibold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{message}</p>
         )}
