@@ -408,6 +408,12 @@
         pack_pro: 'PACK PRO',
         pack_max: 'PACK MAX',
       };
+      const PLAN_MODAL_DETAILS = {
+        base: { title: 'PLAN BASE Mensual', price: '$9.99 USD - facturacion mensual', mxn: 'Aprox. $173 MXN' },
+        pack_lite: { title: 'PACK LITE Mensual', price: '$9.99 USD - facturacion mensual', mxn: 'Aprox. $173 MXN' },
+        pack_pro: { title: 'PACK PRO Mensual', price: '$24.99 USD - facturacion mensual', mxn: 'Aprox. $432 MXN' },
+        pack_max: { title: 'PACK MAX Mensual', price: '$49.99 USD - facturacion mensual', mxn: 'Aprox. $864 MXN' },
+      };
 
       const getAuthToken = () =>
         sessionStorage.getItem(TOKEN_STORAGE_KEY) ||
@@ -438,6 +444,7 @@
           itemType: 'plan',
           planId,
           billingCycle: 'monthly',
+          returnUrlBase: window.location.origin,
         }),
       });
 
@@ -451,35 +458,41 @@
           itemType: 'plan',
           planId,
           billingCycle: 'monthly',
+          returnUrlBase: window.location.origin,
         }),
       });
 
       const modal = document.createElement('div');
-      modal.style.cssText = 'position:fixed;inset:0;background:radial-gradient(circle at 15% 10%, rgba(34,211,238,.24), transparent 42%), radial-gradient(circle at 85% 0%, rgba(236,72,153,.18), transparent 46%), rgba(2,6,23,.84);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px;backdrop-filter: blur(10px);';
+      modal.style.cssText = 'position:fixed;inset:0;background:radial-gradient(circle at 15% 10%, rgba(34,211,238,.20), transparent 42%), radial-gradient(circle at 85% 0%, rgba(236,72,153,.14), transparent 46%), rgba(2,6,23,.84);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px;backdrop-filter: blur(10px);';
       modal.innerHTML = `
-        <div style="max-width:520px;width:100%;border:1px solid #2e5084;background:linear-gradient(170deg,#0a1735,#101e42 58%, #1b2156);border-radius:22px;padding:22px;color:#e5e7eb;box-shadow:0 32px 90px rgba(2,6,23,.74);">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-            <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#22d3ee,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 8px 22px rgba(56,189,248,.35);">💳</div>
-            <div style="font-weight:900;font-size:1.08rem;letter-spacing:.2px;">Elegir metodo de pago</div>
+        <div style="max-width:440px;width:100%;border:1px solid #0ea5e9;background:linear-gradient(180deg,#0b1027,#16072f);border-radius:18px;padding:20px;color:#e5e7eb;box-shadow:0 30px 90px rgba(2,6,23,.78);position:relative;">
+          <button id="close-payment-modal-x" type="button" aria-label="Cerrar" style="position:absolute;top:12px;right:12px;border:0;background:transparent;color:#94a3b8;font-size:26px;line-height:1;cursor:pointer;">&times;</button>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+            <div style="font-size:28px;color:#22d3ee;">&#9889;</div>
+            <div style="font-weight:900;font-size:2rem;letter-spacing:.2px;background:linear-gradient(90deg,#22d3ee,#a855f7);-webkit-background-clip:text;background-clip:text;color:transparent;">Comprar Plan</div>
           </div>
-          <div id="payment-plan-label" style="font-size:.93rem;color:#dbeafe;margin:0 0 12px;"></div>
-          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
-            <span style="font-size:.72rem;padding:4px 8px;border-radius:999px;border:1px solid #1e3a8a;background:rgba(37,99,235,.18);color:#bfdbfe;">Checkout seguro</span>
-            <span style="font-size:.72rem;padding:4px 8px;border-radius:999px;border:1px solid #155e75;background:rgba(6,182,212,.16);color:#a5f3fc;">Pago instantaneo</span>
+          <div style="border:1px solid rgba(148,163,184,.22);border-radius:12px;padding:12px 14px;background:rgba(148,163,184,.08);margin-bottom:14px;">
+            <div id="payment-plan-title" style="font-size:1.02rem;font-weight:900;color:#22d3ee;margin-bottom:2px;"></div>
+            <div id="payment-plan-label" style="font-size:.94rem;color:#e2e8f0;margin-bottom:4px;"></div>
+            <div id="payment-plan-mxn" style="font-size:.78rem;color:#94a3b8;"></div>
           </div>
+          <div style="font-size:.92rem;color:#94a3b8;text-align:center;margin:2px 0 12px;">Elige m&eacute;todo de pago</div>
           <div id="payment-status" style="display:none;font-size:.84rem;padding:9px 11px;border-radius:11px;margin-bottom:12px;background:rgba(15,23,42,.6);border:1px solid #334155;color:#cbd5e1;"></div>
-          <button id="pay-with-mercadopago" style="width:100%;border:0;border-radius:14px;padding:13px 12px;font-weight:900;color:#fff;background:linear-gradient(90deg,#06b6d4,#2563eb);cursor:pointer;margin-bottom:10px;box-shadow:0 12px 28px rgba(37,99,235,.35);display:flex;align-items:center;justify-content:center;gap:8px;"><span style="font-size:15px;">💠</span><span>Mercado Pago</span></button>
-          <button id="pay-with-paypal" style="width:100%;border:0;border-radius:14px;padding:13px 12px;font-weight:900;color:#fff;background:linear-gradient(90deg,#1d4ed8,#2563eb);cursor:pointer;margin-bottom:10px;box-shadow:0 12px 28px rgba(37,99,235,.3);display:flex;align-items:center;justify-content:center;gap:8px;"><span style="font-size:15px;">🅿️</span><span>PayPal</span></button>
-          <button id="close-payment-modal" style="width:100%;border:1px solid #4b5f84;border-radius:13px;padding:10px 12px;font-weight:700;color:#dbeafe;background:rgba(15,23,42,.35);cursor:pointer;">Cancelar</button>
-          <div style="margin-top:10px;font-size:.73rem;color:#94a3b8;text-align:center;">Si falla una API, reintentamos automaticamente con otra disponible.</div>
+          <button id="pay-with-mercadopago" style="width:100%;border:0;border-radius:12px;padding:12px 12px;font-weight:900;color:#fff;background:linear-gradient(90deg,#10bce2,#0ea5e9);cursor:pointer;margin-bottom:10px;box-shadow:0 12px 26px rgba(14,165,233,.28);">Pagar con Mercado Pago</button>
+          <button id="pay-with-paypal" style="width:100%;border:0;border-radius:12px;padding:12px 12px;font-weight:900;color:#0f172a;background:#f5c542;cursor:pointer;margin-bottom:10px;box-shadow:0 12px 26px rgba(245,197,66,.22);">Pagar con PayPal</button>
+          <button id="close-payment-modal" style="width:100%;border:0;background:transparent;color:#94a3b8;font-size:1.02rem;font-weight:700;padding:4px;cursor:pointer;margin-bottom:10px;">Cancelar</button>
+          <div style="font-size:.78rem;color:#64748b;text-align:center;">Pagos 100% seguros - Mercado Pago y PayPal</div>
         </div>
       `;
       document.body.appendChild(modal);
 
       const modalPlanLabel = modal.querySelector('#payment-plan-label');
+      const modalPlanTitle = modal.querySelector('#payment-plan-title');
+      const modalPlanMxn = modal.querySelector('#payment-plan-mxn');
       const paymentStatus = modal.querySelector('#payment-status');
       const payWithMercadoPago = modal.querySelector('#pay-with-mercadopago');
       const payWithPayPal = modal.querySelector('#pay-with-paypal');
+      const closePaymentModalX = modal.querySelector('#close-payment-modal-x');
       const closePaymentModal = modal.querySelector('#close-payment-modal');
 
       let selectedPlanId = '';
@@ -489,12 +502,16 @@
       const openModal = (planId, button) => {
         selectedPlanId = planId;
         selectedButton = button;
-        modalPlanLabel.textContent = `Plan seleccionado: ${PLAN_LABELS[planId] || planId.toUpperCase()}`;
+        const details = PLAN_MODAL_DETAILS[planId] || null;
+        modalPlanTitle.textContent = details?.title || PLAN_LABELS[planId] || planId.toUpperCase();
+        modalPlanLabel.textContent = details?.price || `Plan seleccionado: ${PLAN_LABELS[planId] || planId.toUpperCase()}`;
+        modalPlanMxn.textContent = details?.mxn || 'Referencia en MXN aproximada.';
         paymentStatus.style.display = 'none';
         paymentStatus.textContent = '';
         modal.style.display = 'flex';
       };
 
+      closePaymentModalX.addEventListener('click', closeModal);
       closePaymentModal.addEventListener('click', closeModal);
       modal.addEventListener('click', (event) => { if (event.target === modal) closeModal(); });
 

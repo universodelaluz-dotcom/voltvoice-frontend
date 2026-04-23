@@ -28,4 +28,15 @@ export default defineConfig({
   ],
   root: process.env.VITE_ROOT || '.',
   publicDir: 'public',
+  server: {
+    host: true,
+    allowedHosts: ['.ngrok-free.dev', 'localhost', '127.0.0.1'],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })

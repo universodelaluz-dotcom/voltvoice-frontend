@@ -2,7 +2,19 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Mail, Lock, Eye, EyeOff, Loader, AlertCircle, ArrowLeft, CheckCircle } from 'lucide-react'
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const resolveApiUrl = () => {
+  const configured = String(import.meta.env.VITE_API_URL || '').trim()
+  if (typeof window !== 'undefined') {
+    const origin = window.location.origin
+    const isHttpsPage = window.location.protocol === 'https:'
+    const isNgrokPage = window.location.hostname.includes('ngrok-free.dev')
+    if (isHttpsPage && isNgrokPage && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(configured)) {
+      return origin
+    }
+  }
+  return configured || 'https://voltvoice-backend.onrender.com'
+}
+const API_URL = resolveApiUrl()
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
 const RECAPTCHA_REQUIRED = ['1', 'true', 'yes', 'on'].includes(String(import.meta.env.VITE_RECAPTCHA_REQUIRED ?? 'false').toLowerCase())

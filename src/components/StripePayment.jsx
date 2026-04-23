@@ -2,9 +2,22 @@ import { useState, useEffect, useCallback } from 'react'
 import { X, Zap, Check, AlertCircle, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const resolveApiUrl = () => {
+  const configured = String(import.meta.env.VITE_API_URL || '').trim()
+  if (typeof window !== 'undefined') {
+    const origin = window.location.origin
+    const isHttpsPage = window.location.protocol === 'https:'
+    const isNgrokPage = window.location.hostname.includes('ngrok-free.dev')
+    if (isHttpsPage && isNgrokPage && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(configured)) {
+      return origin
+    }
+  }
+  return configured || 'https://voltvoice-backend.onrender.com'
+}
+const API_URL = resolveApiUrl()
 const TOKEN_STORAGE_KEY = 'sv-token'
 const TOKEN_PERSIST_KEY = 'sv-token-persist'
+const PAYMENT_PENDING_KEY = 'sv-payment-pending-v1'
 const FREE_PLANS = new Set(['free', 'on_demand'])
 
 const tokenPackages = [
@@ -165,17 +178,25 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     return window.confirm(message)
   }
 
+  const getReturnUrl = () => {
+    if (typeof window === 'undefined') return undefined
+    const origin = window.location.origin
+    return `${origin}/mercadopago-success.html`
+  }
+
   const requestPayload = currentItem.type === 'plan'
     ? {
         planId: currentItem.planId,
         billingCycle: currentItem.billingCycle,
         itemType: 'plan',
+        returnUrlBase: getReturnUrl(),
         couponCode: validCoupon ? couponCode.trim() : undefined,
         couponId: validCoupon?.coupon?.id || undefined,
       }
     : {
         tokensPackage: currentItem.package.tokens,
         itemType: 'tokens',
+        returnUrlBase: getReturnUrl(),
         couponCode: validCoupon ? couponCode.trim() : undefined,
         couponId: validCoupon?.coupon?.id || undefined,
       }
@@ -237,10 +258,17 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
       }
 
       if (data.requiresPayment === false) {
+        localStorage.removeItem(PAYMENT_PENDING_KEY)
         alert(data.message || t('payment.planScheduled'))
         onClose?.()
       } else if (preferredCheckoutUrl) {
         if (!confirmScheduledPlanPayment(data.action)) return
+        localStorage.setItem(PAYMENT_PENDING_KEY, JSON.stringify({
+          provider: 'mercadopago',
+          startedAt: Date.now(),
+          itemType: currentItem?.type || 'plan',
+          planId: currentItem?.planId || null
+        }))
         window.location.href = preferredCheckoutUrl
       }
       else alert('Error MercadoPago: ' + (data.error || 'desconocido'))
@@ -274,10 +302,17 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         return
       }
       if (data.requiresPayment === false) {
+        localStorage.removeItem(PAYMENT_PENDING_KEY)
         alert(data.message || t('payment.planScheduled'))
         onClose?.()
       } else if (data.approvalUrl) {
         if (!confirmScheduledPlanPayment(data.action)) return
+        localStorage.setItem(PAYMENT_PENDING_KEY, JSON.stringify({
+          provider: 'paypal',
+          startedAt: Date.now(),
+          itemType: currentItem?.type || 'plan',
+          planId: currentItem?.planId || null
+        }))
         window.location.href = data.approvalUrl
       } else {
         alert('Error PayPal: ' + (data.error || 'desconocido'))

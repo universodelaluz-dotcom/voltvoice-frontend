@@ -2,7 +2,7 @@
 import { useTranslation } from 'react-i18next'
 import { PricingCards } from './components/PricingCards'
 import { PricingComparison } from './components/PricingComparison'
-import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft, LogOut, ChevronDown, ChevronUp, RotateCcw, Loader2, TestTube2, Check } from 'lucide-react'
+import { ChevronRight, Zap, Mic2, Sliders, TrendingUp, Users, Shield, Sun, Moon, ArrowLeft, LogOut, RotateCcw, Loader2, TestTube2, Check } from 'lucide-react'
 
 const StripePayment = lazy(() => import('./components/StripePayment').then((m) => ({ default: m.StripePayment })))
 const SynthesisStudio = lazy(() => import('./components/SynthesisStudio').then((m) => ({ default: m.SynthesisStudio })))
@@ -13,10 +13,23 @@ const StatisticsDashboard = lazy(() => import('./components/StatisticsDashboard'
 const AuthPage = lazy(() => import('./components/AuthPage').then((m) => ({ default: m.AuthPage })))
 const AIRoleplayWorkshop = lazy(() => import('./components/AIRoleplayWorkshop'))
 const AdminPanel = lazy(() => import('./components/AdminPanel'))
-const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
+const resolveApiUrl = () => {
+  const configured = String(import.meta.env.VITE_API_URL || '').trim()
+  if (typeof window !== 'undefined') {
+    const origin = window.location.origin
+    const isHttpsPage = window.location.protocol === 'https:'
+    const isNgrokPage = window.location.hostname.includes('ngrok-free.dev')
+    if (isHttpsPage && isNgrokPage && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(configured)) {
+      return origin
+    }
+  }
+  return configured || 'https://voltvoice-backend.onrender.com'
+}
+const API_URL = resolveApiUrl()
 const TOKEN_API_KEY = 'sv-token-api-v1'
 const TOKEN_STORAGE_KEY = 'sv-token'
 const TOKEN_PERSIST_KEY = 'sv-token-persist'
+const PAYMENT_PENDING_KEY = 'sv-payment-pending-v1'
 const LOCAL_CONFIG_CACHE_KEY = 'sv-config-cache-v1'
 const LOCAL_CONFIG_CACHE_KEY_PREFIX = 'sv-config-cache-v2'
 const COOKIE_CONSENT_KEY = 'cookieConsent'
@@ -399,12 +412,17 @@ function AnimatedMetric({ value, className = '', animateOnView = false }) {
 }
 
 function PublicTestResetCard({ darkMode, onAssumeUser }) {
-  const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [resettingId, setResettingId] = useState(null)
   const [users, setUsers] = useState([])
   const [message, setMessage] = useState('')
   const [assumingId, setAssumingId] = useState(null)
+  const USER_SLOTS = [
+    { slot: 1, label: 'USUARIO FREE' },
+    { slot: 2, label: 'USUARIO BASE' },
+    { slot: 3, label: 'USUARIO PRO' },
+    { slot: 4, label: 'USUARIO MAXX' },
+  ]
 
   const loadUsers = useCallback(async () => {
     setLoading(true)
@@ -422,14 +440,14 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
   }, [])
 
   useEffect(() => {
-    if (isOpen) loadUsers()
-  }, [isOpen, loadUsers])
+    loadUsers()
+  }, [loadUsers])
 
   const resetUser = async (userId) => {
     setResettingId(userId)
     setMessage('')
     try {
-      const res = await fetch(`${API_URL}/api/test-lab/users/${userId}/reset`, { method: 'POST' })
+      const res = await fetch(`${API_URL}/api/test-lab/users/${userId}/reset-tokens`, { method: 'POST' })
       const data = await res.json()
       if (!data?.success) throw new Error(data?.error || 'No se pudo resetear')
       setUsers(Array.isArray(data.users) ? data.users : [])
@@ -452,7 +470,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
         throw new Error(data?.error || 'No se pudo tomar el rol del usuario.')
       }
       onAssumeUser(data.user, data.token)
-      setMessage(`Entraste como ${data.user.email}`)
+      setMessage(`Entraste como ${data.user.email} (${String(data.user.plan || 'free').toUpperCase()})`)
     } catch (error) {
       setMessage(error.message || 'Error al iniciar sesión temporal.')
     } finally {
@@ -462,79 +480,68 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
 
   return (
     <section className="px-4 pb-2">
-      <div className={`max-w-5xl mx-auto rounded-lg border ${darkMode ? 'bg-[#11142a]/70 border-cyan-500/20' : 'bg-white border-cyan-100 shadow-sm'}`}>
-        <button
-          onClick={() => setIsOpen((prev) => !prev)}
-          className={`w-full px-4 py-3 flex items-center justify-between text-left ${darkMode ? 'hover:bg-white/5' : 'hover:bg-cyan-50'} transition-colors`}
-        >
+      <div className={`max-w-5xl mx-auto rounded-xl border p-4 ${darkMode ? 'bg-[#11142a]/70 border-cyan-500/25' : 'bg-white border-cyan-100 shadow-sm'}`}>
+        <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-3">
             <TestTube2 className="w-5 h-5 text-cyan-400" />
             <div>
-              <p className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>Panel rápido de pruebas</p>
-              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Reset público para Usuario 1, 2, 3 y 4</p>
+              <p className={`font-black text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>TARJETA DE TESTS</p>
+              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cambiar entre FREE, BASE, PRO y MAXX + reset rápido de tokens.</p>
             </div>
           </div>
-          {isOpen ? <ChevronUp className="w-5 h-5 text-cyan-400" /> : <ChevronDown className="w-5 h-5 text-cyan-400" />}
-        </button>
+          <button
+            onClick={loadUsers}
+            className={`text-xs font-bold px-3 py-1.5 rounded-md ${darkMode ? 'bg-white/10 text-cyan-300 hover:bg-white/20' : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}`}
+          >
+            Recargar
+          </button>
+        </div>
 
-        {isOpen && (
-          <div className={`px-4 pb-4 border-t ${darkMode ? 'border-white/10' : 'border-cyan-100'}`}>
-            <div className="pt-3 flex items-center justify-between mb-2">
-              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cada reset deja: tokens en 0, membresía FREE y pagos borrados.</p>
-              <button
-                onClick={loadUsers}
-                className={`text-xs font-bold px-3 py-1.5 rounded-md ${darkMode ? 'bg-white/10 text-cyan-300 hover:bg-white/20' : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}`}
-              >
-                Recargar
-              </button>
-            </div>
-
-            {loading ? (
-              <div className="py-8 flex items-center justify-center">
-                <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {[0, 1, 2, 3].map((idx) => {
-                  const user = users[idx]
-                  return (
-                    <div key={idx} className={`rounded-md border p-3 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
-                      <p className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>USUARIO {idx + 1}</p>
-                      {user ? (
-                        <>
-                          <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>ID: {user.id}</p>
-                          <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Membresía actual: <span className="font-bold uppercase">{user.plan}</span></p>
-                          <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Tokens: <span className="font-bold">{Number(user.tokens || 0).toLocaleString()}</span></p>
-                          <button
-                            onClick={() => resetUser(user.id)}
-                            disabled={resettingId === user.id}
-                            className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-black text-white bg-gradient-to-r from-red-500 to-orange-500 hover:opacity-90 disabled:opacity-70"
-                          >
-                            {resettingId === user.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-                            BORRAR DATOS
-                          </button>
-                          <button
-                            onClick={() => assumeUser(user.id)}
-                            disabled={assumingId === user.id}
-                            className="mt-1.5 w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-black text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:opacity-90 disabled:opacity-70"
-                          >
-                            {assumingId === user.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
-                            ENTRAR COMO ESTE USUARIO
-                          </button>
-                        </>
-                      ) : (
-                        <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>Sin usuario asignado todavía.</p>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {message && (
-              <p className={`mt-3 text-xs font-semibold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{message}</p>
-            )}
+        {loading ? (
+          <div className="py-8 flex items-center justify-center">
+            <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {USER_SLOTS.map((slotSpec) => {
+              const user = users.find((entry) => Number(entry?.slot) === slotSpec.slot) || null
+              return (
+                <div key={slotSpec.slot} className={`rounded-md border p-3 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
+                  <p className={`font-black text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{slotSpec.label}</p>
+                  {user ? (
+                    <>
+                      <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>ID: {user.id}</p>
+                      <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Plan actual: <span className="font-bold uppercase">{user.plan}</span></p>
+                      <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Tokens: <span className="font-bold">{Number(user.tokens || 0).toLocaleString()}</span></p>
+                      <button
+                        onClick={() => assumeUser(user.id)}
+                        disabled={assumingId === user.id}
+                        className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-black text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:opacity-90 disabled:opacity-70"
+                      >
+                        {assumingId === user.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
+                        CAMBIAR A {slotSpec.label}
+                      </button>
+                      <button
+                        onClick={() => resetUser(user.id)}
+                        disabled={resettingId === user.id}
+                        className="mt-1.5 w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-black text-white bg-gradient-to-r from-red-500 to-orange-500 hover:opacity-90 disabled:opacity-70"
+                      >
+                        {resettingId === user.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                        RESET TOKENS
+                      </button>
+                    </>
+                  ) : (
+                    <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>Sin usuario asignado todavía.</p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        <p className={`mt-3 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Nota: RESET TOKENS reinicia saldo a 0 y mantiene el plan del usuario.</p>
+        {message && (
+          <p className={`mt-2 text-xs font-semibold ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{message}</p>
         )}
       </div>
     </section>
@@ -650,7 +657,12 @@ export function App() {
   
   useEffect(() => {
     if (!paymentNotice) return
-    const timer = setTimeout(() => setPaymentNotice(null), 9000)
+    const timeoutMs = paymentNotice.status === 'success'
+      ? 3200
+      : paymentNotice.status === 'processing'
+        ? 12000
+        : 7000
+    const timer = setTimeout(() => setPaymentNotice(null), timeoutMs)
     return () => clearTimeout(timer)
   }, [paymentNotice])
 
@@ -1200,11 +1212,12 @@ export function App() {
 
     const callbackState = sessionStorage.getItem(callbackKey)
     if (callbackState === 'done') {
+      localStorage.removeItem(PAYMENT_PENDING_KEY)
       cleanPaymentQuery()
       setCurrentPage('studio')
       setPaymentNotice({
         title: 'Pago acreditado',
-        message: 'Tu compra se proceso correctamente. Ya estas en Studio con tus beneficios activos.',
+        message: 'Tu compra se proceso correctamente. Ya estas en Studio con tus beneficios activos. Este mensaje se cerrara solo.',
         status: 'success'
       })
       return
@@ -1231,9 +1244,10 @@ export function App() {
         }
         completed = true
         sessionStorage.setItem(callbackKey, 'done')
+        localStorage.removeItem(PAYMENT_PENDING_KEY)
         setPaymentNotice({
-          title: 'Pago acreditado',
-          message: 'Tu compra se proceso correctamente. Ya estas en Studio con tus beneficios activos.',
+          title: '✓ Pago Realizado',
+          message: `Tu compra se procesó correctamente. Tokens actualizados: ${data.user?.tokens || tokens}. Ya tienes acceso a todos tus beneficios.`,
           status: 'success'
         })
       } catch (error) {
@@ -1247,6 +1261,71 @@ export function App() {
       } finally {
         await refreshUser()
         cleanPaymentQuery()
+      }
+    })()
+  }, [])
+
+  // Recuperacion de pago cuando el usuario vuelve manualmente del comprobante sin query de callback.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('payment')) return
+
+    const token = getStoredToken()
+    if (!token) return
+
+    let pending = null
+    try {
+      pending = JSON.parse(localStorage.getItem(PAYMENT_PENDING_KEY) || 'null')
+    } catch {
+      pending = null
+    }
+    if (!pending) return
+
+    const startedAt = Number(pending?.startedAt || 0)
+    const maxAgeMs = 2 * 60 * 60 * 1000
+    if (!Number.isFinite(startedAt) || (Date.now() - startedAt) > maxAgeMs) {
+      localStorage.removeItem(PAYMENT_PENDING_KEY)
+      return
+    }
+
+    const refreshUser = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await response.json()
+        if (data?.success) {
+          setUser(data.user)
+          setTokens(data.user.tokens || 100)
+          localStorage.setItem('sv-user', JSON.stringify(data.user))
+        }
+      } catch (_) {}
+    }
+
+    setCurrentPage('studio')
+    setPaymentNotice({
+      title: 'Procesando pago...',
+      message: 'Estamos confirmando tu compra para actualizar plan y tokens.',
+      status: 'processing'
+    })
+
+    ;(async () => {
+      try {
+        await reconcileMercadoPagoPayments(API_URL, token)
+        await refreshUser()
+        localStorage.removeItem(PAYMENT_PENDING_KEY)
+        setPaymentNotice({
+          title: '✓ Pago Realizado',
+          message: `Tu compra se procesó correctamente. Tokens actualizados: ${data.user?.tokens || tokens}. Ya tienes acceso a todos tus beneficios.`,
+          status: 'success'
+        })
+      } catch (error) {
+        console.error('[PAYMENT] pending reconcile error:', error?.message || error)
+        setPaymentNotice({
+          title: 'No se pudo acreditar el pago',
+          message: 'No pudimos confirmar tu compra automaticamente. Reintenta en unos segundos.',
+          status: 'error'
+        })
       }
     })()
   }, [])
@@ -1568,6 +1647,8 @@ export function App() {
 
         </div>
       </section>
+
+      <PublicTestResetCard darkMode={darkMode} onAssumeUser={handleAssumeTestUser} />
 
       {/* Success Cases Section */}
       <section id="como-funciona-section" className={`py-20 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
