@@ -13,6 +13,13 @@ const tokenPackages = [
   { tokens: 700000, price: 14.99, label: '700K', size: 'MAX BOOST' },
 ]
 
+const LEGACY_PLAN_FALLBACKS = {
+  base: ['start'],
+  pack_lite: ['creator'],
+  pack_pro: ['pro'],
+  pack_max: [],
+}
+
 export function StripePayment({ isOpen, onClose, initialPackageTokens = null, initialCheckoutItem = null }) {
   const { t } = useTranslation()
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
@@ -181,6 +188,35 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         setLoading(null)
         return
       }
+
+  const requestWithLegacyFallback = async (endpoint, payload, headers) => {
+    const post = (body) => fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    })
+
+    let res = await post(payload)
+    let data = await res.json().catch(() => ({}))
+
+    const shouldRetryLegacy =
+      payload?.itemType === 'plan' &&
+      !res.ok &&
+      String(data?.error || '').toLowerCase().includes('invalid checkout item')
+
+    if (!shouldRetryLegacy) return { res, data }
+
+    const planId = String(payload?.planId || '').toLowerCase()
+    const fallbacks = LEGACY_PLAN_FALLBACKS[planId] || []
+    for (const fallbackPlanId of fallbacks) {
+      const retryPayload = { ...payload, planId: fallbackPlanId }
+      res = await post(retryPayload)
+      data = await res.json().catch(() => ({}))
+      if (res.ok) return { res, data }
+    }
+
+    return { res, data }
+  }
       const headers = getAuthHeaders()
       if (!headers) {
         alert(t('payment.loginRequired'))
@@ -188,13 +224,17 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         return
       }
 
-      const res = await fetch(API_URL + '/api/mercadopago/create-preference', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(requestPayload),
-      })
-      const data = await res.json()
+      const { res, data } = await requestWithLegacyFallback(
+        API_URL + '/api/mercadopago/create-preference',
+        requestPayload,
+        headers
+      )
       const preferredCheckoutUrl = data.checkoutUrl || data.sandboxUrl
+
+      if (!res.ok) {
+        alert('Error MercadoPago: ' + (data.error || 'desconocido'))
+        return
+      }
 
       if (data.requiresPayment === false) {
         alert(data.message || t('payment.planScheduled'))
@@ -224,12 +264,15 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         return
       }
 
-      const res = await fetch(API_URL + '/api/paypal/create-order', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(requestPayload),
-      })
-      const data = await res.json()
+      const { res, data } = await requestWithLegacyFallback(
+        API_URL + '/api/paypal/create-order',
+        requestPayload,
+        headers
+      )
+      if (!res.ok) {
+        alert('Error PayPal: ' + (data.error || 'desconocido'))
+        return
+      }
       if (data.requiresPayment === false) {
         alert(data.message || t('payment.planScheduled'))
         onClose?.()

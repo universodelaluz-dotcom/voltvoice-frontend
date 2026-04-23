@@ -9,7 +9,7 @@
     "enterStudio": "Entrar al Studio",
     "backToStudio": "Volver al Studio",
     "hero": {
-      "badge": "🚀 Plataforma #1 para TikTok LIVE",
+      "badge": "Plataforma #1 para TikTok LIVE",
       "title": "Tu LIVE ya no sonará",
       "titleHighlight": "genérico",
       "subtitle": "Dale voz a tu chat de TikTok LIVE con personajes en vivo y crea una experiencia única.",
@@ -20,9 +20,9 @@
       "statsUptime": "Uptime garantizado",
       "viewPlans": "Ver Planes",
       "tags": [
-        "🎮 Tu personaje famoso leyendo comentarios",
-        "😂 Narrador gracioso reaccionando",
-        "😈 Voz troll para donaciones"
+        "🎭 Tu personaje famoso leyendo comentarios",
+        "🎙️ Narrador gracioso reaccionando",
+        "🧌 Voz troll para donaciones"
       ]
     },
     "features": {
@@ -48,113 +48,113 @@
         {
           "name": "@alexgamertok",
           "type": "TikTok Creator Gaming",
-          "benefit": "🟢 Tu stream nunca se queda muerto",
+          "benefit": "🚀 Tu stream nunca se queda muerto",
           "text": "Antes si me callaba 30 segundos el Live se moría solo. Con Stream Voicer el chat tiene vida propia: los viewers leen, comentan y se quedan aunque yo esté enfocado en el juego.",
           "stars": 5
         },
         {
           "name": "@sofiaart",
           "type": "TikTok Creator Art",
-          "benefit": "💬 Tu chat trabaja por ti",
+          "benefit": "🤝 Tu chat trabaja por ti",
           "text": "No tengo que estar leyendo comentarios todo el tiempo. Stream Voicer los procesa, destaca los mejores y mantiene la conversación fluida. Yo solo me concentro en crear contenido y el chat se cuida solo.",
           "stars": 5
         },
         {
           "name": "@carlosmusica.live",
           "type": "TikTok Creator Música",
-          "benefit": "⚡ Más interacción sin más esfuerzo",
+          "benefit": "✨ Más interacción sin más esfuerzo",
           "text": "Mis Lives ahora tienen 3x más engagement sin que yo haga nada diferente. La gente comenta más porque sabe que sus mensajes van a ser valorados. Es increíble cuánta interacción genera sin esfuerzo extra.",
           "stars": 5
         },
         {
           "name": "@dianabeauty_tk",
           "type": "TikTok Creator Belleza",
-          "benefit": "🎯 Convierte mensajes en participación",
+          "benefit": "💬 Convierte mensajes en participación",
           "text": "Cada comentario que llega se convierte en una participación real. Ya no es solo \"jeje\" abajo, ahora los comentarios generan conversación. Mi comunidad se siente escuchada y eso atrae más personas al Live.",
           "stars": 5
         },
         {
           "name": "@javierstreamer22",
           "type": "TikTok Creator Competitivo",
-          "benefit": "⭐ Destaca a tus seguidores y donadores",
+          "benefit": "🏆 Destaca a tus seguidores y donadores",
           "text": "El sistema automáticamente reconoce a mis followers y donadores. No tengo que perder tiempo dándoles shout-outs manuales. Ellos se sienten valorados naturalmente y eso me genera más donaciones y suscripciones.",
           "stars": 5
         },
         {
           "name": "@mariacomedy_tk",
           "type": "TikTok Creator Comedia",
-          "benefit": "🚀 Haz tu stream dinámico sin hablar más",
+          "benefit": "🎬 Haz tu stream dinámico sin hablar más",
           "text": "Mi Live es mucho más dinámico y entretenido sin que tenga que estar hablando todo el tiempo para mantener atención. El chat está tan activo y valorado que la gente viene por la comunidad, no solo por mí.",
           "stars": 5
         }
       ]
     },
     "pricing": {
-      "title": "💰 PAQUETES COMPLETOS",
+      "title": "PAQUETES COMPLETOS",
       "subtitle": "Elige el plan perfecto para tu stream",
-      "comparison": "📋 Comparativa detallada"
+      "comparison": "Comparativa detallada"
     },
     "faq": {
-      "title": "❓ Preguntas Frecuentes",
+      "title": "Preguntas Frecuentes",
       "subtitle": "Resuelve tus dudas sobre Stream Voicer",
       "items": [
         {
-          "icon": "🔊",
+          "icon": "❓",
           "q": "¿Cómo funciona Stream Voicer?",
           "a": "Stream Voicer lee en tiempo real los mensajes de tu chat de TikTok LIVE y los reproduce con voz para mantener interacción constante en tu stream."
         },
         {
-          "icon": "🧩",
+          "icon": "❓",
           "q": "¿Qué es un token?",
           "a": "1 token equivale a 1 carácter generado. El consumo aplica cuando usas voces premium o voces personalizadas."
         },
         {
-          "icon": "🎙️",
+          "icon": "❓",
           "q": "¿Qué voces consumen tokens?",
           "a": "Las voces premium y las voces personalizadas consumen tokens. La voz esencial no consume tokens."
         },
         {
-          "icon": "♻️",
-          "q": "👉 ¿Stream Voicer realmente aumenta la interacción y retención en mis lives?",
+          "icon": "❓",
+          "q": "¿Stream Voicer realmente aumenta la interacción y retención en mis lives?",
           "a": "Sí. Al leer mensajes en tiempo real con voz, mantienes el chat activo, haces que más usuarios participen y reduces el silencio en tus transmisiones. Esto genera mayor retención, más comentarios y una experiencia más dinámica para tu audiencia."
         },
         {
-          "icon": "💳",
+          "icon": "❓",
           "q": "¿Qué hago si se me acaban los tokens?",
           "a": "Puedes añadir un Pack de voces clonadas (Lite, Pro o Max) desde la plataforma. Si no tienes tokens, las voces premium y clonadas dejan de reproducirse hasta recargar."
         },
         {
-          "icon": "💰",
+          "icon": "❓",
           "q": "¿Cuánto cuesta el Plan Base?",
           "a": "El Plan Base cuesta $9.99 USD/mes e incluye 2 voces esenciales ilimitadas, 2 voces premium, 20,000 caracteres mensuales y todas las funciones: filtros avanzados, smart filter, anti-spam y analytics."
         },
         {
-          "icon": "🎭",
+          "icon": "❓",
           "q": "¿Qué son los Packs de voces clonadas?",
           "a": "Son compras adicionales al Plan Base que amplían tu capacidad para crear tus propias voces clonadas con IA. No incluyen personajes prehechos: tú subes y clonas tus voces. Pack Lite ($9.99, +1 voz, 50K tokens), Pack Pro ($24.99, +3 voces, 250K tokens) y Pack Max ($49.99, +6 voces, 500K tokens)."
         },
         {
-          "icon": "🔄",
+          "icon": "❓",
           "q": "¿Puedo cancelar mi Plan Base cuando quiera?",
           "a": "Sí. Puedes cancelar en cualquier momento. Seguirás teniendo acceso hasta el final del periodo ya pagado."
         },
         {
-          "icon": "🌍",
+          "icon": "❓",
           "q": "¿Funciona con otros idiomas?",
           "a": "Actualmente Stream Voicer está optimizado para español e inglés. Próximamente se integrarán más idiomas."
         },
         {
-          "icon": "⚡",
+          "icon": "❓",
           "q": "¿Cuánto tarda en procesarse un mensaje?",
           "a": "Se procesa en tiempo real. Normalmente tarda entre 1 y 3 segundos según longitud del mensaje, voz elegida y carga del sistema."
         },
         {
-          "icon": "🔐",
+          "icon": "❓",
           "q": "¿Es seguro conectar mi TikTok?",
           "a": "Sí. Solo se usa el acceso necesario para leer la actividad pública de tu LIVE. No compartimos tus datos con terceros."
         },
         {
-          "icon": "🛠️",
+          "icon": "❓",
           "q": "¿Puedo crear y editar mis voces clonadas?",
           "a": "Sí. Puedes gestionar tus voces clonadas desde el panel. La cantidad disponible depende del Pack que hayas añadido a tu Plan Base."
         }
@@ -173,8 +173,8 @@
       "items": [
         {
           "metric": "+150%",
-          "label": "De 50K → 125K seguidores en 3 meses",
-          "creator": "🎮 Alex Gaming",
+          "label": "De 50K ? 125K seguidores en 3 meses",
+          "creator": "Alex Gaming",
           "category": "Gaming Live",
           "description": "Chat activo en vivo gracias a voces que reaccionan en tiempo real.",
           "img": "https://voltvoice-frontend.vercel.app/images/web1.png"
@@ -182,7 +182,7 @@
         {
           "metric": "+2,500",
           "label": "Comentarios por LIVE",
-          "creator": "🎮 Max JuanGamingPro",
+          "creator": "Max JuanGamingPro",
           "category": "Gaming Live",
           "description": "El chat cobra vida con voces y se vuelve parte del show.",
           "img": "https://voltvoice-frontend.vercel.app/images/web%207.png"
@@ -190,7 +190,7 @@
         {
           "metric": "+85%",
           "label": "Aumento en donaciones",
-          "creator": "😂 Carlos Comedy",
+          "creator": "Carlos Comedy",
           "category": "Comedia Live",
           "description": "Las voces en vivo hacen el stream más divertido y participativo.",
           "img": "https://voltvoice-frontend.vercel.app/images/web3.png"
@@ -212,15 +212,15 @@
       }
     ],
     "packages": {
-      "badge": "🎭 PACKS DE VOCES CLONADAS →",
+      "badge": "PACKS DE VOCES CLONADAS ?",
       "title": "Amplía con Packs de Voces",
       "subtitle": "Añade personajes con voz clonada por IA a tu Plan Base. Combínalos para crear tu elenco.",
-      "popular": "⭐ RECOMENDADO",
-      "characters": "🎙️ Voces clonadas",
+      "popular": "? RECOMENDADO",
+      "characters": "?Voces clonadas",
       "approxMxn": "Aprox. {{mxn}} MXN",
-      "buyNow": "Añadir Pack →",
-      "buyNowPopular": "🚀 Añadir Pack →",
-      "note": "🧠 NOTA: Los Packs son compras únicas que se suman a tu Plan Base mensual. Los tokens no caducan mientras el Plan Base esté activo.",
+      "buyNow": "Añadir Pack ?",
+      "buyNowPopular": "Añadir Pack ?",
+      "note": "NOTA: Los Packs son compras únicas que se suman a tu Plan Base mensual. Los tokens no caducan mientras el Plan Base esté activo.",
       "items": [
         {
           "size": "PACK LITE",
@@ -249,43 +249,43 @@
     },
     "benefits": [
       {
-        "icon": "🎭",
+        "icon": "❓",
         "title": "Clonación y Sistema de Personajes",
         "subtitle": "Crea identidades únicas dentro de tu stream.",
         "description": "Clona voces y asigna personajes a cada tipo de usuario (chat, donadores, moderadores, etc)."
       },
       {
-        "icon": "⚙️",
+        "icon": "❓",
         "title": "Más de 30 Herramientas de Control",
         "subtitle": "Tú decides cómo se comporta tu chat.",
         "description": "Filtros inteligentes, control de cola, bloqueo de spam, gestión de mensajes, límites, limpieza automática y más."
       },
       {
-        "icon": "🔊",
+        "icon": "❓",
         "title": "Interacción en Tiempo Real",
         "subtitle": "Tu stream reacciona automáticamente.",
         "description": "Lectura de chat, notificaciones, eventos y acciones sin retrasos."
       },
       {
-        "icon": "🎨",
+        "icon": "❓",
         "title": "Personalización Total",
         "subtitle": "Diseña la experiencia completa.",
         "description": "Colores, nicks, estilos, tipos de usuario, visual del chat y comportamiento."
       },
       {
-        "icon": "💰",
+        "icon": "❓",
         "title": "Optimizado para Engagement y Monetización",
         "subtitle": "Convierte interacción en resultados.",
         "description": "Diferencia donadores, destaca usuarios clave y aumenta participación en tu stream."
       },
       {
-        "icon": "🎮",
+        "icon": "❓",
         "title": "Preparado para Streaming en Vivo",
         "subtitle": "Funciona donde lo necesitas.",
         "description": "Optimizado para TikTok LIVE y flujos en tiempo real."
       },
       {
-        "icon": "🔒",
+        "icon": "❓",
         "title": "Seguro y Estable",
         "subtitle": "Sistema confiable para streams largos.",
         "description": "Protección de datos y rendimiento constante."
@@ -407,7 +407,7 @@
       "reset": "Cambiar contraseña",
       "resetting": "Cambiando...",
       "backToLogin": "Volver al login",
-      "backLogin": "← Volver al inicio de sesión",
+      "backLogin": "? Volver al inicio de sesión",
       "yourEmail": "Tu email",
       "sendCodeBtn": "Enviarme código",
       "codeSentToEmail": "Código enviado a {{email}}",
@@ -417,7 +417,7 @@
       "repeatPass": "Repite la contraseña",
       "updating": "Actualizando...",
       "changeBtn": "Cambiar contraseña",
-      "useOtherEmail": "← Usar otro email",
+      "useOtherEmail": "? Usar otro email",
       "resetTitle": "Restablecer Contraseña",
       "forgotDesc": "Te enviaremos un código de recuperación por email",
       "codeDesc": "Ingresa el código enviado a"
@@ -425,7 +425,7 @@
     "forgotUser": {
       "title": "Olvidé mi Usuario",
       "desc": "Tu usuario en Stream Voicer es el correo electrónico con el que te registraste.",
-      "back": "← Volver al inicio de sesión"
+      "back": "? Volver al inicio de sesión"
     },
     "branding": {
       "title": "Tu chat TikTok",
@@ -433,17 +433,17 @@
       "subtitle": "Voces con IA que leen tu stream en tiempo real.",
       "features": [
         {
-          "icon": "🎙️",
+          "icon": "❓",
           "title": "Voces con IA",
           "desc": "Más de 20 voces premium"
         },
         {
-          "icon": "⚡",
+          "icon": "❓",
           "title": "Tiempo real",
           "desc": "Sin delay, sin complicaciones"
         },
         {
-          "icon": "🎭",
+          "icon": "❓",
           "title": "Bots con personalidad",
           "desc": "Personajes que interactúan solos"
         }
@@ -563,7 +563,7 @@
       "connectToChat": "Conéctate para ver el chat",
       "connectHint": "Ingresa tu usuario de TikTok arriba",
       "waitingMessage": "Esperando mensaje en curso...",
-      "connectToChatHint": "El panel de chat est? listo. Conecta TikTok para ver mensajes en vivo."
+      "connectToChatHint": "El panel de chat está listo. Conecta TikTok para ver mensajes en vivo."
     },
     "support": {
       "title": "Contactar Soporte",
@@ -571,7 +571,7 @@
       "sendBtn": "Enviar mensaje",
       "placeholder": "Describe tu problema o consulta con el mayor detalle posible...",
       "charCount": "{{count}}/500 caracteres",
-      "submit": "📨 Enviar a soporte",
+      "submit": "Enviar a soporte",
       "sending": "Enviando..."
     },
     "stats": {
@@ -774,7 +774,7 @@
       "placeholder": "Escribe el texto para probar la voz...",
       "btn": "Generar audio",
       "generating": "Generando...",
-      "success": "✓ Audio generado exitosamente"
+      "success": "? Audio generado exitosamente"
     },
     "delete": {
       "confirm": "¿Eliminar la voz \"{{name}}\"?",
@@ -805,7 +805,7 @@
       "selectRange": "Selecciona rango",
       "start": "Inicio",
       "end": "Fin",
-      "preview": "▶ Preview",
+      "preview": "? Preview",
       "useClip": "Usar este clip",
       "processing": "Procesando clip...",
       "usesLeft": "Te quedan {{n}} usos por hoy, se renueva cada 24 hrs.",
@@ -838,13 +838,13 @@
       "delete": "Eliminar voz"
     },
     "ai": {
-      "locked": "El asistente IA est? bloqueado en este plan.",
+      "locked": "El asistente IA está bloqueado en este plan.",
       "availablePro": "Disponible con Pack Pro o Pack Max."
     },
     "upgrade": {
       "title": "Mejora tu plan",
       "workshopAccess": "Acceso al Taller de Voces disponible",
-      "fromStart": "con el Plan Base",
+      "fromStart": "con Pack Lite, Pack Pro o Pack Max",
       "viewPlans": "Ver planes"
     }
   },
@@ -1006,7 +1006,7 @@
     }
   },
   "bot": {
-    "title": "🤖 Invocar Personaje",
+    "title": "Invocar Personaje",
     "select": "Selecciona personaje:",
     "modes": {
       "text": "Texto",
@@ -1041,10 +1041,10 @@
     "myClonedVoices": "Mis voces clonadas"
   },
   "cookies": {
-    "title": "🍪 POLÍTICA DE COOKIES",
+    "title": "POLÍTICA DE COOKIES",
     "text": "Utilizamos cookies para mejorar tu experiencia, analizar cómo usas Stream Voicer y personalizar contenido. Al continuar navegando, aceptas nuestra política.",
-    "details": "👉 Ver detalles completos",
-    "acceptAll": "✅ ACEPTAR TODAS",
+    "details": "Ver detalles completos",
+    "acceptAll": "? ACEPTAR TODAS",
     "reject": "Rechazar",
     "whatAre": "¿Qué son las cookies?",
     "whatAreText": "Las cookies son pequeños archivos de texto que se guardan en tu dispositivo cuando visitas nuestro sitio. Nos ayudan a mejorar tu experiencia y analizar cómo usas Stream Voicer.",
@@ -1075,16 +1075,16 @@
       "total": "Total"
     },
     "cancel": "Cancelar",
-    "noRefund": "⚠️ Sin reembolsos en paquetes de tokens",
+    "noRefund": "Sin reembolsos en paquetes de tokens",
     "noRefundDetail": "Los paquetes de tokens son productos digitales de consumo inmediato. Una vez procesada la compra, no aplican reembolsos ni devoluciones de ningún tipo.",
     "secure": "Pagos 100% seguros - Mercado Pago y PayPal",
     "planScheduled": "Cambio de plan programado para el siguiente ciclo.",
     "loginRequired": "Inicia sesión para continuar con el pago."
   },
   "pricing": {
-    "header": "💰 PAQUETES COMPLETOS",
+    "header": "PAQUETES COMPLETOS",
     "subtitle": "Elige el plan perfecto para tu stream",
-    "popular": "🔥 MÁS POPULAR",
+    "popular": "MÁS POPULAR",
     "toggle": {
       "monthly": "Mensual",
       "annual": "Anual"
@@ -1092,7 +1092,7 @@
     "perMonth": "USD",
     "perYear": "USD / año",
     "approxMonth": "(~${{price}} USD/mes)",
-    "note": "🧠 NOTA",
+    "note": "NOTA",
     "noteText1": "El consumo depende de la actividad del chat y la configuración.",
     "noteText2": "Puedes extender la duración usando filtros inteligentes y lectura selectiva.",
     "noteRef": "Referencia en MXN aproximada; se adapta al tipo de cambio USD/MXN del día.",
@@ -1145,7 +1145,7 @@
         "compatibility": [
           "lectura inteligente del chat",
           "voces dinámicas por tipo de usuario",
-          "🎬 Extractor de audio",
+          "Extractor de audio",
           "control avanzado de mensajes"
         ]
       },
@@ -1163,7 +1163,7 @@
         ],
         "compatibility": [
           "sistema completo de filtrado",
-          "🎬 Extractor de audio",
+          "Extractor de audio",
           "control total del chat",
           "optimización máxima del consumo"
         ]
@@ -1196,7 +1196,7 @@
           "Rinde aprox 5-8 horas de stream activo",
           "lectura inteligente del chat",
           "voces dinámicas por tipo de usuario",
-          "🎬 Extractor de audio",
+          "Extractor de audio",
           "control avanzado de mensajes"
         ]
       },
@@ -1211,7 +1211,7 @@
           "Rinde aprox 10-15 horas de stream activo",
           "Experiencia completa con IA",
           "sistema completo de filtrado",
-          "🎬 Extractor de audio",
+          "Extractor de audio",
           "control total del chat",
           "optimización máxima del consumo"
         ]
@@ -1240,7 +1240,7 @@
         "monthlyCapacity": "Capacidad mensual",
         "messageTools": "Herramientas optimizadoras de mensajes",
         "dynamicVoices": "Voces dinámicas por tipo de usuario",
-        "audioExtractor": "🎬 Extractor de audio",
+        "audioExtractor": "Extractor de audio",
         "basicFilters": "Filtros básicos para optimizar el chat",
         "advancedControls": "Controles avanzados de mensajes",
         "smartReading": "Lectura inteligente del chat",
@@ -1257,9 +1257,9 @@
         "premiumVoices1": "1 voz premium",
         "premiumVoices2": "2 voces premium",
         "premiumVoices4": "4 voces premium",
-        "monthlyStart": "200,000 tokens (≈ 2-4 h)",
-        "monthlyCreator": "500,000 tokens (≈ 5-8 h)",
-        "monthlyPro": "800,000 tokens (≈ 10-15 h)"
+        "monthlyStart": "200,000 tokens (˜ 2-4 h)",
+        "monthlyCreator": "500,000 tokens (˜ 5-8 h)",
+        "monthlyPro": "800,000 tokens (˜ 10-15 h)"
       },
       "howWorks": "Cómo funciona",
       "howWorksList": [
@@ -1297,7 +1297,7 @@
     },
     "character": {
       "example": "(ejemplo)",
-      "custom": "✓"
+      "custom": "?"
     }
   },
   "common": {
@@ -1330,3 +1330,7 @@
     "rafaelPremium": "Voz natural Leonel - Premium"
   }
 }
+
+
+
+

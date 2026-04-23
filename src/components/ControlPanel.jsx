@@ -2,14 +2,9 @@
 import { ArrowLeft, Check, HelpCircle, Keyboard, ChevronRight, Ban, Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-// Determina si una feature estA bloqueada segAon el plan del usuario
+// Determina si una feature está bloqueada según el plan del usuario
 const isFeatureBlocked = (feature, userPlan, rawPlan = '') => {
   const plan = userPlan?.toLowerCase() || 'free'
-
-  // Si el usuario tiene pack, TODO está desbloqueado
-  if (String(rawPlan || '').toLowerCase().includes('pack')) {
-    return false
-  }
 
   const blockedByPlan = {
     free: {
@@ -48,74 +43,10 @@ const isFeatureBlocked = (feature, userPlan, rawPlan = '') => {
       onlyPlainNicks: false, // LIBRE
       stripChatEmojis: false, // LIBRE
     },
-    start: {
-      // PRESETS Y BOTONES INICIO RAPIDO - LIBRES
-      presets: false,
-      quickStart: false,
-      // TODAS LAS VOCES - BLOQUEADAS
-      voicesGeneral: true,
-      voicesDonor: true,
-      voicesSubscriber: true,
-      voicesCommunity: true,
-      voicesQuestion: true,
-      voicesCommand: true,
-      voicesNotif: true,
-      voicesModerator: true, // BLOQUEADA
-      // FILTROS AVANZADOS - BLOQUEADOS
-      excessiveEmojis: true,
-      minMessageLength: true,
-      charLimit: true,
-      maxQueue: true,
-      // NOTIFICACIONES Y IA - BLOQUEADAS
-      notifications: true,
-      aiAssistant: true,
-      advancedVoiceTools: true,
-      // LECTURA Y FILTROS BASICOS - LIBRES
-      readOnlyMessage: false, // LIBRE
-      onlyQuestions: false, // LIBRE
-      onlyDonors: false, // LIBRE
-      onlyModerators: false, // LIBRE
-      onlySubscribers: false, // LIBRE
-      onlyCommunityMembers: false, // LIBRE
-      ignoreLinks: false, // LIBRE
-      profanityFilterEnabled: false, // LIBRE EN PLANES DE PAGA
-      skipRepeated: false, // LIBRE
-      onlyPlainNicks: false, // LIBRE
-      stripChatEmojis: false, // LIBRE
-    },
-    creator: {
-      presets: false,
-      quickStart: false,
-      voicesGeneral: false,
-      voicesDonor: false,
-      voicesSubscriber: false,
-      voicesCommunity: false,
-      voicesQuestion: false,
-      voicesCommand: false,
-      voicesNotif: false,
-      voicesModerator: false,
-      excessiveEmojis: false,
-      minMessageLength: false,
-      charLimit: false,
-      maxQueue: false,
-      notifications: false,
-      aiAssistant: true, // SOLO ESTO BLOQUEADO
-      advancedVoiceTools: false,
-      readOnlyMessage: false,
-      onlyQuestions: false,
-      onlyDonors: false,
-      onlyModerators: false,
-      onlySubscribers: false,
-      onlyCommunityMembers: false,
-      ignoreLinks: false,
-      profanityFilterEnabled: false,
-      skipRepeated: false,
-      onlyPlainNicks: false,
-      stripChatEmojis: false,
-    },
-    pro: { all: false }, // TODO LIBRE
-    premium: { all: false },
-    elite: { all: false },
+    base: { all: false, aiAssistant: true },
+    pack_lite: { all: false },
+    pack_pro: { all: false },
+    pack_max: { all: false },
     admin: { all: false },
   }
 
@@ -125,12 +56,28 @@ const isFeatureBlocked = (feature, userPlan, rawPlan = '') => {
 
 const normalizeUserPlan = (rawPlan = 'free') => {
   const normalized = String(rawPlan || 'free').trim().toLowerCase()
-  const map = {
-    premium: 'creator',
-    elite: 'pro',
-    on_demand: 'free',
-  }
-  return map[normalized] || normalized || 'free'
+  if (!normalized) return 'free'
+
+  // Nuevo sistema de planes + compatibilidad con nombres legacy
+  if (normalized === 'free' || normalized === 'plan free') return 'free'
+  if (normalized === 'base' || normalized === 'plan base' || normalized === 'start' || normalized === 'start_monthly') return 'base'
+  if (
+    normalized === 'pack_lite' ||
+    normalized === 'pack lite' ||
+    normalized === 'lite' ||
+    normalized === 'creator' ||
+    normalized === 'creator_monthly'
+  ) return 'pack_lite'
+  if (
+    normalized === 'pack_pro' ||
+    normalized === 'pack pro' ||
+    normalized === 'pro' ||
+    normalized === 'pro_monthly'
+  ) return 'pack_pro'
+  if (normalized === 'pack_max' || normalized === 'pack max' || normalized === 'max') return 'pack_max'
+  if (normalized === 'admin') return 'admin'
+
+  return normalized
 }
 
 // Componente wrapper para mostrar secciones bloqueadas
@@ -506,16 +453,16 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   const getActualPlan = (userObj) => {
     const mainPlan = String(userObj?.plan || '').toLowerCase()
     const backendPlan = String(userObj?.subscription?.backendPlan || '').toLowerCase()
-    // If main plan is free but subscription has backendPlan, use backendPlan
-    if (mainPlan === 'free' && backendPlan && backendPlan !== 'free') {
-      return backendPlan
-    }
-    return mainPlan
+    const subscriptionPlan = String(userObj?.subscription?.plan || '').toLowerCase()
+    const candidates = [backendPlan, subscriptionPlan, mainPlan].filter(Boolean)
+    return candidates.find((plan) => plan !== 'free') || candidates[0] || 'free'
   }
 
   const rawPlan = getActualPlan(user)
   const userPlan = normalizeUserPlan(rawPlan)
-  const isBasePlan = rawPlan === 'base' || rawPlan === 'plan base'
+  const isBasePlan = userPlan === 'base'
+  const canUseAIAssistantInConfig = user?.role === 'admin' || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
+  const isAIAssistantBlockedInConfig = !canUseAIAssistantInConfig
   useEffect(() => {
     if (userPlan !== 'free') return
 
@@ -541,13 +488,12 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     config?.maxQueueEnabled,
   ])
   const PREMIUM_BY_PLAN = {
-    free: [], start: ['Diego'],
-    creator: ['Diego', 'Lupita'],
-    pro: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
-    premium: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
-    elite: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    free: [],
+    base: ['Diego', 'Lupita'],
+    pack_lite: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    pack_pro: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    pack_max: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
     admin: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
-    on_demand: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
   }
   const allowedPremium = PREMIUM_BY_PLAN[userPlan] ?? []
   const localVoiceLabelSuffix = userPlan === 'free' ? '' : ` ${t('studio.voice.unlimited')}`
@@ -881,8 +827,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               )}
 
               {/* SECCIÓN VOCES */}
-              <div className={`relative ${(userPlan === 'free' || isBasePlan) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
-                {isBasePlan && (
+              <div className={`relative ${userPlan === 'free' ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
+                {userPlan === 'free' && (
                   <FeatureLockedOverlay darkMode={darkMode} message="Voces disponibles en packs" showIcon showMessage />
                 )}
                 <SectionHeader title={t('control.sections.voice')} tone="voces" darkMode={darkMode} />
@@ -1540,9 +1486,9 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 )}
               </div>
 
-              {/* ASISTENTE DE IA - BLOQUEADO EN FREE, START Y CREATOR */}
-              <div className={`relative ${(isFeatureBlocked('aiAssistant', userPlan, rawPlan) && isBasePlan) ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
-                {isFeatureBlocked('aiAssistant', userPlan, rawPlan) && isBasePlan && (
+              {/* ASISTENTE DE IA - en BASE solo esta sección queda bloqueada */}
+              <div className={`relative ${isAIAssistantBlockedInConfig ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
+                {isAIAssistantBlockedInConfig && (
                   <FeatureLockedOverlay
                     darkMode={darkMode}
                     message="Asistente disponible en packs"
@@ -1756,10 +1702,3 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     </div>
   )
 }
-
-
-
-
-
-
-

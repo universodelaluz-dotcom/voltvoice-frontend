@@ -35,6 +35,34 @@ export function PricingPage({ onGoHome, darkMode, onPlanAction }) {
             </p>
           </div>
 
+          {/* Quick buy buttons - always visible */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-10">
+            <button
+              onClick={() => onPlanAction?.({ name: 'PLAN BASE', price: 9.99 })}
+              className="py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 transition-all shadow-lg"
+            >
+              🎯 Comprar Plan Base
+            </button>
+            <button
+              onClick={() => onPlanAction?.({ name: 'PACK LITE', price: 9.99 })}
+              className="py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r from-cyan-600 to-indigo-600 hover:opacity-90 transition-all shadow-lg"
+            >
+              ⚡ Agregar Pack Lite
+            </button>
+            <button
+              onClick={() => onPlanAction?.({ name: 'PACK PRO', price: 24.99 })}
+              className="py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:opacity-90 transition-all shadow-lg"
+            >
+              🔥 Agregar Pack Pro
+            </button>
+            <button
+              onClick={() => onPlanAction?.({ name: 'PACK MAX', price: 49.99 })}
+              className="py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r from-orange-500 to-red-600 hover:opacity-90 transition-all shadow-lg"
+            >
+              ⭐ Agregar Pack Max
+            </button>
+          </div>
+
           {/* Pricing Cards */}
           <PricingCards darkMode={darkMode} showToggle={true} onPlanAction={onPlanAction} />
 

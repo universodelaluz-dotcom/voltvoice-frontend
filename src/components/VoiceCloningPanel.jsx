@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Edit2, Bot, Lock, Play, Square } from 'lucide-react'
 import AIRoleplayWorkshop from './AIRoleplayWorkshop'
 import { useTranslation } from 'react-i18next'
@@ -15,24 +15,45 @@ const formatTimeMinutesSeconds = (ms) => {
 
 export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, config, updateConfig, user }) {
   const { t } = useTranslation()
-  // Get actual plan, preferring subscription.backendPlan if available
+  const normalizePlanTier = (rawPlan = 'free') => {
+    const normalized = String(rawPlan || 'free').trim().toLowerCase()
+    if (!normalized) return 'free'
+    if (normalized === 'free' || normalized === 'plan free') return 'free'
+    if (normalized === 'base' || normalized === 'plan base' || normalized === 'start' || normalized === 'start_monthly') return 'base'
+    if (
+      normalized === 'pack_lite' ||
+      normalized === 'pack lite' ||
+      normalized === 'lite' ||
+      normalized === 'creator' ||
+      normalized === 'creator_monthly'
+    ) return 'pack_lite'
+    if (
+      normalized === 'pack_pro' ||
+      normalized === 'pack pro' ||
+      normalized === 'pro' ||
+      normalized === 'pro_monthly'
+    ) return 'pack_pro'
+    if (normalized === 'pack_max' || normalized === 'pack max' || normalized === 'max') return 'pack_max'
+    if (normalized === 'admin') return 'admin'
+    return normalized
+  }
+
+  // Get actual plan, preferring subscription/backend plan fields when available
   const getActualPlan = (userObj) => {
-    const mainPlan = String(userObj?.plan || 'free').toLowerCase()
+    const mainPlan = String(userObj?.plan || '').toLowerCase()
     const backendPlan = String(userObj?.subscription?.backendPlan || '').toLowerCase()
-    if (mainPlan === 'free' && backendPlan && backendPlan !== 'free') {
-      return backendPlan
-    }
-    return mainPlan
+    const subscriptionPlan = String(userObj?.subscription?.plan || '').toLowerCase()
+    const candidates = [backendPlan, subscriptionPlan, mainPlan].filter(Boolean)
+    const picked = candidates.find((plan) => plan !== 'free') || candidates[0] || 'free'
+    return normalizePlanTier(picked)
   }
   const planKey = getActualPlan(user)
   const PLAN_MAX_CLONED_VOICES = {
     free: 0,
-    start: 1,
-    creator: 2,
-    premium: 2,
-    pro: 5,
-    elite: 5,
-    on_demand: 999,
+    base: 0,
+    pack_lite: 1,
+    pack_pro: 3,
+    pack_max: 6,
     admin: 999
   }
   const planMaxVoices = PLAN_MAX_CLONED_VOICES[planKey] ?? 0
@@ -715,7 +736,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           </button>
           {testAudioUrl && (
             <div className={darkMode ? 'bg-gray-800/60 border border-gray-700/50 rounded-lg p-4' : 'bg-gray-50 border border-gray-200 rounded-lg p-4'}>
-              <p className={`text-sm mb-2 ${darkMode ? 'text-cyan-300' : 'text-gray-700'}`}>🔊 Escucha el resultado:</p>
+              <p className={`text-sm mb-2 ${darkMode ? 'text-cyan-300' : 'text-gray-700'}`}>Escucha el resultado:</p>
               <audio
                 key={testAudioUrl}
                 ref={testAudioRef}
@@ -734,12 +755,13 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
   // Feature access control
   const userPlan = getActualPlan(user)
-  const isFreeUser = userPlan === 'free'
-  const canUseAIAssistant = user?.role === 'admin' || ['pro', 'premium', 'elite', 'on_demand', 'pack_pro', 'pack_lite', 'pack_max'].includes(userPlan)
-  const canUseExtractorPro = user?.role === 'admin' || ['creator', 'pro', 'pack_pro', 'pack_lite', 'pack_max'].includes(userPlan)
+  const hasWorkshopAccess = user?.role === 'admin' || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
+  const isWorkshopBlocked = !hasWorkshopAccess
+  const canUseAIAssistant = user?.role === 'admin' || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
+  const canUseExtractorPro = user?.role === 'admin' || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
 
   return (
-    <div className={`relative space-y-6 ${isFreeUser ? 'opacity-50 pointer-events-none' : ''}`}>
+    <div className={`relative space-y-6 ${isWorkshopBlocked ? 'opacity-50 pointer-events-none' : ''}`}>
       {/* Tabs */}
       <div className={`flex gap-3 p-1 rounded-lg mb-2 flex-wrap ${darkMode ? 'bg-gray-800/60' : 'bg-gray-100'}`}>
         <button
@@ -866,9 +888,9 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
           {/* Requerimientos */}
           <div className={darkMode ? "text-xs text-gray-400 space-y-1" : "text-xs text-gray-500 space-y-1"}>
-            <p>✓ Duración ideal: 10-15 segundos (máx 15 seg)</p>
-            <p>✓ Audio claro, sin ruido de fondo ni música</p>
-            <p>✓ Formato: MP3 o WAV</p>
+            <p>Duración ideal: 10-15 segundos (máx. 15 seg)</p>
+            <p>Audio claro, sin ruido de fondo ni música</p>
+            <p>Formato: MP3 o WAV</p>
           </div>
 
           {/* Submit */}
@@ -907,15 +929,15 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         </form>
       </div>
 
-      {/* Probar Voz — solo clonadas */}
+      {/* Probar Voz - solo clonadas */}
       {renderTestVoice(clonedVoices)}
 
-      {/* Mis Voces Creadas — solo clonadas */}
+      {/* Mis Voces Creadas - solo clonadas */}
       {renderVoiceList(clonedVoices)}
         </>
       )}
 
-      {/* Extractor Pro — Extract audio from video/long audio */}
+      {/* Extractor Pro - Extract audio from video/long audio */}
       {activeTab === 'studio-pro' && (
         <div className={`relative ${darkMode ? "bg-[#1a1a2e] border border-orange-400/30 rounded-lg p-6" : "bg-white border border-orange-200 rounded-lg p-6 shadow-sm"} ${!canUseExtractorPro ? 'opacity-80' : ''}`}>
           <div className="flex items-center gap-3 mb-4">
@@ -987,7 +1009,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
               <div className={darkMode ? "bg-gray-800/40 border border-cyan-400/20 rounded-lg p-4" : "bg-gray-50 border border-orange-200 rounded-lg p-4"}>
                 <h3 className={`font-semibold mb-4 ${darkMode ? 'text-cyan-300' : 'text-orange-700'}`}>{t('voiceClone.extractor.step2')}</h3>
 
-                {/* Timeline Bar — YouTube-style trimmer */}
+                {/* Timeline Bar - YouTube-style trimmer */}
                 <div className="space-y-3">
                   <div className={darkMode ? "bg-gray-900/60 border border-gray-700 rounded-lg p-3" : "bg-white border border-gray-200 rounded-lg p-3"}>
                     <div className="flex items-center justify-between mb-3">
@@ -1064,7 +1086,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                     {/* Time labels */}
                     <div className="flex items-center justify-between mt-2 px-1">
                       <span className={`text-sm font-mono font-bold ${darkMode ? 'text-orange-300' : 'text-orange-700'}`}>
-                        ▶ {formatTimeMinutesSeconds(studioPro.startMs)}
+                        {">"} {formatTimeMinutesSeconds(studioPro.startMs)}
                       </span>
                       <span className={`text-sm font-mono font-bold ${darkMode ? 'text-orange-300' : 'text-orange-700'}`}>
                         ⏹ {formatTimeMinutesSeconds(studioPro.endMs)}
@@ -1124,7 +1146,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className={`block text-sm font-medium mb-1 ${!studioPro.voiceName ? 'text-red-400' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                        {t('voiceClone.voiceName.label')} {!studioPro.voiceName && <span className="font-bold">← {t('voiceClone.required')}</span>}
+                        {t('voiceClone.voiceName.label')} {!studioPro.voiceName && <span className="font-bold">{"<-"} {t('voiceClone.required')}</span>}
                       </label>
                       <input
                         type="text"
@@ -1222,7 +1244,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
               <div className={`${darkMode ? 'bg-gray-900/90 border border-orange-400/40 text-orange-200' : 'bg-white/95 border border-orange-300 text-orange-700'} px-4 py-3 rounded-lg text-center text-sm font-semibold max-w-sm`}>
                 Extractor Pro visible en modo bloqueado.
                 <br />
-                Disponible desde plan Creator y Pro.
+                Disponible desde Pack Lite, Pack Pro o Pack Max.
               </div>
             </div>
           )}
@@ -1244,7 +1266,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         </div>
       )}
 
-      {/* Asistente IA — Primero Taller, luego Probar Voz */}
+      {/* Asistente IA - Primero Taller, luego Probar Voz */}
       {activeTab === 'ai-assistant' && (
         <div className="relative">
           <div className={`space-y-6 ${!canUseAIAssistant ? 'opacity-70 pointer-events-none select-none' : ''}`}>
@@ -1266,7 +1288,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       )}
 
       {/* Overlay para usuarios FREE - TRANSPARENTE */}
-      {isFreeUser && (
+      {isWorkshopBlocked && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="flex flex-col items-center gap-6 pointer-events-auto">
             <div className={`p-6 rounded-2xl ${darkMode ? 'bg-white/10' : 'bg-black/5'} backdrop-blur-sm`}>
@@ -1301,6 +1323,20 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

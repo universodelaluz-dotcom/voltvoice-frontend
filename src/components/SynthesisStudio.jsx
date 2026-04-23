@@ -5,12 +5,44 @@ import AudioVisualizer from './AudioVisualizer'
 import BotInvoker from './BotInvoker'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Shield, Lock } from 'lucide-react'
 
+const getEffectiveUserPlan = (userObj = null) => {
+  const directPlan = String(userObj?.plan || '').trim().toLowerCase()
+  const backendPlan = String(userObj?.subscription?.backendPlan || '').trim().toLowerCase()
+  const subscriptionPlan = String(userObj?.subscription?.plan || '').trim().toLowerCase()
+  const candidates = [backendPlan, subscriptionPlan, directPlan].filter(Boolean)
+  return candidates.find((plan) => plan !== 'free') || candidates[0] || 'free'
+}
+
+const normalizePlanTier = (rawPlan = 'free') => {
+  const normalized = String(rawPlan || 'free').trim().toLowerCase()
+  if (!normalized) return 'free'
+  if (normalized === 'free' || normalized === 'plan free') return 'free'
+  if (normalized === 'base' || normalized === 'plan base' || normalized === 'start' || normalized === 'start_monthly') return 'base'
+  if (
+    normalized === 'pack_lite' ||
+    normalized === 'pack lite' ||
+    normalized === 'lite' ||
+    normalized === 'creator' ||
+    normalized === 'creator_monthly'
+  ) return 'pack_lite'
+  if (
+    normalized === 'pack_pro' ||
+    normalized === 'pack pro' ||
+    normalized === 'pro' ||
+    normalized === 'pro_monthly'
+  ) return 'pack_pro'
+  if (normalized === 'pack_max' || normalized === 'pack max' || normalized === 'max') return 'pack_max'
+  if (normalized === 'admin') return 'admin'
+  return normalized
+}
+
 export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAdmin, onGoPricingPage, darkMode, setDarkMode, config, updateConfig, configReady = true, user }) {
   const { t } = useTranslation()
   const audioSpeed = config.audioSpeed || 1.0
   const PREMIUM_TEST_CHAR_LIMIT = 500
   const FREE_LOCAL_LIMIT_CODE = 'FREE_LOCAL_VOICE_DAILY_LIMIT_REACHED'
-  const currentPlan = String(user?.plan || 'free').toLowerCase()
+  const effectivePlanRaw = getEffectiveUserPlan(user)
+  const currentPlan = normalizePlanTier(effectivePlanRaw)
   const localVoiceLabelSuffix = currentPlan === 'free' ? '' : ` ${t('studio.voice.unlimited')}`
   const [showBotInvoker, setShowBotInvoker] = useState(false)
 
@@ -155,13 +187,12 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
 
   // Voces premium permitidas por plan
   const PREMIUM_BY_PLAN = {
-    free: [], start: ['Diego'],
-    creator: ['Diego', 'Lupita'],
-    pro: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
-    premium: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
-    elite: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    free: [],
+    base: ['Diego', 'Lupita'],
+    pack_lite: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    pack_pro: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
+    pack_max: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
     admin: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
-    on_demand: ['Diego', 'Lupita', 'Miguel', 'Rafael'],
   }
   const ALL_PREMIUM_VOICES = [
     { id: "Diego", name: t('voiceNames.diegoPremium'), category: "premium", engine: "inworld" },
@@ -172,8 +203,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
 
   // Cargar voces disponibles de Inworld AI + Google TTS + Voces del usuario
   useEffect(() => {
-    const userPlan = user?.plan || 'free'
-    const allowedPremium = PREMIUM_BY_PLAN[userPlan] ?? []
+    const allowedPremium = PREMIUM_BY_PLAN[currentPlan] ?? []
     const allVoices = [
       // === VOCES LOCALES — incluidas en todos los planes, sin tokens ===
       { id: "es-ES", name: `${t('studio.voiceLocal.spanish')}${localVoiceLabelSuffix}`, category: "webspeech", engine: "webspeech" },
@@ -186,7 +216,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
       ...userVoices,
     ]
     setVoices(allVoices)
-  }, [userVoices, user?.plan, localVoiceLabelSuffix])
+  }, [userVoices, currentPlan, localVoiceLabelSuffix])
 
   // Cargar voces al montar y escuchar evento de voz nueva
   useEffect(() => {
@@ -621,7 +651,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
             <span className="truncate">{t('studio.nav.config')}</span>
           </button>
           {onGoVoiceCloning && (() => {
-            const blocked = String(user?.plan || 'free').toLowerCase() === 'free'
+            const blocked = currentPlan === 'free' || currentPlan === 'base'
             return (
               <button
                 onClick={onGoVoiceCloning}

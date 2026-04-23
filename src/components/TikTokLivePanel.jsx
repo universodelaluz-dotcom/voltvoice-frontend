@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef } from 'react'
-import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X, Users, Clock3, TrendingUp, Filter, Trophy, Sparkles, BookOpen, Copy, CheckCircle } from 'lucide-react'
+import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X, Users, Clock3, TrendingUp, Filter, Trophy, Sparkles, BookOpen, Copy, CheckCircle, Lock, Mail } from 'lucide-react'
 import chatStore from '../services/chatStore.js'
 import { useTranslation } from 'react-i18next'
 
@@ -35,7 +35,7 @@ const writeFreeLocalVoiceUsage = (usage) => {
 const isQuestion = (text) => {
   const trimmed = text.trim().toLowerCase()
   if (trimmed.includes('?')) return true
-  const questionWords = /^(quÃ©|que|cÃ³mo|como|cuÃ¡ndo|cuando|dÃ³nde|donde|por\s?quÃ©|por\s?que|cuÃ¡l|cual|quiÃ©n|quien|cuÃ¡nto|cuanto|what|how|when|where|why|who|which|is|are|do|does|can|will|would)\b/i
+  const questionWords = /^(qué|que|cómo|como|cuándo|cuando|dónde|donde|por\s?qué|por\s?que|cuál|cual|quién|quien|cuánto|cuanto|what|how|when|where|why|who|which|is|are|do|does|can|will|would)\b/i
   return questionWords.test(trimmed)
 }
 
@@ -58,6 +58,7 @@ const parseCommandReadMessage = (text, rawPrefix) => {
 
 // Regex completa para detectar TODOS los emojis Unicode
 const emojiFullRegex = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2300}-\u{23FF}\u{2B50}\u{2B55}\u{231A}-\u{231B}\u{25AA}-\u{25AB}\u{25B6}\u{25C0}\u{25FB}-\u{25FE}\u{2614}-\u{2615}\u{2648}-\u{2653}\u{267F}\u{2693}\u{2702}\u{2708}\u{2709}\u{270A}-\u{270D}\u{270F}\u{2712}\u{2714}\u{2716}\u{271D}\u{2721}\u{2728}\u{2733}-\u{2734}\u{2744}\u{2747}\u{274C}\u{274E}\u{2753}-\u{2755}\u{2757}\u{2763}-\u{2764}\u{2795}-\u{2797}\u{27A1}\u{27B0}\u{27BF}\u{2934}-\u{2935}\u{2B05}-\u{2B07}\u{2B1B}-\u{2B1C}\u{3030}\u{303D}\u{3297}\u{3299}\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\u{1F004}\u{1F0CF}\u{1F170}-\u{1F171}\u{1F17E}-\u{1F17F}\u{1F18E}\u{1F191}-\u{1F19A}\u{1F201}-\u{1F202}\u{1F21A}\u{1F22F}\u{1F232}-\u{1F23A}\u{1F250}-\u{1F251}]/gu
+const hiddenUnicodeRegex = /[\u0000-\u001F\u007F-\u009F\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180E\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFE00-\uFE0F\uFEFF]/g
 
 const hasExcessiveEmojis = (text, maxAllowed = 3) => {
   const emojis = text.match(emojiFullRegex) || []
@@ -67,20 +68,20 @@ const hasExcessiveEmojis = (text, maxAllowed = 3) => {
 
 const hasLinks = (text) => /https?:\/\/|www\.|\.com|\.net|\.org|bit\.ly/i.test(text)
 
-// Normalizar Unicode para evitar homÃ³glifos y caracteres de evasiÃ³n
+// Normalizar Unicode para evitar homóglifos y caracteres de evasión
 const normalizeUnicode = (text) => {
   // Contar caracteres sospechosos antes de normalizar
   const suspiciousChars = text.match(/[\u0370-\u03FF\u0400-\u04FF\u3040-\u309F\u4E00-\u9FFF\u2000-\u206F\u2070-\u209F]/g) || []
   const suspiciousRatio = suspiciousChars.length / text.length
 
-  // Si mÃ¡s del 30% son caracteres no-latinos sospechosos, marcar como riesgoso
+  // Si más del 30% son caracteres no-latinos sospechosos, marcar como riesgoso
   if (suspiciousRatio > 0.3) {
     return { text, suspicious: true, reason: 'Muchos caracteres especiales detectados' }
   }
 
   // Normalizar Unicode NFKD (descomponer caracteres)
   const normalized = text.normalize('NFKD')
-    // Remover diacrÃ­ticos y convertir a ASCII similar
+    // Remover diacríticos y convertir a ASCII similar
     .replace(/[\u0300-\u036f]/g, '')
     // Reemplazar caracteres cirilicos/griegos/CJK comunes con advertencia
     .replace(/[\u0400-\u04FF]/g, 'a') // Cirilico
@@ -95,15 +96,23 @@ const normalizeUnicode = (text) => {
   return { text: normalized, suspicious: changed && suspiciousRatio > 0, reason: changed ? 'Caracteres Unicode normalizados' : null }
 }
 
-const getPlainNick = (nickname) => {
-  // Eliminar emojis del nickname
-  let cleanNick = nickname.replace(emojiFullRegex, '')
+const getPlainNick = (nickname, fallback = '') => {
+  const normalizeNick = (value = '') => String(value || '')
+    .normalize('NFKC')
+    .replace(hiddenUnicodeRegex, '')
+    .replace(emojiFullRegex, '')
+    .replace(/[_\-.]+/g, ' ')
+    // Mantener letras latinas (incluye acentos), números y espacios.
+    .replace(/[^0-9A-Za-z\u00C0-\u024F ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 
-  // Eliminar nÃºmeros, caracteres especiales - mantener SOLO letras (con acentos) y espacios
-  cleanNick = cleanNick.replace(/[^a-zA-Z\u00C0-\u00FF ]/g, '')
+  let cleanNick = normalizeNick(nickname)
+  if (!cleanNick) cleanNick = normalizeNick(fallback)
+  if (!cleanNick) cleanNick = 'Usuario'
 
-  // Limpiar espacios mÃºltiples y espacios al inicio/final
-  return cleanNick.trim().replace(/\s+/g, ' ')
+  // Evita nicks excesivamente largos que rompen render/TTS.
+  return cleanNick.slice(0, 32)
 }
 
 const removeEmojis = (text) => {
@@ -226,7 +235,7 @@ const hiddenDefaultProfanityWords = [
   'puta',
   'putos',
   'putas',
-  'puÃ±etas'
+  'puñetas'
 ]
 
 const parseProfanityWords = (rawWords) => {
@@ -480,24 +489,49 @@ const apiNicks = {
   }
 }
 
+const getEffectiveUserPlan = (userObj = null) => {
+  const directPlan = String(userObj?.plan || '').trim().toLowerCase()
+  const backendPlan = String(userObj?.subscription?.backendPlan || '').trim().toLowerCase()
+  const subscriptionPlan = String(userObj?.subscription?.plan || '').trim().toLowerCase()
+  const candidates = [backendPlan, subscriptionPlan, directPlan].filter(Boolean)
+  return candidates.find((plan) => plan !== 'free') || candidates[0] || 'free'
+}
+
+const normalizePlanTier = (rawPlan = 'free') => {
+  const normalized = String(rawPlan || 'free').trim().toLowerCase()
+  if (!normalized) return 'free'
+  if (normalized === 'elite') return 'admin'
+  return normalized
+}
+
+const getPlanBadgeLabel = (planTier) => {
+  const map = {
+    free: 'FREE',
+    base: 'PLAN BASE',
+    pack_lite: 'PACK LITE',
+    pack_pro: 'PACK PRO',
+    pack_max: 'PACK MAX',
+    admin: 'ADMIN',
+  }
+  return map[planTier] || String(planTier || 'FREE').toUpperCase()
+}
+
 export default function TikTokLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride }) {
   const { t } = useTranslation()
-  const normalizedPlan = String(user?.plan || 'free').toLowerCase()
-  const displayPlan =
-    normalizedPlan === 'pro' ? 'START' :
-    normalizedPlan === 'premium' ? 'CREATOR' :
-    normalizedPlan === 'elite' ? 'PRO' :
-    normalizedPlan === 'on_demand' ? 'PRO' :
-    normalizedPlan === 'admin' ? 'ADMIN' :
-    normalizedPlan.toUpperCase()
-  const planBadgeClass = normalizedPlan === 'admin'
+  const effectivePlanRaw = getEffectiveUserPlan(user)
+  const currentPlan = String(user?.role || '').toLowerCase() === 'admin'
+    ? 'admin'
+    : normalizePlanTier(effectivePlanRaw)
+  const displayPlan = getPlanBadgeLabel(currentPlan)
+  const hasPaidAccess = currentPlan !== 'free'
+  const planBadgeClass = currentPlan === 'admin'
     ? 'bg-red-500/20 text-red-300 border-red-400/30'
-    : (normalizedPlan === 'pro' || normalizedPlan === 'start')
+    : (currentPlan === 'pack_pro' || currentPlan === 'pack_max')
       ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
-      : (normalizedPlan === 'premium' || normalizedPlan === 'creator')
+      : (currentPlan === 'pack_lite')
         ? 'bg-blue-500/20 text-blue-300 border-blue-400/30'
-        : (normalizedPlan === 'elite')
-          ? 'bg-purple-500/20 text-purple-300 border-purple-400/30'
+        : (currentPlan === 'base')
+          ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/30'
           : 'bg-gray-500/20 text-gray-300 border-gray-400/30'
 
   const PLATFORM_HELP_FAQ = t('tiktok.faq.questions', { returnObjects: true })
@@ -554,19 +588,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const [chatMsgColor, setChatMsgColor] = useState(() => getThemeChatMsgColor(config, localStorage.getItem('voltvoice-theme') !== 'light'))
   const [showFontPanel, setShowFontPanel] = useState(false)
   const [smartChatEnabled, setSmartChatEnabled] = useState(config.smartChatEnabled || false)
-  const normalizePlan = (rawPlan = 'free') => {
-    const normalized = String(rawPlan || 'free').trim().toLowerCase()
-    const map = {
-      premium: 'creator',
-      elite: 'pro',
-      on_demand: 'free',
-    }
-    return map[normalized] || normalized || 'free'
-  }
-  const currentPlan = normalizePlan(user?.plan || 'free')
   const isFreePlan = currentPlan === 'free'
-  const canUseAiFilter = ['creator', 'pro', 'admin'].includes(currentPlan)
-  const canUseAdvancedVoiceTools = ['creator', 'pro', 'admin'].includes(currentPlan)
+  const canUseAiFilter = hasPaidAccess
+  const canUseAdvancedVoiceTools = hasPaidAccess
   const freeLocalUsageRef = useRef(readFreeLocalVoiceUsage())
   const localLimitPopupAtRef = useRef(0)
   const [mobilePreviewEnabled, setMobilePreviewEnabled] = useState(config.mobilePreviewEnabled || false)
@@ -590,7 +614,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       setCanWriteConfig(false)
       return
     }
-    // Bloqueo breve Ãºnicamente al hidratar, luego habilitar guardado continuo.
+    // Bloqueo breve únicamente al hidratar, luego habilitar guardado continuo.
     setCanWriteConfig(false)
     const id = setTimeout(() => setCanWriteConfig(true), 600)
     return () => clearTimeout(id)
@@ -772,21 +796,21 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const sessionUniqueUsersRef = useRef(new Set())
   const sessionUserCountsRef = useRef({})
   const sessionPeakMessagesPerMinuteRef = useRef(0)
-  // Cooldown por tipo de notificaciÃ³n (timestamp del Ãºltimo anuncio)
+  // Cooldown por tipo de notificación (timestamp del último anuncio)
   const lastNotifTime = useRef({ like: 0, viewer_count: 0, share: 0, follow: 0, gift: 0 })
   // Anti-spam por usuario: { username: [timestamps] }
   const userSpamTimestampsRef = useRef({})
-  // Media de mensajes cada 20s para ajuste dinÃ¡mico de presiÃ³n
+  // Media de mensajes cada 20s para ajuste dinámico de presión
   const recentMessages20sRef = useRef([])
 
   const isAudioSuppressed = () => isPttSuppressedRef.current || isInteractionSuppressedRef.current
 
-  // Auto-scroll: SIEMPRE scroll al fondo para mostrar mensajes mÃ¡s recientes en chat en vivo
-  // Sin requestAnimationFrame para evitar reflow que mueve la pÃ¡gina entera
+  // Auto-scroll: SIEMPRE scroll al fondo para mostrar mensajes más recientes en chat en vivo
+  // Sin requestAnimationFrame para evitar reflow que mueve la página entera
   useEffect(() => {
     if (!chatContainerRef.current) return
     const container = chatContainerRef.current
-    // Scroll DIRECTO sin delays para evitar que se mueva la pÃ¡gina
+    // Scroll DIRECTO sin delays para evitar que se mueva la página
     container.scrollTop = container.scrollHeight
   }, [messages])
 
@@ -827,7 +851,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     if (!isConnected) return
     const currentVoice = config.generalVoiceId || 'es-ES'
     if (lastVoiceIdRef.current !== currentVoice) {
-      console.log(`[Voice Change] ${lastVoiceIdRef.current} â†’ ${currentVoice}`)
+      console.log(`[Voice Change] ${lastVoiceIdRef.current} -> ${currentVoice}`)
       lastVoiceIdRef.current = currentVoice
       stopPlaybackNow() // Solo detener audio actual, para que reanude con nueva voz
     }
@@ -1312,13 +1336,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           return
         }
 
-        // Si estÃ¡ pausado, ignorar todo excepto el ping de subscribed/status
+        // Si está pausado, ignorar todo excepto el ping de subscribed/status
         if (isPausedRef.current && data.type !== 'subscribed' && data.type !== 'status') return
 
         if (data.type === 'subscribed') {
           console.log('[TikTok] Suscrito a:', data.username)
 
-        // Helper cooldown: solo anuncia si pasÃ³ suficiente tiempo
+        // Helper cooldown: solo anuncia si pasó suficiente tiempo
         const canAnnounce = (type, cooldownSecs) => {
           const now = Date.now()
           if (now - lastNotifTime.current[type] < cooldownSecs * 1000) return false
@@ -1326,10 +1350,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           return true
         }
 
-        // === EVENTOS DE NOTIFICACIÃ“N ===
+        // === EVENTOS DE NOTIFICACION ===
         } else if (data.data && data.data.type === 'gift') {
           const giftData = data.data
-          console.log(`[TikTok] ðŸŽ Regalo de @${giftData.username}: ${giftData.giftName}`)
+          console.log(`[TikTok] Gift from @${giftData.username}: ${giftData.giftName}`)
           const normalizedGiftUsername = normalizeTikTokUsername(giftData.username)
           setDonors(prev => new Set([
             ...prev,
@@ -1348,7 +1372,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             meta: { giftName: giftData.giftName }
           })
           if (c.announceGifts && canAnnounce('gift', c.giftCooldown || 5)) {
-            const text = `${giftData.username} enviÃ³ ${giftData.giftName}`
+            const text = `${giftData.username} envió ${giftData.giftName}`
             queueMessage(text, giftData.username, { isNotification: true })
           }
 
@@ -1378,13 +1402,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             timestamp: Date.now()
           })
           if (c.announceShares && canAnnounce('share', c.shareCooldown || 15)) {
-            const text = `${data.data.username} compartiÃ³ tu stream`
+            const text = `${data.data.username} compartió tu stream`
             queueMessage(text, data.data.username, { isNotification: true })
           }
 
         } else if (data.data && data.data.type === 'viewer_count') {
           if (c.announceViewers && canAnnounce('viewer_count', c.viewerCooldown || 120)) {
-            const text = `Hay ${data.data.viewerCount} personas viÃ©ndote`
+            const text = `Hay ${data.data.viewerCount} personas viéndote`
             queueMessage(text, 'sistema', { isNotification: true })
           }
 
@@ -1416,8 +1440,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             || Number(msg.topGifterRank || 0) > 0
           )
           console.log(`[TikTok] Nuevo mensaje: ${msg.username} - ${msg.text}`)
-          console.log(`  â†’ isDonor: ${msg.isDonor}, isModerator: ${msg.isModerator}, isSubscriber: ${msg.isSubscriber}, topGifterRank: ${msg.topGifterRank}`)
-          console.log(`  â†’ Full msg object:`, JSON.stringify(msg, null, 2))
+          console.log(`  -> isDonor: ${msg.isDonor}, isModerator: ${msg.isModerator}, isSubscriber: ${msg.isSubscriber}, topGifterRank: ${msg.topGifterRank}`)
+          console.log(`  -> Full msg object:`, JSON.stringify(msg, null, 2))
 
           recentIncomingTimestampsRef.current = pruneRecentTimestamps([
             ...recentIncomingTimestampsRef.current,
@@ -1483,9 +1507,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           // (Only count messages that arrive AFTER the bot's response ends)
           if (window.messagesCountSinceLastResponseRef !== undefined && !isInteractionSuppressedRef.current) {
             window.messagesCountSinceLastResponseRef++
-            console.log(`[TikTok] âœ“ Message counter incremented: ${window.messagesCountSinceLastResponseRef} (chat not suppressed)`)
+            console.log(`[TikTok] [OK] Message counter incremented: ${window.messagesCountSinceLastResponseRef} (chat not suppressed)`)
           } else if (window.messagesCountSinceLastResponseRef !== undefined && isInteractionSuppressedRef.current) {
-            console.log(`[TikTok] âœ— Message NOT counted (chat suppressed/bot speaking)`)
+            console.log(`[TikTok] [SKIP] Message NOT counted (chat suppressed/bot speaking)`)
           }
 
           // Sumar al contador de comentarios
@@ -1497,7 +1521,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           const commandRead = parseCommandReadMessage(msg.text, configuredCommandPrefix)
           const messageForRead = readByCommandEnabled ? commandRead.payload : msg.text
 
-          // Si estÃ¡ baneado, no leer en voz
+          // Si está baneado, no leer en voz
           if (isBanned) { markFilteredMessage(); return }
 
           if (readByCommandEnabled && !commandRead.matched) {
@@ -1509,7 +1533,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             return
           }
 
-          // PUNTO 4: Filtros de rol â€” trabajan como OR entre sÃ­ (pasa si cumple CUALQUIERA)
+          // PUNTO 4: Filtros de rol - trabajan como OR entre si (pasa si cumple CUALQUIERA)
           // Ejemplo: donor + moderador = lee a cualquiera de los dos, no a ambos a la vez
           const onlyDonors = isEnabledFlag(c.onlyDonors)
           const onlyModerators = isEnabledFlag(c.onlyModerators)
@@ -1520,17 +1544,17 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           const roleFiltersActive = onlyDonors || onlyModerators || onlySubscribers || onlyCommunityMembers
           const isQuestionMsg = isQuestion(messageForRead)
 
-          // Calcula si pasa filtro de rol: cumple CUALQUIERA de los roles activos (OR lÃ³gico)
+          // Calcula si pasa filtro de rol: cumple CUALQUIERA de los roles activos (OR lógico)
           const passRoleFilter =
             (onlyDonors && isKnownDonor) ||
             (onlyModerators && msg.isModerator) ||
             (onlySubscribers && (msg.isSubscriber || false)) ||
             (onlyCommunityMembers && msg.isCommunityMember)
 
-          // LÃ“GICA DE FILTRADO COMBINADO (OR entre grupos):
-          // Si AMBAS restricciones estÃ¡n activas: pasa si cumple rol O es pregunta
-          // Si SOLO rol estÃ¡ activo: pasa si cumple rol
-          // Si SOLO preguntas estÃ¡ activo: pasa si es pregunta
+          // LOGICA DE FILTRADO COMBINADO (OR entre grupos):
+          // Si AMBAS restricciones están activas: pasa si cumple rol O es pregunta
+          // Si SOLO rol está activo: pasa si cumple rol
+          // Si SOLO preguntas está activo: pasa si es pregunta
           if (roleFiltersActive && onlyQuestions) {
             // Ambas activas: pasa si cumple rol O es pregunta
             if (!passRoleFilter && !isQuestionMsg) { markFilteredMessage(); return }
@@ -1547,7 +1571,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             if (containsProfanity(messageForRead, profanityWords)) { markFilteredMessage(); return }
           }
 
-          // Filtro: saltar repetidos â€” mismo usuario consecutivo Y cross-user (anti-multicuenta, ventana 60s)
+          // Filtro: saltar repetidos - mismo usuario consecutivo Y cross-user (anti-multicuenta, ventana 60s)
           const normalizedText = normalizeMessageForMatching(messageForRead)
           if (c.skipRepeated) {
             const isSameUserRepeat = normalizedText === lastMessageRef.current[msg.username]
@@ -1560,8 +1584,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           // Filtro: ignorar enlaces
           if (c.ignoreLinks && hasLinks(messageForRead)) { markFilteredMessage(); return }
 
-          // PUNTO 4: Los checks de configuraciÃ³n se aplican de cajÃ³n, antes de todo filtro inteligente.
-          // (onlyDonors, onlyModerators, onlySubscribers, onlyCommunityMembers, onlyQuestions, skipRepeated, ignoreLinks â€” ya ejecutados arriba)
+          // PUNTO 4: Los checks de configuración se aplican de cajón, antes de todo filtro inteligente.
+          // (onlyDonors, onlyModerators, onlySubscribers, onlyCommunityMembers, onlyQuestions, skipRepeated, ignoreLinks - ya ejecutados arriba)
 
           const priorityUser = isPriorityUser({
             isDonor: isKnownDonor,
@@ -1570,11 +1594,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             isCommunityMember: msg.isCommunityMember || false
           })
 
-          // PUNTO 2: Registrar mensaje en media de 20s para ajuste dinÃ¡mico de presiÃ³n
+          // PUNTO 2: Registrar mensaje en media de 20s para ajuste dinámico de presión
           recordMessage20s()
 
-          // PUNTO 1: Anti-spam por usuario â€” si envÃ­a >5 msgs en 10s, ignorarlo temporalmente
-          // Los usuarios prioritarios (mod, donor, sub, community) estÃ¡n exentos
+          // PUNTO 1: Anti-spam por usuario - si envia >5 msgs en 10s, ignorarlo temporalmente
+          // Los usuarios prioritarios (mod, donor, sub, community) están exentos
           if (!priorityUser) {
             recordUserMessage(msg.username)
             if (isUserSpamming(msg.username)) {
@@ -1610,21 +1634,21 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
           const unicodeCheck = normalizeUnicode(textToProcess)
           if (unicodeCheck.suspicious) {
-            console.log(`[TikTok] âš ï¸ Mensaje sospechoso detectado: ${unicodeCheck.reason}`)
+            console.log(`[TikTok] [WARN] Mensaje sospechoso detectado: ${unicodeCheck.reason}`)
             console.log(`[TikTok] Usuario: ${msg.username}, Texto original: ${textToProcess.substring(0, 50)}...`)
             // Silenciosamente usar el texto normalizado, pero alertar en logs
             textToProcess = unicodeCheck.text
           } else if (unicodeCheck.text !== textToProcess) {
-            // Si hay normalizaciÃ³n pero no es sospechoso, usar el texto normalizado
+            // Si hay normalización pero no es sospechoso, usar el texto normalizado
             textToProcess = unicodeCheck.text
           }
           if (!textToProcess.trim()) { markFilteredMessage(); return }
           if (smartChatActive && smartMetrics?.pressure > 1.25 && !priorityUser && textToProcess.trim().length < 5) { markFilteredMessage(); return }
 
-          // Filtro: largo mÃ­nimo
+          // Filtro: largo mínimo
           if (c.minMessageLengthEnabled && textToProcess.trim().length < c.minMessageLength) { markFilteredMessage(); return }
 
-          // Limitar cola mÃ¡xima
+          // Limitar cola máxima
           if (c.maxQueueEnabled && speakQueueRef.current.length >= c.maxQueueSize) {
             console.log(`[TikTok] Cola llena (${c.maxQueueSize}), descartando mensaje`)
             markFilteredMessage()
@@ -1637,13 +1661,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             textToSpeak = textToProcess.substring(0, c.donorCharLimit)
           }
 
-          // Construir texto final (usar nickname para lectura, no el username tÃ©cnico)
+          // Construir texto final (usar nickname para lectura, no el username técnico)
           const overrideName = getNickOverrideValue(nickOverridesRef.current, msg.username)
           let displayName = overrideName || msg.nickname || msg.username
 
-          // Si estÃ¡ activado, eliminar emojis y caracteres especiales del nickname
-          if ((c.onlyPlainNicks || smartChatActive) && !overrideName) {
-            displayName = getPlainNick(displayName)
+          // Si está activado, eliminar emojis y caracteres especiales del nickname
+          if (c.onlyPlainNicks || smartChatActive) {
+            displayName = getPlainNick(displayName, msg.username)
           }
 
           const finalText = c.readOnlyMessage ? textToSpeak : `${displayName}: ${textToSpeak}`
@@ -1695,7 +1719,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     }
   }, [isConnected, connectedTikTokUser])
 
-  // Timer local de uptime â€” sube 1 segundo cada segundo mientras estÃ¡ conectado
+  // Timer local de uptime - sube 1 segundo cada segundo mientras esta conectado
   useEffect(() => {
     if (!isConnected) return
     connectedAtRef.current = connectedAtRef.current || Date.now()
@@ -1726,7 +1750,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       const hours = Math.floor(resetInMs / 3600000)
       const minutes = Math.ceil((resetInMs % 3600000) / 60000)
       const waitLabel = hours > 0 ? `${hours}h ${Math.max(0, minutes)}m` : `${Math.max(1, minutes)} min`
-      const popupMessage = `Llegaste al lÃ­mite diario de 2 horas de voces locales en plan FREE. Se restablece en aproximadamente ${waitLabel}.`
+      const popupMessage = `Llegaste al límite diario de 2 horas de voces locales en plan FREE. Se restablece en aproximadamente ${waitLabel}.`
 
       setError(popupMessage)
       if ((now - localLimitPopupAtRef.current) > 5000) {
@@ -1749,7 +1773,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     const readCapacityPerMinute = Math.max(6, 60 / Math.max(1.8, avgPlaybackSeconds))
     const queueDepth = speakQueueRef.current.length
     const basePressure = incomingPerMinute / Math.max(1, readCapacityPerMinute)
-    // PUNTO 2: Ajuste dinÃ¡mico con media de 20s â€” mÃ¡s velocidad = mÃ¡s filtrado
+    // PUNTO 2: Ajuste dinamico con media de 20s - mas velocidad = mas filtrado
     const pressureMultiplier = getDynamicPressureMultiplier()
     const pressure = basePressure * pressureMultiplier
     return { incomingPerMinute, avgPlaybackSeconds, readCapacityPerMinute, queueDepth, pressure, pressureMultiplier }
@@ -1772,9 +1796,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
     const useFuzzy = normalizedText.length >= 10
     for (const entry of recent) {
-      // Coincidencia exacta tras normalizaciÃ³n
+      // Coincidencia exacta tras normalización
       if (entry.text === normalizedText) return true
-      // Coincidencia difusa por bigramas (Dice â‰¥ 0.75) para textos largos
+      // Coincidencia difusa por bigramas (Dice >= 0.75) para textos largos
       if (useFuzzy && entry.text.length >= 10) {
         const intersection = getBigramIntersection(normalizedText, entry.text)
         const dice = (2 * intersection) / (normalizedText.length - 1 + entry.text.length - 1)
@@ -1797,7 +1821,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     recentGlobalTextsRef.current.push({ text: normalizedText, ts: Date.now() })
   }
 
-  // PUNTO 1: Anti-spam por usuario â€” ignora temporalmente si envÃ­a >5 msgs en 10s
+  // PUNTO 1: Anti-spam por usuario - ignora temporalmente si envia >5 msgs en 10s
   const isUserSpamming = (username) => {
     const now = Date.now()
     const cutoff = now - 10000
@@ -1811,7 +1835,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     userSpamTimestampsRef.current[username].push(now)
   }
 
-  // PUNTO 2: Media de mensajes en Ãºltimos 20s para ajustar filtrado dinÃ¡mico
+  // PUNTO 2: Media de mensajes en últimos 20s para ajustar filtrado dinámico
   const getMessageRate20s = () => {
     const now = Date.now()
     const cutoff = now - 20000
@@ -1821,13 +1845,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const recordMessage20s = () => {
     recentMessages20sRef.current.push(Date.now())
   }
-  // Retorna un multiplicador de presiÃ³n basado en velocidad del chat en 20s
-  // Alta velocidad = mÃ¡s filtrado (>1), baja velocidad = mÃ¡s permisivo (<1)
+  // Retorna un multiplicador de presión basado en velocidad del chat en 20s
+  // Alta velocidad = más filtrado (>1), baja velocidad = más permisivo (<1)
   const getDynamicPressureMultiplier = () => {
     const rate = getMessageRate20s()
-    if (rate > 3) return 1.4      // >3 msgs/s = muy intenso, filtrar mÃ¡s
+    if (rate > 3) return 1.4      // >3 msgs/s = muy intenso, filtrar más
     if (rate > 1.5) return 1.15   // >1.5 msgs/s = flujo alto
-    if (rate < 0.3) return 0.7   // <0.3 msgs/s = chat lento, ser mÃ¡s permisivo
+    if (rate < 0.3) return 0.7   // <0.3 msgs/s = chat lento, ser más permisivo
     return 1.0
   }
 
@@ -1842,8 +1866,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     const lower = String(text || '').toLowerCase()
     let score = 0
     if (/[!?]{2,}/.test(lower)) score += 1.2
-    if (/(ðŸ˜­|ðŸ˜¢|ðŸ¥¹|â¤ï¸|ðŸ’”|ðŸ˜±|ðŸ˜‚|ðŸ¤£|ðŸ˜|ðŸ¥°|ðŸ˜¡|ðŸ˜³|ðŸ«¶)/u.test(text)) score += 1.3
-    if (/\b(ay|wow|no manches|que paso|quÃ© pasÃ³|contexto|urgente|help|ayuda|triste|miedo|amor|lloro|llorar|emocion|emociÃ³n)\b/i.test(lower)) score += 1.4
+    if (/(😭|😢|🥹|❤️|💔|😱|😂|🤣|😍|🥰|😡|😳|🫶)/u.test(text)) score += 1.3
+    if (/\b(ay|wow|no manches|que paso|qué pasó|contexto|urgente|help|ayuda|triste|miedo|amor|lloro|llorar|emocion|emoción)\b/i.test(lower)) score += 1.4
     return score
   }
 
@@ -1879,18 +1903,18 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
     let score = 0
     if (item.isNotification) score += 11
-    // PUNTO 3: Prioridad por rol â€” comunidad > mod > donor > suscriptor > pregunta
-    if (item.isCommunityMember) score += 10  // Fan/SuperFan: mÃ¡s comprometidos
+    // PUNTO 3: Prioridad por rol - comunidad > mod > donor > suscriptor > pregunta
+    if (item.isCommunityMember) score += 10  // Fan/SuperFan: más comprometidos
     if (item.isModerator) score += 9
     if (item.isDonor) score += 8.5
-    if (secondsSinceGift <= 45) score += 7.5  // donaciÃ³n reciente = muy relevante
+    if (secondsSinceGift <= 45) score += 7.5  // donación reciente = muy relevante
     if (item.isSubscriber) score += 7.5
     // PUNTO 1: Prioriza mensajes con mayor longitud y diversidad de palabras
     const words = rawText.split(/\s+/).filter(Boolean)
     const uniqueWords = new Set(words.map(w => w.toLowerCase()))
     const wordDiversityBonus = Math.min(3, (uniqueWords.size / Math.max(1, words.length)) * 4)
     score += wordDiversityBonus
-    if (rawText.length >= 30 && rawText.length <= 150) score += 2.5  // longitud Ã³ptima
+    if (rawText.length >= 30 && rawText.length <= 150) score += 2.5  // longitud óptima
     if (item.isQuestion || isQuestion(rawText)) score += 6.5
     if (mentionsStreamer || /(^|\s)@[\w._-]+/i.test(rawText)) score += 3.4
     score += getTopicRelevanceScore(rawText)
@@ -1965,9 +1989,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     const isDonorEligible = item.isDonor || donors.has(username) || donors.has(normalizedItemUsername)
     const isQuestionEligible = item.isQuestion || isQuestion(item.sourceText || item.rawText || item.text || '')
 
-    // PRIORIDAD 0: Voz personalizada por usuario (MÃXIMA PRIORIDAD)
+    // PRIORIDAD 0: Voz personalizada por usuario (MÁXIMA PRIORIDAD)
     if (canUseAdvancedVoiceTools && c.userVoiceAssignments && c.userVoiceAssignments.length > 0) {
-      // Normalizar username: quitar @ si lo tiene para comparaciÃ³n
+      // Normalizar username: quitar @ si lo tiene para comparación
       const normalizedUsername = username.toLowerCase().replace(/^@+/, '')
       const userAssignment = c.userVoiceAssignments.find(a => a.username.toLowerCase() === normalizedUsername)
       if (userAssignment) {
@@ -2025,7 +2049,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       return voice
     }
 
-    // Modo voces variadas: si estÃ¡ enabled y hay voces seleccionadas, randomiza
+    // Modo voces variadas: si está enabled y hay voces seleccionadas, randomiza
     if (canUseAdvancedVoiceTools && c.variedVoicesEnabled && c.variedVoicesSelected && c.variedVoicesSelected.length > 0) {
       const validVoices = Array.from(new Set(
         c.variedVoicesSelected
@@ -2073,7 +2097,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       const metrics = getSmartMetrics()
       const normalizedQueuedText = normalizeMessageForMatching(item.rawText || item.text)
       if (!item.isNotification && hasQueuedDuplicate(normalizedQueuedText)) {
-        console.log('[TikTok] Smart chat descartÃ³ mensaje repetido ya en cola')
+        console.log('[TikTok] Smart chat descartó mensaje repetido ya en cola')
         markFilteredMessage()
         return
       }
@@ -2088,7 +2112,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         return
       }
       if (shouldHardDropSmartMessage(item, metrics)) {
-        console.log('[TikTok] Smart chat descartÃ³ mensaje por filtros duros adaptativos', {
+        console.log('[TikTok] Smart chat descartó mensaje por filtros duros adaptativos', {
           username: item.username,
           text: (item.rawText || item.text).substring(0, 50),
           pressure: metrics.pressure.toFixed(2),
@@ -2103,7 +2127,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
       item.smartScore = scoreSmartMessage(item, metrics)
       if (item.smartScore < threshold) {
-        console.log(`[TikTok] Smart chat descartÃ³ mensaje (score ${item.smartScore.toFixed(2)} < ${threshold.toFixed(2)})`, {
+        console.log(`[TikTok] Smart chat descartó mensaje (score ${item.smartScore.toFixed(2)} < ${threshold.toFixed(2)})`, {
           username: item.username,
           text: (item.rawText || item.text).substring(0, 50),
           pressure: metrics.pressure.toFixed(2)
@@ -2167,7 +2191,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       if (canUseAiFilter && smartChatEnabledRef.current) {
         const metrics = getSmartMetrics()
         if (shouldHardDropSmartMessage(item, metrics)) {
-          console.log('[TikTok] Smart chat saltÃ³ un pendiente viejo o ilegible para mantenerse fresco')
+          console.log('[TikTok] Smart chat saltó un pendiente viejo o ilegible para mantenerse fresco')
           markFilteredMessage()
           continue
         }
@@ -2221,8 +2245,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       try {
         const isLocalVoice = voiceId === 'es-ES' || voiceId === 'en-US'
 
-        // Si cambiÃ³ la voz GLOBAL del usuario (no por-mensaje), vaciar cola
-        // Esto evita vaciar cuando estÃ¡ randomizando (cada mensaje tiene voiceId diferente congelada)
+        // Si cambió la voz GLOBAL del usuario (no por-mensaje), vaciar cola
+        // Esto evita vaciar cuando está randomizando (cada mensaje tiene voiceId diferente congelada)
         if (lastVoiceIdRef.current !== currentGlobalVoice) {
           lastVoiceIdRef.current = currentGlobalVoice
           markPlayingMessagesAsDone() // Marcar como hechos
@@ -2237,7 +2261,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           let backendAudio = null
           let backendLimitReached = false
 
-          // Si ya estÃ¡ pre-generado Y es de la generaciÃ³n actual, usarlo
+          // Si ya está pre-generado Y es de la generación actual, usarlo
           if (
             nextPreGeneratedRef.current?.itemId === item.id &&
             nextPreGeneratedRef.current?.audioUrl &&
@@ -2269,7 +2293,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               const waitLabel = waitMinutes >= 60
                 ? `${Math.floor(waitMinutes / 60)}h ${waitMinutes % 60}m`
                 : `${waitMinutes} min`
-              const popupMessage = `Llegaste al lÃ­mite diario de 2 horas de voces locales en plan FREE. Se restablece en aproximadamente ${waitLabel}.`
+              const popupMessage = `Llegaste al límite diario de 2 horas de voces locales en plan FREE. Se restablece en aproximadamente ${waitLabel}.`
               setError(popupMessage)
               if ((Date.now() - localLimitPopupAtRef.current) > 5000) {
                 localLimitPopupAtRef.current = Date.now()
@@ -2371,7 +2395,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                         username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
                         messageUsername: nextItem.username,
                         messageText: nextItem.text,
-                        voiceId: nextVoiceId
+                        voiceId: nextVoiceId,
+                        preGenerate: true
                       })
                     })
 
@@ -2452,23 +2477,23 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             window.speechSynthesis.speak(utterance)
           })
         } else {
-        // Voz Inworld/clonada â€” llamada al backend
+        // Voz Inworld/clonada - llamada al backend
         const authToken = getAuthToken()
         let data = null
         let response = null
 
-        // Revisar si ya estÃ¡ pre-generado Y es de la generaciÃ³n actual
+        // Revisar si ya está pre-generado Y es de la generación actual
         if (
           nextPreGeneratedRef.current?.itemId === item.id &&
           nextPreGeneratedRef.current?.audioUrl &&
           nextPreGeneratedRef.current?.genId === preGenIdRef.current
         ) {
-          console.log('[Pre-gen] âœ“ Usando pre-generado para', item.username)
+          console.log('[Pre-gen] [OK] Usando pre-generado para', item.username)
           data = { audio: nextPreGeneratedRef.current.audioUrl }
           nextPreGeneratedRef.current = {}
         } else {
           // No hay pre-generado, hacer request directo
-          console.log('[Pre-gen] âœ— Generando nuevo para', item.username)
+          console.log('[Pre-gen] [NEW] Generando nuevo para', item.username)
           response = await fetch(`${API_URL}/api/tiktok/message`, {
             method: 'POST',
             headers: {
@@ -2635,21 +2660,22 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                     username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
                     messageUsername: nextItem.username,
                     messageText: nextItem.text,
-                    voiceId: nextVoiceId
+                    voiceId: nextVoiceId,
+                    preGenerate: true
                   })
                 })
                   .then(r => r.json())
                   .then(data => {
                     if (data?.audio) {
                       nextPreGeneratedRef.current = { itemId: nextItem.id, audioUrl: data.audio, voiceId: nextVoiceId, genId: preGenIdRef.current }
-                      console.log('[Pre-gen] âœ“ Completado para', nextItem.username)
+                      console.log('[Pre-gen] [OK] Completado para', nextItem.username)
                     }
                   })
                   .catch(() => {})
                   .finally(() => { isPreGeneratingRef.current = false })
               }
 
-              // Resolver sin delay - si la pre-generaciÃ³n se demora, el sistema espera en el siguiente mensaje
+              // Resolver sin delay - si la pre-generación se demora, el sistema espera en el siguiente mensaje
               resolve()
             }
             audio.onerror = () => {
@@ -2715,7 +2741,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         setStats({ count: 0, uptime: 0 })
         setIsConnected(true)
         setMessages([])
-        // Guardar Ãºltimo usuario conectado (normalizado)
+        // Guardar último usuario conectado (normalizado)
         if (updateConfig) updateConfig('lastTiktokUser', cleanUsername)
       } else {
         setError(data.error || 'Error conectando a TikTok')
@@ -2745,7 +2771,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   }
 
   const keepReadMessageVisible = ({ force = false } = {}) => {
-    // Scroll DIRECTO sin requestAnimationFrame para evitar reflow que mueve la pÃ¡gina
+    // Scroll DIRECTO sin requestAnimationFrame para evitar reflow que mueve la página
     const container = chatContainerRef.current
     if (!container) return
 
@@ -2884,7 +2910,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     speakQueueRef.current = []
     isProcessingRef.current = false
     stopPlaybackNow()
-    // Si estaba pausado, reanudar tambiÃ©n
+    // Si estaba pausado, reanudar también
     if (isPausedRef.current) {
       isPausedRef.current = false
       setIsPaused(false)
@@ -2972,7 +2998,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             className={`flex items-center gap-1.5 px-3 sm:px-6 text-xs sm:text-sm font-bold border-r transition-all ${darkMode
               ? 'border-white/10 bg-slate-800 text-cyan-300 hover:bg-cyan-500/20'
               : 'border-slate-300 bg-white text-cyan-700 hover:bg-cyan-50'}`}
-            title="GuÃ­a detallada de uso"
+            title="Guía detallada de uso"
           >
             <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <span className="hidden xs:inline">{t('tiktok.panel.helpBtn')}</span>
@@ -3013,7 +3039,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             type="button"
             className="absolute inset-0 bg-black/55"
             onClick={() => setShowHelpGuide(false)}
-            aria-label="Cerrar guÃ­a"
+            aria-label="Cerrar guía"
           />
           <div className={`absolute top-0 right-0 h-full w-full max-w-xl overflow-y-auto p-5 sm:p-6 border-l shadow-2xl ${
             darkMode ? 'bg-[#0f1022] border-cyan-400/30 text-gray-100' : 'bg-white border-indigo-200 text-gray-900'
@@ -3033,7 +3059,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 className={darkMode
                   ? "p-2 rounded-lg border border-cyan-400/30 bg-cyan-500/10 hover:bg-cyan-500/20 transition-all"
                   : "p-2 rounded-lg border border-cyan-300 bg-cyan-50 hover:bg-cyan-100 transition-all"}
-                aria-label="Cerrar guÃ­a"
+                aria-label="Cerrar guía"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -3067,15 +3093,15 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               ))}
               {!visibleHelpFaq.length && (
                 <div className={darkMode ? "rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-4 text-gray-200" : "rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-gray-700"}>
-                  No encontrÃ© resultados para esa bÃºsqueda. Prueba con palabras como: voz, tokens, silenciar, nick, filtros.
+                  No encontré resultados para esa búsqueda. Prueba con palabras como: voz, tokens, silenciar, nick, filtros.
                 </div>
               )}
 
-              {/* â”€â”€ Contactar Soporte â”€â”€ */}
+              {/* -- Contactar Soporte -- */}
               <div className={`mt-4 rounded-xl border p-4 ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
                 {currentPlan === 'free' ? (
                   <div className="text-center py-2">
-                    <span className="text-2xl block mb-2">ðŸ”’</span>
+                    <Lock className={`w-8 h-8 mx-auto mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                     <p className={`text-sm font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Soporte directo disponible para planes de pago</p>
                     <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Actualiza tu plan para contactarnos directamente</p>
                   </div>
@@ -3083,7 +3109,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                   <>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">âœ‰ï¸</span>
+                        <Mail className={`w-5 h-5 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`} />
                         <div>
                           <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{t('tiktok.support.title')}</p>
                           <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('tiktok.support.response')}</p>
@@ -3100,9 +3126,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                     {showSupportForm && (
                       supportDone ? (
                         <div className={`text-center py-4 rounded-xl ${darkMode ? 'bg-green-500/10 border border-green-500/30' : 'bg-green-50 border border-green-200'}`}>
-                          <span className="text-3xl block mb-2">âœ…</span>
-                          <p className={`text-sm font-bold ${darkMode ? 'text-green-300' : 'text-green-700'}`}>Â¡Mensaje enviado!</p>
-                          <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Te responderemos a tu correo en 24â€“48 horas.</p>
+                          <CheckCircle className={`w-8 h-8 mx-auto mb-2 ${darkMode ? 'text-green-300' : 'text-green-600'}`} />
+                          <p className={`text-sm font-bold ${darkMode ? 'text-green-300' : 'text-green-700'}`}>¡Mensaje enviado!</p>
+                          <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Te responderemos a tu correo en 24-48 horas.</p>
                         </div>
                       ) : (
                         <div className="space-y-2">
@@ -3251,7 +3277,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       ) : (
         <div className="space-y-2">
 
-          {/* Barra compacta de conexiÃ³n â€” visible solo cuando no estÃ¡ conectado */}
+          {/* Barra compacta de conexion - visible solo cuando no esta conectado */}
           {!isConnected && (
             <form onSubmit={handleConnectSubmit}>
               <div className={`flex gap-2 p-3 rounded-xl border ${darkMode ? 'bg-cyan-500/5 border-cyan-500/20' : 'bg-indigo-50 border-indigo-200'}`}>
@@ -3332,7 +3358,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             )}
           </div>
 
-          {/* Flex: chat izq + controles der â€” en mÃ³vil apilados verticalmente */}
+          {/* Flex: chat izq + controles der - en movil apilados verticalmente */}
           <div className="flex flex-col sm:flex-row gap-3 items-start">
           <div className="flex-1 min-w-0 w-full">
 
@@ -3384,7 +3410,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                         </>
                       ) : (
                         <>
-                          <span className="text-3xl mb-3 block">ðŸ“¡</span>
+                          <MessageCircle className="w-8 h-8 mx-auto mb-3 text-cyan-400" />
                           <p className={`font-semibold text-sm ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>{t('tiktok.panel.connectToChat')}</p>
                           <p className={`text-xs mt-1 ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>{t('tiktok.panel.connectHint')}</p>
                         </>
@@ -3406,7 +3432,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                   : null
                 const hlColor = highlightedUsers[msg.user] || autoColor
                 // Tipo de badge para mostrar
-                const badgeLabel = msg.isModerator ? 'âš”ï¸ MOD' : msg.isTopGifter ? 'ðŸ† TOP' : msg.isDonor ? 'ðŸŽ DONOR' : msg.isSubscriber ? 'â­ SUB' : msg.isCommunityMember ? 'ðŸ’š CLUB' : null
+                const badgeLabel = msg.isModerator ? 'MOD' : msg.isTopGifter ? 'TOP' : msg.isDonor ? 'DONOR' : msg.isSubscriber ? 'SUB' : msg.isCommunityMember ? 'CLUB' : null
                 return (
                 <div
                   key={getMessageRenderKey(msg, idx)}
@@ -3455,7 +3481,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                               await apiNicks.set(normalizedUsername, nextNick)
                               setNickOverrides(prev => ({ ...prev, [normalizedUsername]: nextNick }))
                             } else {
-                              // Si queda vacÃ­o, remover del override
+                              // Si queda vacío, remover del override
                               await apiNicks.remove(normalizedUsername)
                               setNickOverrides(prev => {
                                 const next = { ...prev }
@@ -3543,7 +3569,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                               : 'hover:underline'
                           }`}
                           style={!isUserBannedBySet(bannedUsers, msg.user) ? { color: chatNickColor } : undefined}
-                          title={highlightMode ? "Click para remarcar/desmarcar este usuario" : isUserBannedBySet(bannedUsers, msg.user) ? "Click derecho para desbloquear" : "Click para editar Â· Click derecho para silenciar"}
+                          title={highlightMode ? "Click para remarcar/desmarcar este usuario" : isUserBannedBySet(bannedUsers, msg.user) ? "Click derecho para desbloquear" : "Click para editar · Click derecho para silenciar"}
                         >
                           {hlColor && <span className="inline-block w-2.5 h-2.5 rounded-full mr-1 ring-1 ring-white/30" style={{ backgroundColor: hlColor }} />}
                             {getNickOverrideValue(nickOverrides, msg.user) || msg.nickname || msg.user}
@@ -3587,13 +3613,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                   <div className={darkMode ? "bg-[#0f0f23]/90 border border-cyan-400/30 rounded-2xl p-2 shadow-lg" : "bg-white border border-indigo-200 rounded-2xl p-2 shadow-md"}>
                     <div className={darkMode ? "rounded-xl border border-cyan-500/20 bg-black/40 p-2 h-[620px] flex flex-col" : "rounded-xl border border-indigo-200 bg-gray-50 p-2 h-[620px] flex flex-col"}>
                       <div className="flex items-center justify-between mb-2">
-                        <span className={darkMode ? "text-[10px] text-cyan-300 font-semibold" : "text-[10px] text-cyan-700 font-semibold"}>LIVE MÃ³vil</span>
+                        <span className={darkMode ? "text-[10px] text-cyan-300 font-semibold" : "text-[10px] text-cyan-700 font-semibold"}>LIVE Móvil</span>
                         <span className={`text-[10px] font-semibold ${mobilePreviewMuted ? 'text-amber-300' : 'text-emerald-300'}`}>
                           {mobilePreviewMuted ? 'MUTE' : 'AUDIO'}
                         </span>
                       </div>
                       <div className={darkMode ? "flex-1 rounded-lg bg-[#070714] border border-cyan-500/15 p-3 overflow-hidden" : "flex-1 rounded-lg bg-white border border-indigo-200 p-3 overflow-hidden"}>
-                        {mobilePreviewFrameUrl ? (<iframe title="Preview LIVE mÃ³vil" src={mobilePreviewFrameUrl} className="w-full h-full rounded-md" allow="autoplay; encrypted-media; picture-in-picture; clipboard-write" referrerPolicy="strict-origin-when-cross-origin" />) : (
+                        {mobilePreviewFrameUrl ? (<iframe title="Preview LIVE móvil" src={mobilePreviewFrameUrl} className="w-full h-full rounded-md" allow="autoplay; encrypted-media; picture-in-picture; clipboard-write" referrerPolicy="strict-origin-when-cross-origin" />) : (
                           <div className="h-full flex flex-col gap-2">
                             {currentReadingMessage ? (
                               <div className={darkMode ? "rounded-md border border-cyan-500/25 bg-cyan-500/10 p-2" : "rounded-md border border-cyan-200 bg-cyan-50 p-2"}>
@@ -3619,7 +3645,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                                     </p>
                                   ) : (
                                     <>
-                                      <span className="text-lg block mb-1">ðŸ“¡</span>
+                                      <span className="text-lg block mb-1">i</span>
                                       <p className={darkMode ? "text-[10px] text-slate-400" : "text-[10px] text-slate-500"}>
                                         {t('tiktok.panel.connectToChat')}
                                       </p>
@@ -3650,7 +3676,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           </div>
           </div>{/* fin col izq */}
 
-          {/* Controles - columna derecha en desktop, grid 3 cols en mÃ³vil */}
+          {/* Controles - columna derecha en desktop, grid 3 cols en móvil */}
           <div className={`grid grid-cols-3 sm:flex sm:flex-col rounded-lg border overflow-hidden w-full sm:w-40 sm:shrink-0 ${
             darkMode ? 'border-white/10 bg-slate-900/40' : 'border-slate-300 bg-slate-100'
           }`}>
@@ -3672,7 +3698,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               className={`flex items-center gap-2 px-3 py-2.5 text-xs font-bold border-b transition-all w-full ${
                 darkMode ? 'bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
               }`}
-              title="Saltar cola y continuar desde el prÃ³ximo mensaje"
+              title="Saltar cola y continuar desde el próximo mensaje"
             >
               <RotateCcw className="w-4 h-4 shrink-0" />{t('tiktok.controls.refresh')}
             </button>
@@ -3684,7 +3710,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 smartChatEnabled ? 'bg-slate-700 text-white hover:bg-slate-600'
                   : darkMode ? 'bg-fuchsia-500/12 text-fuchsia-100 hover:bg-fuchsia-500/20 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
               } ${!canUseAiFilter ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={!canUseAiFilter ? 'Disponible en CREATOR y PRO' : 'Activa el filtro inteligente para eliminar spam y basura'}
+              title={!canUseAiFilter ? 'Disponible con Pack Lite, Pack Pro o Pack Max' : 'Activa el filtro inteligente para eliminar spam y basura'}
             >
               <span className={`inline-flex w-2 h-2 rounded-full shrink-0 border ${
                 smartChatEnabled ? 'bg-emerald-400 border-emerald-200 shadow-[0_0_8px_rgba(74,222,128,0.9)]' : darkMode ? 'bg-fuchsia-200/20 border-fuchsia-200/30' : 'bg-slate-300 border-slate-400'
@@ -3730,7 +3756,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             <div className={`col-span-3 px-4 py-3 border-b ${darkMode ? 'border-white/10' : 'border-slate-300'}`}>
               <span className={`text-[11px] font-bold uppercase tracking-wider block mb-2 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>VOL</span>
               <div className="flex items-center gap-1.5">
-                <button onClick={() => setVolume(v => Math.max(0, v - 0.05))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-emerald-400' : 'bg-slate-200 hover:bg-slate-300 text-emerald-600'}`}>âˆ’</button>
+                <button onClick={() => setVolume(v => Math.max(0, v - 0.05))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-emerald-400' : 'bg-slate-200 hover:bg-slate-300 text-emerald-600'}`}>-</button>
                 <span className={`flex-1 text-sm font-bold text-center tabular-nums ${darkMode ? 'text-white' : 'text-slate-900'}`}>{Math.round(volume * 100)}%</span>
                 <button onClick={() => setVolume(v => Math.min(1, v + 0.05))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-emerald-400' : 'bg-slate-200 hover:bg-slate-300 text-emerald-600'}`}>+</button>
               </div>
@@ -3739,13 +3765,13 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             <div className={`col-span-3 px-4 py-3`}>
               <span className={`text-[11px] font-bold uppercase tracking-wider block mb-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>VEL</span>
               <div className="flex items-center gap-1.5">
-                <button onClick={() => updateConfig && updateConfig('audioSpeed', Math.max(0.5, Number(config.audioSpeed || 1) - 0.1))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-blue-400' : 'bg-slate-200 hover:bg-slate-300 text-blue-600'}`}>âˆ’</button>
+                <button onClick={() => updateConfig && updateConfig('audioSpeed', Math.max(0.5, Number(config.audioSpeed || 1) - 0.1))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-blue-400' : 'bg-slate-200 hover:bg-slate-300 text-blue-600'}`}>-</button>
                 <span className={`flex-1 text-sm font-bold text-center tabular-nums ${darkMode ? 'text-white' : 'text-slate-900'}`}>{Number(config.audioSpeed || 1).toFixed(1)}x</span>
                 <button onClick={() => updateConfig && updateConfig('audioSpeed', Math.min(2, Number(config.audioSpeed || 1) + 0.1))} className={`w-8 h-8 rounded font-bold text-lg flex items-center justify-center transition-colors ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-blue-400' : 'bg-slate-200 hover:bg-slate-300 text-blue-600'}`}>+</button>
               </div>
             </div>
           </div>
-          {/* Panel lateral derecho â€” a la derecha en desktop, abajo en mÃ³vil */}
+          {/* Panel lateral derecho - a la derecha en desktop, abajo en movil */}
           {(showFontPanel || showHighlightPanel || showNicksPanel) && (
             <div className={`w-full sm:w-64 sm:shrink-0 rounded-lg border ${
               darkMode ? 'bg-gray-900/90 border-white/10' : 'bg-white border-slate-200 shadow-md'
@@ -3760,9 +3786,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 <button onClick={() => setShowFontPanel(false)} className={`p-1 rounded transition-colors ${darkMode ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'}`}><X className="w-3.5 h-3.5" /></button>
               </div>
 
-              {/* TamaÃ±o */}
+              {/* Tamaño */}
               <div className={`flex items-stretch rounded-lg border overflow-hidden ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
-                <button onClick={() => setChatFontSize(s => Math.max(10, s - 1))} className={`flex-1 py-2 text-xs font-bold border-r transition-colors ${darkMode ? 'border-white/10 bg-slate-800 hover:bg-slate-700 text-slate-200' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`}>Aâˆ’</button>
+                <button onClick={() => setChatFontSize(s => Math.max(10, s - 1))} className={`flex-1 py-2 text-xs font-bold border-r transition-colors ${darkMode ? 'border-white/10 bg-slate-800 hover:bg-slate-700 text-slate-200' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`}>A-</button>
                 <span className={`px-3 flex items-center text-xs font-black tabular-nums ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`}>{chatFontSize}px</span>
                 <button onClick={() => setChatFontSize(s => Math.min(24, s + 1))} className={`flex-1 py-2 text-xs font-bold border-l transition-colors ${darkMode ? 'border-white/10 bg-slate-800 hover:bg-slate-700 text-slate-200' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`}>A+</button>
               </div>
@@ -3834,7 +3860,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                       rule.enabled ? 'border-amber-400 bg-amber-400/30' : darkMode ? 'border-gray-500' : 'border-gray-400'
                     }`}
                   >
-                    {rule.enabled && <span className="text-amber-300 text-[10px] font-bold">âœ“</span>}
+                    {rule.enabled && <span className="text-amber-300 text-[10px] font-bold">OK</span>}
                   </button>
                   <span className={`text-xs font-medium flex-1 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{label}</span>
                   <div className="flex gap-1">
@@ -3855,16 +3881,16 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 </div>
               )})}
 
-              {/* BotÃ³n de prueba para verificar resaltado */}
+              {/* Botón de prueba para verificar resaltado */}
               <div className={`pt-2 border-t ${darkMode ? 'border-gray-700' : 'border-amber-200'}`}>
                 <button
                   onClick={() => {
                     const testMessages = [
-                      { id: `test-mod-${Date.now()}`, user: 'test_moderador', nickname: 'Moderador Test', text: 'ðŸ§ª Soy moderador de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: true, isSubscriber: false, isTopGifter: false, isBanned: false },
-                      { id: `test-donor-${Date.now()}`, user: 'test_donador', nickname: 'Donador Test', text: 'ðŸ§ª Soy donador de prueba', status: 'received', timestamp: new Date(), isDonor: true, isModerator: false, isSubscriber: false, isTopGifter: false, isBanned: false },
-                      { id: `test-sub-${Date.now()}`, user: 'test_suscriptor', nickname: 'Suscriptor Test', text: 'ðŸ§ª Soy suscriptor de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: true, isTopGifter: false, isBanned: false },
-                      { id: `test-community-${Date.now()}`, user: 'test_comunidad', nickname: 'Comunidad Test', text: 'ðŸ§ª Soy fan o superfan de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: false, isCommunityMember: true, isTopGifter: false, isBanned: false },
-                      { id: `test-topfan-${Date.now()}`, user: 'test_topfan', nickname: 'Top Fan Test', text: 'ðŸ§ª Soy top fan de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: false, isTopGifter: true, isBanned: false },
+                      { id: `test-mod-${Date.now()}`, user: 'test_moderador', nickname: 'Moderador Test', text: '[TEST] Soy moderador de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: true, isSubscriber: false, isTopGifter: false, isBanned: false },
+                      { id: `test-donor-${Date.now()}`, user: 'test_donador', nickname: 'Donador Test', text: '[TEST] Soy donador de prueba', status: 'received', timestamp: new Date(), isDonor: true, isModerator: false, isSubscriber: false, isTopGifter: false, isBanned: false },
+                      { id: `test-sub-${Date.now()}`, user: 'test_suscriptor', nickname: 'Suscriptor Test', text: '[TEST] Soy suscriptor de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: true, isTopGifter: false, isBanned: false },
+                      { id: `test-community-${Date.now()}`, user: 'test_comunidad', nickname: 'Comunidad Test', text: '[TEST] Soy fan o superfan de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: false, isCommunityMember: true, isTopGifter: false, isBanned: false },
+                      { id: `test-topfan-${Date.now()}`, user: 'test_topfan', nickname: 'Top Fan Test', text: '[TEST] Soy top fan de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: false, isTopGifter: true, isBanned: false },
                     ]
                     setMessages(prev => [...prev, ...testMessages])
                   }}
@@ -3872,7 +3898,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                     darkMode ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30' : 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300'
                   }`}
                 >
-                  ðŸ§ª Probar resaltado (mensajes de prueba)
+                  [TEST] Probar resaltado (mensajes de prueba)
                 </button>
               </div>
 
@@ -3916,7 +3942,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                     </button>
                   )}
                 </div>
-                {/* Lista de usuarios remarcados con botÃ³n individual para quitar */}
+                {/* Lista de usuarios remarcados con botón individual para quitar */}
                 {Object.keys(highlightedUsers).length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {Object.entries(highlightedUsers).map(([user, color]) => (
@@ -3936,7 +3962,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                           className="hover:text-red-400 transition-colors ml-0.5"
                           title={`Quitar remarque de ${user}`}
                         >
-                          âœ•
+                          *
                         </button>
                       </span>
                     ))}
@@ -4184,5 +4210,4 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     </div>
   )
 }
-
 

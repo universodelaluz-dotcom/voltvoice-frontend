@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -31,7 +31,8 @@ const getAddOns = (t) => [
     price: 9.99,
     characters: '+1 Voz',
     tokens: '50K tokens',
-    tokensDesc: 'Para clonar y reutilizar',
+    estimate: '50 min – 1.5 h',
+    tokensDesc: 'Impulsa voces premium y personajes IA. Optimiza con filtros y multiplica el rendimiento hasta 15x.',
     description: 'Un personaje clonado para tu stream',
     gradient: 'from-cyan-500 to-blue-500',
     buttonColor: 'bg-cyan-600 hover:bg-cyan-700'
@@ -42,7 +43,8 @@ const getAddOns = (t) => [
     price: 24.99,
     characters: '+3 Voces',
     tokens: '250K tokens',
-    tokensDesc: 'Para clonar y reutilizar',
+    estimate: '4 – 7 h',
+    tokensDesc: 'Impulsa voces premium y personajes IA. Optimiza con filtros y multiplica el rendimiento hasta 15x.',
     description: 'Tres personajes clonados para tu elenco',
     gradient: 'from-pink-500 to-rose-500',
     buttonColor: 'bg-pink-600 hover:bg-pink-700',
@@ -54,7 +56,8 @@ const getAddOns = (t) => [
     price: 49.99,
     characters: '+6 Voces',
     tokens: '500K tokens',
-    tokensDesc: 'Para clonar y reutilizar',
+    estimate: '8 – 14 h',
+    tokensDesc: 'Impulsa voces premium y personajes IA. Optimiza con filtros y multiplica el rendimiento hasta 15x.',
     description: 'Seis personajes clonados para tu universo',
     gradient: 'from-orange-500 to-red-500',
     buttonColor: 'bg-orange-600 hover:bg-orange-700'
@@ -195,7 +198,6 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
               )}
 
               <div className={`flex flex-col h-full ${addon.popular ? 'mt-3' : ''}`}>
-                {/* Icon + Title */}
                 <div className="mb-1">
                   <div className={`text-5xl ${!addon.popular ? 'group-hover:scale-110' : ''} transition-transform duration-300`}>
                     {addon.icon}
@@ -208,7 +210,6 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   {addon.description}
                 </p>
 
-                {/* Price - más grande */}
                 <div className="mb-4">
                   <div className="flex items-baseline gap-1">
                     <div className={`text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${addon.gradient}`}>
@@ -221,7 +222,6 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   </p>
                 </div>
 
-                {/* Voces/Personajes - destacado */}
                 <div className={`rounded-xl px-4 py-3 mb-4 bg-gradient-to-r ${addon.gradient} text-white`}>
                   <div className="text-xs font-semibold opacity-90">VOCES PARA CLONAR</div>
                   <div className="text-2xl font-black mt-1">
@@ -229,11 +229,13 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   </div>
                 </div>
 
-                {/* Tokens - destacado */}
                 <div className={`rounded-xl px-4 py-3 mb-5 ${darkMode ? 'bg-gray-700/50 border border-gray-600' : 'bg-gray-100 border border-gray-300'}`}>
                   <div className={`text-xs font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>TOKENS INCLUIDOS</div>
                   <div className={`text-2xl font-black mt-1 text-transparent bg-clip-text bg-gradient-to-r ${addon.gradient}`}>
                     {addon.tokens}
+                  </div>
+                  <div className={`text-xs mt-1 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    {addon.estimate}
                   </div>
                   <div className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                     {addon.tokensDesc}
@@ -251,6 +253,10 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
           ))}
 
         </div>
+
+        <p className={`mt-5 text-xs text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          Los tiempos mostrados son estimaciones bajo condiciones promedio de uso. Y mejorara si usas las herramientas que te damos.
+        </p>
       </div>
     </div>
   )

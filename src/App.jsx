@@ -1032,40 +1032,43 @@ export function App() {
 
     const normalizedPlanName = String(plan.name || '').trim().toLowerCase()
     const planAliases = {
-      start: 'start',
-      creator: 'creator',
-      pro: 'pro',
-      'plan base': 'start',
-      base: 'start',
-      'pack lite': 'creator',
-      lite: 'creator',
-      'pack pro': 'pro',
-      'pack max': 'pro',
-      max: 'pro',
+      start: 'base',
+      creator: 'pack_lite',
+      pro: 'pack_pro',
+      elite: 'pack_max',
+      'plan base': 'base',
+      base: 'base',
+      'pack lite': 'pack_lite',
+      lite: 'pack_lite',
+      'pack pro': 'pack_pro',
+      'pack max': 'pack_max',
+      max: 'pack_max',
     }
     const requestedPlanId = String(meta.planId || plan.planId || planAliases[normalizedPlanName] || '')
       .trim()
       .toLowerCase()
 
-    const allowedPlanIds = new Set(['start', 'creator', 'pro'])
+    const allowedPlanIds = new Set(['base', 'pack_lite', 'pack_pro', 'pack_max'])
     if (!allowedPlanIds.has(requestedPlanId)) {
       alert('Este plan todavia no esta disponible para checkout. Elige otro por ahora.')
       return
     }
 
     const planPrice = Number(plan.price)
-    const inferredAnnualPrices = new Set([59, 109, 149])
+    const inferredAnnualPrices = new Set([99, 249, 499])
     const inferredBillingCycle = inferredAnnualPrices.has(planPrice) ? 'annual' : 'monthly'
     const billingCycle = meta.billingCycle || inferredBillingCycle
     const recommendedPackagesByPlan = {
-      start: 150000,
-      creator: 350000,
-      pro: 700000,
+      base: 150000,
+      pack_lite: 350000,
+      pack_pro: 700000,
+      pack_max: 700000,
     }
     const checkoutPriceByPlan = {
-      start: 6.99,
-      creator: 12.99,
-      pro: 17.99,
+      base: 9.99,
+      pack_lite: 9.99,
+      pack_pro: 24.99,
+      pack_max: 49.99,
     }
 
     setSelectedPaymentPackage(recommendedPackagesByPlan[requestedPlanId] || 350000)
@@ -1078,6 +1081,34 @@ export function App() {
     })
     setIsPaymentOpen(true)
   }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const buyRaw = String(params.get('buy') || '').trim().toLowerCase()
+    if (!buyRaw) return
+
+    const buyToPlan = {
+      base: { name: 'PLAN BASE', price: 9.99, planId: 'base' },
+      pack_lite: { name: 'PACK LITE', price: 9.99, planId: 'pack_lite' },
+      lite: { name: 'PACK LITE', price: 9.99, planId: 'pack_lite' },
+      pack_pro: { name: 'PACK PRO', price: 24.99, planId: 'pack_pro' },
+      pro: { name: 'PACK PRO', price: 24.99, planId: 'pack_pro' },
+      pack_max: { name: 'PACK MAX', price: 49.99, planId: 'pack_max' },
+      max: { name: 'PACK MAX', price: 49.99, planId: 'pack_max' },
+    }
+
+    const selected = buyToPlan[buyRaw]
+    if (!selected) return
+    setCurrentPage('landing')
+    handlePlanAction(
+      { name: selected.name, price: selected.price, planId: selected.planId },
+      { planId: selected.planId, billingCycle: 'monthly' }
+    )
+    try {
+      const cleanUrl = window.location.pathname + (window.location.hash || '')
+      window.history.replaceState({}, document.title, cleanUrl)
+    } catch {}
+  }, [])
 
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -1601,7 +1632,7 @@ export function App() {
             ))}
           </div>
 
-          <div className="mt-32 mb-0">
+          <div className="mt-14 md:mt-20 mb-0">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
               {t('landing.metrics', { returnObjects: true }).map((item) => (
                 <div
@@ -1624,7 +1655,7 @@ export function App() {
       </section>
 
       {/* Testimonials Section - Horizontal Scroll */}
-      <section className={`py-20 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <section className={`pt-10 pb-20 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h3 className={`text-4xl font-black mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -1708,16 +1739,33 @@ export function App() {
             <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{t('landing.faq.subtitle')}</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {faqItems.map((faq, idx) => (
-              <div key={idx} className={`p-6 rounded-lg border-l-4 ${darkMode ? 'bg-gray-800/50 border-cyan-500' : 'bg-gray-50 border-cyan-400'}`}>
-                <h4 className={`text-lg font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {faq.icon} {faq.q}
-                </h4>
-                <p className={`text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              <article
+                key={idx}
+                className={`group relative overflow-hidden rounded-2xl border p-5 sm:p-6 transition-all duration-300 hover:-translate-y-0.5 ${
+                  darkMode
+                    ? 'bg-gradient-to-br from-[#0d1428] via-[#101a31] to-[#0b1325] border-cyan-400/25 hover:border-cyan-300/50 hover:shadow-[0_12px_35px_rgba(34,211,238,0.18)]'
+                    : 'bg-gradient-to-br from-white via-cyan-50/45 to-indigo-50/45 border-cyan-200 hover:border-cyan-400 hover:shadow-[0_12px_30px_rgba(6,182,212,0.16)]'
+                }`}
+              >
+                <span className={`absolute left-0 top-0 h-full w-1.5 ${
+                  darkMode ? 'bg-gradient-to-b from-cyan-300 to-blue-500' : 'bg-gradient-to-b from-cyan-400 to-blue-500'
+                }`} />
+                <div className="flex items-start gap-3">
+                  <span className={`inline-flex items-center justify-center min-w-7 h-7 px-2 rounded-full text-[11px] font-black tracking-wide ${
+                    darkMode ? 'bg-cyan-400/15 text-cyan-200 border border-cyan-300/30' : 'bg-cyan-100 text-cyan-700 border border-cyan-300'
+                  }`}>
+                    {idx + 1}
+                  </span>
+                  <h4 className={`text-lg font-extrabold leading-snug ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {faq.q}
+                  </h4>
+                </div>
+                <p className={`mt-3 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   {faq.a}
                 </p>
-              </div>
+              </article>
             ))}
           </div>
 

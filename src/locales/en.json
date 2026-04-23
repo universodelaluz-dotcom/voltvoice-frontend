@@ -841,7 +841,7 @@
     "upgrade": {
       "title": "Upgrade your plan",
       "workshopAccess": "Voice Workshop access available",
-      "fromStart": "from START plan",
+      "fromStart": "with Pack Lite, Pack Pro or Pack Max",
       "viewPlans": "View Plans"
     }
   },
@@ -1327,3 +1327,4 @@
     "rafaelPremium": "Leonel natural voice - Premium"
   }
 }
+

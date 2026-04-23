@@ -2764,19 +2764,18 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
   // Autopilot deshabilitado: el interactuador solo se invoca manualmente (F8).
   const missingAssistantSetup = !selectedCharacterId || !selectedRealtimeVoiceId
 
-  // Feature access control: Only PRO users can use the assistant
+  // Feature access control: Assistant available only in pack tiers
   // Get actual plan, preferring subscription.backendPlan if available
   const getActualPlan = (userObj) => {
-    const mainPlan = String(userObj?.plan || 'free').toLowerCase()
+    const mainPlan = String(userObj?.plan || '').toLowerCase()
     const backendPlan = String(userObj?.subscription?.backendPlan || '').toLowerCase()
-    if (mainPlan === 'free' && backendPlan && backendPlan !== 'free') {
-      return backendPlan
-    }
-    return mainPlan
+    const subscriptionPlan = String(userObj?.subscription?.plan || '').toLowerCase()
+    const candidates = [backendPlan, subscriptionPlan, mainPlan].filter(Boolean)
+    return candidates.find((plan) => plan !== 'free') || candidates[0] || 'free'
   }
   const userPlan = getActualPlan(user)
-  const isPROUser = ['pro', 'premium', 'elite', 'admin', 'on_demand', 'pack_pro', 'pack_lite', 'pack_max'].includes(userPlan)
-  const isFeatureLockedForUser = !isPROUser
+  const hasAssistantAccess = ['admin', 'pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
+  const isFeatureLockedForUser = !hasAssistantAccess
 
   return (
     <div className={`relative rounded-lg border p-4 space-y-3 ${
@@ -2797,7 +2796,7 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
               ? 'bg-purple-500/40 hover:bg-purple-500/70 text-purple-300'
               : 'bg-purple-300/50 hover:bg-purple-400 text-purple-600'
           }`}
-          title="Ver planes - Solo disponible en plan PRO"
+          title="Ver planes - Disponible con Pack Lite, Pack Pro o Pack Max"
         >
           <Lock className="w-4 h-4" />
         </button>
