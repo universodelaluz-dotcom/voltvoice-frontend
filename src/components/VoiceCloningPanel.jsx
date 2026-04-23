@@ -138,10 +138,6 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     loadUserVoices()
   }, [])
 
-  useEffect(() => {
-    setMaxVoicesAllowed(planMaxVoices)
-  }, [planMaxVoices])
-
   // Limpiar audio cuando cambia la voz seleccionada
   useEffect(() => {
     setTestAudioUrl(null)
@@ -190,7 +186,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         setUserVoices(data.voices || [])
         const apiMax = Number(data.maxVoices)
         const safeApiMax = Number.isFinite(apiMax) ? apiMax : planMaxVoices
-        setMaxVoicesAllowed(Math.min(safeApiMax, planMaxVoices))
+        setMaxVoicesAllowed(safeApiMax)
       }
     } catch (err) {
       console.error('[Voices] Error cargando voces:', err)
