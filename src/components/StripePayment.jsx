@@ -297,9 +297,6 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         couponId: validCoupon?.coupon?.id || undefined,
       }
 
-  const handleMercadoPago = async () => {
-    setLoading('mercadopago')
-    try {
   const requestWithLegacyFallback = async (endpoint, payload, headers) => {
     const post = (body) => fetch(endpoint, {
       method: 'POST',
@@ -328,6 +325,10 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
 
     return { res, data }
   }
+
+  const handleMercadoPago = async () => {
+    setLoading('mercadopago')
+    try {
       const headers = getAuthHeaders()
       if (!headers) {
         alert(t('payment.loginRequired'))

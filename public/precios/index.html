@@ -204,9 +204,13 @@
       color: #fff; background: linear-gradient(90deg, #ec4899, #f43f5e);
       padding: 4px 14px; border-radius: 999px;
     }
-    .pack-name { font-size: 1.65rem; font-weight: 900; margin-bottom: 10px; }
-    .pack-price { font-size: 2.2rem; font-weight: 900; margin: 8px 0 10px; }
-    .pack-price span { font-size: 1.08rem; font-weight: 600; color: var(--muted); }
+    .pack-name { font-size: 1.9rem; font-weight: 900; margin-bottom: 12px; line-height: 1.05; }
+    .pack-price { font-size: 3.6rem; font-weight: 900; margin: 12px 0 16px; letter-spacing: -.9px; line-height: .95; }
+    .pack-price span { font-size: inherit; font-weight: inherit; color: inherit; letter-spacing: inherit; }
+    .pack-price span:last-child { font-size: 1.24rem; font-weight: 800; color: #dbeafe; letter-spacing: 0; margin-left: 8px; }
+    #pack-lite-price { color: #30d8ff; text-shadow: 0 8px 24px rgba(48, 216, 255, .28); }
+    #pack-pro-price { color: #ff5ca9; text-shadow: 0 8px 24px rgba(255, 92, 169, .28); }
+    #pack-max-price { color: #ff8a3d; text-shadow: 0 8px 24px rgba(255, 138, 61, .28); }
     .pack-voices {
       border-radius: 10px; padding: 13px 15px; margin: 16px 0 14px;
       font-weight: 900; font-size: 1.22rem; color: #fff;
@@ -218,23 +222,23 @@
     }
     .pack-tokens strong { display: block; font-size: 1.36rem; }
     .pack-tokens small { font-size: .95rem; color: var(--muted); }
-    .pack-desc { font-size: 1.08rem; line-height: 1.65; color: var(--muted); margin-bottom: 10px; min-height: 0; }
+    .pack-desc { font-size: 1.12rem; line-height: 1.7; color: #b8c4d8; margin-bottom: 12px; min-height: 0; }
     .monthly-bundle-switch {
       display: inline-flex;
       gap: 6px;
       margin: 16px 0 20px;
-      padding: 6px;
-      border-radius: 12px;
+      padding: 8px;
+      border-radius: 14px;
       border: 1px solid #334155;
       background: #0f172a;
     }
     .pack .cta-btn { margin-top: auto; padding-top: 14px; padding-bottom: 14px; }
     .monthly-bundle-switch button {
       border: 0;
-      border-radius: 9px;
-      padding: 10px 18px;
-      min-height: 44px;
-      font-size: .94rem;
+      border-radius: 11px;
+      padding: 12px 22px;
+      min-height: 54px;
+      font-size: 1.12rem;
       font-weight: 900;
       color: #cbd5e1;
       background: transparent;
@@ -249,11 +253,19 @@
 
     /* Comparison */
     .comparison {
-      width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 14px;
-      border: 1px solid var(--line); background: #0f172a;
+      width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 16px;
+      border: 1px solid #2b3f64; background: linear-gradient(180deg, #0f1a31, #0c152a);
+      box-shadow: 0 16px 34px rgba(2, 6, 23, .34);
     }
-    .comparison th, .comparison td { padding: 12px 10px; border-bottom: 1px solid #1d2a44; text-align: left; font-size: .93rem; }
-    .comparison th { background: #101c34; color: #c7d2fe; font-weight: 800; }
+    .comparison th, .comparison td { padding: 14px 12px; border-bottom: 1px solid #203252; text-align: left; font-size: 1rem; }
+    .comparison th { background: linear-gradient(180deg, #102342, #0f1f3a); color: #dbeafe; font-weight: 900; font-size: 1.08rem; }
+    .comparison tbody tr:nth-child(even) td { background: rgba(18, 34, 60, .25); }
+    .comparison tbody tr:first-child td:not(:first-child) { font-size: 1.55rem; font-weight: 900; letter-spacing: -.4px; }
+    .comparison tbody tr:first-child td:nth-child(2) { color: #33d4ff; }
+    .comparison tbody tr:first-child td:nth-child(3) { color: #33d4ff; }
+    .comparison tbody tr:first-child td:nth-child(4) { color: #ff5ca9; }
+    .comparison tbody tr:first-child td:nth-child(5) { color: #ff8a3d; }
+    .comparison tbody tr:last-child td { font-weight: 700; }
     .comparison tr:last-child td { border-bottom: none; }
     .note {
       margin-top: 18px; border: 1px dashed #355582; border-radius: 14px; padding: 14px;
@@ -302,8 +314,12 @@
       .page-cycle button { min-width: 0; flex: 1; font-size: .92rem; padding: 10px 12px; min-height: 44px; }
       .base-plan { padding: 22px; }
       .pack { padding: 22px; min-height: 0; }
-      .pack-name { font-size: 1.45rem; }
-      .pack-price { font-size: 1.95rem; }
+      .pack-name { font-size: 1.6rem; }
+      .pack-price { font-size: 2.55rem; }
+      .pack-price span:last-child { font-size: 1.02rem; }
+      .monthly-bundle-switch button { min-height: 48px; font-size: 1rem; padding: 10px 16px; }
+      .comparison th, .comparison td { font-size: .92rem; padding: 10px 8px; }
+      .comparison tbody tr:first-child td:not(:first-child) { font-size: 1.22rem; }
     }
 
     @keyframes glowPulse {
@@ -459,7 +475,13 @@
         <tr><td>Voces premium</td><td>2</td><td>2</td><td>2</td><td>2</td></tr>
         <tr><td>Voces clonadas por IA</td><td>-</td><td>+1</td><td>+3</td><td>+6</td></tr>
         <tr><td>Tokens totales</td><td id="cmp-tokens-base">20K</td><td id="cmp-tokens-lite">50K</td><td id="cmp-tokens-pro">250K</td><td id="cmp-tokens-max">500K</td></tr>
-        <tr><td>Filtros y funciones IA</td><td>Completo</td><td>Completo</td><td>Completo</td><td>Completo</td></tr>
+        <tr>
+          <td id="cmp-features-label">Funciones y herramientas</td>
+          <td id="cmp-features-base">Solo Funciones avanzadas</td>
+          <td id="cmp-features-lite">Funciones avanzadas + IA</td>
+          <td id="cmp-features-pro">Funciones avanzadas + IA</td>
+          <td id="cmp-features-max">Funciones avanzadas + IA</td>
+        </tr>
       </tbody>
     </table>
 
@@ -544,9 +566,9 @@
       const PAGE_PLAN_DETAILS = {
         monthly: {
           base: { name: 'PLAN BASE', price: '$9.99', period: 'USD / mes', desc: 'El plan perfecto para empezar a streamear con IA', tokens: '20,000 caracteres / mes incluidos', cta: 'Comprar Plan Base' },
-          pack_lite: { name: 'PACK LITE', price: '$9.99', period: 'USD', desc: 'Un personaje clonado para tu stream', cta: '? Agregar Pack Lite' },
+          pack_lite: { name: 'PACK LITE', price: '$9.99', period: 'USD', desc: 'Un personaje clonado para tu stream', cta: '\u26A1 Agregar Pack Lite' },
           pack_pro: { name: 'PACK PRO', price: '$24.99', period: 'USD', desc: 'Tres personajes clonados para tu elenco', cta: 'Agregar Pack Pro' },
-          pack_max: { name: 'PACK MAX', price: '$49.99', period: 'USD', desc: 'Seis personajes clonados para tu universo', cta: '? Agregar Pack Max' },
+          pack_max: { name: 'PACK MAX', price: '$49.99', period: 'USD', desc: 'Seis personajes clonados para tu universo', cta: '\u2B50 Agregar Pack Max' },
           sectionBaseTitle: 'Plan Base - incluido en tu suscripción',
           sectionPacksTitle: 'Packs de voces clonadas - añade personajes a tu stream',
           sectionPacksDesc: 'Los packs son compras independientes que se suman a tu Plan Base. Combínalos para crear tu elenco de personajes con voz propia.',
@@ -555,13 +577,18 @@
           cmpPriceLite: '+$9.99',
           cmpPricePro: '+$24.99',
           cmpPriceMax: '+$49.99',
+          cmpFeaturesLabel: 'Funciones y herramientas',
+          cmpFeaturesBase: 'Solo Funciones avanzadas',
+          cmpFeaturesLite: 'Funciones avanzadas + IA',
+          cmpFeaturesPro: 'Funciones avanzadas + IA',
+          cmpFeaturesMax: 'Funciones avanzadas + IA',
           note: 'Nota: Los packs de voces clonadas son compras únicas que se acumulan sobre tu Plan Base mensual. Los tiempos mostrados son estimaciones bajo condiciones promedio de uso. Y mejorará si usas las herramientas que te damos. Los importes en moneda local pueden variar según tipo de cambio del día.'
         },
         annual: {
           base: { name: 'PLAN BASE ANUAL', price: '$99.90', period: 'USD / año', desc: 'Suscripción anual con 2 meses gratis', tokens: '20,000 caracteres / mes incluidos (12 meses)', cta: 'Comprar Plan Base Anual' },
-          pack_lite: { name: 'BASE + LITE', price: '$199.80', period: 'USD / año', desc: 'Suscripción anual Base + Lite (2 meses gratis)', cta: '? Suscribirme Base + Lite' },
+          pack_lite: { name: 'BASE + LITE', price: '$199.80', period: 'USD / año', desc: 'Suscripción anual Base + Lite (2 meses gratis)', cta: '\u26A1 Suscribirme Base + Lite' },
           pack_pro: { name: 'BASE + PRO', price: '$349.80', period: 'USD / año', desc: 'Suscripción anual Base + Pro (2 meses gratis)', cta: 'Suscribirme Base + Pro' },
-          pack_max: { name: 'BASE + MAX', price: '$599.80', period: 'USD / año', desc: 'Suscripción anual Base + Max (2 meses gratis)', cta: '? Suscribirme Base + Max' },
+          pack_max: { name: 'BASE + MAX', price: '$599.80', period: 'USD / año', desc: 'Suscripción anual Base + Max (2 meses gratis)', cta: '\u2B50 Suscribirme Base + Max' },
           sectionBaseTitle: 'Plan Base anual - suscripción',
           sectionPacksTitle: 'Planes anuales combinados - Base + Pack',
           sectionPacksDesc: 'En anual los packs se vuelven combos de suscripción: Base + Lite, Base + Pro o Base + Max. Incluyen 2 meses gratis.',
@@ -570,6 +597,11 @@
           cmpPriceLite: '$199.80/año',
           cmpPricePro: '$349.80/año',
           cmpPriceMax: '$599.80/año',
+          cmpFeaturesLabel: 'Funciones y herramientas',
+          cmpFeaturesBase: 'Solo Funciones avanzadas',
+          cmpFeaturesLite: 'Funciones avanzadas + IA',
+          cmpFeaturesPro: 'Funciones avanzadas + IA',
+          cmpFeaturesMax: 'Funciones avanzadas + IA',
           note: 'Nota: En anual se cobra suscripción (12 meses con promo de 2 meses gratis). Los importes en moneda local pueden variar según tipo de cambio del día.'
         }
       };
@@ -704,7 +736,7 @@
         setText('pack-lite-period', lite.period);
         setText('pack-lite-desc', liteBundleOn ? 'Compra mensual en una sola transacción: Base + Lite.' : lite.desc);
         setText('pack-lite-tokens', selectedBillingCycle === 'annual' || liteBundleOn ? '70K tokens' : '50K tokens');
-        setText('pack-lite-cta', liteBundleOn ? '? Comprar Base + Lite' : lite.cta);
+        setText('pack-lite-cta', liteBundleOn ? '\u26A1 Comprar Base + Lite' : lite.cta);
         const liteCta = document.getElementById('pack-lite-cta');
         if (liteCta) liteCta.setAttribute('data-plan-id', liteBundleOn ? MONTHLY_COMBO_MODE.pack_lite.comboPlanId : 'pack_lite');
 
@@ -722,7 +754,7 @@
         setText('pack-max-period', max.period);
         setText('pack-max-desc', maxBundleOn ? 'Compra mensual en una sola transacción: Base + Max.' : max.desc);
         setText('pack-max-tokens', selectedBillingCycle === 'annual' || maxBundleOn ? '520K tokens' : '500K tokens');
-        setText('pack-max-cta', maxBundleOn ? '? Comprar Base + Max' : max.cta);
+        setText('pack-max-cta', maxBundleOn ? '\u2B50 Comprar Base + Max' : max.cta);
         const maxCta = document.getElementById('pack-max-cta');
         if (maxCta) maxCta.setAttribute('data-plan-id', maxBundleOn ? MONTHLY_COMBO_MODE.pack_max.comboPlanId : 'pack_max');
 
@@ -734,6 +766,11 @@
         setText('cmp-tokens-lite', selectedBillingCycle === 'annual' || liteBundleOn ? '70K' : '50K');
         setText('cmp-tokens-pro', selectedBillingCycle === 'annual' || proBundleOn ? '270K' : '250K');
         setText('cmp-tokens-max', selectedBillingCycle === 'annual' || maxBundleOn ? '520K' : '500K');
+        setText('cmp-features-label', pageDetails.cmpFeaturesLabel);
+        setText('cmp-features-base', pageDetails.cmpFeaturesBase);
+        setText('cmp-features-lite', pageDetails.cmpFeaturesLite);
+        setText('cmp-features-pro', pageDetails.cmpFeaturesPro);
+        setText('cmp-features-max', pageDetails.cmpFeaturesMax);
 
         const syncBundleSwitch = (planId) => {
           const switchEl = document.getElementById(`${planId.replace('_', '-')}-switch`);
