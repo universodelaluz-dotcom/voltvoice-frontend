@@ -32,6 +32,7 @@ const LEGACY_PLAN_FALLBACKS = {
   pack_pro: ['pro'],
   pack_max: [],
 }
+const MONTHLY_PACK_PLAN_IDS = new Set(['pack_lite', 'pack_pro', 'pack_max'])
 
 export function StripePayment({ isOpen, onClose, initialPackageTokens = null, initialCheckoutItem = null }) {
   const { t } = useTranslation()
@@ -122,6 +123,17 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     }
   }
 
+  const fetchCurrentUserPlan = async (headers) => {
+    try {
+      const res = await fetch(API_URL + '/api/auth/me', { headers: { Authorization: headers.Authorization } })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data?.success) return null
+      return String(data?.user?.plan || '').toLowerCase()
+    } catch {
+      return null
+    }
+  }
+
   const validateCoupon = useCallback(async () => {
     const code = couponCode.trim()
     if (!code) {
@@ -204,12 +216,6 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
   const handleMercadoPago = async () => {
     setLoading('mercadopago')
     try {
-      if (currentItem.type === 'tokens' && isCurrentUserFreePlan()) {
-        alert('Primero debes adquirir un plan de pago para poder comprar paquetes de tokens.')
-        setLoading(null)
-        return
-      }
-
   const requestWithLegacyFallback = async (endpoint, payload, headers) => {
     const post = (body) => fetch(endpoint, {
       method: 'POST',
@@ -241,6 +247,23 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
       const headers = getAuthHeaders()
       if (!headers) {
         alert(t('payment.loginRequired'))
+        setLoading(null)
+        return
+      }
+      const backendPlan = await fetchCurrentUserPlan(headers)
+      const effectivePlan = backendPlan || (isCurrentUserFreePlan() ? 'free' : '')
+      if (currentItem.type === 'tokens' && FREE_PLANS.has(effectivePlan)) {
+        alert('Primero debes adquirir un plan de pago para poder comprar paquetes de tokens.')
+        setLoading(null)
+        return
+      }
+      if (
+        currentItem.type === 'plan' &&
+        currentItem.billingCycle === 'monthly' &&
+        MONTHLY_PACK_PLAN_IDS.has(String(currentItem.planId || '').toLowerCase()) &&
+        FREE_PLANS.has(effectivePlan)
+      ) {
+        alert('Para comprar un pack mensual primero debes activar el Plan Base.')
         setLoading(null)
         return
       }
@@ -282,13 +305,24 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
   const handlePayPal = async () => {
     setLoading('paypal')
     try {
-      if (currentItem.type === 'tokens' && isCurrentUserFreePlan()) {
-        alert('Primero debes adquirir un plan de pago para poder comprar paquetes de tokens.')
-        return
-      }
       const headers = getAuthHeaders()
       if (!headers) {
         alert(t('payment.loginRequired'))
+        return
+      }
+      const backendPlan = await fetchCurrentUserPlan(headers)
+      const effectivePlan = backendPlan || (isCurrentUserFreePlan() ? 'free' : '')
+      if (currentItem.type === 'tokens' && FREE_PLANS.has(effectivePlan)) {
+        alert('Primero debes adquirir un plan de pago para poder comprar paquetes de tokens.')
+        return
+      }
+      if (
+        currentItem.type === 'plan' &&
+        currentItem.billingCycle === 'monthly' &&
+        MONTHLY_PACK_PLAN_IDS.has(String(currentItem.planId || '').toLowerCase()) &&
+        FREE_PLANS.has(effectivePlan)
+      ) {
+        alert('Para comprar un pack mensual primero debes activar el Plan Base.')
         return
       }
 
