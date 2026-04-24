@@ -43,13 +43,12 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     const role = String(userObj?.role || '').trim().toLowerCase()
     if (role === 'admin') return 'admin'
 
-    const mainPlan = String(userObj?.plan || '').toLowerCase()
-    const backendPlan = String(userObj?.subscription?.backendPlan || '').toLowerCase()
-    const subscriptionPlan = String(userObj?.subscription?.plan || '').toLowerCase()
-    const baseCandidates = [backendPlan, subscriptionPlan, mainPlan]
-      .map((plan) => normalizePlanTier(plan))
-      .filter(Boolean)
-    const basePlan = baseCandidates.find((plan) => plan !== 'free') || baseCandidates[0] || 'free'
+    const basePlan = normalizePlanTier(String(
+      userObj?.subscription?.backendPlan ||
+      userObj?.plan ||
+      userObj?.subscription?.plan ||
+      'free'
+    ).toLowerCase())
 
     if (['pack_lite', 'pack_pro', 'pack_max', 'admin'].includes(basePlan)) {
       return basePlan

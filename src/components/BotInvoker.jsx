@@ -2794,11 +2794,12 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
     const role = String(userObj?.role || '').trim().toLowerCase()
     if (role === 'admin') return 'admin'
 
-    const backendPlan = normalizePlanTier(String(userObj?.subscription?.backendPlan || '').toLowerCase())
-    const subscriptionPlan = normalizePlanTier(String(userObj?.subscription?.plan || '').toLowerCase())
-    const mainPlan = normalizePlanTier(String(userObj?.plan || '').toLowerCase())
-    const basePlanCandidates = [backendPlan, subscriptionPlan, mainPlan].filter(Boolean)
-    const basePlan = basePlanCandidates.find((plan) => plan !== 'free') || basePlanCandidates[0] || 'free'
+    const basePlan = normalizePlanTier(String(
+      userObj?.subscription?.backendPlan ||
+      userObj?.plan ||
+      userObj?.subscription?.plan ||
+      'free'
+    ).toLowerCase())
 
     if (['pack_lite', 'pack_pro', 'pack_max'].includes(basePlan)) {
       return basePlan

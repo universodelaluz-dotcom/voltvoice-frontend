@@ -64,11 +64,12 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
   const currentPlan = (() => {
     try {
       const userData = JSON.parse(localStorage.getItem('sv-user') || '{}')
-      const mainPlan = String(userData?.plan || '').toLowerCase()
-      const backendPlan = String(userData?.subscription?.backendPlan || '').toLowerCase()
-      const subscriptionPlan = String(userData?.subscription?.plan || '').toLowerCase()
-      const candidates = [backendPlan, subscriptionPlan, mainPlan].filter(Boolean)
-      return candidates.find((plan) => plan !== 'free') || candidates[0] || 'free'
+      return String(
+        userData?.subscription?.backendPlan ||
+        userData?.plan ||
+        userData?.subscription?.plan ||
+        'free'
+      ).toLowerCase()
     } catch {
       return 'free'
     }

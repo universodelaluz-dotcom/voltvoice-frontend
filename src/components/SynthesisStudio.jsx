@@ -25,8 +25,7 @@ const getEffectiveUserPlan = (userObj = null) => {
   const role = String(userObj?.role || '').trim().toLowerCase()
   if (role === 'admin') return 'admin'
 
-  const baseCandidates = [backendPlan, subscriptionPlan, directPlan].map((plan) => normalizePlan(plan)).filter(Boolean)
-  const basePlan = baseCandidates.find((plan) => plan !== 'free') || baseCandidates[0] || 'free'
+  const basePlan = normalizePlan(backendPlan || directPlan || subscriptionPlan || 'free')
   if (['pack_lite', 'pack_pro', 'pack_max', 'admin'].includes(basePlan)) return basePlan
 
   const addonRaw = userObj?.subscription?.addonPack || null

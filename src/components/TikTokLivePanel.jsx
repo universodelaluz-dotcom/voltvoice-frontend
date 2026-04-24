@@ -494,11 +494,13 @@ const getEffectiveUserPlan = (userObj = null) => {
   const addonExpiresAtMs = addonRaw?.expiresAt ? Date.parse(addonRaw.expiresAt) : NaN
   const addonActive = Boolean(addonRaw?.active) && Number.isFinite(addonExpiresAtMs) && addonExpiresAtMs > Date.now()
   const addonPlan = addonActive ? String(addonRaw?.planKey || '').trim().toLowerCase() : ''
-  const directPlan = String(userObj?.plan || '').trim().toLowerCase()
-  const backendPlan = String(userObj?.subscription?.backendPlan || '').trim().toLowerCase()
-  const subscriptionPlan = String(userObj?.subscription?.plan || '').trim().toLowerCase()
-  const candidates = [addonPlan, backendPlan, subscriptionPlan, directPlan].filter(Boolean)
-  return candidates.find((plan) => plan !== 'free') || candidates[0] || 'free'
+  if (addonPlan) return addonPlan
+  return String(
+    userObj?.subscription?.backendPlan ||
+    userObj?.plan ||
+    userObj?.subscription?.plan ||
+    'free'
+  ).trim().toLowerCase()
 }
 
 const normalizePlanTier = (rawPlan = 'free') => {
