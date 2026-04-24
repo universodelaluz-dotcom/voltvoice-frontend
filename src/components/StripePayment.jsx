@@ -276,6 +276,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
       const preferredCheckoutUrl = data.checkoutUrl || data.sandboxUrl
 
       if (!res.ok) {
+        localStorage.removeItem(PAYMENT_PENDING_KEY)
         alert('Error MercadoPago: ' + (data.error || 'desconocido'))
         return
       }
@@ -297,6 +298,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
       }
       else alert('Error MercadoPago: ' + (data.error || 'desconocido'))
     } catch (e) {
+      localStorage.removeItem(PAYMENT_PENDING_KEY)
       alert('Error: ' + e.message)
     } finally {
       setLoading(null)
@@ -333,6 +335,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         headers
       )
       if (!res.ok) {
+        localStorage.removeItem(PAYMENT_PENDING_KEY)
         alert('Error PayPal: ' + (data.error || 'desconocido'))
         return
       }
@@ -354,6 +357,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         alert('Error PayPal: ' + (data.error || 'desconocido'))
       }
     } catch (e) {
+      localStorage.removeItem(PAYMENT_PENDING_KEY)
       alert('Error: ' + e.message)
     } finally {
       setLoading(null)

@@ -1233,17 +1233,8 @@ export function App() {
     }
 
     const callbackState = sessionStorage.getItem(callbackKey)
-    if (callbackState === 'done') {
-      localStorage.removeItem(PAYMENT_PENDING_KEY)
-      cleanPaymentQuery()
-      setCurrentPage('studio')
-      setPaymentNotice({
-        title: 'Pago acreditado',
-        message: 'Tu compra se proceso correctamente. Ya estas en Studio con tus beneficios activos. Este mensaje se cerrara solo.',
-        status: 'success'
-      })
-      return
-    }
+    // Nunca confiar en "done" cacheado para mostrar exito: siempre revalidar estado real.
+    if (callbackState === 'done') sessionStorage.removeItem(callbackKey)
     if (callbackState === 'inflight') return
     setCurrentPage('studio')
     setPaymentNotice({
@@ -1297,12 +1288,14 @@ export function App() {
             refreshedPlan !== previousPlan
           )
         )
-        if (paymentSeemsApplied) {
+        if (paymentSeemsApplied || isScheduledAction) {
           sessionStorage.setItem(callbackKey, 'done')
           localStorage.removeItem(PAYMENT_PENDING_KEY)
           setPaymentNotice({
             title: '✓ Pago Realizado',
-            message: `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
+            message: isScheduledAction
+              ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
+              : `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
             status: 'success'
           })
           return
@@ -1405,11 +1398,13 @@ export function App() {
             refreshedPlan !== previousPlan
           )
         )
-        if (paymentSeemsApplied) {
+        if (paymentSeemsApplied || isScheduledAction) {
           localStorage.removeItem(PAYMENT_PENDING_KEY)
           setPaymentNotice({
             title: '✓ Pago Realizado',
-            message: `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
+            message: isScheduledAction
+              ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
+              : `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
             status: 'success'
           })
           return
