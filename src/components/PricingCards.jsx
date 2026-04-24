@@ -105,6 +105,11 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
   const isAnnual = billingCycle === 'annual'
   const basePrice = isAnnual ? 99.90 : basePlan.price
   const baseLabel = isAnnual ? 'PLAN BASE ANUAL' : 'PLAN BASE'
+  const [bundleWithBaseByPlan, setBundleWithBaseByPlan] = useState({
+    pack_lite: true,
+    pack_pro: true,
+    pack_max: true,
+  })
 
   return (
     <div className="py-4">
@@ -232,22 +237,66 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   </div>
                 </div>
                 <h3 className={`text-xl font-black mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {isAnnual ? `BASE + ${addon.name.replace('PACK ', '')}` : addon.name}
+                  {isAnnual
+                    ? `BASE + ${addon.name.replace('PACK ', '')}`
+                    : (bundleWithBaseByPlan[addon.planId]
+                      ? `BASE + ${addon.name.replace('PACK ', '')}`
+                      : addon.name)}
                 </h3>
                 <p className={`text-xs mb-4 leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {isAnnual ? `${addon.description} en suscripción anual.` : addon.description}
+                  {isAnnual
+                    ? `${addon.description} en suscripción anual.`
+                    : (bundleWithBaseByPlan[addon.planId]
+                      ? `${addon.description}. Compra mensual en una sola transacción: Base + Pack.`
+                      : addon.description)}
                 </p>
 
+                {!isAnnual && (
+                  <div className={`mb-3 rounded-lg p-1 border ${darkMode ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className="grid grid-cols-2 gap-1 text-[11px] font-black">
+                      <button
+                        type="button"
+                        onClick={() => setBundleWithBaseByPlan((prev) => ({ ...prev, [addon.planId]: false }))}
+                        className={`rounded-md px-2 py-1.5 ${!bundleWithBaseByPlan[addon.planId] ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                      >
+                        Solo pack
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBundleWithBaseByPlan((prev) => ({ ...prev, [addon.planId]: true }))}
+                        className={`rounded-md px-2 py-1.5 ${bundleWithBaseByPlan[addon.planId] ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                      >
+                        Base + Pack
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-4">
+                  {(() => {
+                    const monthlyCombo = addon.price + basePlan.price
+                    const activePrice = isAnnual
+                      ? addon.annualPrice
+                      : (bundleWithBaseByPlan[addon.planId] ? monthlyCombo : addon.price)
+                    return (
+                      <>
                   <div className="flex items-baseline gap-1">
                     <div className={`text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${addon.gradient}`}>
-                      ${(isAnnual ? addon.annualPrice : addon.price).toFixed(2)}
+                          ${activePrice.toFixed(2)}
                     </div>
                     <span className={`text-sm font-bold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>USD</span>
                   </div>
                   <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                    ≈ {formatMxnApprox(isAnnual ? addon.annualPrice : addon.price)} MXN
+                          ≈ {formatMxnApprox(activePrice)} MXN
                   </p>
+                        {!isAnnual && bundleWithBaseByPlan[addon.planId] && (
+                          <p className={`text-[11px] mt-1 font-semibold ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>
+                            1 transacción mensual: Base + Pack
+                          </p>
+                        )}
+                      </>
+                    )
+                  })()}
                   {isAnnual && (
                     <p className={`text-[11px] mt-1 font-semibold ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>
                       Incluye 2 meses gratis
@@ -276,13 +325,25 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                 </div>
 
                 <button
-                  onClick={() => onPlanAction?.(
-                    { ...addon, name: isAnnual ? `BASE + ${addon.name.replace('PACK ', '')}` : addon.name, price: isAnnual ? addon.annualPrice : addon.price, planId: addon.planId },
-                    { billingCycle, isAddOn: true, planId: addon.planId }
-                  )}
+                  onClick={() => {
+                    const isMonthlyBundle = !isAnnual && Boolean(bundleWithBaseByPlan[addon.planId])
+                    const monthlyBundlePrice = addon.price + basePlan.price
+                    const planIdForCheckout = isMonthlyBundle ? `${addon.planId}_combo` : addon.planId
+                    const nameForCheckout = isAnnual || isMonthlyBundle
+                      ? `BASE + ${addon.name.replace('PACK ', '')}`
+                      : addon.name
+                    const priceForCheckout = isAnnual
+                      ? addon.annualPrice
+                      : (isMonthlyBundle ? monthlyBundlePrice : addon.price)
+
+                    onPlanAction?.(
+                      { ...addon, name: nameForCheckout, price: priceForCheckout, planId: planIdForCheckout },
+                      { billingCycle, isAddOn: true, planId: planIdForCheckout }
+                    )
+                  }}
                   className={`w-full py-3 rounded-xl font-black text-sm text-white transition-all ${addon.buttonColor} shadow-lg hover:shadow-xl mt-auto`}
                 >
-                  ✨ {isAnnual ? 'ELEGIR ANUAL' : 'AGREGAR'}
+                  ✨ {isAnnual ? 'ELEGIR ANUAL' : (bundleWithBaseByPlan[addon.planId] ? 'COMPRAR BASE + PACK' : 'AGREGAR')}
                 </button>
               </div>
             </div>

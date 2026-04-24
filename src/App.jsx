@@ -1062,7 +1062,15 @@ export function App() {
       .trim()
       .toLowerCase()
 
-    const allowedPlanIds = new Set(['base', 'pack_lite', 'pack_pro', 'pack_max'])
+    const allowedPlanIds = new Set([
+      'base',
+      'pack_lite',
+      'pack_pro',
+      'pack_max',
+      'pack_lite_combo',
+      'pack_pro_combo',
+      'pack_max_combo',
+    ])
     if (!allowedPlanIds.has(requestedPlanId)) {
       alert('Este plan todavia no esta disponible para checkout. Elige otro por ahora.')
       return
@@ -1077,6 +1085,9 @@ export function App() {
       pack_lite: 350000,
       pack_pro: 700000,
       pack_max: 700000,
+      pack_lite_combo: 350000,
+      pack_pro_combo: 700000,
+      pack_max_combo: 700000,
     }
     const checkoutPriceByPlan = {
       monthly: {
@@ -1084,6 +1095,9 @@ export function App() {
         pack_lite: 9.99,
         pack_pro: 24.99,
         pack_max: 49.99,
+        pack_lite_combo: 19.98,
+        pack_pro_combo: 34.98,
+        pack_max_combo: 59.98,
       },
       annual: {
         base: 99.90,

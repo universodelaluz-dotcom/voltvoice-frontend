@@ -204,6 +204,29 @@
     .pack-tokens strong { display: block; font-size: 1.1rem; }
     .pack-tokens small { font-size: .8rem; color: var(--muted); }
     .pack-desc { font-size: .88rem; color: var(--muted); margin-bottom: 4px; }
+    .monthly-bundle-switch {
+      display: inline-flex;
+      gap: 4px;
+      margin: 6px 0 10px;
+      padding: 3px;
+      border-radius: 999px;
+      border: 1px solid #334155;
+      background: #0f172a;
+    }
+    .monthly-bundle-switch button {
+      border: 0;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: .68rem;
+      font-weight: 900;
+      color: #cbd5e1;
+      background: transparent;
+      cursor: pointer;
+    }
+    .monthly-bundle-switch button.active {
+      color: #ecfeff;
+      background: linear-gradient(90deg, #0ea5e9, #2563eb);
+    }
 
     /* Comparison */
     .comparison {
@@ -312,6 +335,10 @@
         <div id="pack-lite-name" class="pack-name">PACK LITE</div>
         <p id="pack-lite-desc" class="pack-desc">Un personaje clonado para tu stream</p>
         <div class="pack-price"><span id="pack-lite-price">$9.99</span> <span id="pack-lite-period">USD</span></div>
+        <div id="pack-lite-switch" class="monthly-bundle-switch">
+          <button type="button" data-plan="pack_lite" data-mode="pack">Solo pack</button>
+          <button type="button" data-plan="pack_lite" data-mode="bundle">Base + Pack</button>
+        </div>
         <div class="pack-voices" style="background:linear-gradient(90deg,#06b6d4,#3b82f6);">
           +1 Voz clonada
           <small>Para usar voces premium y tus personajes</small>
@@ -331,6 +358,10 @@
         <div id="pack-pro-name" class="pack-name">PACK PRO</div>
         <p id="pack-pro-desc" class="pack-desc">Tres personajes clonados para tu elenco</p>
         <div class="pack-price"><span id="pack-pro-price">$24.99</span> <span id="pack-pro-period">USD</span></div>
+        <div id="pack-pro-switch" class="monthly-bundle-switch">
+          <button type="button" data-plan="pack_pro" data-mode="pack">Solo pack</button>
+          <button type="button" data-plan="pack_pro" data-mode="bundle">Base + Pack</button>
+        </div>
         <div class="pack-voices" style="background:linear-gradient(90deg,#ec4899,#f43f5e);">
           +3 Voces clonadas
           <small>Para usar voces premium y tus personajes</small>
@@ -349,6 +380,10 @@
         <div id="pack-max-name" class="pack-name">PACK MAX</div>
         <p id="pack-max-desc" class="pack-desc">Seis personajes clonados para tu universo</p>
         <div class="pack-price"><span id="pack-max-price">$49.99</span> <span id="pack-max-period">USD</span></div>
+        <div id="pack-max-switch" class="monthly-bundle-switch">
+          <button type="button" data-plan="pack_max" data-mode="pack">Solo pack</button>
+          <button type="button" data-plan="pack_max" data-mode="bundle">Base + Pack</button>
+        </div>
         <div class="pack-voices" style="background:linear-gradient(90deg,#f97316,#ef4444);">
           +6 Voces clonadas
           <small>Para usar voces premium y tus personajes</small>
@@ -436,13 +471,24 @@
         pack_lite: 'PACK LITE',
         pack_pro: 'PACK PRO',
         pack_max: 'PACK MAX',
+        pack_lite_combo: 'BASE + LITE',
+        pack_pro_combo: 'BASE + PRO',
+        pack_max_combo: 'BASE + MAX',
+      };
+      const MONTHLY_COMBO_MODE = {
+        pack_lite: { mode: 'bundle', comboPlanId: 'pack_lite_combo', comboPrice: 19.98, comboTitle: 'BASE + LITE Mensual (1 transacción)', comboMxn: 'Aprox. $346 MXN' },
+        pack_pro: { mode: 'bundle', comboPlanId: 'pack_pro_combo', comboPrice: 34.98, comboTitle: 'BASE + PRO Mensual (1 transacción)', comboMxn: 'Aprox. $605 MXN' },
+        pack_max: { mode: 'bundle', comboPlanId: 'pack_max_combo', comboPrice: 59.98, comboTitle: 'BASE + MAX Mensual (1 transacción)', comboMxn: 'Aprox. $1,038 MXN' },
       };
       const PLAN_MODAL_DETAILS = {
         monthly: {
           base: { title: 'PLAN BASE Mensual', price: '$9.99 USD - facturacion mensual', mxn: 'Aprox. $173 MXN' },
           pack_lite: { title: 'PACK LITE Mensual', price: '$9.99 USD - facturacion mensual', mxn: 'Aprox. $173 MXN' },
           pack_pro: { title: 'PACK PRO Mensual', price: '$24.99 USD - facturacion mensual', mxn: 'Aprox. $432 MXN' },
-          pack_max: { title: 'PACK MAX Mensual', price: '$49.99 USD - facturacion mensual', mxn: 'Aprox. $864 MXN' }
+          pack_max: { title: 'PACK MAX Mensual', price: '$49.99 USD - facturacion mensual', mxn: 'Aprox. $864 MXN' },
+          pack_lite_combo: { title: 'BASE + LITE Mensual (1 transacción)', price: '$19.98 USD - facturacion mensual', mxn: 'Aprox. $346 MXN' },
+          pack_pro_combo: { title: 'BASE + PRO Mensual (1 transacción)', price: '$34.98 USD - facturacion mensual', mxn: 'Aprox. $605 MXN' },
+          pack_max_combo: { title: 'BASE + MAX Mensual (1 transacción)', price: '$59.98 USD - facturacion mensual', mxn: 'Aprox. $1,038 MXN' }
         },
         annual: {
           base: { title: 'PLAN BASE Anual', price: '$99.90 USD - suscripcion anual (2 meses gratis)', mxn: 'Aprox. $1,730 MXN' },
@@ -574,6 +620,11 @@
       let selectedButton = null;
       let selectedBillingCycle = 'monthly';
       const cardCycleButtons = Array.from(document.querySelectorAll('.card-cycle-toggle'));
+      const monthlyBundleModeByPack = {
+        pack_lite: MONTHLY_COMBO_MODE.pack_lite.mode,
+        pack_pro: MONTHLY_COMBO_MODE.pack_pro.mode,
+        pack_max: MONTHLY_COMBO_MODE.pack_max.mode,
+      };
 
       const setText = (id, text) => {
         const node = document.getElementById(id);
@@ -586,6 +637,9 @@
         const lite = pageDetails.pack_lite;
         const pro = pageDetails.pack_pro;
         const max = pageDetails.pack_max;
+        const liteBundleOn = selectedBillingCycle === 'monthly' && monthlyBundleModeByPack.pack_lite === 'bundle';
+        const proBundleOn = selectedBillingCycle === 'monthly' && monthlyBundleModeByPack.pack_pro === 'bundle';
+        const maxBundleOn = selectedBillingCycle === 'monthly' && monthlyBundleModeByPack.pack_max === 'bundle';
 
         setText('section-base-title', pageDetails.sectionBaseTitle);
         setText('section-packs-title', pageDetails.sectionPacksTitle);
@@ -600,28 +654,47 @@
         setText('base-plan-tokens', base.tokens);
         setText('base-plan-cta', base.cta);
 
-        setText('pack-lite-name', lite.name);
-        setText('pack-lite-price', lite.price);
+        setText('pack-lite-name', liteBundleOn ? 'BASE + LITE' : lite.name);
+        setText('pack-lite-price', liteBundleOn ? `$${MONTHLY_COMBO_MODE.pack_lite.comboPrice.toFixed(2)}` : lite.price);
         setText('pack-lite-period', lite.period);
-        setText('pack-lite-desc', lite.desc);
-        setText('pack-lite-cta', lite.cta);
+        setText('pack-lite-desc', liteBundleOn ? 'Compra mensual en una sola transacción: Base + Lite.' : lite.desc);
+        setText('pack-lite-cta', liteBundleOn ? '⚡ Comprar Base + Lite' : lite.cta);
+        const liteCta = document.getElementById('pack-lite-cta');
+        if (liteCta) liteCta.setAttribute('data-plan-id', liteBundleOn ? MONTHLY_COMBO_MODE.pack_lite.comboPlanId : 'pack_lite');
 
-        setText('pack-pro-name', pro.name);
-        setText('pack-pro-price', pro.price);
+        setText('pack-pro-name', proBundleOn ? 'BASE + PRO' : pro.name);
+        setText('pack-pro-price', proBundleOn ? `$${MONTHLY_COMBO_MODE.pack_pro.comboPrice.toFixed(2)}` : pro.price);
         setText('pack-pro-period', pro.period);
-        setText('pack-pro-desc', pro.desc);
-        setText('pack-pro-cta', pro.cta);
+        setText('pack-pro-desc', proBundleOn ? 'Compra mensual en una sola transacción: Base + Pro.' : pro.desc);
+        setText('pack-pro-cta', proBundleOn ? '🔥 Comprar Base + Pro' : pro.cta);
+        const proCta = document.getElementById('pack-pro-cta');
+        if (proCta) proCta.setAttribute('data-plan-id', proBundleOn ? MONTHLY_COMBO_MODE.pack_pro.comboPlanId : 'pack_pro');
 
-        setText('pack-max-name', max.name);
-        setText('pack-max-price', max.price);
+        setText('pack-max-name', maxBundleOn ? 'BASE + MAX' : max.name);
+        setText('pack-max-price', maxBundleOn ? `$${MONTHLY_COMBO_MODE.pack_max.comboPrice.toFixed(2)}` : max.price);
         setText('pack-max-period', max.period);
-        setText('pack-max-desc', max.desc);
-        setText('pack-max-cta', max.cta);
+        setText('pack-max-desc', maxBundleOn ? 'Compra mensual en una sola transacción: Base + Max.' : max.desc);
+        setText('pack-max-cta', maxBundleOn ? '⭐ Comprar Base + Max' : max.cta);
+        const maxCta = document.getElementById('pack-max-cta');
+        if (maxCta) maxCta.setAttribute('data-plan-id', maxBundleOn ? MONTHLY_COMBO_MODE.pack_max.comboPlanId : 'pack_max');
 
         setText('cmp-price-base', pageDetails.cmpPriceBase);
-        setText('cmp-price-lite', pageDetails.cmpPriceLite);
-        setText('cmp-price-pro', pageDetails.cmpPricePro);
-        setText('cmp-price-max', pageDetails.cmpPriceMax);
+        setText('cmp-price-lite', liteBundleOn ? '$19.98/mes' : pageDetails.cmpPriceLite);
+        setText('cmp-price-pro', proBundleOn ? '$34.98/mes' : pageDetails.cmpPricePro);
+        setText('cmp-price-max', maxBundleOn ? '$59.98/mes' : pageDetails.cmpPriceMax);
+
+        const syncBundleSwitch = (planId) => {
+          const switchEl = document.getElementById(`${planId.replace('_', '-')}-switch`);
+          if (!switchEl) return;
+          switchEl.style.display = selectedBillingCycle === 'monthly' ? 'inline-flex' : 'none';
+          switchEl.querySelectorAll('button[data-mode]').forEach((btn) => {
+            const mode = String(btn.getAttribute('data-mode') || '');
+            btn.classList.toggle('active', mode === monthlyBundleModeByPack[planId]);
+          });
+        };
+        syncBundleSwitch('pack_lite');
+        syncBundleSwitch('pack_pro');
+        syncBundleSwitch('pack_max');
 
         cardCycleButtons.forEach((btn) => {
           const isMonthly = selectedBillingCycle === 'monthly';
@@ -644,9 +717,12 @@
 
       const refreshModalPlanCopy = () => {
         if (!selectedPlanId) return;
-        const details = PLAN_MODAL_DETAILS[selectedBillingCycle]?.[selectedPlanId] || null;
-        modalPlanTitle.textContent = details?.title || PLAN_LABELS[selectedPlanId] || selectedPlanId.toUpperCase();
-        modalPlanLabel.textContent = details?.price || `Plan seleccionado: ${PLAN_LABELS[selectedPlanId] || selectedPlanId.toUpperCase()}`;
+        const normalizedPlanId = selectedBillingCycle === 'annual'
+          ? String(selectedPlanId || '').replace(/_combo$/i, '')
+          : selectedPlanId;
+        const details = PLAN_MODAL_DETAILS[selectedBillingCycle]?.[normalizedPlanId] || null;
+        modalPlanTitle.textContent = details?.title || PLAN_LABELS[normalizedPlanId] || normalizedPlanId.toUpperCase();
+        modalPlanLabel.textContent = details?.price || `Plan seleccionado: ${PLAN_LABELS[normalizedPlanId] || normalizedPlanId.toUpperCase()}`;
         modalPlanMxn.textContent = details?.mxn || 'Referencia en MXN aproximada.';
         updateBillingButtons();
         refreshPricingSurface();
@@ -713,7 +789,10 @@
           return;
         }
 
-        const planId = String(selectedPlanId || '').trim().toLowerCase();
+        const rawSelectedPlanId = String(selectedPlanId || '').trim().toLowerCase();
+        const planId = selectedBillingCycle === 'annual'
+          ? rawSelectedPlanId.replace(/_combo$/i, '')
+          : rawSelectedPlanId;
         const actionButton = selectedButton;
         if (!planId || !actionButton) return;
 
@@ -775,6 +854,15 @@
       cardCycleButtons.forEach((btn) => {
         btn.addEventListener('click', () => {
           selectedBillingCycle = selectedBillingCycle === 'monthly' ? 'annual' : 'monthly';
+          refreshPricingSurface();
+        });
+      });
+      document.querySelectorAll('.monthly-bundle-switch button[data-plan][data-mode]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const planId = String(btn.getAttribute('data-plan') || '').toLowerCase();
+          const mode = String(btn.getAttribute('data-mode') || '').toLowerCase();
+          if (!['pack_lite', 'pack_pro', 'pack_max'].includes(planId)) return;
+          monthlyBundleModeByPack[planId] = mode === 'bundle' ? 'bundle' : 'pack';
           refreshPricingSurface();
         });
       });
