@@ -19,6 +19,10 @@ const TOKEN_STORAGE_KEY = 'sv-token'
 const TOKEN_PERSIST_KEY = 'sv-token-persist'
 const PAYMENT_PENDING_KEY = 'sv-payment-pending-v1'
 const FREE_PLANS = new Set(['free', 'on_demand'])
+const getFrontendOrigin = () => {
+  if (typeof window === 'undefined') return ''
+  return String(window.location.origin || '').trim()
+}
 
 const tokenPackages = [
   { tokens: 150000, price: 4.99, label: '150K', size: 'MINI BOOST' },
@@ -285,6 +289,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         planId: currentItem.planId,
         billingCycle: currentItem.billingCycle,
         itemType: 'plan',
+        frontendOrigin: getFrontendOrigin(),
         returnUrlBase: getReturnUrl(),
         couponCode: validCoupon ? couponCode.trim() : undefined,
         couponId: validCoupon?.coupon?.id || undefined,
@@ -292,6 +297,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     : {
         tokensPackage: currentItem.package.tokens,
         itemType: 'tokens',
+        frontendOrigin: getFrontendOrigin(),
         returnUrlBase: getReturnUrl(),
         couponCode: validCoupon ? couponCode.trim() : undefined,
         couponId: validCoupon?.coupon?.id || undefined,
