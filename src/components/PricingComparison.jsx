@@ -2,7 +2,7 @@
 import { Check, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-const getComparisonData = (t) => ({
+const getComparisonData = (t, billingCycle = 'monthly') => ({
   features: [
     {
       category: 'Voces',
@@ -23,17 +23,66 @@ const getComparisonData = (t) => ({
       ]
     },
     {
-      category: 'Capacidad Mensual',
+      category: 'Capacidad',
       items: [
-        { name: 'Caracteres incluidos', base: '20,000', lite: '70,000', pro: '170,000', max: '520,000' }
+        { name: billingCycle === 'annual' ? 'Caracteres por mes (durante suscripción anual)' : 'Caracteres incluidos', base: '20,000', lite: '70,000', pro: '170,000', max: '520,000' }
       ]
     }
   ],
   plans: [
-    { id: 'base', name: 'PLAN BASE', price: '$9.99', color: 'from-cyan-400 to-purple-500', bgColor: 'bg-gradient-to-br from-cyan-50 to-purple-50', borderColor: 'border-cyan-300', textColor: 'text-gray-900', popular: true, usage: '20,000 caracteres', cta: t('pricing.comparison.choosePlan') },
-    { id: 'lite', name: 'PACK LITE', price: '$9.99', color: 'from-cyan-500 to-blue-500', bgColor: 'bg-gradient-to-br from-cyan-50 to-blue-50', borderColor: 'border-cyan-300', textColor: 'text-gray-900', usage: '+50,000 caracteres', cta: t('pricing.comparison.choosePlan') },
-    { id: 'pro', name: 'PACK PRO', price: '$24.99', color: 'from-purple-500 to-pink-500', bgColor: 'bg-gradient-to-br from-purple-50 to-pink-50', borderColor: 'border-purple-300', textColor: 'text-gray-900', usage: '+150,000 caracteres', cta: t('pricing.comparison.choosePlan') },
-    { id: 'max', name: 'PACK MAX', price: '$49.99', color: 'from-orange-500 to-red-500', bgColor: 'bg-gradient-to-br from-orange-50 to-red-50', borderColor: 'border-orange-300', textColor: 'text-gray-900', usage: '+500,000 caracteres', cta: t('pricing.comparison.choosePlan') }
+    {
+      id: 'base',
+      checkoutPlanId: 'base',
+      name: billingCycle === 'annual' ? 'PLAN BASE ANUAL' : 'PLAN BASE',
+      price: billingCycle === 'annual' ? '$99.90' : '$9.99',
+      numericPrice: billingCycle === 'annual' ? 99.90 : 9.99,
+      color: 'from-cyan-400 to-purple-500',
+      bgColor: 'bg-gradient-to-br from-cyan-50 to-purple-50',
+      borderColor: 'border-cyan-300',
+      textColor: 'text-gray-900',
+      popular: true,
+      usage: '20,000 caracteres',
+      cta: billingCycle === 'annual' ? 'Suscribirme anual' : t('pricing.comparison.choosePlan')
+    },
+    {
+      id: 'lite',
+      checkoutPlanId: 'pack_lite',
+      name: billingCycle === 'annual' ? 'BASE + LITE' : 'PACK LITE',
+      price: billingCycle === 'annual' ? '$199.80' : '$9.99',
+      numericPrice: billingCycle === 'annual' ? 199.80 : 9.99,
+      color: 'from-cyan-500 to-blue-500',
+      bgColor: 'bg-gradient-to-br from-cyan-50 to-blue-50',
+      borderColor: 'border-cyan-300',
+      textColor: 'text-gray-900',
+      usage: '+50,000 caracteres',
+      cta: billingCycle === 'annual' ? 'Suscribirme anual' : t('pricing.comparison.choosePlan')
+    },
+    {
+      id: 'pro',
+      checkoutPlanId: 'pack_pro',
+      name: billingCycle === 'annual' ? 'BASE + PRO' : 'PACK PRO',
+      price: billingCycle === 'annual' ? '$349.80' : '$24.99',
+      numericPrice: billingCycle === 'annual' ? 349.80 : 24.99,
+      color: 'from-purple-500 to-pink-500',
+      bgColor: 'bg-gradient-to-br from-purple-50 to-pink-50',
+      borderColor: 'border-purple-300',
+      textColor: 'text-gray-900',
+      usage: '+150,000 caracteres',
+      cta: billingCycle === 'annual' ? 'Suscribirme anual' : t('pricing.comparison.choosePlan')
+    },
+    {
+      id: 'max',
+      checkoutPlanId: 'pack_max',
+      name: billingCycle === 'annual' ? 'BASE + MAX' : 'PACK MAX',
+      price: billingCycle === 'annual' ? '$599.80' : '$49.99',
+      numericPrice: billingCycle === 'annual' ? 599.80 : 49.99,
+      color: 'from-orange-500 to-red-500',
+      bgColor: 'bg-gradient-to-br from-orange-50 to-red-50',
+      borderColor: 'border-orange-300',
+      textColor: 'text-gray-900',
+      usage: '+500,000 caracteres',
+      cta: billingCycle === 'annual' ? 'Suscribirme anual' : t('pricing.comparison.choosePlan')
+    }
   ]
 })
 
@@ -44,9 +93,9 @@ const renderFeatureValue = (value, plan, darkMode) => {
   return <span className={`text-sm font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{value}</span>
 }
 
-export function PricingComparison({ darkMode, onPlanAction }) {
+export function PricingComparison({ darkMode, onPlanAction, billingCycle = 'monthly' }) {
   const { t } = useTranslation()
-  const comparisonData = getComparisonData(t)
+  const comparisonData = getComparisonData(t, billingCycle)
   return (
     <div className={`min-h-screen py-16 px-4 ${darkMode ? 'bg-gradient-to-b from-[#0f0f23] to-[#1a0033] text-white' : 'bg-gradient-to-b from-gray-50 via-white to-gray-100'}`}>
       <div className="max-w-7xl mx-auto">
@@ -93,7 +142,7 @@ export function PricingComparison({ darkMode, onPlanAction }) {
                           {plan.price}
                         </span>
                         <span className={`text-[15px] leading-none font-medium mb-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                          {t('pricing.comparison.perMonth')}
+                          {billingCycle === 'annual' ? '/año' : t('pricing.comparison.perMonth')}
                         </span>
                       </div>
                       {plan.popular && (
@@ -106,7 +155,10 @@ export function PricingComparison({ darkMode, onPlanAction }) {
                           <>
                             <span className="absolute -inset-1 rounded-xl pointer-events-none animate-ping opacity-50 bg-gradient-to-r from-cyan-400/40 to-blue-500/40" />
                             <button
-                              onClick={() => onPlanAction?.({ name: plan.name, price: parseFloat(plan.price.replace('$', '')) })}
+                              onClick={() => onPlanAction?.(
+                                { name: plan.name, price: plan.numericPrice, planId: plan.checkoutPlanId },
+                                { planId: plan.checkoutPlanId, billingCycle }
+                              )}
                               className="relative z-10 w-full px-5 py-2.5 rounded-xl text-sm font-black text-white transition-all animate-pulse hover:scale-[1.03] shadow-lg shadow-cyan-500/30 flex items-center justify-center gap-1.5 bg-gradient-to-r from-cyan-400 to-blue-500"
                             >
                               🚀 {plan.cta}
@@ -115,7 +167,10 @@ export function PricingComparison({ darkMode, onPlanAction }) {
                           </>
                         ) : (
                           <button
-                            onClick={() => onPlanAction?.({ name: plan.name, price: parseFloat(plan.price.replace('$', '')) })}
+                            onClick={() => onPlanAction?.(
+                              { name: plan.name, price: plan.numericPrice, planId: plan.checkoutPlanId },
+                              { planId: plan.checkoutPlanId, billingCycle }
+                            )}
                             className={`relative w-full px-5 py-2.5 rounded-xl text-sm font-black text-white transition-all hover:scale-[1.03] hover:opacity-90 shadow-md flex items-center justify-center gap-1.5 bg-gradient-to-r ${
                               plan.id === 'base'
                                 ? 'from-cyan-400 to-purple-500 shadow-cyan-500/20'

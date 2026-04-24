@@ -1068,7 +1068,7 @@ export function App() {
     }
 
     const planPrice = Number(plan.price)
-    const inferredAnnualPrices = new Set([99, 249, 499])
+    const inferredAnnualPrices = new Set([99, 99.9, 199.8, 349.8, 599.8])
     const inferredBillingCycle = inferredAnnualPrices.has(planPrice) ? 'annual' : 'monthly'
     const billingCycle = meta.billingCycle || inferredBillingCycle
     const recommendedPackagesByPlan = {
@@ -1078,10 +1078,18 @@ export function App() {
       pack_max: 700000,
     }
     const checkoutPriceByPlan = {
-      base: 9.99,
-      pack_lite: 9.99,
-      pack_pro: 24.99,
-      pack_max: 49.99,
+      monthly: {
+        base: 9.99,
+        pack_lite: 9.99,
+        pack_pro: 24.99,
+        pack_max: 49.99,
+      },
+      annual: {
+        base: 99.90,
+        pack_lite: 199.80,
+        pack_pro: 349.80,
+        pack_max: 599.80,
+      }
     }
 
     setSelectedPaymentPackage(recommendedPackagesByPlan[requestedPlanId] || 350000)
@@ -1090,7 +1098,7 @@ export function App() {
       planId: requestedPlanId,
       billingCycle,
       label: `${plan.name} ${billingCycle === 'annual' ? 'Anual' : 'Mensual'}`,
-      price: Number(checkoutPriceByPlan[requestedPlanId] || plan.price).toFixed(2),
+      price: Number(checkoutPriceByPlan[billingCycle]?.[requestedPlanId] || plan.price).toFixed(2),
     })
     setIsPaymentOpen(true)
   }

@@ -26,9 +26,11 @@ const getBasePlan = (t) => ({
 
 const getAddOns = (t) => [
   {
+    planId: 'pack_lite',
     icon: '⚡',
     name: 'PACK LITE',
     price: 9.99,
+    annualPrice: 199.80,
     characters: '+1 Voz',
     tokens: '50K tokens',
     estimate: '50 min – 1.5 h',
@@ -38,9 +40,11 @@ const getAddOns = (t) => [
     buttonColor: 'bg-cyan-600 hover:bg-cyan-700'
   },
   {
+    planId: 'pack_pro',
     icon: '🔥',
     name: 'PACK PRO',
     price: 24.99,
+    annualPrice: 349.80,
     characters: '+3 Voces',
     tokens: '250K tokens',
     estimate: '4 – 7 h',
@@ -51,9 +55,11 @@ const getAddOns = (t) => [
     popular: true
   },
   {
+    planId: 'pack_max',
     icon: '⭐',
     name: 'PACK MAX',
     price: 49.99,
+    annualPrice: 599.80,
     characters: '+6 Voces',
     tokens: '500K tokens',
     estimate: '8 – 14 h',
@@ -67,6 +73,7 @@ const getAddOns = (t) => [
 export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
   const { t } = useTranslation()
   const [usdMxn, setUsdMxn] = useState(18)
+  const [billingCycle, setBillingCycle] = useState('monthly')
 
   useEffect(() => {
     let active = true
@@ -95,10 +102,31 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
 
   const basePlan = getBasePlan(t)
   const addOns = getAddOns(t)
+  const isAnnual = billingCycle === 'annual'
+  const basePrice = isAnnual ? 99.90 : basePlan.price
+  const baseLabel = isAnnual ? 'PLAN BASE ANUAL' : 'PLAN BASE'
 
   return (
     <div className="py-4">
       <div className="max-w-6xl mx-auto px-4">
+        {showToggle && (
+          <div className="mb-5 flex justify-center">
+            <div className={`inline-flex rounded-xl p-1 border ${darkMode ? 'border-cyan-500/30 bg-[#0b1327]' : 'border-cyan-200 bg-cyan-50'}`}>
+              <button
+                onClick={() => setBillingCycle('monthly')}
+                className={`px-4 py-2 rounded-lg text-sm font-black ${billingCycle === 'monthly' ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+              >
+                Mensual
+              </button>
+              <button
+                onClick={() => setBillingCycle('annual')}
+                className={`px-4 py-2 rounded-lg text-sm font-black ${billingCycle === 'annual' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+              >
+                Anual (2 meses gratis)
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Una sola fila: base plan (2 cols) + 3 packs (1 col c/u) = 5 cols */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 items-stretch">
@@ -118,7 +146,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                 </span>
               </div>
 
-              <h3 className="text-2xl font-black mb-1">{basePlan.icon} {basePlan.name}</h3>
+              <h3 className="text-2xl font-black mb-1">{basePlan.icon} {baseLabel}</h3>
               <p className={`text-xs mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 {basePlan.description}
               </p>
@@ -126,12 +154,12 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
               <div className="mb-4">
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
-                    ${basePlan.price.toFixed(2)}
+                    ${basePrice.toFixed(2)}
                   </span>
-                  <span className={`text-sm font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>USD /mes</span>
+                  <span className={`text-sm font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>USD /{isAnnual ? 'año' : 'mes'}</span>
                 </div>
                 <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                  ≈ {formatMxnApprox(basePlan.price)} MXN
+                  ≈ {formatMxnApprox(basePrice)} MXN
                 </p>
               </div>
 
@@ -167,10 +195,10 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
               </div>
 
               <button
-                onClick={() => onPlanAction?.(basePlan, { billingCycle: 'monthly' })}
+                onClick={() => onPlanAction?.({ ...basePlan, name: baseLabel, price: basePrice, planId: 'base' }, { billingCycle, planId: 'base' })}
                 className="w-full py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 transition-all shadow-lg mt-auto hover:shadow-xl hover:shadow-slate-700/50 animate-button-pulse"
               >
-                🚀 ACTIVAR PLAN
+                🚀 ACTIVAR {isAnnual ? 'ANUAL' : 'PLAN'}
               </button>
             </div>
           </div>
@@ -204,22 +232,27 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   </div>
                 </div>
                 <h3 className={`text-xl font-black mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {addon.name}
+                  {isAnnual ? `BASE + ${addon.name.replace('PACK ', '')}` : addon.name}
                 </h3>
                 <p className={`text-xs mb-4 leading-relaxed ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {addon.description}
+                  {isAnnual ? `${addon.description} en suscripción anual.` : addon.description}
                 </p>
 
                 <div className="mb-4">
                   <div className="flex items-baseline gap-1">
                     <div className={`text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${addon.gradient}`}>
-                      ${addon.price.toFixed(2)}
+                      ${(isAnnual ? addon.annualPrice : addon.price).toFixed(2)}
                     </div>
                     <span className={`text-sm font-bold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>USD</span>
                   </div>
                   <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                    ≈ {formatMxnApprox(addon.price)} MXN
+                    ≈ {formatMxnApprox(isAnnual ? addon.annualPrice : addon.price)} MXN
                   </p>
+                  {isAnnual && (
+                    <p className={`text-[11px] mt-1 font-semibold ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>
+                      Incluye 2 meses gratis
+                    </p>
+                  )}
                 </div>
 
                 <div className={`rounded-xl px-4 py-3 mb-4 bg-gradient-to-r ${addon.gradient} text-white`}>
@@ -243,10 +276,13 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                 </div>
 
                 <button
-                  onClick={() => onPlanAction?.(addon, { billingCycle: 'monthly', isAddOn: true })}
+                  onClick={() => onPlanAction?.(
+                    { ...addon, name: isAnnual ? `BASE + ${addon.name.replace('PACK ', '')}` : addon.name, price: isAnnual ? addon.annualPrice : addon.price, planId: addon.planId },
+                    { billingCycle, isAddOn: true, planId: addon.planId }
+                  )}
                   className={`w-full py-3 rounded-xl font-black text-sm text-white transition-all ${addon.buttonColor} shadow-lg hover:shadow-xl mt-auto`}
                 >
-                  ✨ AGREGAR
+                  ✨ {isAnnual ? 'ELEGIR ANUAL' : 'AGREGAR'}
                 </button>
               </div>
             </div>
