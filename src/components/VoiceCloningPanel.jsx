@@ -754,10 +754,11 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
   // Feature access control
   const userPlan = getActualPlan(user)
-  const hasWorkshopAccess = user?.role === 'admin' || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
+  const hasAddonPackActive = Boolean(user?.subscription?.addonPack?.active)
+  const hasWorkshopAccess = user?.role === 'admin' || hasAddonPackActive || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
   const isWorkshopBlocked = !hasWorkshopAccess
-  const canUseAIAssistant = user?.role === 'admin' || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
-  const canUseExtractorPro = user?.role === 'admin' || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
+  const canUseAIAssistant = user?.role === 'admin' || hasAddonPackActive || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
+  const canUseExtractorPro = user?.role === 'admin' || hasAddonPackActive || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
 
   return (
     <div className={`relative space-y-6 ${isWorkshopBlocked ? 'opacity-50 pointer-events-none' : ''}`}>

@@ -463,8 +463,9 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
 
   const rawPlan = getActualPlan(user)
   const userPlan = normalizeUserPlan(rawPlan)
+  const hasAddonPackActive = Boolean(user?.subscription?.addonPack?.active)
   const isBasePlan = userPlan === 'base'
-  const canUseAIAssistantInConfig = user?.role === 'admin' || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
+  const canUseAIAssistantInConfig = user?.role === 'admin' || hasAddonPackActive || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
   const isAIAssistantBlockedInConfig = !canUseAIAssistantInConfig
   useEffect(() => {
     if (userPlan !== 'free') return
