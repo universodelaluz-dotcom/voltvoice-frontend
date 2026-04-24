@@ -1200,6 +1200,14 @@ export function App() {
 
     const previousTokens = Number(user?.tokens || 0)
     const previousPlan = String(user?.plan || 'free').toLowerCase()
+    let pendingAction = ''
+    try {
+      const pending = JSON.parse(localStorage.getItem(PAYMENT_PENDING_KEY) || 'null')
+      pendingAction = String(pending?.action || '').toLowerCase()
+    } catch {
+      pendingAction = ''
+    }
+    const isScheduledAction = ['downgrade_next_cycle', 'billing_cycle_next_cycle'].includes(pendingAction)
 
     const refreshUser = async () => {
       if (!token) return
@@ -1257,14 +1265,28 @@ export function App() {
           await reconcileMercadoPagoPayments(API_URL, token)
         }
         const refreshedUser = await refreshUser()
-        completed = true
-        sessionStorage.setItem(callbackKey, 'done')
-        localStorage.removeItem(PAYMENT_PENDING_KEY)
-        setPaymentNotice({
-          title: '✓ Pago Realizado',
-          message: `Tu compra se procesó correctamente. Tokens actualizados: ${Number(refreshedUser?.tokens ?? previousTokens).toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
-          status: 'success'
-        })
+        const refreshedTokens = Number(refreshedUser?.tokens || 0)
+        const refreshedPlan = String(refreshedUser?.plan || 'free').toLowerCase()
+        const paymentSeemsApplied = Boolean(
+          refreshedUser && (
+            refreshedTokens > previousTokens ||
+            refreshedPlan !== previousPlan
+          )
+        )
+        if (paymentSeemsApplied || isScheduledAction) {
+          completed = true
+          sessionStorage.setItem(callbackKey, 'done')
+          localStorage.removeItem(PAYMENT_PENDING_KEY)
+          setPaymentNotice({
+            title: '✓ Pago Realizado',
+            message: isScheduledAction
+              ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
+              : `Tu compra se procesó correctamente. Tokens actualizados: ${Number(refreshedUser?.tokens ?? previousTokens).toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
+            status: 'success'
+          })
+          return
+        }
+        throw new Error('Payment callback finished without account updates')
       } catch (error) {
         const refreshedUser = await refreshUser()
         const refreshedTokens = Number(refreshedUser?.tokens || 0)
@@ -1323,6 +1345,8 @@ export function App() {
 
     const previousTokens = Number(user?.tokens || 0)
     const previousPlan = String(user?.plan || 'free').toLowerCase()
+    const pendingAction = String(pending?.action || '').toLowerCase()
+    const isScheduledAction = ['downgrade_next_cycle', 'billing_cycle_next_cycle'].includes(pendingAction)
 
     const refreshUser = async () => {
       try {
@@ -1351,12 +1375,26 @@ export function App() {
       try {
         await reconcileMercadoPagoPayments(API_URL, token)
         const refreshedUser = await refreshUser()
-        localStorage.removeItem(PAYMENT_PENDING_KEY)
-        setPaymentNotice({
-          title: '✓ Pago Realizado',
-          message: `Tu compra se procesó correctamente. Tokens actualizados: ${Number(refreshedUser?.tokens ?? previousTokens).toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
-          status: 'success'
-        })
+        const refreshedTokens = Number(refreshedUser?.tokens || 0)
+        const refreshedPlan = String(refreshedUser?.plan || 'free').toLowerCase()
+        const paymentSeemsApplied = Boolean(
+          refreshedUser && (
+            refreshedTokens > previousTokens ||
+            refreshedPlan !== previousPlan
+          )
+        )
+        if (paymentSeemsApplied || isScheduledAction) {
+          localStorage.removeItem(PAYMENT_PENDING_KEY)
+          setPaymentNotice({
+            title: '✓ Pago Realizado',
+            message: isScheduledAction
+              ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
+              : `Tu compra se procesó correctamente. Tokens actualizados: ${Number(refreshedUser?.tokens ?? previousTokens).toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
+            status: 'success'
+          })
+          return
+        }
+        throw new Error('Pending reconcile finished without account updates')
       } catch (error) {
         const refreshedUser = await refreshUser()
         const refreshedTokens = Number(refreshedUser?.tokens || 0)

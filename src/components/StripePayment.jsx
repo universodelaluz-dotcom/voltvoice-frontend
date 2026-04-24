@@ -290,7 +290,8 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
           provider: 'mercadopago',
           startedAt: Date.now(),
           itemType: currentItem?.type || 'plan',
-          planId: currentItem?.planId || null
+          planId: currentItem?.planId || null,
+          action: data?.action || null,
         }))
         window.location.href = preferredCheckoutUrl
       }
@@ -345,7 +346,8 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
           provider: 'paypal',
           startedAt: Date.now(),
           itemType: currentItem?.type || 'plan',
-          planId: currentItem?.planId || null
+          planId: currentItem?.planId || null,
+          action: data?.action || null,
         }))
         window.location.href = data.approvalUrl
       } else {
