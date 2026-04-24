@@ -1219,6 +1219,7 @@ export function App() {
     const provider = String(params.get('provider') || '').toLowerCase()
     const paypalOrderId = params.get('token') || params.get('orderId') || ''
     const paypalAlreadyCaptured = params.get('captured') === '1'
+    const paypalProviderConfirmed = provider === 'paypal' && (paypalAlreadyCaptured || Boolean(paypalOrderId))
     const callbackKey = `sv-payment-callback:${provider}:${paypalOrderId || 'na'}:${paymentStatus}`
     const token = getStoredToken()
     const isPaypalCallback = provider === 'paypal' && Boolean(paypalOrderId)
@@ -1290,7 +1291,7 @@ export function App() {
             refreshedPlan !== previousPlan
           )
         )
-        if (paymentSeemsApplied || isScheduledAction) {
+        if (paymentSeemsApplied || isScheduledAction || paypalProviderConfirmed) {
           completed = true
           sessionStorage.setItem(callbackKey, 'done')
           localStorage.removeItem(PAYMENT_PENDING_KEY)
@@ -1298,7 +1299,9 @@ export function App() {
             title: '✓ Pago Realizado',
             message: isScheduledAction
               ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
-              : `Tu compra se procesó correctamente. Tokens actualizados: ${Number(refreshedUser?.tokens ?? previousTokens).toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
+              : refreshedUser
+                ? `Tu compra se procesó correctamente. Tokens actualizados: ${Number(refreshedUser?.tokens ?? previousTokens).toLocaleString()}. Ya tienes acceso a todos tus beneficios.`
+                : 'Tu compra se procesó correctamente. Ya tienes acceso a tus beneficios.',
             status: 'success'
           })
           return
@@ -1314,14 +1317,16 @@ export function App() {
             refreshedPlan !== previousPlan
           )
         )
-        if (paymentSeemsApplied || isScheduledAction) {
+        if (paymentSeemsApplied || isScheduledAction || paypalProviderConfirmed) {
           sessionStorage.setItem(callbackKey, 'done')
           localStorage.removeItem(PAYMENT_PENDING_KEY)
           setPaymentNotice({
             title: '✓ Pago Realizado',
             message: isScheduledAction
               ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
-              : `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
+              : refreshedUser
+                ? `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`
+                : 'Tu compra se procesó correctamente. Ya tienes acceso a tus beneficios.',
             status: 'success'
           })
           return
