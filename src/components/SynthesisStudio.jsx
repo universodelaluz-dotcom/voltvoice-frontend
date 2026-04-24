@@ -6,10 +6,11 @@ import BotInvoker from './BotInvoker'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Shield, Lock } from 'lucide-react'
 
 const getEffectiveUserPlan = (userObj = null) => {
+  const featurePlan = String(userObj?.subscription?.effectiveFeaturePlanKey || '').trim().toLowerCase()
   const directPlan = String(userObj?.plan || '').trim().toLowerCase()
   const backendPlan = String(userObj?.subscription?.backendPlan || '').trim().toLowerCase()
   const subscriptionPlan = String(userObj?.subscription?.plan || '').trim().toLowerCase()
-  const candidates = [backendPlan, subscriptionPlan, directPlan].filter(Boolean)
+  const candidates = [featurePlan, backendPlan, subscriptionPlan, directPlan].filter(Boolean)
   return candidates.find((plan) => plan !== 'free') || candidates[0] || 'free'
 }
 
