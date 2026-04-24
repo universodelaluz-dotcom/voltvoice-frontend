@@ -251,6 +251,15 @@ const clearStoredAuthToken = () => {
   localStorage.removeItem(TOKEN_PERSIST_KEY)
 }
 
+const sleep = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const didPaymentApplyToUser = (nextUser, previousTokens = 0, previousPlan = 'free') => {
+  if (!nextUser) return false
+  const refreshedTokens = Number(nextUser?.tokens || 0)
+  const refreshedPlan = String(nextUser?.plan || 'free').toLowerCase()
+  return refreshedTokens > Number(previousTokens || 0) || refreshedPlan !== String(previousPlan || 'free').toLowerCase()
+}
+
 const reconcileMercadoPagoPayments = async (apiUrl, token) => {
   if (!apiUrl || !token) return
   try {
@@ -1228,13 +1237,17 @@ export function App() {
     const previousTokens = Number(user?.tokens || 0)
     const previousPlan = String(user?.plan || 'free').toLowerCase()
     let pendingAction = ''
+    let pendingProvider = ''
     try {
       const pending = JSON.parse(localStorage.getItem(PAYMENT_PENDING_KEY) || 'null')
       pendingAction = String(pending?.action || '').toLowerCase()
+      pendingProvider = String(pending?.provider || '').toLowerCase()
     } catch {
       pendingAction = ''
+      pendingProvider = ''
     }
     const isScheduledAction = ['downgrade_next_cycle', 'billing_cycle_next_cycle'].includes(pendingAction)
+    const isPaypalPending = provider === 'paypal' || pendingProvider === 'paypal'
 
     const refreshUser = async () => {
       if (!token) return
@@ -1282,16 +1295,17 @@ export function App() {
           if (!token) throw new Error('Sesion no disponible para reconciliar el pago')
           await reconcileMercadoPagoPayments(API_URL, token)
         }
-        const refreshedUser = await refreshUser()
-        const refreshedTokens = Number(refreshedUser?.tokens || 0)
-        const refreshedPlan = String(refreshedUser?.plan || 'free').toLowerCase()
-        const paymentSeemsApplied = Boolean(
-          refreshedUser && (
-            refreshedTokens > previousTokens ||
-            refreshedPlan !== previousPlan
-          )
-        )
-        if (paymentSeemsApplied || isScheduledAction || paypalProviderConfirmed) {
+        let refreshedUser = await refreshUser()
+        let paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
+        if (!paymentSeemsApplied && !isScheduledAction && isPaypalPending) {
+          for (let attempt = 0; attempt < 8; attempt += 1) {
+            await sleep(1000)
+            refreshedUser = await refreshUser()
+            paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
+            if (paymentSeemsApplied) break
+          }
+        }
+        if (paymentSeemsApplied || isScheduledAction) {
           completed = true
           sessionStorage.setItem(callbackKey, 'done')
           localStorage.removeItem(PAYMENT_PENDING_KEY)
@@ -1306,18 +1320,29 @@ export function App() {
           })
           return
         }
+        if (paypalProviderConfirmed) {
+          sessionStorage.removeItem(callbackKey)
+          setPaymentNotice({
+            title: 'Pago confirmado por PayPal',
+            message: 'Tu pago fue aprobado. Estamos terminando de acreditar tus tokens; esto puede tardar unos segundos.',
+            status: 'processing'
+          })
+          return
+        }
         throw new Error('Payment callback finished without account updates')
       } catch (error) {
-        const refreshedUser = await refreshUser()
-        const refreshedTokens = Number(refreshedUser?.tokens || 0)
-        const refreshedPlan = String(refreshedUser?.plan || 'free').toLowerCase()
-        const paymentSeemsApplied = Boolean(
-          refreshedUser && (
-            refreshedTokens > previousTokens ||
-            refreshedPlan !== previousPlan
-          )
-        )
-        if (paymentSeemsApplied || isScheduledAction || paypalProviderConfirmed) {
+        let refreshedUser = await refreshUser()
+        let paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
+        if (!paymentSeemsApplied && !isScheduledAction && isPaypalPending) {
+          for (let attempt = 0; attempt < 8; attempt += 1) {
+            await sleep(1000)
+            refreshedUser = await refreshUser()
+            paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
+            if (paymentSeemsApplied) break
+          }
+        }
+        if (paymentSeemsApplied || isScheduledAction) {
+          const refreshedTokens = Number(refreshedUser?.tokens || 0)
           sessionStorage.setItem(callbackKey, 'done')
           localStorage.removeItem(PAYMENT_PENDING_KEY)
           setPaymentNotice({
@@ -1328,6 +1353,15 @@ export function App() {
                 ? `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`
                 : 'Tu compra se procesó correctamente. Ya tienes acceso a tus beneficios.',
             status: 'success'
+          })
+          return
+        }
+        if (paypalProviderConfirmed) {
+          sessionStorage.removeItem(callbackKey)
+          setPaymentNotice({
+            title: 'Pago confirmado por PayPal',
+            message: 'Tu pago fue aprobado. Estamos terminando de acreditar tus tokens; esto puede tardar unos segundos.',
+            status: 'processing'
           })
           return
         }
@@ -1370,7 +1404,9 @@ export function App() {
     const previousTokens = Number(user?.tokens || 0)
     const previousPlan = String(user?.plan || 'free').toLowerCase()
     const pendingAction = String(pending?.action || '').toLowerCase()
+    const pendingProvider = String(pending?.provider || '').toLowerCase()
     const isScheduledAction = ['downgrade_next_cycle', 'billing_cycle_next_cycle'].includes(pendingAction)
+    const isPaypalPending = pendingProvider === 'paypal'
 
     const refreshUser = async () => {
       try {
@@ -1391,16 +1427,18 @@ export function App() {
     ;(async () => {
       try {
         await reconcileMercadoPagoPayments(API_URL, token)
-        const refreshedUser = await refreshUser()
-        const refreshedTokens = Number(refreshedUser?.tokens || 0)
-        const refreshedPlan = String(refreshedUser?.plan || 'free').toLowerCase()
-        const paymentSeemsApplied = Boolean(
-          refreshedUser && (
-            refreshedTokens > previousTokens ||
-            refreshedPlan !== previousPlan
-          )
-        )
+        let refreshedUser = await refreshUser()
+        let paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
+        if (!paymentSeemsApplied && !isScheduledAction && isPaypalPending) {
+          for (let attempt = 0; attempt < 8; attempt += 1) {
+            await sleep(1000)
+            refreshedUser = await refreshUser()
+            paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
+            if (paymentSeemsApplied) break
+          }
+        }
         if (paymentSeemsApplied || isScheduledAction) {
+          const refreshedTokens = Number(refreshedUser?.tokens || 0)
           localStorage.removeItem(PAYMENT_PENDING_KEY)
           setPaymentNotice({
             title: '✓ Pago Realizado',
@@ -1411,20 +1449,24 @@ export function App() {
           })
           return
         }
-        // Usuario volvió del checkout sin completar pago: limpiar pendiente en silencio.
-        localStorage.removeItem(PAYMENT_PENDING_KEY)
+        // Si PayPal sigue asentando, mantener pendiente para próximos intentos automáticos.
+        if (!isPaypalPending) {
+          localStorage.removeItem(PAYMENT_PENDING_KEY)
+        }
         return
       } catch (error) {
-        const refreshedUser = await refreshUser()
-        const refreshedTokens = Number(refreshedUser?.tokens || 0)
-        const refreshedPlan = String(refreshedUser?.plan || 'free').toLowerCase()
-        const paymentSeemsApplied = Boolean(
-          refreshedUser && (
-            refreshedTokens > previousTokens ||
-            refreshedPlan !== previousPlan
-          )
-        )
+        let refreshedUser = await refreshUser()
+        let paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
+        if (!paymentSeemsApplied && !isScheduledAction && isPaypalPending) {
+          for (let attempt = 0; attempt < 8; attempt += 1) {
+            await sleep(1000)
+            refreshedUser = await refreshUser()
+            paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
+            if (paymentSeemsApplied) break
+          }
+        }
         if (paymentSeemsApplied || isScheduledAction) {
+          const refreshedTokens = Number(refreshedUser?.tokens || 0)
           localStorage.removeItem(PAYMENT_PENDING_KEY)
           setPaymentNotice({
             title: '✓ Pago Realizado',
@@ -1437,7 +1479,9 @@ export function App() {
         }
         console.error('[PAYMENT] pending reconcile error:', error?.message || error)
         // Si no hubo acreditación real, no molestar con modal de error al usuario.
-        localStorage.removeItem(PAYMENT_PENDING_KEY)
+        if (!isPaypalPending) {
+          localStorage.removeItem(PAYMENT_PENDING_KEY)
+        }
         setPaymentNotice(null)
       }
     })()
@@ -1561,7 +1605,9 @@ export function App() {
     const previousTokens = Number(user?.tokens || 0)
     const previousPlan = String(user?.plan || 'free').toLowerCase()
     const pendingAction = String(pending?.action || '').toLowerCase()
+    const pendingProvider = String(pending?.provider || '').toLowerCase()
     const isScheduledAction = ['downgrade_next_cycle', 'billing_cycle_next_cycle'].includes(pendingAction)
+    const isPaypalPending = pendingProvider === 'paypal'
 
     ;(async () => {
       try {
@@ -1575,15 +1621,27 @@ export function App() {
           setTokens(data.user.tokens || 100)
           localStorage.setItem('sv-user', JSON.stringify(data.user))
         }
-        const refreshedTokens = Number(data?.user?.tokens || 0)
-        const refreshedPlan = String(data?.user?.plan || 'free').toLowerCase()
-        const paymentSeemsApplied = Boolean(
-          data?.success && (
-            refreshedTokens > previousTokens ||
-            refreshedPlan !== previousPlan
-          )
-        )
+        let refreshedUser = data?.success ? data.user : null
+        let paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
+        if (!paymentSeemsApplied && !isScheduledAction && isPaypalPending) {
+          for (let attempt = 0; attempt < 8; attempt += 1) {
+            await sleep(1000)
+            const retryResponse = await fetch(`${API_URL}/api/auth/me`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            const retryData = await retryResponse.json().catch(() => ({}))
+            if (retryData?.success) {
+              refreshedUser = retryData.user
+              setUser(retryData.user)
+              setTokens(retryData.user.tokens || 100)
+              localStorage.setItem('sv-user', JSON.stringify(retryData.user))
+            }
+            paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
+            if (paymentSeemsApplied) break
+          }
+        }
         if (paymentSeemsApplied || isScheduledAction) {
+          const refreshedTokens = Number(refreshedUser?.tokens || 0)
           localStorage.removeItem(PAYMENT_PENDING_KEY)
           setPaymentNotice({
             title: '✓ Pago Realizado',
@@ -1594,11 +1652,15 @@ export function App() {
           })
           return
         }
-        // No hubo cambios: cerrar pendiente silenciosamente.
-        localStorage.removeItem(PAYMENT_PENDING_KEY)
+        // No hubo cambios todavía: en PayPal mantener pendiente para próximos reintentos.
+        if (!isPaypalPending) {
+          localStorage.removeItem(PAYMENT_PENDING_KEY)
+        }
       } catch (error) {
         console.error('[PAYMENT] auto-process error:', error?.message || error)
-        localStorage.removeItem(PAYMENT_PENDING_KEY)
+        if (!isPaypalPending) {
+          localStorage.removeItem(PAYMENT_PENDING_KEY)
+        }
         setPaymentNotice(null)
       }
     })()
