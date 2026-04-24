@@ -69,13 +69,14 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
         userData?.plan ||
         userData?.subscription?.plan ||
         'free'
-      ).toLowerCase()
+      ).toLowerCase().replace(/\s+/g, '_')
     } catch {
       return 'free'
     }
   })()
-  const isBasePlan = currentPlan === 'base' || currentPlan === 'plan base'
-  const baseVoices = getBaseVoices(t, currentPlan)
+  const normalizedCurrentPlan = ['on_demand', 'ondemand', 'free_plan', 'free_monthly', 'plan_free'].includes(currentPlan) ? 'free' : currentPlan
+  const isBasePlan = normalizedCurrentPlan === 'base' || normalizedCurrentPlan === 'plan base'
+  const baseVoices = getBaseVoices(t, normalizedCurrentPlan)
 
   // Cargar personajes al montar
   useEffect(() => {

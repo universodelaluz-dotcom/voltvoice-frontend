@@ -59,7 +59,14 @@ const normalizeUserPlan = (rawPlan = 'free') => {
   if (!normalized) return 'free'
 
   // Nuevo sistema de planes + compatibilidad con nombres legacy
-  if (normalized === 'free' || normalized === 'plan free') return 'free'
+  if (
+    normalized === 'free' ||
+    normalized === 'plan free' ||
+    normalized === 'free_plan' ||
+    normalized === 'free_monthly' ||
+    normalized === 'on_demand' ||
+    normalized === 'ondemand'
+  ) return 'free'
   if (normalized === 'base' || normalized === 'plan base' || normalized === 'start' || normalized === 'start_monthly') return 'base'
   if (
     normalized === 'pack_lite' ||

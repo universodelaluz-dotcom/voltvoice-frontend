@@ -2769,7 +2769,14 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
   const normalizePlanTier = (rawPlan = 'free') => {
     const normalized = String(rawPlan || 'free').trim().toLowerCase()
     if (!normalized) return 'free'
-    if (normalized === 'free' || normalized === 'plan free') return 'free'
+    if (
+      normalized === 'free' ||
+      normalized === 'plan free' ||
+      normalized === 'free_plan' ||
+      normalized === 'free_monthly' ||
+      normalized === 'on_demand' ||
+      normalized === 'ondemand'
+    ) return 'free'
     if (normalized === 'base' || normalized === 'plan base' || normalized === 'start' || normalized === 'start_monthly') return 'base'
     if (
       normalized === 'pack_lite' ||

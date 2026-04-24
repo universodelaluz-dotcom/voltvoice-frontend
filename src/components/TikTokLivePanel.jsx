@@ -506,6 +506,14 @@ const getEffectiveUserPlan = (userObj = null) => {
 const normalizePlanTier = (rawPlan = 'free') => {
   const normalized = String(rawPlan || 'free').trim().toLowerCase()
   if (!normalized) return 'free'
+  if (
+    normalized === 'free' ||
+    normalized === 'plan free' ||
+    normalized === 'free_plan' ||
+    normalized === 'free_monthly' ||
+    normalized === 'on_demand' ||
+    normalized === 'ondemand'
+  ) return 'free'
   if (normalized === 'elite') return 'admin'
   return normalized
 }

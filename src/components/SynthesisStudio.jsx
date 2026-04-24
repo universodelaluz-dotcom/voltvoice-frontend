@@ -9,7 +9,14 @@ const getEffectiveUserPlan = (userObj = null) => {
   const normalizePlan = (rawPlan = 'free') => {
     const normalized = String(rawPlan || 'free').trim().toLowerCase()
     if (!normalized) return 'free'
-    if (normalized === 'free' || normalized === 'plan free') return 'free'
+    if (
+      normalized === 'free' ||
+      normalized === 'plan free' ||
+      normalized === 'free_plan' ||
+      normalized === 'free_monthly' ||
+      normalized === 'on_demand' ||
+      normalized === 'ondemand'
+    ) return 'free'
     if (normalized === 'base' || normalized === 'plan base' || normalized === 'start' || normalized === 'start_monthly') return 'base'
     if (normalized === 'pack_lite' || normalized === 'pack lite' || normalized === 'lite' || normalized === 'creator' || normalized === 'creator_monthly') return 'pack_lite'
     if (normalized === 'pack_pro' || normalized === 'pack pro' || normalized === 'pro' || normalized === 'pro_monthly') return 'pack_pro'
@@ -41,7 +48,14 @@ const getEffectiveUserPlan = (userObj = null) => {
 const normalizePlanTier = (rawPlan = 'free') => {
   const normalized = String(rawPlan || 'free').trim().toLowerCase()
   if (!normalized) return 'free'
-  if (normalized === 'free' || normalized === 'plan free') return 'free'
+  if (
+    normalized === 'free' ||
+    normalized === 'plan free' ||
+    normalized === 'free_plan' ||
+    normalized === 'free_monthly' ||
+    normalized === 'on_demand' ||
+    normalized === 'ondemand'
+  ) return 'free'
   if (normalized === 'base' || normalized === 'plan base' || normalized === 'start' || normalized === 'start_monthly') return 'base'
   if (
     normalized === 'pack_lite' ||
