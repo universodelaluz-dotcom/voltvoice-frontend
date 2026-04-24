@@ -490,10 +490,12 @@ const apiNicks = {
 }
 
 const getEffectiveUserPlan = (userObj = null) => {
+  const addonActive = Boolean(userObj?.subscription?.addonPack?.active)
+  const addonPlan = addonActive ? String(userObj?.subscription?.addonPack?.planKey || '').trim().toLowerCase() : ''
   const directPlan = String(userObj?.plan || '').trim().toLowerCase()
   const backendPlan = String(userObj?.subscription?.backendPlan || '').trim().toLowerCase()
   const subscriptionPlan = String(userObj?.subscription?.plan || '').trim().toLowerCase()
-  const candidates = [backendPlan, subscriptionPlan, directPlan].filter(Boolean)
+  const candidates = [addonPlan, backendPlan, subscriptionPlan, directPlan].filter(Boolean)
   return candidates.find((plan) => plan !== 'free') || candidates[0] || 'free'
 }
 

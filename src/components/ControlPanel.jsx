@@ -451,11 +451,13 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
 
   // Get the actual plan, preferring subscription.backendPlan if available
   const getActualPlan = (userObj) => {
+    const addonActive = Boolean(userObj?.subscription?.addonPack?.active)
+    const addonPlan = addonActive ? String(userObj?.subscription?.addonPack?.planKey || '').toLowerCase() : ''
     const featurePlan = String(userObj?.subscription?.effectiveFeaturePlanKey || '').toLowerCase()
     const mainPlan = String(userObj?.plan || '').toLowerCase()
     const backendPlan = String(userObj?.subscription?.backendPlan || '').toLowerCase()
     const subscriptionPlan = String(userObj?.subscription?.plan || '').toLowerCase()
-    const candidates = [featurePlan, backendPlan, subscriptionPlan, mainPlan].filter(Boolean)
+    const candidates = [addonPlan, featurePlan, backendPlan, subscriptionPlan, mainPlan].filter(Boolean)
     return candidates.find((plan) => plan !== 'free') || candidates[0] || 'free'
   }
 
