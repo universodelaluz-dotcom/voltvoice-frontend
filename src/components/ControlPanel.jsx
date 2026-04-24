@@ -697,7 +697,10 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
           {/* PRESETS - BLOQUEADO EN PLAN FREE */}
           <div className={`relative mb-4 rounded-2xl border p-4 ${
             darkMode ? 'border-cyan-500/20 bg-[#12122a]/70' : 'border-indigo-200 bg-white/80'
-          }`}>
+          } ${userPlan === 'free' ? 'opacity-50 pointer-events-none' : ''}`}>
+            {userPlan === 'free' && (
+              <FeatureLockedOverlay darkMode={darkMode} message="Disponible en plan Base o superior" showIcon showMessage />
+            )}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className={`text-sm font-black uppercase tracking-widest ${darkMode ? 'text-cyan-300' : 'text-indigo-700'}`}>
@@ -759,7 +762,10 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
           {/* BOTONES INICIO RAPIDO - BLOQUEADO EN PLAN FREE */}
           <div className={`relative mb-4 rounded-2xl border p-4 ${
             darkMode ? 'border-fuchsia-500/20 bg-[#12122a]/70' : 'border-fuchsia-200 bg-white/80'
-          }`}>
+          } ${userPlan === 'free' ? 'opacity-50 pointer-events-none' : ''}`}>
+            {userPlan === 'free' && (
+              <FeatureLockedOverlay darkMode={darkMode} message="Disponible en plan Base o superior" showIcon showMessage />
+            )}
             <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className={`text-sm font-black uppercase tracking-widest ${darkMode ? 'text-fuchsia-300' : 'text-fuchsia-700'}`}>
