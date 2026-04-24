@@ -1220,6 +1220,19 @@ export function App() {
     }
   }, [currentPage, canOpenStudioWithoutAuth])
 
+  // Guard global: nunca permitir vistas privadas sin sesión válida.
+  useEffect(() => {
+    const privatePages = new Set(['studio', 'control-panel', 'statistics', 'admin', 'voice-workshop', 'ai-roleplay'])
+    if (!privatePages.has(currentPage)) return
+    if (canOpenStudioWithoutAuth) return
+    setPaymentNotice({
+      status: 'error',
+      title: 'Inicia sesión primero',
+      message: 'Para entrar al Studio debes iniciar sesión con tu cuenta.'
+    })
+    setCurrentPage('auth')
+  }, [currentPage, canOpenStudioWithoutAuth])
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const paymentStatus = params.get('payment')

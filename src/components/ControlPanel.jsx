@@ -485,10 +485,16 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     return basePlan
   }
 
-  const rawPlan = getActualPlan(user)
-  const userPlan = normalizeUserPlan(rawPlan)
   const addonExpiresAtMs = user?.subscription?.addonPack?.expiresAt ? Date.parse(user.subscription.addonPack.expiresAt) : NaN
   const hasAddonPackActive = Boolean(user?.subscription?.addonPack?.active) && Number.isFinite(addonExpiresAtMs) && addonExpiresAtMs > Date.now()
+  const rawPlan = getActualPlan(user)
+  const computedPlan = normalizeUserPlan(rawPlan)
+  const publicPlan = normalizeUserPlan(String(user?.plan || 'free'))
+  const shouldForceFreePlan =
+    String(user?.role || '').toLowerCase() !== 'admin' &&
+    publicPlan === 'free' &&
+    !hasAddonPackActive
+  const userPlan = shouldForceFreePlan ? 'free' : computedPlan
   const isBasePlan = userPlan === 'base'
   const canUseAIAssistantInConfig = user?.role === 'admin' || hasAddonPackActive || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
   const isAIAssistantBlockedInConfig = !canUseAIAssistantInConfig
@@ -496,26 +502,82 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     if (userPlan !== 'free') return
 
     const forcedOffInFree = [
+      'readOnlyMessage',
+      'readByCommandEnabled',
+      'onlyQuestions',
+      'onlyDonors',
+      'onlyModerators',
+      'onlySubscribers',
+      'onlyCommunityMembers',
       'ignoreLinks',
       'profanityFilterEnabled',
       'ignoreExcessiveEmojis',
       'minMessageLengthEnabled',
       'donorCharLimitEnabled',
       'maxQueueEnabled',
+      'donorVoiceEnabled',
+      'modVoiceEnabled',
+      'subscriberVoiceEnabled',
+      'communityMemberVoiceEnabled',
+      'questionVoiceEnabled',
+      'commandVoiceEnabled',
+      'notifVoiceEnabled',
+      'variedVoicesEnabled',
+      'announceFollowers',
+      'announceGifts',
+      'announceViewers',
+      'announceLikes',
+      'announceShares',
+      'announceBattles',
+      'announcePolls',
+      'announceGoals',
+      'botShortcutEnabled',
+      'interactorShortcutEnabled',
     ]
 
     forcedOffInFree.forEach((key) => {
       if (config?.[key]) updateConfig(key, false)
     })
-  }, [
-    userPlan,
-    config?.ignoreLinks,
-    config?.profanityFilterEnabled,
-    config?.ignoreExcessiveEmojis,
-    config?.minMessageLengthEnabled,
-    config?.donorCharLimitEnabled,
-    config?.maxQueueEnabled,
-  ])
+
+    const forcedValuesInFree = {
+      generalVoiceId: 'es-ES',
+      donorVoiceId: 'es-ES',
+      modVoiceId: 'es-ES',
+      subscriberVoiceId: 'es-ES',
+      communityMemberVoiceId: 'es-ES',
+      questionVoiceId: 'es-ES',
+      commandVoiceId: 'es-ES',
+      notifVoiceId: 'es-ES',
+      readByCommandPrefix: 'bot/',
+      profanityWords: '',
+      maxEmojisAllowed: 3,
+      minMessageLength: 4,
+      donorCharLimit: 180,
+      maxQueueSize: 5,
+      botAssistantCharacterId: '',
+      botAssistantVoiceId: '',
+      botAssistantVoiceSpeed: 1,
+      botAssistantMaxResponseChars: 250,
+      followCooldown: 10,
+      giftCooldown: 5,
+      viewerCooldown: 120,
+      likeCooldown: 60,
+      shareCooldown: 15,
+      botShortcutKey: 'F8',
+      interactorShortcutKey: 'F9',
+    }
+
+    Object.entries(forcedValuesInFree).forEach(([key, value]) => {
+      if (config?.[key] !== value) updateConfig(key, value)
+    })
+
+    if (Array.isArray(config?.variedVoicesSelected) && config.variedVoicesSelected.length > 0) {
+      updateConfig('variedVoicesSelected', [])
+    }
+    if (Array.isArray(config?.userVoiceAssignments) && config.userVoiceAssignments.length > 0) {
+      updateConfig('userVoiceAssignments', [])
+    }
+  }, [userPlan, config, updateConfig])
   const PREMIUM_BY_PLAN = {
     free: [],
     base: ['Diego', 'Lupita'],
@@ -862,7 +924,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               )}
 
               {/* SECCIÓN VOCES */}
-              <div className={`relative ${userPlan === 'free' ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
+              <div className={`relative ${userPlan === 'free' ? 'opacity-45 pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
                 {userPlan === 'free' && (
                   <FeatureLockedOverlay darkMode={darkMode} message="Voces disponibles en packs" showIcon showMessage />
                 )}
@@ -1157,7 +1219,10 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   : config.variedVoicesEnabled
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                   : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
-              }`}>
+              } ${userPlan === 'free' ? 'opacity-45 pointer-events-none' : ''}`}>
+                {userPlan === 'free' && (
+                  <FeatureLockedOverlay darkMode={darkMode} message="Disponible en packs" showIcon showMessage />
+                )}
                 <div>
                 <button onClick={() => updateConfig('variedVoicesEnabled', !config.variedVoicesEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
@@ -1212,7 +1277,10 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   : showUserVoiceAssignments
                     ? 'bg-slate-100 border-slate-400 shadow-sm'
                   : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
-              }`}>
+              } ${userPlan === 'free' ? 'opacity-45 pointer-events-none' : ''}`}>
+                {userPlan === 'free' && (
+                  <FeatureLockedOverlay darkMode={darkMode} message="Disponible en packs" showIcon showMessage />
+                )}
                 <div>
                 <button onClick={() => setShowUserVoiceAssignments(!showUserVoiceAssignments)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
@@ -1306,8 +1374,11 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               </div>
 
               {/* LEFT COLUMN - BLOQUE INDEPENDIENTE DE NOTIFICACIONES */}
-              <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-rose-400/25' : 'bg-white border-slate-200'}`}>
+              <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-rose-400/25' : 'bg-white border-slate-200'} ${userPlan === 'free' ? 'opacity-45 pointer-events-none' : ''}`}>
                 <div className={`relative`}>
+                  {userPlan === 'free' && (
+                    <FeatureLockedOverlay darkMode={darkMode} message="Notificaciones disponibles en packs" showIcon showMessage />
+                  )}
                   <SectionHeader title="Notificaciones en Vivo" tone="notificaciones" darkMode={darkMode} />
 
                   <CheckWithInput label={t('control.announcements.followers')} checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} hint={t('control.announcements.followersHint')} />
@@ -1522,7 +1593,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               </div>
 
               {/* ASISTENTE DE IA - en BASE solo esta sección queda bloqueada */}
-              <div className={`relative ${isAIAssistantBlockedInConfig ? 'pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
+              <div className={`relative ${isAIAssistantBlockedInConfig ? 'opacity-45 pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
                 {isAIAssistantBlockedInConfig && (
                   <FeatureLockedOverlay
                     darkMode={darkMode}
