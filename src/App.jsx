@@ -1323,9 +1323,9 @@ export function App() {
         if (paypalProviderConfirmed) {
           sessionStorage.removeItem(callbackKey)
           setPaymentNotice({
-            title: 'Pago confirmado por PayPal',
-            message: 'Tu pago fue aprobado. Estamos terminando de acreditar tus tokens; esto puede tardar unos segundos.',
-            status: 'processing'
+            title: 'Gracias, pago confirmado',
+            message: 'PayPal confirmó tu pago. Estamos sincronizando tus tokens automáticamente.',
+            status: 'success'
           })
           return
         }
@@ -1359,9 +1359,9 @@ export function App() {
         if (paypalProviderConfirmed) {
           sessionStorage.removeItem(callbackKey)
           setPaymentNotice({
-            title: 'Pago confirmado por PayPal',
-            message: 'Tu pago fue aprobado. Estamos terminando de acreditar tus tokens; esto puede tardar unos segundos.',
-            status: 'processing'
+            title: 'Gracias, pago confirmado',
+            message: 'PayPal confirmó tu pago. Estamos sincronizando tus tokens automáticamente.',
+            status: 'success'
           })
           return
         }
@@ -1665,6 +1665,76 @@ export function App() {
       }
     })()
   }, [currentPage])
+
+  // Reconciliacion en segundo plano para PayPal sin exigir refresh manual.
+  useEffect(() => {
+    if (currentPage !== 'studio') return
+
+    const token = getStoredToken()
+    if (!token) return
+
+    let pending = null
+    try {
+      pending = JSON.parse(localStorage.getItem(PAYMENT_PENDING_KEY) || 'null')
+    } catch {
+      pending = null
+    }
+    if (!pending || String(pending?.provider || '').toLowerCase() !== 'paypal') return
+
+    const startedAt = Number(pending?.startedAt || 0)
+    const maxAgeMs = 2 * 60 * 60 * 1000
+    if (!Number.isFinite(startedAt) || (Date.now() - startedAt) > maxAgeMs) {
+      localStorage.removeItem(PAYMENT_PENDING_KEY)
+      return
+    }
+
+    const previousTokens = Number(user?.tokens || 0)
+    const previousPlan = String(user?.plan || 'free').toLowerCase()
+    const pendingAction = String(pending?.action || '').toLowerCase()
+    const isScheduledAction = ['downgrade_next_cycle', 'billing_cycle_next_cycle'].includes(pendingAction)
+
+    let cancelled = false
+    let attempts = 0
+    const maxAttempts = 20
+
+    const poll = async () => {
+      if (cancelled) return
+      attempts += 1
+      try {
+        const response = await fetch(`${API_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await response.json().catch(() => ({}))
+        if (data?.success) {
+          setUser(data.user)
+          setTokens(data.user.tokens || 100)
+          localStorage.setItem('sv-user', JSON.stringify(data.user))
+          const paymentSeemsApplied = didPaymentApplyToUser(data.user, previousTokens, previousPlan)
+          if (paymentSeemsApplied || isScheduledAction) {
+            localStorage.removeItem(PAYMENT_PENDING_KEY)
+            if (!paymentNotice || paymentNotice.status !== 'success') {
+              setPaymentNotice({
+                title: '✓ Pago Realizado',
+                message: isScheduledAction
+                  ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
+                  : `Tu compra se procesó correctamente. Tokens actualizados: ${Number(data.user?.tokens || 0).toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
+                status: 'success'
+              })
+            }
+            return
+          }
+        }
+      } catch (_) {}
+
+      if (cancelled || attempts >= maxAttempts) return
+      setTimeout(poll, 3000)
+    }
+
+    setTimeout(poll, 1200)
+    return () => {
+      cancelled = true
+    }
+  }, [currentPage, API_URL, paymentNotice, user?.plan, user?.tokens])
 
   // Studio + Voice Workshop + paneles secundarios: todos en el mismo bloque con display:none/block
   // para que SynthesisStudio nunca se desmonte (manteniendo el WebSocket de TikTok vivo al navegar a voice-workshop)

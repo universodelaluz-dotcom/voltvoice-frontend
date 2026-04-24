@@ -78,7 +78,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
   const [success, setSuccess] = useState(false)
 
   // Tokens & Stats
-  const [tokens, setTokens] = useState(user?.tokens || 1000)
+  const [tokens, setTokens] = useState(typeof user?.tokens === 'number' ? user.tokens : 0)
   const [totalTokensUsed, setTotalTokensUsed] = useState(0)
   const [synthesisCount, setSynthesisCount] = useState(0)
   const [announcements, setAnnouncements] = useState([])
