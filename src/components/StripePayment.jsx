@@ -34,6 +34,64 @@ const LEGACY_PLAN_FALLBACKS = {
 }
 const MONTHLY_PACK_PLAN_IDS = new Set(['pack_lite', 'pack_pro', 'pack_max'])
 
+const PLAN_PRICE_BY_CYCLE = {
+  monthly: {
+    base: 9.99,
+    pack_lite: 9.99,
+    pack_pro: 24.99,
+    pack_max: 49.99,
+    pack_lite_combo: 19.98,
+    pack_pro_combo: 34.98,
+    pack_max_combo: 59.98,
+  },
+  annual: {
+    base: 99.90,
+    pack_lite: 199.80,
+    pack_pro: 349.80,
+    pack_max: 599.80,
+  }
+}
+
+const PLAN_LABEL_BY_CYCLE = {
+  monthly: {
+    base: 'PLAN BASE',
+    pack_lite: 'PACK LITE',
+    pack_pro: 'PACK PRO',
+    pack_max: 'PACK MAX',
+    pack_lite_combo: 'BASE + LITE',
+    pack_pro_combo: 'BASE + PRO',
+    pack_max_combo: 'BASE + MAX',
+  },
+  annual: {
+    base: 'PLAN BASE',
+    pack_lite: 'BASE + LITE',
+    pack_pro: 'BASE + PRO',
+    pack_max: 'BASE + MAX',
+  }
+}
+
+const normalizeBillingCycle = (value) => String(value || 'monthly').toLowerCase() === 'annual' ? 'annual' : 'monthly'
+const normalizePlanIdForCycle = (planId, billingCycle) => {
+  const normalized = String(planId || 'base').toLowerCase().trim()
+  if (!normalized) return 'base'
+  if (billingCycle === 'annual') return normalized.replace(/_combo$/i, '')
+  return normalized
+}
+const buildPlanCheckoutItem = ({ planId, billingCycle }) => {
+  const cycle = normalizeBillingCycle(billingCycle)
+  const normalizedPlanId = normalizePlanIdForCycle(planId, cycle)
+  const price = Number(PLAN_PRICE_BY_CYCLE[cycle]?.[normalizedPlanId] || 0)
+  const planLabel = PLAN_LABEL_BY_CYCLE[cycle]?.[normalizedPlanId] || String(normalizedPlanId || 'base').toUpperCase()
+  const cycleLabel = cycle === 'annual' ? 'Anual' : 'Mensual'
+  return {
+    type: 'plan',
+    planId: normalizedPlanId,
+    billingCycle: cycle,
+    label: `${planLabel} ${cycleLabel}`,
+    price: price.toFixed(2),
+  }
+}
+
 export function StripePayment({ isOpen, onClose, initialPackageTokens = null, initialCheckoutItem = null }) {
   const { t } = useTranslation()
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
@@ -44,6 +102,8 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
   const [couponLoading, setCouponLoading] = useState(false)
   const [loading, setLoading] = useState(null)
   const [usdMxn, setUsdMxn] = useState(17)
+  const [planBillingCycle, setPlanBillingCycle] = useState('monthly')
+  const [preferredMonthlyPlanId, setPreferredMonthlyPlanId] = useState('base')
 
   useEffect(() => {
     const sync = () => setDarkMode(localStorage.getItem('voltvoice-theme') !== 'light')
@@ -59,7 +119,12 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     setCouponValidation(null)
 
     if (initialCheckoutItem?.type === 'plan') {
-      setCheckoutItem(initialCheckoutItem)
+      const initialCycle = normalizeBillingCycle(initialCheckoutItem.billingCycle)
+      const initialPlanId = String(initialCheckoutItem.planId || 'base').toLowerCase().trim()
+      const monthlyPlanId = initialCycle === 'monthly' ? initialPlanId : normalizePlanIdForCycle(initialPlanId, 'monthly')
+      setPreferredMonthlyPlanId(monthlyPlanId)
+      setPlanBillingCycle(initialCycle)
+      setCheckoutItem(buildPlanCheckoutItem({ planId: initialCycle === 'monthly' ? monthlyPlanId : initialPlanId, billingCycle: initialCycle }))
       return
     }
 
@@ -174,6 +239,25 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
   const currentItem = checkoutItem?.type === 'plan'
     ? checkoutItem
     : { type: 'tokens', package: selectedPackage }
+
+  const switchPlanBillingCycle = (nextCycle) => {
+    const normalizedCycle = normalizeBillingCycle(nextCycle)
+    if (currentItem.type !== 'plan') return
+    if (normalizedCycle === planBillingCycle) return
+
+    if (normalizedCycle === 'annual') {
+      const annualPlanId = normalizePlanIdForCycle(preferredMonthlyPlanId || currentItem.planId, 'annual')
+      setPlanBillingCycle('annual')
+      setCheckoutItem(buildPlanCheckoutItem({ planId: annualPlanId, billingCycle: 'annual' }))
+      setCouponValidation(null)
+      return
+    }
+
+    const monthlyPlanId = normalizePlanIdForCycle(preferredMonthlyPlanId || currentItem.planId, 'monthly')
+    setPlanBillingCycle('monthly')
+    setCheckoutItem(buildPlanCheckoutItem({ planId: monthlyPlanId, billingCycle: 'monthly' }))
+    setCouponValidation(null)
+  }
 
   const validCoupon = couponValidation?.valid ? couponValidation : null
   const isScheduledPlanAction = (action) => ['downgrade_next_cycle', 'billing_cycle_next_cycle'].includes(String(action || ''))
@@ -414,16 +498,34 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         )}
 
         {currentItem.type === 'plan' && (
-          <div className={`rounded-xl p-3 mb-5 flex items-center gap-2 ${dm ? 'bg-white/5 border border-white/10' : 'bg-indigo-50 border border-indigo-100'}`}>
-            <Zap className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-            <p className={`text-sm ${dm ? 'text-gray-300' : 'text-gray-600'}`}>
-              <span className="font-bold text-cyan-400">{currentItem.label}</span>{' '}por{' '}
-              <span className="font-bold">${currentItem.price} USD</span>{' '}
-              <span>- {currentItem.billingCycle === 'annual' ? t('payment.billingAnnual') : t('payment.billingMonthly')}</span>
-              <span className={`block text-[11px] ${dm ? 'text-gray-500' : 'text-gray-500'}`}>
-                {t('payment.approxMxn', { mxn: formatMxnApprox(Number(currentItem.price)) })}
-              </span>
-            </p>
+          <div className="mb-5">
+            <div className={`rounded-xl p-3 mb-3 flex items-center gap-2 ${dm ? 'bg-white/5 border border-white/10' : 'bg-indigo-50 border border-indigo-100'}`}>
+              <Zap className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+              <p className={`text-sm ${dm ? 'text-gray-300' : 'text-gray-600'}`}>
+                <span className="font-bold text-cyan-400">{currentItem.label}</span>{' '}por{' '}
+                <span className="font-bold">${currentItem.price} USD</span>{' '}
+                <span>- {currentItem.billingCycle === 'annual' ? t('payment.billingAnnual') : t('payment.billingMonthly')}</span>
+                <span className={`block text-[11px] ${dm ? 'text-gray-500' : 'text-gray-500'}`}>
+                  {t('payment.approxMxn', { mxn: formatMxnApprox(Number(currentItem.price)) })}
+                </span>
+              </p>
+            </div>
+            <div className={`inline-flex w-full gap-2 rounded-xl p-1.5 border ${dm ? 'border-cyan-500/30 bg-[#0b1327]' : 'border-cyan-200 bg-cyan-50'}`}>
+              <button
+                type="button"
+                onClick={() => switchPlanBillingCycle('monthly')}
+                className={`flex-1 px-4 py-2 rounded-lg text-xs font-black transition-all ${planBillingCycle === 'monthly' ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white' : dm ? 'text-gray-300' : 'text-gray-700'}`}
+              >
+                Mensual
+              </button>
+              <button
+                type="button"
+                onClick={() => switchPlanBillingCycle('annual')}
+                className={`flex-1 px-4 py-2 rounded-lg text-xs font-black transition-all ${planBillingCycle === 'annual' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' : dm ? 'text-gray-300' : 'text-gray-700'}`}
+              >
+                Anual (2 meses gratis)
+              </button>
+            </div>
           </div>
         )}
         <p className={`text-[11px] mb-3 text-center ${dm ? 'text-gray-600' : 'text-gray-500'}`}>

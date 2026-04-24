@@ -945,6 +945,17 @@ export function App() {
     setConfigReady(false)
     reconcileMercadoPagoPayments(API_URL, token)
     loadAndApplyUserConfig(token, userData)
+    fetch(`${API_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data?.success || !data?.user) return
+        setUser(data.user)
+        setTokens(data.user.tokens || 100)
+        localStorage.setItem('sv-user', JSON.stringify(data.user))
+      })
+      .catch(() => {})
     setCurrentPage('studio')
   }
 

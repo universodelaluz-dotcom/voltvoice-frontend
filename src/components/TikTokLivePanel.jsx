@@ -504,7 +504,22 @@ const normalizePlanTier = (rawPlan = 'free') => {
   return normalized
 }
 
-const getPlanBadgeLabel = (planTier) => {
+const getUserBillingCycle = (userObj = null) => {
+  const candidates = [
+    userObj?.subscription?.billing_cycle,
+    userObj?.subscription?.billingCycle,
+    userObj?.subscription?.cycle,
+    userObj?.billing_cycle,
+    userObj?.billingCycle,
+    userObj?.subscription_billing_cycle
+  ]
+    .map((value) => String(value || '').trim().toLowerCase())
+    .filter(Boolean)
+
+  return candidates.includes('annual') ? 'annual' : 'monthly'
+}
+
+const getPlanBadgeLabel = (planTier, billingCycle = 'monthly') => {
   const map = {
     free: 'FREE',
     base: 'PLAN BASE',
@@ -513,16 +528,21 @@ const getPlanBadgeLabel = (planTier) => {
     pack_max: 'PACK MAX',
     admin: 'ADMIN',
   }
-  return map[planTier] || String(planTier || 'FREE').toUpperCase()
+  const baseLabel = map[planTier] || String(planTier || 'FREE').toUpperCase()
+  if (billingCycle === 'annual' && planTier !== 'free' && planTier !== 'admin') {
+    return `${baseLabel} ANUAL`
+  }
+  return baseLabel
 }
 
 export default function TikTokLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride }) {
   const { t } = useTranslation()
   const effectivePlanRaw = getEffectiveUserPlan(user)
+  const userBillingCycle = getUserBillingCycle(user)
   const currentPlan = String(user?.role || '').toLowerCase() === 'admin'
     ? 'admin'
     : normalizePlanTier(effectivePlanRaw)
-  const displayPlan = getPlanBadgeLabel(currentPlan)
+  const displayPlan = getPlanBadgeLabel(currentPlan, userBillingCycle)
   const hasPaidAccess = currentPlan !== 'free'
   const planBadgeClass = currentPlan === 'admin'
     ? 'bg-red-500/20 text-red-300 border-red-400/30'
@@ -4210,4 +4230,3 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     </div>
   )
 }
-

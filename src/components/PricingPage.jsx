@@ -14,7 +14,7 @@ export function PricingPage({ onGoHome, darkMode, onPlanAction }) {
       monthlyPrice: 9.99,
       annualPrice: 99.90,
       monthlyCta: 'Comprar Plan Base',
-      annualCta: 'Suscribirme Base Anual',
+      annualCta: 'Comprar Plan Base Anual',
       className: 'bg-gradient-to-r from-cyan-500 to-blue-600',
     },
     {
@@ -135,3 +135,4 @@ export function PricingPage({ onGoHome, darkMode, onPlanAction }) {
     </div>
   )
 }
+
