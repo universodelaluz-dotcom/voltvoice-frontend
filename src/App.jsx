@@ -1972,9 +1972,9 @@ export function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
             <h3 className="text-4xl font-black mb-4">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{t('landing.pricing.title')}</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">✨ {t('landing.pricing.title')} ✨</span>
             </h3>
-            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{t('landing.pricing.subtitle')}</p>
+            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>🎯 {t('landing.pricing.subtitle')} 🚀</p>
           </div>
           <PricingCards darkMode={darkMode} showToggle={true} onPlanAction={handlePlanAction} />
         </div>

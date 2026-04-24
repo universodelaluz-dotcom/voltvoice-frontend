@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
 
 const BASE_PLAN = {
@@ -15,19 +15,19 @@ const BASE_PLAN = {
     'Soporte prioritario'
   ],
   features: [
-    { icon: '??', label: 'Filtros avanzados' },
-    { icon: '??', label: 'Smart filter' },
-    { icon: '??', label: 'Cambiar nick' },
-    { icon: '??', label: 'Silenciado' },
-    { icon: '???', label: 'Anti-spam' },
-    { icon: '??', label: 'Analytics' }
+    { icon: '🎨', label: 'Filtros avanzados' },
+    { icon: '🤖', label: 'Smart filter' },
+    { icon: '👤', label: 'Cambiar nick' },
+    { icon: '🔇', label: 'Silenciado' },
+    { icon: '🛡️', label: 'Anti-spam' },
+    { icon: '📊', label: 'Analytics' }
   ]
 }
 
 const PACKS = [
   {
     planId: 'pack_lite',
-    icon: '?',
+    icon: '⚡',
     name: 'PACK LITE',
     bundleName: 'BASE + LITE',
     price: 9.99,
@@ -43,7 +43,7 @@ const PACKS = [
   },
   {
     planId: 'pack_pro',
-    icon: '??',
+    icon: '🔥',
     name: 'PACK PRO',
     bundleName: 'BASE + PRO',
     price: 24.99,
@@ -60,7 +60,7 @@ const PACKS = [
   },
   {
     planId: 'pack_max',
-    icon: '?',
+    icon: '⭐',
     name: 'PACK MAX',
     bundleName: 'BASE + MAX',
     price: 49.99,
@@ -76,7 +76,7 @@ const PACKS = [
   }
 ]
 
-export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
+export function PricingCards({ darkMode, showToggle = true, onPlanAction, layout = 'landing' }) {
   const [usdMxn, setUsdMxn] = useState(18)
   const [billingCycle, setBillingCycle] = useState('monthly')
   const [bundleWithBaseByPlan, setBundleWithBaseByPlan] = useState({
@@ -119,6 +119,18 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
   const isAnnual = billingCycle === 'annual'
   const basePrice = isAnnual ? BASE_PLAN.annualPrice : BASE_PLAN.price
   const baseLabel = isAnnual ? 'PLAN BASE ANUAL' : BASE_PLAN.name
+  const isPricingLayout = layout === 'pricing'
+  const packsSectionClass = isPricingLayout
+    ? `mt-20 pt-12 border-t ${darkMode ? 'border-cyan-400/20' : 'border-cyan-200'}`
+    : `mt-14 pt-7 border-t ${darkMode ? 'border-cyan-400/20' : 'border-cyan-200'}`
+  const packsTitleClass = isPricingLayout
+    ? `text-base md:text-lg font-black mb-4 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`
+    : `text-lg md:text-xl font-black mb-3 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`
+  const packsDescClass = isPricingLayout
+    ? `text-sm mb-9 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`
+    : `text-sm md:text-base mb-7 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`
+  const toggleWrapClass = isPricingLayout ? 'mb-10 flex justify-center' : 'mb-8 flex justify-center'
+  const packsGridClass = isPricingLayout ? 'grid grid-cols-1 md:grid-cols-3 gap-6' : 'grid grid-cols-1 md:grid-cols-3 gap-5'
 
   return (
     <div className="py-8">
@@ -137,18 +149,18 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
         }
       `}</style>
       <div className="max-w-6xl mx-auto px-4">
-        <h2 className={`text-sm font-bold mb-2 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
-          Plan Base - incluido en tu suscripci�n
+        <h2 className={`text-base md:text-lg font-black mb-4 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
+          Plan Base - incluido en tu suscripción
         </h2>
 
-        <article className={`relative overflow-hidden rounded-2xl p-6 border ${darkMode ? 'bg-gradient-to-br from-[#141734] via-[#121633] to-[#10142f] border-cyan-400/40 shadow-[0_0_28px_rgba(34,211,238,0.14)]' : 'bg-white border-cyan-200 shadow-sm'}`}>
+        <article className={`relative overflow-hidden rounded-2xl p-7 md:p-8 border ${darkMode ? 'bg-gradient-to-br from-[#141734] via-[#121633] to-[#10142f] border-cyan-400/40 shadow-[0_0_28px_rgba(34,211,238,0.14)]' : 'bg-white border-cyan-200 shadow-sm'}`}>
           <span className="pointer-events-none absolute -top-10 -right-10 h-28 w-28 rounded-full bg-cyan-400/20 blur-2xl animate-pulse" />
-          <div className="mb-3 inline-flex rounded-full px-3 py-1 text-[11px] font-bold text-white bg-gradient-to-r from-cyan-500 to-blue-500">
+          <div className="mb-5 inline-flex rounded-full px-3 py-1 text-[11px] font-bold text-white bg-gradient-to-r from-cyan-500 to-blue-500">
             EL MAS POPULAR
           </div>
 
-          <h3 className="text-[30px] leading-tight font-black mb-1">?? {baseLabel}</h3>
-          <p className={`text-sm mb-3 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{BASE_PLAN.subtitle}</p>
+          <h3 className="text-[32px] leading-tight font-black mb-2">🎯 {baseLabel}</h3>
+          <p className={`text-base mb-5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{BASE_PLAN.subtitle}</p>
 
           <div className="mb-3 flex items-baseline gap-2">
             <span className="text-[44px] leading-none font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
@@ -156,13 +168,13 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
             </span>
             <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>USD / {isAnnual ? 'ano' : 'mes'}</span>
           </div>
-          <p className={`text-sm mb-4 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>~ {formatMxnApprox(basePrice)} MXN</p>
+          <p className={`text-sm mb-6 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>~ {formatMxnApprox(basePrice)} MXN</p>
 
-          <div className={`inline-block rounded-md px-3 py-2 mb-4 text-sm font-bold ${darkMode ? 'bg-cyan-500/10 border border-cyan-400/30 text-cyan-300' : 'bg-cyan-50 border border-cyan-200 text-cyan-700'}`}>
+          <div className={`inline-block rounded-md px-3 py-2 mb-6 text-sm font-bold ${darkMode ? 'bg-cyan-500/10 border border-cyan-400/30 text-cyan-300' : 'bg-cyan-50 border border-cyan-200 text-cyan-700'}`}>
             {BASE_PLAN.tokens}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
             {BASE_PLAN.voices.map((voice) => (
               <div key={voice} className="flex items-center gap-2 text-sm">
                 <Check className="w-4 h-4 text-emerald-400" />
@@ -171,7 +183,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
             ))}
           </div>
 
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-4">
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-2.5 mb-6">
             {BASE_PLAN.features.map((feature) => (
               <div key={feature.label} className={`rounded-md px-2 py-2 text-center text-xs font-semibold ${darkMode ? 'bg-white/5 text-gray-200' : 'bg-cyan-50 text-gray-700'}`}>
                 <div className="text-sm">{feature.icon}</div>
@@ -182,33 +194,32 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
 
           <button
             onClick={() => onPlanAction?.({ ...BASE_PLAN, name: baseLabel, price: basePrice, planId: 'base' }, { billingCycle, planId: 'base' })}
-            className="w-full py-3 rounded-lg font-bold text-sm text-white bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 transition-all hover:shadow-[0_0_18px_rgba(34,211,238,0.28)]"
+            className="w-full py-3.5 rounded-lg font-bold text-base text-white bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 transition-all hover:shadow-[0_0_18px_rgba(34,211,238,0.28)]"
           >
-            {isAnnual ? '?? Comprar Plan Base Anual' : '?? Comprar Plan Base'}
+            {isAnnual ? '🚀 Comprar Plan Base Anual' : '🚀 Comprar Plan Base'}
           </button>
         </article>
 
-        <section className={`mt-16 pt-8 border-t ${darkMode ? 'border-cyan-400/25' : 'border-cyan-200'}`}>
-          <div className={`h-px w-full mb-6 ${darkMode ? 'bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent' : 'bg-gradient-to-r from-transparent via-cyan-300 to-transparent'}`} />
-          <h2 className={`text-sm font-bold mb-2 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
-            Packs de voces clonadas - a�ade personajes a tu stream
+        <section className={packsSectionClass}>
+          <h2 className={packsTitleClass}>
+            Packs de voces clonadas - añade personajes a tu stream
           </h2>
-          <p className={`text-xs mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            Los packs son compras independientes que se suman a tu Plan Base. Comb�nalos para crear tu elenco de personajes con voz propia.
+          <p className={packsDescClass}>
+            Los packs son compras independientes que se suman a tu Plan Base. Combínalos para crear tu elenco de personajes con voz propia.
           </p>
 
           {showToggle && (
-            <div className="mb-5 flex justify-center">
+            <div className={toggleWrapClass}>
               <div className={`inline-flex gap-2 rounded-xl p-1.5 border ${darkMode ? 'border-cyan-500/30 bg-[#0b1327]' : 'border-cyan-200 bg-cyan-50'}`}>
                 <button
                   onClick={() => setBillingCycle('monthly')}
-                  className={`px-5 py-2.5 min-h-10 rounded-md text-sm font-bold ${billingCycle === 'monthly' ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                  className={`px-5 py-2.5 min-h-10 rounded-md text-base font-black ${billingCycle === 'monthly' ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}
                 >
                   Mensual
                 </button>
                 <button
                   onClick={() => setBillingCycle('annual')}
-                  className={`px-5 py-2.5 min-h-10 rounded-md text-sm font-bold ${billingCycle === 'annual' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                  className={`px-5 py-2.5 min-h-10 rounded-md text-base font-black ${billingCycle === 'annual' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}
                 >
                   Anual (2 meses gratis)
                 </button>
@@ -216,7 +227,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className={packsGridClass}>
             {PACKS.map((pack) => {
               const bundleWithBase = Boolean(bundleWithBaseByPlan[pack.planId])
               const comboPrice = BASE_PLAN.price + pack.price
@@ -237,7 +248,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
                   <span className={`pointer-events-none absolute -top-10 -right-10 h-24 w-24 rounded-full blur-2xl opacity-60 animate-pulse ${pack.popular ? 'bg-pink-400/30' : 'bg-cyan-400/20'}`} />
                   {pack.popular && (
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex rounded-full px-3 py-1 text-[11px] font-bold text-white bg-gradient-to-r from-pink-500 to-rose-500" style={{ animation: 'svBadgeBlink 1.4s ease-in-out infinite' }}>
-                      ? RECOMENDADO
+                      ⭐ RECOMENDADO
                     </span>
                   )}
 
@@ -308,4 +319,5 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction }) {
     </div>
   )
 }
+
 

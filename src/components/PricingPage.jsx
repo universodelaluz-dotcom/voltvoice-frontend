@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { PricingCards } from './PricingCards'
 import { PricingComparison } from './PricingComparison'
@@ -113,7 +113,7 @@ export function PricingPage({ onGoHome, darkMode, onPlanAction }) {
             ))}
           </div>
 
-          <PricingCards darkMode={darkMode} showToggle={true} onPlanAction={onPlanAction} />
+          <PricingCards darkMode={darkMode} showToggle={true} onPlanAction={onPlanAction} layout="pricing" />
 
           <div className="my-20 flex items-center gap-4">
             <div className={`flex-1 h-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
@@ -135,4 +135,5 @@ export function PricingPage({ onGoHome, darkMode, onPlanAction }) {
     </div>
   )
 }
+
 
