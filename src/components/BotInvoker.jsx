@@ -2791,16 +2791,32 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
   }
 
   const getActualPlan = (userObj) => {
-    const addonActive = Boolean(userObj?.subscription?.addonPack?.active)
-    const addonPlan = addonActive ? String(userObj?.subscription?.addonPack?.planKey || '').toLowerCase() : ''
-    const featurePlan = String(userObj?.subscription?.effectiveFeaturePlanKey || '').toLowerCase()
-    const backendPlan = String(userObj?.subscription?.backendPlan || '').toLowerCase()
-    const subscriptionPlan = String(userObj?.subscription?.plan || '').toLowerCase()
-    const mainPlan = String(userObj?.plan || '').toLowerCase()
-    const candidates = [addonPlan, featurePlan, backendPlan, subscriptionPlan, mainPlan]
-      .map((plan) => normalizePlanTier(plan))
-      .filter(Boolean)
-    return candidates.find((plan) => plan !== 'free') || candidates[0] || 'free'
+    const role = String(userObj?.role || '').trim().toLowerCase()
+    if (role === 'admin') return 'admin'
+
+    const backendPlan = normalizePlanTier(String(userObj?.subscription?.backendPlan || '').toLowerCase())
+    const subscriptionPlan = normalizePlanTier(String(userObj?.subscription?.plan || '').toLowerCase())
+    const mainPlan = normalizePlanTier(String(userObj?.plan || '').toLowerCase())
+    const basePlanCandidates = [backendPlan, subscriptionPlan, mainPlan].filter(Boolean)
+    const basePlan = basePlanCandidates.find((plan) => plan !== 'free') || basePlanCandidates[0] || 'free'
+
+    if (['pack_lite', 'pack_pro', 'pack_max'].includes(basePlan)) {
+      return basePlan
+    }
+
+    const addonRaw = userObj?.subscription?.addonPack || null
+    const addonPlan = normalizePlanTier(String(addonRaw?.planKey || '').toLowerCase())
+    const addonExpiresAtMs = addonRaw?.expiresAt ? Date.parse(addonRaw.expiresAt) : NaN
+    const addonActiveFlag = Boolean(addonRaw?.active)
+    const addonIsTimeValid = Number.isFinite(addonExpiresAtMs) && addonExpiresAtMs > Date.now()
+    const addonIsPack = ['pack_lite', 'pack_pro', 'pack_max'].includes(addonPlan)
+    const addonEntitlementActive = addonActiveFlag && addonIsPack && addonIsTimeValid
+
+    if (addonEntitlementActive) {
+      return addonPlan
+    }
+
+    return basePlan
   }
 
   const userPlan = getActualPlan(user)

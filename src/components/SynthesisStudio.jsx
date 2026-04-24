@@ -6,14 +6,37 @@ import BotInvoker from './BotInvoker'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Shield, Lock } from 'lucide-react'
 
 const getEffectiveUserPlan = (userObj = null) => {
-  const addonActive = Boolean(userObj?.subscription?.addonPack?.active)
-  const addonPlan = addonActive ? String(userObj?.subscription?.addonPack?.planKey || '').trim().toLowerCase() : ''
-  const featurePlan = String(userObj?.subscription?.effectiveFeaturePlanKey || '').trim().toLowerCase()
+  const normalizePlan = (rawPlan = 'free') => {
+    const normalized = String(rawPlan || 'free').trim().toLowerCase()
+    if (!normalized) return 'free'
+    if (normalized === 'free' || normalized === 'plan free') return 'free'
+    if (normalized === 'base' || normalized === 'plan base' || normalized === 'start' || normalized === 'start_monthly') return 'base'
+    if (normalized === 'pack_lite' || normalized === 'pack lite' || normalized === 'lite' || normalized === 'creator' || normalized === 'creator_monthly') return 'pack_lite'
+    if (normalized === 'pack_pro' || normalized === 'pack pro' || normalized === 'pro' || normalized === 'pro_monthly') return 'pack_pro'
+    if (normalized === 'pack_max' || normalized === 'pack max' || normalized === 'max') return 'pack_max'
+    if (normalized === 'elite') return 'admin'
+    if (normalized === 'admin') return 'admin'
+    return normalized
+  }
+
   const directPlan = String(userObj?.plan || '').trim().toLowerCase()
   const backendPlan = String(userObj?.subscription?.backendPlan || '').trim().toLowerCase()
   const subscriptionPlan = String(userObj?.subscription?.plan || '').trim().toLowerCase()
-  const candidates = [addonPlan, featurePlan, backendPlan, subscriptionPlan, directPlan].filter(Boolean)
-  return candidates.find((plan) => plan !== 'free') || candidates[0] || 'free'
+  const role = String(userObj?.role || '').trim().toLowerCase()
+  if (role === 'admin') return 'admin'
+
+  const baseCandidates = [backendPlan, subscriptionPlan, directPlan].map((plan) => normalizePlan(plan)).filter(Boolean)
+  const basePlan = baseCandidates.find((plan) => plan !== 'free') || baseCandidates[0] || 'free'
+  if (['pack_lite', 'pack_pro', 'pack_max', 'admin'].includes(basePlan)) return basePlan
+
+  const addonRaw = userObj?.subscription?.addonPack || null
+  const addonPlan = normalizePlan(String(addonRaw?.planKey || '').trim().toLowerCase())
+  const addonExpiresAtMs = addonRaw?.expiresAt ? Date.parse(addonRaw.expiresAt) : NaN
+  const addonActive = Boolean(addonRaw?.active)
+  const addonValid = addonActive && Number.isFinite(addonExpiresAtMs) && addonExpiresAtMs > Date.now()
+  if (addonValid && ['pack_lite', 'pack_pro', 'pack_max'].includes(addonPlan)) return addonPlan
+
+  return basePlan
 }
 
 const normalizePlanTier = (rawPlan = 'free') => {

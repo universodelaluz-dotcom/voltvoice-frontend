@@ -40,15 +40,32 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
   // Get actual plan, preferring subscription/backend plan fields when available
   const getActualPlan = (userObj) => {
-    const addonActive = Boolean(userObj?.subscription?.addonPack?.active)
-    const addonPlan = addonActive ? String(userObj?.subscription?.addonPack?.planKey || '').toLowerCase() : ''
-    const featurePlan = String(userObj?.subscription?.effectiveFeaturePlanKey || '').toLowerCase()
+    const role = String(userObj?.role || '').trim().toLowerCase()
+    if (role === 'admin') return 'admin'
+
     const mainPlan = String(userObj?.plan || '').toLowerCase()
     const backendPlan = String(userObj?.subscription?.backendPlan || '').toLowerCase()
     const subscriptionPlan = String(userObj?.subscription?.plan || '').toLowerCase()
-    const candidates = [addonPlan, featurePlan, backendPlan, subscriptionPlan, mainPlan].filter(Boolean)
-    const picked = candidates.find((plan) => plan !== 'free') || candidates[0] || 'free'
-    return normalizePlanTier(picked)
+    const baseCandidates = [backendPlan, subscriptionPlan, mainPlan]
+      .map((plan) => normalizePlanTier(plan))
+      .filter(Boolean)
+    const basePlan = baseCandidates.find((plan) => plan !== 'free') || baseCandidates[0] || 'free'
+
+    if (['pack_lite', 'pack_pro', 'pack_max', 'admin'].includes(basePlan)) {
+      return basePlan
+    }
+
+    const addonRaw = userObj?.subscription?.addonPack || null
+    const addonPlan = normalizePlanTier(String(addonRaw?.planKey || '').toLowerCase())
+    const addonExpiresAtMs = addonRaw?.expiresAt ? Date.parse(addonRaw.expiresAt) : NaN
+    const addonActive = Boolean(addonRaw?.active)
+    const addonValid = addonActive && Number.isFinite(addonExpiresAtMs) && addonExpiresAtMs > Date.now()
+
+    if (addonValid && ['pack_lite', 'pack_pro', 'pack_max'].includes(addonPlan)) {
+      return addonPlan
+    }
+
+    return basePlan
   }
   const planKey = getActualPlan(user)
   const PLAN_MAX_CLONED_VOICES = {
@@ -754,7 +771,8 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
   // Feature access control
   const userPlan = getActualPlan(user)
-  const hasAddonPackActive = Boolean(user?.subscription?.addonPack?.active)
+  const addonExpiresAtMs = user?.subscription?.addonPack?.expiresAt ? Date.parse(user.subscription.addonPack.expiresAt) : NaN
+  const hasAddonPackActive = Boolean(user?.subscription?.addonPack?.active) && Number.isFinite(addonExpiresAtMs) && addonExpiresAtMs > Date.now()
   const hasWorkshopAccess = user?.role === 'admin' || hasAddonPackActive || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
   const isWorkshopBlocked = !hasWorkshopAccess
   const canUseAIAssistant = user?.role === 'admin' || hasAddonPackActive || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)

@@ -490,8 +490,10 @@ const apiNicks = {
 }
 
 const getEffectiveUserPlan = (userObj = null) => {
-  const addonActive = Boolean(userObj?.subscription?.addonPack?.active)
-  const addonPlan = addonActive ? String(userObj?.subscription?.addonPack?.planKey || '').trim().toLowerCase() : ''
+  const addonRaw = userObj?.subscription?.addonPack || null
+  const addonExpiresAtMs = addonRaw?.expiresAt ? Date.parse(addonRaw.expiresAt) : NaN
+  const addonActive = Boolean(addonRaw?.active) && Number.isFinite(addonExpiresAtMs) && addonExpiresAtMs > Date.now()
+  const addonPlan = addonActive ? String(addonRaw?.planKey || '').trim().toLowerCase() : ''
   const directPlan = String(userObj?.plan || '').trim().toLowerCase()
   const backendPlan = String(userObj?.subscription?.backendPlan || '').trim().toLowerCase()
   const subscriptionPlan = String(userObj?.subscription?.plan || '').trim().toLowerCase()
@@ -539,7 +541,8 @@ const getPlanBadgeLabel = (planTier, billingCycle = 'monthly') => {
 
 export default function TikTokLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride }) {
   const { t } = useTranslation()
-  const addonActive = Boolean(user?.subscription?.addonPack?.active)
+  const addonExpiresAtMs = user?.subscription?.addonPack?.expiresAt ? Date.parse(user.subscription.addonPack.expiresAt) : NaN
+  const addonActive = Boolean(user?.subscription?.addonPack?.active) && Number.isFinite(addonExpiresAtMs) && addonExpiresAtMs > Date.now()
   const addonPlanRaw = addonActive ? String(user?.subscription?.addonPack?.planKey || '').trim().toLowerCase() : ''
   const addonPlan = normalizePlanTier(addonPlanRaw || 'free')
   const visualPlanRawCandidates = [
