@@ -542,16 +542,22 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const addonActive = Boolean(user?.subscription?.addonPack?.active)
   const addonPlanRaw = addonActive ? String(user?.subscription?.addonPack?.planKey || '').trim().toLowerCase() : ''
   const addonPlan = normalizePlanTier(addonPlanRaw || 'free')
-  const baseBackendPlanRaw = String(user?.subscription?.backendPlan || user?.plan || 'free').trim().toLowerCase()
-  const baseBackendPlan = normalizePlanTier(baseBackendPlanRaw)
+  const visualPlanRawCandidates = [
+    String(user?.subscription?.backendPlan || '').trim().toLowerCase(),
+    String(user?.subscription?.plan || '').trim().toLowerCase(),
+    String(user?.plan || '').trim().toLowerCase(),
+  ].filter(Boolean)
+  const visualPlanRaw = visualPlanRawCandidates.find((plan) => plan !== 'free') || visualPlanRawCandidates[0] || 'free'
+  const visualPlan = normalizePlanTier(visualPlanRaw)
   const effectivePlanRaw = getEffectiveUserPlan(user)
   const userBillingCycle = getUserBillingCycle(user)
   const currentPlan = String(user?.role || '').toLowerCase() === 'admin'
     ? 'admin'
     : normalizePlanTier(effectivePlanRaw)
-  const displayPlan = addonActive
-    ? `${getPlanBadgeLabel(baseBackendPlan, userBillingCycle)} + ${getPlanBadgeLabel(addonPlan, 'monthly')} (31D)`
-    : getPlanBadgeLabel(currentPlan, userBillingCycle)
+  const displayPlan = getPlanBadgeLabel(
+    String(user?.role || '').toLowerCase() === 'admin' ? 'admin' : visualPlan,
+    userBillingCycle
+  )
   const hasPaidAccess = currentPlan !== 'free'
   const planBadgeClass = currentPlan === 'admin'
     ? 'bg-red-500/20 text-red-300 border-red-400/30'
