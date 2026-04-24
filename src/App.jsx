@@ -511,6 +511,7 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
                   <p className={`font-black text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{slotSpec.label}</p>
                   {user ? (
                     <>
+                      <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Correo: <span className="font-bold">{String(user.email || '')}</span></p>
                       <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>ID: {user.id}</p>
                       <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Plan actual: <span className="font-bold uppercase">{user.plan}</span></p>
                       <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Tokens: <span className="font-bold">{Number(user.tokens || 0).toLocaleString()}</span></p>
