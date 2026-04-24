@@ -2764,15 +2764,45 @@ Speak with a voice pacing style around ${assistantVoiceSpeed.toFixed(2)}x.`
   // Autopilot deshabilitado: el interactuador solo se invoca manualmente (F8).
   const missingAssistantSetup = !selectedCharacterId || !selectedRealtimeVoiceId
 
-  // Feature access control: Assistant available only in pack tiers
-  // Get actual plan, preferring subscription.backendPlan if available
+  // Feature access control: Assistant available in paid packs and admin.
+  // Support annual base + monthly addon by honoring effective feature plan/addon fields.
+  const normalizePlanTier = (rawPlan = 'free') => {
+    const normalized = String(rawPlan || 'free').trim().toLowerCase()
+    if (!normalized) return 'free'
+    if (normalized === 'free' || normalized === 'plan free') return 'free'
+    if (normalized === 'base' || normalized === 'plan base' || normalized === 'start' || normalized === 'start_monthly') return 'base'
+    if (
+      normalized === 'pack_lite' ||
+      normalized === 'pack lite' ||
+      normalized === 'lite' ||
+      normalized === 'creator' ||
+      normalized === 'creator_monthly'
+    ) return 'pack_lite'
+    if (
+      normalized === 'pack_pro' ||
+      normalized === 'pack pro' ||
+      normalized === 'pro' ||
+      normalized === 'pro_monthly'
+    ) return 'pack_pro'
+    if (normalized === 'pack_max' || normalized === 'pack max' || normalized === 'max') return 'pack_max'
+    if (normalized === 'elite') return 'admin'
+    if (normalized === 'admin') return 'admin'
+    return normalized
+  }
+
   const getActualPlan = (userObj) => {
-    const mainPlan = String(userObj?.plan || '').toLowerCase()
+    const addonActive = Boolean(userObj?.subscription?.addonPack?.active)
+    const addonPlan = addonActive ? String(userObj?.subscription?.addonPack?.planKey || '').toLowerCase() : ''
+    const featurePlan = String(userObj?.subscription?.effectiveFeaturePlanKey || '').toLowerCase()
     const backendPlan = String(userObj?.subscription?.backendPlan || '').toLowerCase()
     const subscriptionPlan = String(userObj?.subscription?.plan || '').toLowerCase()
-    const candidates = [backendPlan, subscriptionPlan, mainPlan].filter(Boolean)
+    const mainPlan = String(userObj?.plan || '').toLowerCase()
+    const candidates = [addonPlan, featurePlan, backendPlan, subscriptionPlan, mainPlan]
+      .map((plan) => normalizePlanTier(plan))
+      .filter(Boolean)
     return candidates.find((plan) => plan !== 'free') || candidates[0] || 'free'
   }
+
   const userPlan = getActualPlan(user)
   const hasAssistantAccess = ['admin', 'pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
   const isFeatureLockedForUser = !hasAssistantAccess
