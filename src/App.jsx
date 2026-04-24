@@ -1358,13 +1358,6 @@ export function App() {
       return null
     }
 
-    setCurrentPage('studio')
-    setPaymentNotice({
-      title: 'Procesando pago...',
-      message: 'Estamos confirmando tu compra para actualizar plan y tokens.',
-      status: 'processing'
-    })
-
     ;(async () => {
       try {
         await reconcileMercadoPagoPayments(API_URL, token)
@@ -1388,7 +1381,9 @@ export function App() {
           })
           return
         }
-        throw new Error('Pending reconcile finished without account updates')
+        // Usuario volvió del checkout sin completar pago: limpiar pendiente en silencio.
+        localStorage.removeItem(PAYMENT_PENDING_KEY)
+        return
       } catch (error) {
         const refreshedUser = await refreshUser()
         const refreshedTokens = Number(refreshedUser?.tokens || 0)
@@ -1411,11 +1406,9 @@ export function App() {
           return
         }
         console.error('[PAYMENT] pending reconcile error:', error?.message || error)
-        setPaymentNotice({
-          title: 'No se pudo acreditar el pago',
-          message: 'No pudimos confirmar tu compra automaticamente. Reintenta en unos segundos.',
-          status: 'error'
-        })
+        // Si no hubo acreditación real, no molestar con modal de error al usuario.
+        localStorage.removeItem(PAYMENT_PENDING_KEY)
+        setPaymentNotice(null)
       }
     })()
   }, [])
@@ -1535,11 +1528,11 @@ export function App() {
       localStorage.removeItem(PAYMENT_PENDING_KEY)
       return
     }
-    setPaymentNotice({
-      title: 'Procesando pago...',
-      message: 'Completando tu compra...',
-      status: 'processing'
-    })
+    const previousTokens = Number(user?.tokens || 0)
+    const previousPlan = String(user?.plan || 'free').toLowerCase()
+    const pendingAction = String(pending?.action || '').toLowerCase()
+    const isScheduledAction = ['downgrade_next_cycle', 'billing_cycle_next_cycle'].includes(pendingAction)
+
     ;(async () => {
       try {
         await reconcileMercadoPagoPayments(API_URL, token)
@@ -1552,19 +1545,31 @@ export function App() {
           setTokens(data.user.tokens || 100)
           localStorage.setItem('sv-user', JSON.stringify(data.user))
         }
+        const refreshedTokens = Number(data?.user?.tokens || 0)
+        const refreshedPlan = String(data?.user?.plan || 'free').toLowerCase()
+        const paymentSeemsApplied = Boolean(
+          data?.success && (
+            refreshedTokens > previousTokens ||
+            refreshedPlan !== previousPlan
+          )
+        )
+        if (paymentSeemsApplied || isScheduledAction) {
+          localStorage.removeItem(PAYMENT_PENDING_KEY)
+          setPaymentNotice({
+            title: '✓ Pago Realizado',
+            message: isScheduledAction
+              ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
+              : `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
+            status: 'success'
+          })
+          return
+        }
+        // No hubo cambios: cerrar pendiente silenciosamente.
         localStorage.removeItem(PAYMENT_PENDING_KEY)
-        setPaymentNotice({
-          title: '✓ Pago Realizado',
-          message: `Tu compra se procesó correctamente. Tokens actualizados: ${data.user?.tokens || tokens}. Ya tienes acceso a todos tus beneficios.`,
-          status: 'success'
-        })
       } catch (error) {
         console.error('[PAYMENT] auto-process error:', error?.message || error)
-        setPaymentNotice({
-          title: 'No se pudo acreditar el pago',
-          message: 'Intenta recargar la página en unos segundos.',
-          status: 'error'
-        })
+        localStorage.removeItem(PAYMENT_PENDING_KEY)
+        setPaymentNotice(null)
       }
     })()
   }, [currentPage])
