@@ -78,7 +78,14 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
   const [success, setSuccess] = useState(false)
 
   // Tokens & Stats
-  const [tokens, setTokens] = useState(typeof user?.tokens === 'number' ? user.tokens : 0)
+  const [tokens, setTokens] = useState(() => {
+    if (typeof user?.tokens === 'number') return user.tokens
+    try {
+      const cachedUser = JSON.parse(localStorage.getItem('sv-user') || 'null')
+      if (typeof cachedUser?.tokens === 'number') return cachedUser.tokens
+    } catch (_) {}
+    return 0
+  })
   const [totalTokensUsed, setTotalTokensUsed] = useState(0)
   const [synthesisCount, setSynthesisCount] = useState(0)
   const [announcements, setAnnouncements] = useState([])

@@ -1297,13 +1297,15 @@ export function App() {
         }
         let refreshedUser = await refreshUser()
         let paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
-        if (!paymentSeemsApplied && !isScheduledAction && isPaypalPending) {
-          for (let attempt = 0; attempt < 8; attempt += 1) {
-            await sleep(1000)
-            refreshedUser = await refreshUser()
-            paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
-            if (paymentSeemsApplied) break
-          }
+        if (!paymentSeemsApplied && !isScheduledAction && isPaypalPending && paypalProviderConfirmed) {
+          // Confirmacion inmediata para UX: la sincronizacion fina sigue en segundo plano.
+          sessionStorage.setItem(callbackKey, 'done')
+          setPaymentNotice({
+            title: 'Gracias, pago confirmado',
+            message: 'PayPal confirmó tu pago. Estamos sincronizando tus tokens automáticamente.',
+            status: 'success'
+          })
+          return
         }
         if (paymentSeemsApplied || isScheduledAction) {
           completed = true
@@ -1320,26 +1322,18 @@ export function App() {
           })
           return
         }
-        if (paypalProviderConfirmed) {
-          sessionStorage.removeItem(callbackKey)
+        throw new Error('Payment callback finished without account updates')
+      } catch (error) {
+        let refreshedUser = await refreshUser()
+        let paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
+        if (!paymentSeemsApplied && !isScheduledAction && isPaypalPending && paypalProviderConfirmed) {
+          sessionStorage.setItem(callbackKey, 'done')
           setPaymentNotice({
             title: 'Gracias, pago confirmado',
             message: 'PayPal confirmó tu pago. Estamos sincronizando tus tokens automáticamente.',
             status: 'success'
           })
           return
-        }
-        throw new Error('Payment callback finished without account updates')
-      } catch (error) {
-        let refreshedUser = await refreshUser()
-        let paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
-        if (!paymentSeemsApplied && !isScheduledAction && isPaypalPending) {
-          for (let attempt = 0; attempt < 8; attempt += 1) {
-            await sleep(1000)
-            refreshedUser = await refreshUser()
-            paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
-            if (paymentSeemsApplied) break
-          }
         }
         if (paymentSeemsApplied || isScheduledAction) {
           const refreshedTokens = Number(refreshedUser?.tokens || 0)
@@ -1352,15 +1346,6 @@ export function App() {
               : refreshedUser
                 ? `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`
                 : 'Tu compra se procesó correctamente. Ya tienes acceso a tus beneficios.',
-            status: 'success'
-          })
-          return
-        }
-        if (paypalProviderConfirmed) {
-          sessionStorage.removeItem(callbackKey)
-          setPaymentNotice({
-            title: 'Gracias, pago confirmado',
-            message: 'PayPal confirmó tu pago. Estamos sincronizando tus tokens automáticamente.',
             status: 'success'
           })
           return
@@ -1734,7 +1719,7 @@ export function App() {
     return () => {
       cancelled = true
     }
-  }, [currentPage, API_URL, paymentNotice, user?.plan, user?.tokens])
+  }, [currentPage, API_URL])
 
   // Studio + Voice Workshop + paneles secundarios: todos en el mismo bloque con display:none/block
   // para que SynthesisStudio nunca se desmonte (manteniendo el WebSocket de TikTok vivo al navegar a voice-workshop)
