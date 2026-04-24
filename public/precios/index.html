@@ -76,30 +76,33 @@
     }
     .home-btn:hover { filter: brightness(1.05); text-decoration: none; }
     h2 { margin: 28px 0 14px; font-size: 1.2rem; color: #dbeafe; }
-    .card-cycle-toggle {
-      position: absolute;
-      top: 12px;
-      right: 12px;
+    .page-cycle-wrap { display: flex; justify-content: center; margin: 18px 0 20px; }
+    .page-cycle {
+      display: inline-flex;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 14px;
       border: 1px solid #334155;
-      border-radius: 999px;
-      background: #0f172a;
+      background: rgba(15, 23, 42, .72);
+      backdrop-filter: blur(6px);
+    }
+    .page-cycle button {
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
       color: #cbd5e1;
-      padding: 6px 11px;
+      padding: 10px 16px;
+      font-size: .88rem;
       font-weight: 800;
+      letter-spacing: .2px;
       cursor: pointer;
-      font-size: .76rem;
-      line-height: 1;
-      z-index: 2;
+      min-width: 152px;
     }
-    .card-cycle-toggle.active-monthly {
-      background: #0b3a63;
-      border-color: #0ea5e9;
-      color: #e0f2fe;
-    }
-    .card-cycle-toggle.active-annual {
-      background: #14532d;
-      border-color: #22c55e;
-      color: #ecfdf5;
+    .page-cycle button.active {
+      color: #fff;
+      background: linear-gradient(90deg, #06b6d4, #2563eb);
+      box-shadow: 0 10px 24px rgba(37, 99, 235, .28);
+      border-color: rgba(56, 189, 248, .45);
     }
     .theme-toggle {
       margin-left: auto;
@@ -175,9 +178,12 @@
       margin-bottom: 24px;
     }
     .pack {
-      border: 1px solid var(--line); border-radius: 16px; padding: 20px;
+      border: 1px solid var(--line); border-radius: 16px; padding: 24px;
       background: linear-gradient(180deg, #111827, #0b1428);
       position: relative;
+      min-height: 570px;
+      display: flex;
+      flex-direction: column;
     }
     .pack.recommended {
       border-color: #ec4899;
@@ -189,39 +195,42 @@
       color: #fff; background: linear-gradient(90deg, #ec4899, #f43f5e);
       padding: 4px 14px; border-radius: 999px;
     }
-    .pack-name { font-size: 1.3rem; font-weight: 900; margin-bottom: 6px; }
-    .pack-price { font-size: 2rem; font-weight: 900; margin: 4px 0; }
+    .pack-name { font-size: 1.28rem; font-weight: 900; margin-bottom: 8px; }
+    .pack-price { font-size: 1.95rem; font-weight: 900; margin: 6px 0 8px; }
     .pack-price span { font-size: 1rem; font-weight: 600; color: var(--muted); }
     .pack-voices {
-      border-radius: 10px; padding: 10px 14px; margin: 10px 0;
+      border-radius: 10px; padding: 12px 14px; margin: 14px 0 12px;
       font-weight: 900; font-size: 1.1rem; color: #fff;
     }
     .pack-voices small { display: block; font-size: .78rem; font-weight: 600; opacity: .85; }
     .pack-tokens {
-      border-radius: 10px; padding: 8px 14px; margin-bottom: 8px;
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;
       background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
     }
     .pack-tokens strong { display: block; font-size: 1.1rem; }
     .pack-tokens small { font-size: .8rem; color: var(--muted); }
-    .pack-desc { font-size: .88rem; color: var(--muted); margin-bottom: 4px; }
+    .pack-desc { font-size: .88rem; line-height: 1.55; color: var(--muted); margin-bottom: 8px; min-height: 0; }
     .monthly-bundle-switch {
       display: inline-flex;
-      gap: 4px;
-      margin: 6px 0 10px;
-      padding: 3px;
-      border-radius: 999px;
+      gap: 6px;
+      margin: 12px 0 16px;
+      padding: 5px;
+      border-radius: 12px;
       border: 1px solid #334155;
       background: #0f172a;
     }
+    .pack .cta-btn { margin-top: auto; padding-top: 12px; padding-bottom: 12px; }
     .monthly-bundle-switch button {
       border: 0;
-      border-radius: 999px;
-      padding: 5px 9px;
-      font-size: .68rem;
+      border-radius: 9px;
+      padding: 8px 14px;
+      min-height: 36px;
+      font-size: .78rem;
       font-weight: 900;
       color: #cbd5e1;
       background: transparent;
       cursor: pointer;
+      letter-spacing: .2px;
     }
     .monthly-bundle-switch button.active {
       color: #ecfeff;
@@ -296,7 +305,6 @@
 
     <h2 id="section-base-title">Plan Base - incluido en tu suscripci&oacute;n</h2>
     <div class="base-plan">
-      <button class="card-cycle-toggle" type="button">Ver anual</button>
       <span class="popular-badge">&#x2728; EL M&Aacute;S POPULAR</span>
       <div id="base-plan-name" style="font-size:1.1rem; font-weight:900; margin-top:6px;">&#x1F3AF; PLAN BASE</div>
       <div class="price-big"><span id="base-plan-price">$9.99</span> <span id="base-plan-period" class="price-period">USD / mes</span></div>
@@ -326,11 +334,16 @@
 
     <h2 id="section-packs-title">Packs de voces clonadas - a&ntilde;ade personajes a tu stream</h2>
     <p id="section-packs-desc" class="small" style="margin-bottom:14px;">Los packs son compras independientes que se suman a tu Plan Base. Comb&iacute;nalos para crear tu elenco de personajes con voz propia.</p>
+    <div class="page-cycle-wrap">
+      <div class="page-cycle" role="tablist" aria-label="Ciclo de facturación">
+        <button id="page-cycle-monthly" type="button" class="active">Mensual</button>
+        <button id="page-cycle-annual" type="button">Anual (2 meses gratis)</button>
+      </div>
+    </div>
 
     <section class="packs-grid">
 
       <article class="pack">
-        <button class="card-cycle-toggle" type="button">Ver anual</button>
         <div style="font-size:2.6rem; margin-bottom:6px;">&#x26A1;</div>
         <div id="pack-lite-name" class="pack-name">PACK LITE</div>
         <p id="pack-lite-desc" class="pack-desc">Un personaje clonado para tu stream</p>
@@ -344,7 +357,7 @@
           <small>Para usar voces premium y tus personajes</small>
         </div>
         <div class="pack-tokens">
-          <strong>50K tokens</strong>
+          <strong id="pack-lite-tokens">50K tokens</strong>
           <small>50 min - 1.5 h</small>
           <small>Impulsa voces premium y personajes IA. Optimiza con filtros y multiplica el rendimiento hasta 15x.</small>
         </div>
@@ -352,7 +365,6 @@
       </article>
 
       <article class="pack recommended">
-        <button class="card-cycle-toggle" type="button">Ver anual</button>
         <span class="rec-badge">&#x2B50; RECOMENDADO</span>
         <div style="font-size:2.6rem; margin-bottom:6px; margin-top:10px;">&#x1F525;</div>
         <div id="pack-pro-name" class="pack-name">PACK PRO</div>
@@ -367,7 +379,7 @@
           <small>Para usar voces premium y tus personajes</small>
         </div>
         <div class="pack-tokens">
-          <strong>250K tokens</strong>
+          <strong id="pack-pro-tokens">250K tokens</strong>
           <small>4 - 7 h</small>
           <small>Impulsa voces premium y personajes IA. Optimiza con filtros y multiplica el rendimiento hasta 15x.</small>
         </div>
@@ -375,7 +387,6 @@
       </article>
 
       <article class="pack">
-        <button class="card-cycle-toggle" type="button">Ver anual</button>
         <div style="font-size:2.6rem; margin-bottom:6px;">&#x2B50;</div>
         <div id="pack-max-name" class="pack-name">PACK MAX</div>
         <p id="pack-max-desc" class="pack-desc">Seis personajes clonados para tu universo</p>
@@ -389,7 +400,7 @@
           <small>Para usar voces premium y tus personajes</small>
         </div>
         <div class="pack-tokens">
-          <strong>500K tokens</strong>
+          <strong id="pack-max-tokens">500K tokens</strong>
           <small>8 - 14 h</small>
           <small>Impulsa voces premium y personajes IA. Optimiza con filtros y multiplica el rendimiento hasta 15x.</small>
         </div>
@@ -414,7 +425,7 @@
         <tr><td>Voces esenciales</td><td>2 ilimitadas</td><td>2 ilimitadas</td><td>2 ilimitadas</td><td>2 ilimitadas</td></tr>
         <tr><td>Voces premium</td><td>2</td><td>2</td><td>2</td><td>2</td></tr>
         <tr><td>Voces clonadas por IA</td><td>-</td><td>+1</td><td>+3</td><td>+6</td></tr>
-        <tr><td>Tokens extra</td><td>20K incluidos</td><td>+50K</td><td>+250K</td><td>+500K</td></tr>
+        <tr><td>Tokens totales</td><td id="cmp-tokens-base">20K</td><td id="cmp-tokens-lite">50K</td><td id="cmp-tokens-pro">250K</td><td id="cmp-tokens-max">500K</td></tr>
         <tr><td>Filtros y funciones IA</td><td>Completo</td><td>Completo</td><td>Completo</td><td>Completo</td></tr>
       </tbody>
     </table>
@@ -476,9 +487,9 @@
         pack_max_combo: 'BASE + MAX',
       };
       const MONTHLY_COMBO_MODE = {
-        pack_lite: { mode: 'bundle', comboPlanId: 'pack_lite_combo', comboPrice: 19.98, comboTitle: 'BASE + LITE Mensual (1 transacción)', comboMxn: 'Aprox. $346 MXN' },
-        pack_pro: { mode: 'bundle', comboPlanId: 'pack_pro_combo', comboPrice: 34.98, comboTitle: 'BASE + PRO Mensual (1 transacción)', comboMxn: 'Aprox. $605 MXN' },
-        pack_max: { mode: 'bundle', comboPlanId: 'pack_max_combo', comboPrice: 59.98, comboTitle: 'BASE + MAX Mensual (1 transacción)', comboMxn: 'Aprox. $1,038 MXN' },
+        pack_lite: { mode: 'pack', comboPlanId: 'pack_lite_combo', comboPrice: 19.98, comboTitle: 'BASE + LITE Mensual (1 transacción)', comboMxn: 'Aprox. $346 MXN' },
+        pack_pro: { mode: 'pack', comboPlanId: 'pack_pro_combo', comboPrice: 34.98, comboTitle: 'BASE + PRO Mensual (1 transacción)', comboMxn: 'Aprox. $605 MXN' },
+        pack_max: { mode: 'pack', comboPlanId: 'pack_max_combo', comboPrice: 59.98, comboTitle: 'BASE + MAX Mensual (1 transacción)', comboMxn: 'Aprox. $1,038 MXN' },
       };
       const PLAN_MODAL_DETAILS = {
         monthly: {
@@ -619,7 +630,8 @@
       let selectedPlanId = '';
       let selectedButton = null;
       let selectedBillingCycle = 'monthly';
-      const cardCycleButtons = Array.from(document.querySelectorAll('.card-cycle-toggle'));
+      const pageCycleMonthlyBtn = document.getElementById('page-cycle-monthly');
+      const pageCycleAnnualBtn = document.getElementById('page-cycle-annual');
       const monthlyBundleModeByPack = {
         pack_lite: MONTHLY_COMBO_MODE.pack_lite.mode,
         pack_pro: MONTHLY_COMBO_MODE.pack_pro.mode,
@@ -658,6 +670,7 @@
         setText('pack-lite-price', liteBundleOn ? `$${MONTHLY_COMBO_MODE.pack_lite.comboPrice.toFixed(2)}` : lite.price);
         setText('pack-lite-period', lite.period);
         setText('pack-lite-desc', liteBundleOn ? 'Compra mensual en una sola transacción: Base + Lite.' : lite.desc);
+        setText('pack-lite-tokens', selectedBillingCycle === 'annual' || liteBundleOn ? '70K tokens' : '50K tokens');
         setText('pack-lite-cta', liteBundleOn ? '⚡ Comprar Base + Lite' : lite.cta);
         const liteCta = document.getElementById('pack-lite-cta');
         if (liteCta) liteCta.setAttribute('data-plan-id', liteBundleOn ? MONTHLY_COMBO_MODE.pack_lite.comboPlanId : 'pack_lite');
@@ -666,6 +679,7 @@
         setText('pack-pro-price', proBundleOn ? `$${MONTHLY_COMBO_MODE.pack_pro.comboPrice.toFixed(2)}` : pro.price);
         setText('pack-pro-period', pro.period);
         setText('pack-pro-desc', proBundleOn ? 'Compra mensual en una sola transacción: Base + Pro.' : pro.desc);
+        setText('pack-pro-tokens', selectedBillingCycle === 'annual' || proBundleOn ? '270K tokens' : '250K tokens');
         setText('pack-pro-cta', proBundleOn ? '🔥 Comprar Base + Pro' : pro.cta);
         const proCta = document.getElementById('pack-pro-cta');
         if (proCta) proCta.setAttribute('data-plan-id', proBundleOn ? MONTHLY_COMBO_MODE.pack_pro.comboPlanId : 'pack_pro');
@@ -674,6 +688,7 @@
         setText('pack-max-price', maxBundleOn ? `$${MONTHLY_COMBO_MODE.pack_max.comboPrice.toFixed(2)}` : max.price);
         setText('pack-max-period', max.period);
         setText('pack-max-desc', maxBundleOn ? 'Compra mensual en una sola transacción: Base + Max.' : max.desc);
+        setText('pack-max-tokens', selectedBillingCycle === 'annual' || maxBundleOn ? '520K tokens' : '500K tokens');
         setText('pack-max-cta', maxBundleOn ? '⭐ Comprar Base + Max' : max.cta);
         const maxCta = document.getElementById('pack-max-cta');
         if (maxCta) maxCta.setAttribute('data-plan-id', maxBundleOn ? MONTHLY_COMBO_MODE.pack_max.comboPlanId : 'pack_max');
@@ -682,6 +697,10 @@
         setText('cmp-price-lite', liteBundleOn ? '$19.98/mes' : pageDetails.cmpPriceLite);
         setText('cmp-price-pro', proBundleOn ? '$34.98/mes' : pageDetails.cmpPricePro);
         setText('cmp-price-max', maxBundleOn ? '$59.98/mes' : pageDetails.cmpPriceMax);
+        setText('cmp-tokens-base', '20K');
+        setText('cmp-tokens-lite', selectedBillingCycle === 'annual' || liteBundleOn ? '70K' : '50K');
+        setText('cmp-tokens-pro', selectedBillingCycle === 'annual' || proBundleOn ? '270K' : '250K');
+        setText('cmp-tokens-max', selectedBillingCycle === 'annual' || maxBundleOn ? '520K' : '500K');
 
         const syncBundleSwitch = (planId) => {
           const switchEl = document.getElementById(`${planId.replace('_', '-')}-switch`);
@@ -696,12 +715,9 @@
         syncBundleSwitch('pack_pro');
         syncBundleSwitch('pack_max');
 
-        cardCycleButtons.forEach((btn) => {
-          const isMonthly = selectedBillingCycle === 'monthly';
-          btn.classList.toggle('active-monthly', isMonthly);
-          btn.classList.toggle('active-annual', !isMonthly);
-          btn.textContent = isMonthly ? 'Ver anual (-2 meses)' : 'Ver mensual';
-        });
+        const isMonthly = selectedBillingCycle === 'monthly';
+        if (pageCycleMonthlyBtn) pageCycleMonthlyBtn.classList.toggle('active', isMonthly);
+        if (pageCycleAnnualBtn) pageCycleAnnualBtn.classList.toggle('active', !isMonthly);
       };
 
       const updateBillingButtons = () => {
@@ -851,12 +867,18 @@
       payWithPayPal.addEventListener('click', () => startCheckout('paypal'));
       billingMonthlyBtn.addEventListener('click', () => { selectedBillingCycle = 'monthly'; refreshModalPlanCopy(); });
       billingAnnualBtn.addEventListener('click', () => { selectedBillingCycle = 'annual'; refreshModalPlanCopy(); });
-      cardCycleButtons.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          selectedBillingCycle = selectedBillingCycle === 'monthly' ? 'annual' : 'monthly';
+      if (pageCycleMonthlyBtn) {
+        pageCycleMonthlyBtn.addEventListener('click', () => {
+          selectedBillingCycle = 'monthly';
           refreshPricingSurface();
         });
-      });
+      }
+      if (pageCycleAnnualBtn) {
+        pageCycleAnnualBtn.addEventListener('click', () => {
+          selectedBillingCycle = 'annual';
+          refreshPricingSurface();
+        });
+      }
       document.querySelectorAll('.monthly-bundle-switch button[data-plan][data-mode]').forEach((btn) => {
         btn.addEventListener('click', () => {
           const planId = String(btn.getAttribute('data-plan') || '').toLowerCase();

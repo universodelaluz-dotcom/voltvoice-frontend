@@ -25,7 +25,7 @@ const getComparisonData = (t, billingCycle = 'monthly') => ({
     {
       category: 'Capacidad',
       items: [
-        { name: billingCycle === 'annual' ? 'Caracteres por mes (durante suscripción anual)' : 'Caracteres incluidos', base: '20,000', lite: '70,000', pro: '170,000', max: '520,000' }
+        { name: billingCycle === 'annual' ? 'Caracteres por mes (durante suscripción anual)' : 'Caracteres incluidos', base: '20,000', lite: '70,000', pro: '270,000', max: '520,000' }
       ]
     }
   ],
@@ -54,7 +54,7 @@ const getComparisonData = (t, billingCycle = 'monthly') => ({
       bgColor: 'bg-gradient-to-br from-cyan-50 to-blue-50',
       borderColor: 'border-cyan-300',
       textColor: 'text-gray-900',
-      usage: '+50,000 caracteres',
+      usage: '70,000 caracteres totales',
       cta: billingCycle === 'annual' ? 'Suscribirme anual' : t('pricing.comparison.choosePlan')
     },
     {
@@ -67,7 +67,7 @@ const getComparisonData = (t, billingCycle = 'monthly') => ({
       bgColor: 'bg-gradient-to-br from-purple-50 to-pink-50',
       borderColor: 'border-purple-300',
       textColor: 'text-gray-900',
-      usage: '+150,000 caracteres',
+      usage: '270,000 caracteres totales',
       cta: billingCycle === 'annual' ? 'Suscribirme anual' : t('pricing.comparison.choosePlan')
     },
     {
@@ -80,7 +80,7 @@ const getComparisonData = (t, billingCycle = 'monthly') => ({
       bgColor: 'bg-gradient-to-br from-orange-50 to-red-50',
       borderColor: 'border-orange-300',
       textColor: 'text-gray-900',
-      usage: '+500,000 caracteres',
+      usage: '520,000 caracteres totales',
       cta: billingCycle === 'annual' ? 'Suscribirme anual' : t('pricing.comparison.choosePlan')
     }
   ]
