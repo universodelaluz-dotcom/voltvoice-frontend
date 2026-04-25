@@ -625,6 +625,13 @@
         }
       };
 
+      const getCurrentReturnUrlBase = () => {
+        const path = String(window.location.pathname || '/')
+          .replace(/index\.html$/i, '')
+          .replace(/\/+$/, '') || '/';
+        return `${window.location.origin}${path}`;
+      };
+
       const postMercadoPago = (apiUrl, token, planId, billingCycle) => fetch(`${apiUrl}/api/mercadopago/create-preference`, {
         method: 'POST',
         headers: {
@@ -635,7 +642,7 @@
           itemType: 'plan',
           planId,
           billingCycle,
-          returnUrlBase: window.location.origin,
+          returnUrlBase: getCurrentReturnUrlBase(),
         }),
       });
 
@@ -649,7 +656,9 @@
           itemType: 'plan',
           planId,
           billingCycle,
-          returnUrlBase: window.location.origin,
+          frontendOrigin: window.location.origin,
+          frontendReturnUrl: getCurrentReturnUrlBase(),
+          returnUrlBase: getCurrentReturnUrlBase(),
         }),
       });
 

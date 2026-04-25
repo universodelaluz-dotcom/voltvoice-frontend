@@ -23,6 +23,11 @@ const getFrontendOrigin = () => {
   if (typeof window === 'undefined') return ''
   return String(window.location.origin || '').trim()
 }
+const getFrontendReturnUrl = () => {
+  if (typeof window === 'undefined') return ''
+  const path = String(window.location.pathname || '/').replace(/\/+$/, '') || '/'
+  return `${window.location.origin}${path}`
+}
 
 const tokenPackages = [
   { tokens: 150000, price: 4.99, label: '150K', size: 'MINI BOOST' },
@@ -290,6 +295,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         billingCycle: currentItem.billingCycle,
         itemType: 'plan',
         frontendOrigin: getFrontendOrigin(),
+        frontendReturnUrl: getFrontendReturnUrl(),
         returnUrlBase: getReturnUrl(),
         couponCode: validCoupon ? couponCode.trim() : undefined,
         couponId: validCoupon?.coupon?.id || undefined,
@@ -298,6 +304,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         tokensPackage: currentItem.package.tokens,
         itemType: 'tokens',
         frontendOrigin: getFrontendOrigin(),
+        frontendReturnUrl: getFrontendReturnUrl(),
         returnUrlBase: getReturnUrl(),
         couponCode: validCoupon ? couponCode.trim() : undefined,
         couponId: validCoupon?.coupon?.id || undefined,
