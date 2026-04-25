@@ -30,6 +30,7 @@ const TOKEN_API_KEY = 'sv-token-api-v1'
 const TOKEN_STORAGE_KEY = 'sv-token'
 const TOKEN_PERSIST_KEY = 'sv-token-persist'
 const PAYMENT_PENDING_KEY = 'sv-payment-pending-v1'
+const PAYMENT_SUCCESS_NOTICE_SHOWN_PREFIX = 'sv-payment-success-shown:'
 const LOCAL_CONFIG_CACHE_KEY = 'sv-config-cache-v1'
 const LOCAL_CONFIG_CACHE_KEY_PREFIX = 'sv-config-cache-v2'
 const COOKIE_CONSENT_KEY = 'cookieConsent'
@@ -588,6 +589,16 @@ export function App() {
   const [selectedPaymentPackage, setSelectedPaymentPackage] = useState(350000)
   const [selectedCheckoutItem, setSelectedCheckoutItem] = useState(null)
   const [paymentNotice, setPaymentNotice] = useState(null)
+  const showPaymentSuccessOnce = useCallback((flowKey, payload) => {
+    const normalizedKey = String(flowKey || '').trim()
+    if (normalizedKey) {
+      const storageKey = `${PAYMENT_SUCCESS_NOTICE_SHOWN_PREFIX}${normalizedKey}`
+      if (sessionStorage.getItem(storageKey) === '1') return false
+      sessionStorage.setItem(storageKey, '1')
+    }
+    setPaymentNotice({ ...payload, status: 'success' })
+    return true
+  }, [])
 
   // Auth state
   const [user, setUser] = useState(null)
@@ -1251,14 +1262,20 @@ export function App() {
     const previousPlan = String(user?.plan || 'free').toLowerCase()
     let pendingAction = ''
     let pendingProvider = ''
+    let pendingStartedAt = 0
     try {
       const pending = JSON.parse(localStorage.getItem(PAYMENT_PENDING_KEY) || 'null')
       pendingAction = String(pending?.action || '').toLowerCase()
       pendingProvider = String(pending?.provider || '').toLowerCase()
+      pendingStartedAt = Number(pending?.startedAt || 0)
     } catch {
       pendingAction = ''
       pendingProvider = ''
+      pendingStartedAt = 0
     }
+    const paymentFlowKey = Number.isFinite(pendingStartedAt) && pendingStartedAt > 0
+      ? `pending:${pendingProvider || provider || 'unknown'}:${pendingStartedAt}`
+      : callbackKey
     const isScheduledAction = ['downgrade_next_cycle', 'billing_cycle_next_cycle'].includes(pendingAction)
     const isPaypalPending = provider === 'paypal' || pendingProvider === 'paypal'
 
@@ -1313,10 +1330,9 @@ export function App() {
         if (!paymentSeemsApplied && !isScheduledAction && isPaypalPending && paypalProviderConfirmed) {
           // Confirmacion inmediata para UX: la sincronizacion fina sigue en segundo plano.
           sessionStorage.setItem(callbackKey, 'done')
-          setPaymentNotice({
+          showPaymentSuccessOnce(paymentFlowKey, {
             title: 'Gracias, pago confirmado',
             message: 'PayPal confirmó tu pago. Estamos sincronizando tus tokens automáticamente.',
-            status: 'success'
           })
           return
         }
@@ -1324,14 +1340,13 @@ export function App() {
           completed = true
           sessionStorage.setItem(callbackKey, 'done')
           localStorage.removeItem(PAYMENT_PENDING_KEY)
-          setPaymentNotice({
+          showPaymentSuccessOnce(paymentFlowKey, {
             title: '✓ Pago Realizado',
             message: isScheduledAction
               ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
               : refreshedUser
                 ? `Tu compra se procesó correctamente. Tokens actualizados: ${Number(refreshedUser?.tokens ?? previousTokens).toLocaleString()}. Ya tienes acceso a todos tus beneficios.`
                 : 'Tu compra se procesó correctamente. Ya tienes acceso a tus beneficios.',
-            status: 'success'
           })
           return
         }
@@ -1341,10 +1356,9 @@ export function App() {
         let paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
         if (!paymentSeemsApplied && !isScheduledAction && isPaypalPending && paypalProviderConfirmed) {
           sessionStorage.setItem(callbackKey, 'done')
-          setPaymentNotice({
+          showPaymentSuccessOnce(paymentFlowKey, {
             title: 'Gracias, pago confirmado',
             message: 'PayPal confirmó tu pago. Estamos sincronizando tus tokens automáticamente.',
-            status: 'success'
           })
           return
         }
@@ -1352,14 +1366,13 @@ export function App() {
           const refreshedTokens = Number(refreshedUser?.tokens || 0)
           sessionStorage.setItem(callbackKey, 'done')
           localStorage.removeItem(PAYMENT_PENDING_KEY)
-          setPaymentNotice({
+          showPaymentSuccessOnce(paymentFlowKey, {
             title: '✓ Pago Realizado',
             message: isScheduledAction
               ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
               : refreshedUser
                 ? `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`
                 : 'Tu compra se procesó correctamente. Ya tienes acceso a tus beneficios.',
-            status: 'success'
           })
           return
         }
@@ -1374,7 +1387,7 @@ export function App() {
         cleanPaymentQuery()
       }
     })()
-  }, [])
+  }, [showPaymentSuccessOnce])
 
   // Recuperacion de pago cuando el usuario vuelve manualmente del comprobante sin query de callback.
   useEffect(() => {
@@ -1405,6 +1418,7 @@ export function App() {
     const pendingProvider = String(pending?.provider || '').toLowerCase()
     const isScheduledAction = ['downgrade_next_cycle', 'billing_cycle_next_cycle'].includes(pendingAction)
     const isPaypalPending = pendingProvider === 'paypal'
+    const paymentFlowKey = `pending:${pendingProvider || 'unknown'}:${Number.isFinite(startedAt) ? startedAt : 'na'}`
 
     const refreshUser = async () => {
       try {
@@ -1438,12 +1452,11 @@ export function App() {
         if (paymentSeemsApplied || isScheduledAction) {
           const refreshedTokens = Number(refreshedUser?.tokens || 0)
           localStorage.removeItem(PAYMENT_PENDING_KEY)
-          setPaymentNotice({
+          showPaymentSuccessOnce(paymentFlowKey, {
             title: '✓ Pago Realizado',
             message: isScheduledAction
               ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
               : `Tu compra se procesó correctamente. Tokens actualizados: ${Number(refreshedUser?.tokens ?? previousTokens).toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
-            status: 'success'
           })
           return
         }
@@ -1466,12 +1479,11 @@ export function App() {
         if (paymentSeemsApplied || isScheduledAction) {
           const refreshedTokens = Number(refreshedUser?.tokens || 0)
           localStorage.removeItem(PAYMENT_PENDING_KEY)
-          setPaymentNotice({
+          showPaymentSuccessOnce(paymentFlowKey, {
             title: '✓ Pago Realizado',
             message: isScheduledAction
               ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
               : `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
-            status: 'success'
           })
           return
         }
@@ -1483,7 +1495,156 @@ export function App() {
         setPaymentNotice(null)
       }
     })()
-  }, [])
+  }, [API_URL, showPaymentSuccessOnce, user?.plan, user?.tokens])
+
+  // Auto-process pending payments when entering studio
+  useEffect(() => {
+    if (currentPage !== 'studio') return
+    const token = getStoredToken()
+    if (!token) return
+    let pending = null
+    try {
+      pending = JSON.parse(localStorage.getItem(PAYMENT_PENDING_KEY) || 'null')
+    } catch { }
+    if (!pending) return
+    const startedAt = Number(pending?.startedAt || 0)
+    const maxAgeMs = 2 * 60 * 60 * 1000
+    if (!Number.isFinite(startedAt) || (Date.now() - startedAt) > maxAgeMs) {
+      localStorage.removeItem(PAYMENT_PENDING_KEY)
+      return
+    }
+    const previousTokens = Number(user?.tokens || 0)
+    const previousPlan = String(user?.plan || 'free').toLowerCase()
+    const pendingAction = String(pending?.action || '').toLowerCase()
+    const pendingProvider = String(pending?.provider || '').toLowerCase()
+    const isScheduledAction = ['downgrade_next_cycle', 'billing_cycle_next_cycle'].includes(pendingAction)
+    const isPaypalPending = pendingProvider === 'paypal'
+    const paymentFlowKey = `pending:${pendingProvider || 'unknown'}:${Number.isFinite(startedAt) ? startedAt : 'na'}`
+
+    ;(async () => {
+      try {
+        await reconcileMercadoPagoPayments(API_URL, token)
+        const response = await fetch(`${API_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await response.json()
+        if (data?.success) {
+          setUser(data.user)
+          setTokens(data.user.tokens || 100)
+          localStorage.setItem('sv-user', JSON.stringify(data.user))
+        }
+        let refreshedUser = data?.success ? data.user : null
+        let paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
+        if (!paymentSeemsApplied && !isScheduledAction && isPaypalPending) {
+          for (let attempt = 0; attempt < 8; attempt += 1) {
+            await sleep(1000)
+            const retryResponse = await fetch(`${API_URL}/api/auth/me`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            const retryData = await retryResponse.json().catch(() => ({}))
+            if (retryData?.success) {
+              refreshedUser = retryData.user
+              setUser(retryData.user)
+              setTokens(retryData.user.tokens || 100)
+              localStorage.setItem('sv-user', JSON.stringify(retryData.user))
+            }
+            paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
+            if (paymentSeemsApplied) break
+          }
+        }
+        if (paymentSeemsApplied || isScheduledAction) {
+          const refreshedTokens = Number(refreshedUser?.tokens || 0)
+          localStorage.removeItem(PAYMENT_PENDING_KEY)
+          showPaymentSuccessOnce(paymentFlowKey, {
+            title: '✓ Pago Realizado',
+            message: isScheduledAction
+              ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
+              : `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
+          })
+          return
+        }
+        // No hubo cambios todavía: en PayPal mantener pendiente para próximos reintentos.
+        if (!isPaypalPending) {
+          localStorage.removeItem(PAYMENT_PENDING_KEY)
+        }
+      } catch (error) {
+        console.error('[PAYMENT] auto-process error:', error?.message || error)
+        if (!isPaypalPending) {
+          localStorage.removeItem(PAYMENT_PENDING_KEY)
+        }
+        setPaymentNotice(null)
+      }
+    })()
+  }, [currentPage, API_URL, showPaymentSuccessOnce, user?.plan, user?.tokens])
+
+  // Reconciliacion en segundo plano para PayPal sin exigir refresh manual.
+  useEffect(() => {
+    if (currentPage !== 'studio') return
+
+    const token = getStoredToken()
+    if (!token) return
+
+    let pending = null
+    try {
+      pending = JSON.parse(localStorage.getItem(PAYMENT_PENDING_KEY) || 'null')
+    } catch {
+      pending = null
+    }
+    if (!pending || String(pending?.provider || '').toLowerCase() !== 'paypal') return
+
+    const startedAt = Number(pending?.startedAt || 0)
+    const maxAgeMs = 2 * 60 * 60 * 1000
+    if (!Number.isFinite(startedAt) || (Date.now() - startedAt) > maxAgeMs) {
+      localStorage.removeItem(PAYMENT_PENDING_KEY)
+      return
+    }
+
+    const previousTokens = Number(user?.tokens || 0)
+    const previousPlan = String(user?.plan || 'free').toLowerCase()
+    const pendingAction = String(pending?.action || '').toLowerCase()
+    const isScheduledAction = ['downgrade_next_cycle', 'billing_cycle_next_cycle'].includes(pendingAction)
+    const paymentFlowKey = `pending:paypal:${Number.isFinite(startedAt) ? startedAt : 'na'}`
+
+    let cancelled = false
+    let attempts = 0
+    const maxAttempts = 20
+
+    const poll = async () => {
+      if (cancelled) return
+      attempts += 1
+      try {
+        const response = await fetch(`${API_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await response.json().catch(() => ({}))
+        if (data?.success) {
+          setUser(data.user)
+          setTokens(data.user.tokens || 100)
+          localStorage.setItem('sv-user', JSON.stringify(data.user))
+          const paymentSeemsApplied = didPaymentApplyToUser(data.user, previousTokens, previousPlan)
+          if (paymentSeemsApplied || isScheduledAction) {
+            localStorage.removeItem(PAYMENT_PENDING_KEY)
+            showPaymentSuccessOnce(paymentFlowKey, {
+              title: '✓ Pago Realizado',
+              message: isScheduledAction
+                ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
+                : `Tu compra se procesó correctamente. Tokens actualizados: ${Number(data.user?.tokens || 0).toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
+            })
+            return
+          }
+        }
+      } catch (_) {}
+
+      if (cancelled || attempts >= maxAttempts) return
+      setTimeout(poll, 3000)
+    }
+
+    setTimeout(poll, 1200)
+    return () => {
+      cancelled = true
+    }
+  }, [currentPage, API_URL, showPaymentSuccessOnce, user?.plan, user?.tokens])
+
   const paymentNoticeBanner = paymentNotice ? (
     <div className="fixed inset-0 z-[120] flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px]" />
@@ -1583,156 +1744,6 @@ export function App() {
       </>
     )
   }
-
-  // Auto-process pending payments when entering studio
-  useEffect(() => {
-    if (currentPage !== 'studio') return
-    const token = getStoredToken()
-    if (!token) return
-    let pending = null
-    try {
-      pending = JSON.parse(localStorage.getItem(PAYMENT_PENDING_KEY) || 'null')
-    } catch { }
-    if (!pending) return
-    const startedAt = Number(pending?.startedAt || 0)
-    const maxAgeMs = 2 * 60 * 60 * 1000
-    if (!Number.isFinite(startedAt) || (Date.now() - startedAt) > maxAgeMs) {
-      localStorage.removeItem(PAYMENT_PENDING_KEY)
-      return
-    }
-    const previousTokens = Number(user?.tokens || 0)
-    const previousPlan = String(user?.plan || 'free').toLowerCase()
-    const pendingAction = String(pending?.action || '').toLowerCase()
-    const pendingProvider = String(pending?.provider || '').toLowerCase()
-    const isScheduledAction = ['downgrade_next_cycle', 'billing_cycle_next_cycle'].includes(pendingAction)
-    const isPaypalPending = pendingProvider === 'paypal'
-
-    ;(async () => {
-      try {
-        await reconcileMercadoPagoPayments(API_URL, token)
-        const response = await fetch(`${API_URL}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const data = await response.json()
-        if (data?.success) {
-          setUser(data.user)
-          setTokens(data.user.tokens || 100)
-          localStorage.setItem('sv-user', JSON.stringify(data.user))
-        }
-        let refreshedUser = data?.success ? data.user : null
-        let paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
-        if (!paymentSeemsApplied && !isScheduledAction && isPaypalPending) {
-          for (let attempt = 0; attempt < 8; attempt += 1) {
-            await sleep(1000)
-            const retryResponse = await fetch(`${API_URL}/api/auth/me`, {
-              headers: { Authorization: `Bearer ${token}` }
-            })
-            const retryData = await retryResponse.json().catch(() => ({}))
-            if (retryData?.success) {
-              refreshedUser = retryData.user
-              setUser(retryData.user)
-              setTokens(retryData.user.tokens || 100)
-              localStorage.setItem('sv-user', JSON.stringify(retryData.user))
-            }
-            paymentSeemsApplied = didPaymentApplyToUser(refreshedUser, previousTokens, previousPlan)
-            if (paymentSeemsApplied) break
-          }
-        }
-        if (paymentSeemsApplied || isScheduledAction) {
-          const refreshedTokens = Number(refreshedUser?.tokens || 0)
-          localStorage.removeItem(PAYMENT_PENDING_KEY)
-          setPaymentNotice({
-            title: '✓ Pago Realizado',
-            message: isScheduledAction
-              ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
-              : `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
-            status: 'success'
-          })
-          return
-        }
-        // No hubo cambios todavía: en PayPal mantener pendiente para próximos reintentos.
-        if (!isPaypalPending) {
-          localStorage.removeItem(PAYMENT_PENDING_KEY)
-        }
-      } catch (error) {
-        console.error('[PAYMENT] auto-process error:', error?.message || error)
-        if (!isPaypalPending) {
-          localStorage.removeItem(PAYMENT_PENDING_KEY)
-        }
-        setPaymentNotice(null)
-      }
-    })()
-  }, [currentPage])
-
-  // Reconciliacion en segundo plano para PayPal sin exigir refresh manual.
-  useEffect(() => {
-    if (currentPage !== 'studio') return
-
-    const token = getStoredToken()
-    if (!token) return
-
-    let pending = null
-    try {
-      pending = JSON.parse(localStorage.getItem(PAYMENT_PENDING_KEY) || 'null')
-    } catch {
-      pending = null
-    }
-    if (!pending || String(pending?.provider || '').toLowerCase() !== 'paypal') return
-
-    const startedAt = Number(pending?.startedAt || 0)
-    const maxAgeMs = 2 * 60 * 60 * 1000
-    if (!Number.isFinite(startedAt) || (Date.now() - startedAt) > maxAgeMs) {
-      localStorage.removeItem(PAYMENT_PENDING_KEY)
-      return
-    }
-
-    const previousTokens = Number(user?.tokens || 0)
-    const previousPlan = String(user?.plan || 'free').toLowerCase()
-    const pendingAction = String(pending?.action || '').toLowerCase()
-    const isScheduledAction = ['downgrade_next_cycle', 'billing_cycle_next_cycle'].includes(pendingAction)
-
-    let cancelled = false
-    let attempts = 0
-    const maxAttempts = 20
-
-    const poll = async () => {
-      if (cancelled) return
-      attempts += 1
-      try {
-        const response = await fetch(`${API_URL}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const data = await response.json().catch(() => ({}))
-        if (data?.success) {
-          setUser(data.user)
-          setTokens(data.user.tokens || 100)
-          localStorage.setItem('sv-user', JSON.stringify(data.user))
-          const paymentSeemsApplied = didPaymentApplyToUser(data.user, previousTokens, previousPlan)
-          if (paymentSeemsApplied || isScheduledAction) {
-            localStorage.removeItem(PAYMENT_PENDING_KEY)
-            if (!paymentNotice || paymentNotice.status !== 'success') {
-              setPaymentNotice({
-                title: '✓ Pago Realizado',
-                message: isScheduledAction
-                  ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
-                  : `Tu compra se procesó correctamente. Tokens actualizados: ${Number(data.user?.tokens || 0).toLocaleString()}. Ya tienes acceso a todos tus beneficios.`,
-                status: 'success'
-              })
-            }
-            return
-          }
-        }
-      } catch (_) {}
-
-      if (cancelled || attempts >= maxAttempts) return
-      setTimeout(poll, 3000)
-    }
-
-    setTimeout(poll, 1200)
-    return () => {
-      cancelled = true
-    }
-  }, [currentPage, API_URL])
 
   // Studio + Voice Workshop + paneles secundarios: todos en el mismo bloque con display:none/block
   // para que SynthesisStudio nunca se desmonte (manteniendo el WebSocket de TikTok vivo al navegar a voice-workshop)
