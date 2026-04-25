@@ -34,6 +34,7 @@ const PAYMENT_SUCCESS_NOTICE_SHOWN_PREFIX = 'sv-payment-success-shown:'
 const LOCAL_CONFIG_CACHE_KEY = 'sv-config-cache-v1'
 const LOCAL_CONFIG_CACHE_KEY_PREFIX = 'sv-config-cache-v2'
 const COOKIE_CONSENT_KEY = 'cookieConsent'
+const SHOW_PUBLIC_TEST_RESET_CARD = false
 const LAZY_FALLBACK = (
   <div className="min-h-[40vh] flex items-center justify-center text-sm text-gray-500">
     Cargando...
@@ -1964,7 +1965,9 @@ export function App() {
         </div>
       </section>
 
-      <PublicTestResetCard darkMode={darkMode} onAssumeUser={handleAssumeTestUser} />
+      {SHOW_PUBLIC_TEST_RESET_CARD && (
+        <PublicTestResetCard darkMode={darkMode} onAssumeUser={handleAssumeTestUser} />
+      )}
 
       {/* Success Cases Section */}
       <section id="como-funciona-section" className={`py-20 px-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
