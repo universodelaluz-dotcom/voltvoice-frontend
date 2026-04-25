@@ -25,8 +25,7 @@ const getFrontendOrigin = () => {
 }
 const getFrontendReturnUrl = () => {
   if (typeof window === 'undefined') return ''
-  const path = String(window.location.pathname || '/').replace(/\/+$/, '') || '/'
-  return `${window.location.origin}${path}`
+  return `${window.location.origin}/`
 }
 
 const tokenPackages = [

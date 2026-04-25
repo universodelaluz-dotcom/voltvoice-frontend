@@ -626,10 +626,7 @@
       };
 
       const getCurrentReturnUrlBase = () => {
-        const path = String(window.location.pathname || '/')
-          .replace(/index\.html$/i, '')
-          .replace(/\/+$/, '') || '/';
-        return `${window.location.origin}${path}`;
+        return `${window.location.origin}/`;
       };
 
       const postMercadoPago = (apiUrl, token, planId, billingCycle) => fetch(`${apiUrl}/api/mercadopago/create-preference`, {
