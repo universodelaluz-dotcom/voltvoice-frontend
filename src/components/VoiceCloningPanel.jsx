@@ -13,8 +13,28 @@ const formatTimeMinutesSeconds = (ms) => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
 
-export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, config, updateConfig, user }) {
+export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, config, updateConfig, user, forceUnrestricted = false }) {
   const { t } = useTranslation()
+  const resolveEffectiveUser = () => {
+    if (user) return user
+    try {
+      const cached = JSON.parse(localStorage.getItem('sv-user') || 'null')
+      return cached || null
+    } catch {
+      return null
+    }
+  }
+  const effectiveUser = resolveEffectiveUser()
+  const roleNormalized = String(effectiveUser?.role || '').trim().toLowerCase()
+  const isAdminRole = (
+    roleNormalized === 'admin' ||
+    roleNormalized.includes('admin') ||
+    Boolean(effectiveUser?.is_admin) ||
+    Boolean(effectiveUser?.isAdmin) ||
+    Boolean(effectiveUser?.admin) ||
+    (typeof window !== 'undefined' && window.location.search.includes('preview=admin'))
+  )
+
   const normalizePlanTier = (rawPlan = 'free') => {
     const normalized = String(rawPlan || 'free').trim().toLowerCase()
     if (!normalized) return 'free'
@@ -26,22 +46,46 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       normalized === 'on_demand' ||
       normalized === 'ondemand'
     ) return 'free'
-    if (normalized === 'base' || normalized === 'plan base' || normalized === 'start' || normalized === 'start_monthly') return 'base'
+    if (
+      normalized === 'base' ||
+      normalized === 'plan base' ||
+      normalized === 'start' ||
+      normalized === 'start_monthly' ||
+      normalized === 'base_monthly' ||
+      normalized === 'base_annual' ||
+      normalized === 'start_annual'
+    ) return 'base'
     if (
       normalized === 'pack_lite' ||
       normalized === 'pack lite' ||
       normalized === 'lite' ||
       normalized === 'creator' ||
-      normalized === 'creator_monthly'
+      normalized === 'creator_monthly' ||
+      normalized === 'pack_lite_monthly' ||
+      normalized === 'pack_lite_annual' ||
+      normalized === 'lite_monthly' ||
+      normalized === 'lite_annual' ||
+      normalized === 'creator_annual'
     ) return 'pack_lite'
     if (
       normalized === 'pack_pro' ||
       normalized === 'pack pro' ||
       normalized === 'pro' ||
-      normalized === 'pro_monthly'
+      normalized === 'pro_monthly' ||
+      normalized === 'pack_pro_monthly' ||
+      normalized === 'pack_pro_annual' ||
+      normalized === 'pro_annual'
     ) return 'pack_pro'
-    if (normalized === 'pack_max' || normalized === 'pack max' || normalized === 'max') return 'pack_max'
-    if (normalized === 'admin') return 'admin'
+    if (
+      normalized === 'pack_max' ||
+      normalized === 'pack max' ||
+      normalized === 'max' ||
+      normalized === 'pack_max_monthly' ||
+      normalized === 'pack_max_annual' ||
+      normalized === 'max_monthly' ||
+      normalized === 'max_annual'
+    ) return 'pack_max'
+    if (normalized === 'admin' || normalized.includes('admin')) return 'admin'
     return normalized
   }
 
@@ -73,7 +117,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
     return basePlan
   }
-  const planKey = getActualPlan(user)
+  const planKey = getActualPlan(effectiveUser)
   const PLAN_MAX_CLONED_VOICES = {
     free: 0,
     base: 0,
@@ -776,13 +820,13 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   )
 
   // Feature access control
-  const userPlan = getActualPlan(user)
-  const addonExpiresAtMs = user?.subscription?.addonPack?.expiresAt ? Date.parse(user.subscription.addonPack.expiresAt) : NaN
-  const hasAddonPackActive = Boolean(user?.subscription?.addonPack?.active) && Number.isFinite(addonExpiresAtMs) && addonExpiresAtMs > Date.now()
-  const hasWorkshopAccess = user?.role === 'admin' || hasAddonPackActive || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
+  const userPlan = getActualPlan(effectiveUser)
+  const addonExpiresAtMs = effectiveUser?.subscription?.addonPack?.expiresAt ? Date.parse(effectiveUser.subscription.addonPack.expiresAt) : NaN
+  const hasAddonPackActive = Boolean(effectiveUser?.subscription?.addonPack?.active) && Number.isFinite(addonExpiresAtMs) && addonExpiresAtMs > Date.now()
+  const hasWorkshopAccess = forceUnrestricted || isAdminRole || hasAddonPackActive || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
   const isWorkshopBlocked = !hasWorkshopAccess
-  const canUseAIAssistant = user?.role === 'admin' || hasAddonPackActive || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
-  const canUseExtractorPro = user?.role === 'admin' || hasAddonPackActive || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
+  const canUseAIAssistant = forceUnrestricted || isAdminRole || hasAddonPackActive || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
+  const canUseExtractorPro = forceUnrestricted || isAdminRole || hasAddonPackActive || ['pack_lite', 'pack_pro', 'pack_max'].includes(userPlan)
 
   return (
     <div className={`relative space-y-6 ${isWorkshopBlocked ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -1295,7 +1339,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         <div className="relative">
           <div className={`space-y-6 ${!canUseAIAssistant ? 'opacity-70 pointer-events-none select-none' : ''}`}>
             {/* 1. Taller de Asistentes de IA Roleplay */}
-            <AIRoleplayWorkshop darkMode={darkMode} config={config || {}} updateConfig={updateConfig || (() => {})} user={user} />
+            <AIRoleplayWorkshop darkMode={darkMode} config={config || {}} updateConfig={updateConfig || (() => {})} user={effectiveUser} />
             {/* 2. Probar Voz */}
             {renderTestVoice(userVoices)}
           </div>

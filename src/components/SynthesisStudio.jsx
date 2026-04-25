@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import TikTokLivePanel from './TikTokLivePanel'
+import YouTubeLivePanel from './YouTubeLivePanel'
 import AudioVisualizer from './AudioVisualizer'
 import BotInvoker from './BotInvoker'
 import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Shield, Lock } from 'lucide-react'
@@ -75,7 +76,7 @@ const normalizePlanTier = (rawPlan = 'free') => {
   return normalized
 }
 
-export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAdmin, onGoPricingPage, darkMode, setDarkMode, config, updateConfig, configReady = true, user }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAdmin, onGoPricingPage, darkMode, setDarkMode, config, updateConfig, configReady = true, user, platformMode = 'tiktok' }) {
   const { t } = useTranslation()
   const audioSpeed = config.audioSpeed || 1.0
   const PREMIUM_TEST_CHAR_LIMIT = 500
@@ -83,7 +84,9 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const effectivePlanRaw = getEffectiveUserPlan(user)
   const currentPlan = normalizePlanTier(effectivePlanRaw)
   const localVoiceLabelSuffix = currentPlan === 'free' ? '' : ` ${t('studio.voice.unlimited')}`
+  const LivePanelComponent = platformMode === 'youtube' ? YouTubeLivePanel : TikTokLivePanel
   const [showBotInvoker, setShowBotInvoker] = useState(false)
+  const isAdminRole = String(user?.role || '').trim().toLowerCase() === 'admin'
 
   const toggleTheme = () => {
     const newMode = darkMode ? 'light' : 'dark'
@@ -631,7 +634,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
               {darkMode ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
             </button>
             {/* Admin */}
-            {user?.role === 'admin' && onGoAdmin && (
+            {isAdminRole && onGoAdmin && (
               <button
                 onClick={onGoAdmin}
                 title="Panel Admin"
@@ -682,8 +685,15 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
           </div>
         )}
         <div className="space-y-4">
-        {/* TikTok Live Section */}
-        <TikTokLivePanel config={config} updateConfig={updateConfig} configReady={configReady} user={user} darkModeOverride={darkMode} />
+        {/* Live Section */}
+        <LivePanelComponent
+          config={config}
+          updateConfig={updateConfig}
+          configReady={configReady}
+          user={user}
+          darkModeOverride={darkMode}
+          platformMode={platformMode}
+        />
 
         {/* Nav buttons - fila debajo del panel */}
         <div className={`flex items-stretch rounded-xl border overflow-hidden ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>

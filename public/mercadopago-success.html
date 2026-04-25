@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -19,21 +19,26 @@
     </div>
 
     <script>
-        // Detecta si MercadoPago redirigió con éxito o fracaso
         const params = new URLSearchParams(window.location.search);
         const preferenceId = params.get('preference_id') || params.get('preapproval_id') || '';
-
-        // Determina el estado: si no hay parámetros específicos de error, asumimos éxito
         const isFailure = params.get('status') === 'failure' ||
                          params.get('status') === 'pending' ||
-                         params.has('external_reference') && params.get('status') === 'rejected';
-
+                         (params.has('external_reference') && params.get('status') === 'rejected');
         const status = isFailure ? 'failure' : 'success';
 
-        // Redirige al studio con parámetros
-        const redirectUrl = `/?payment=${status}&provider=mercadopago&preference_id=${encodeURIComponent(preferenceId)}`;
+        const nextRaw = params.get('next') || '/';
+        let nextPath = '/';
+        try {
+            const parsedNext = new URL(nextRaw, window.location.origin);
+            if (parsedNext.origin === window.location.origin) nextPath = parsedNext.pathname || '/';
+        } catch (_) {
+            if (String(nextRaw || '').startsWith('/')) nextPath = String(nextRaw);
+        }
 
-        // Intenta ir al home primero (asegura que esté en el mismo dominio)
+        const cleanPath = nextPath.replace(/\/+$/, '') || '/';
+        const basePath = cleanPath.endsWith('/') ? cleanPath : `${cleanPath}/`;
+        const redirectUrl = `${basePath}?payment=${status}&provider=mercadopago&preference_id=${encodeURIComponent(preferenceId)}`;
+
         setTimeout(() => {
             window.location.href = redirectUrl;
         }, 500);

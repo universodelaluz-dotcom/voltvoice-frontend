@@ -352,7 +352,7 @@
       "forgot": "¿Olvidaste tu contraseña?",
       "welcomeTitle": "Bienvenido",
       "enterEmail": "Accede con tu email",
-      "registerDesc": "Regístrate gratis y obtén 100 tokens",
+      "registerDesc": "Regístrate gratis",
       "welcomeDesc": "Inicia sesión para acceder a Stream Voicer",
       "continueEmail": "o continúa con email",
       "orEmail": "o con email",
@@ -407,7 +407,7 @@
       "reset": "Cambiar contraseña",
       "resetting": "Cambiando...",
       "backToLogin": "Volver al login",
-      "backLogin": "? Volver al inicio de sesión",
+      "backLogin": "Volver al inicio de sesión",
       "yourEmail": "Tu email",
       "sendCodeBtn": "Enviarme código",
       "codeSentToEmail": "Código enviado a {{email}}",
@@ -417,7 +417,7 @@
       "repeatPass": "Repite la contraseña",
       "updating": "Actualizando...",
       "changeBtn": "Cambiar contraseña",
-      "useOtherEmail": "? Usar otro email",
+      "useOtherEmail": "Usar otro email",
       "resetTitle": "Restablecer Contraseña",
       "forgotDesc": "Te enviaremos un código de recuperación por email",
       "codeDesc": "Ingresa el código enviado a"
@@ -425,7 +425,7 @@
     "forgotUser": {
       "title": "Olvidé mi Usuario",
       "desc": "Tu usuario en Stream Voicer es el correo electrónico con el que te registraste.",
-      "back": "? Volver al inicio de sesión"
+      "back": "Volver al inicio de sesión"
     },
     "branding": {
       "title": "Tu chat TikTok",

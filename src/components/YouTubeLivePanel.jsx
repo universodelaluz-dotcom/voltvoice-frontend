@@ -550,7 +550,7 @@ const getPlanBadgeLabel = (planTier, billingCycle = 'monthly') => {
   return baseLabel
 }
 
-export default function TikTokLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride, platformMode = 'tiktok' }) {
+export default function YouTubeLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride, platformMode = 'tiktok' }) {
   const { t } = useTranslation()
   const isYouTubeMode = platformMode === 'youtube'
   const platformConnectPlaceholder = isYouTubeMode ? 'Canal de YouTube (ej. @canal)' : t('tiktok.connect.placeholderWithExample')
@@ -957,6 +957,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const youtubeInitialBatchConsumedRef = useRef(false)
   const youtubeKnownModeratorsRef = useRef(new Set())
   const youtubeKnownSubscribersRef = useRef(new Set())
+  const youtubeCommunityActivityRef = useRef(new Map())
   const smoothIncomingQueueRef = useRef([])
   const smoothIncomingTimerRef = useRef(null)
   // Cooldown por tipo de notificación (timestamp del último anuncio)
@@ -972,6 +973,47 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       clearInterval(smoothIncomingTimerRef.current)
       smoothIncomingTimerRef.current = null
     }
+  }
+
+  const parseBoundedMinutes = (value, fallback, min, max) => {
+    const n = Number(value)
+    if (!Number.isFinite(n)) return fallback
+    return Math.min(max, Math.max(min, Math.round(n)))
+  }
+
+  const getYouTubeChattingWindowMinutes = () => parseBoundedMinutes(
+    configRef.current?.youtubeChattingWindowMinutes,
+    4,
+    1,
+    60
+  )
+
+  const trackYouTubeCommunityActivity = (username, timestampMs = Date.now()) => {
+    const rawUser = String(username || '').trim()
+    if (!rawUser) return false
+    const normalized = normalizeTikTokUsername(rawUser) || rawUser.toLowerCase()
+    const now = Number(timestampMs) > 0 ? Number(timestampMs) : Date.now()
+    const map = youtubeCommunityActivityRef.current
+    const current = map.get(normalized) || { lastMessageAt: 0, msgCount: 0, lastSeenAt: 0 }
+    const windowMs = getYouTubeChattingWindowMinutes() * 60000
+    const previousMessageAt = Number(current.lastMessageAt) || 0
+    const isChattingActive = previousMessageAt > 0 && (now - previousMessageAt) <= windowMs
+
+    const next = {
+      lastMessageAt: now,
+      msgCount: (Number(current.msgCount) || 0) + 1,
+      lastSeenAt: now
+    }
+    map.set(normalized, next)
+
+    if (map.size > 1500) {
+      const staleBefore = Date.now() - (6 * 60 * 60 * 1000)
+      for (const [key, meta] of map.entries()) {
+        if ((Number(meta?.lastSeenAt) || 0) < staleBefore) map.delete(key)
+      }
+    }
+
+    return isChattingActive
   }
 
   const enqueueSmoothIncoming = (items = []) => {
@@ -1254,6 +1296,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             || knownSubscribersThisPoll.has(currentUser)
             || (normalizedCurrentUser && knownSubscribersThisPoll.has(normalizedCurrentUser))
           )
+          const isCommunityFromActivity = trackYouTubeCommunityActivity(currentUser, Number(msg?.timestamp) || Date.now())
           toAppend.push({
             id: msgId,
             user: currentUser,
@@ -1264,7 +1307,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             isDonor: Boolean(msg?.isDonor),
             isModerator: isKnownModerator,
             isSubscriber: isKnownSubscriber,
-            isCommunityMember: false,
+            isCommunityMember: Boolean(msg?.isCommunityMember) || isCommunityFromActivity,
             isTopGifter: false,
           })
           if (msg?.isDonor) {
@@ -3361,6 +3404,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       youtubeInitialBatchConsumedRef.current = false
       youtubeKnownModeratorsRef.current = new Set()
       youtubeKnownSubscribersRef.current = new Set()
+      youtubeCommunityActivityRef.current = new Map()
       setYoutubeAuthState({ authenticated: false, channelLabel: '' })
       setIsConnected(false)
       setConnectedTikTokUser('')
@@ -3409,6 +3453,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         youtubeInitialBatchConsumedRef.current = false
         youtubeKnownModeratorsRef.current = new Set()
         youtubeKnownSubscribersRef.current = new Set()
+        youtubeCommunityActivityRef.current = new Map()
         setIsConnected(true)
         setConnectedTikTokUser(String(data.channelTitle || getYouTubeSessionLabel(cleanStreamUrl)))
       } catch (err) {
@@ -3609,6 +3654,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       youtubeInitialBatchConsumedRef.current = false
       youtubeKnownModeratorsRef.current = new Set()
       youtubeKnownSubscribersRef.current = new Set()
+      youtubeCommunityActivityRef.current = new Map()
       connectedAtRef.current = null
       return
     }
@@ -4626,19 +4672,18 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             }`}>
               <div className="flex items-center justify-between">
                 <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>
-                  {t('tiktok.highlight.byType')}
+                  Remarcar por tipo (YouTube)
                 </span>
                 <button onClick={() => setShowHighlightPanel(false)} className="text-gray-400 hover:text-gray-200"><X className="w-3.5 h-3.5" /></button>
               </div>
 
               {/* Reglas por tipo */}
               {[
-                { key: 'moderators', label: t('tiktok.highlight.moderators') },
-                { key: 'donors', label: 'Donadores' },
-                { key: 'subscribers', label: 'Suscriptores' },
-                { key: 'communityMembers', label: 'Miembros de comunidad' },
-                { key: 'topFans', label: 'Top Fans / Gifters' },
-                { key: 'banned', label: 'Baneados (silenciados)' },
+                { key: 'moderators', label: 'Moderadores' },
+                { key: 'donors', label: 'Super Chat / Sticker' },
+                { key: 'subscribers', label: 'Suscriptores del canal' },
+                { key: 'communityMembers', label: 'Miembros chateando' },
+                { key: 'banned', label: 'Silenciados' },
               ].map(({ key, label }) => {
                 const rule = highlightRules[key] || defaultHighlightRules[key]
                 return (
@@ -4678,11 +4723,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 <button
                   onClick={() => {
                     const testMessages = [
-                      { id: `test-mod-${Date.now()}`, user: 'test_moderador', nickname: 'Moderador Test', text: '[TEST] Soy moderador de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: true, isSubscriber: false, isTopGifter: false, isBanned: false },
-                      { id: `test-donor-${Date.now()}`, user: 'test_donador', nickname: 'Donador Test', text: '[TEST] Soy donador de prueba', status: 'received', timestamp: new Date(), isDonor: true, isModerator: false, isSubscriber: false, isTopGifter: false, isBanned: false },
-                      { id: `test-sub-${Date.now()}`, user: 'test_suscriptor', nickname: 'Suscriptor Test', text: '[TEST] Soy suscriptor de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: true, isTopGifter: false, isBanned: false },
-                      { id: `test-community-${Date.now()}`, user: 'test_comunidad', nickname: 'Comunidad Test', text: '[TEST] Soy fan o superfan de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: false, isCommunityMember: true, isTopGifter: false, isBanned: false },
-                      { id: `test-topfan-${Date.now()}`, user: 'test_topfan', nickname: 'Top Fan Test', text: '[TEST] Soy top fan de prueba', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: false, isTopGifter: true, isBanned: false },
+                      { id: `test-mod-${Date.now()}`, user: 'test_moderador', nickname: 'Moderador Test', text: '[TEST] Moderador YouTube', status: 'received', timestamp: new Date(), isDonor: false, isModerator: true, isSubscriber: false, isTopGifter: false, isBanned: false },
+                      { id: `test-donor-${Date.now()}`, user: 'test_superchat', nickname: 'Super Chat Test', text: '[TEST] Usuario con Super Chat', status: 'received', timestamp: new Date(), isDonor: true, isModerator: false, isSubscriber: false, isTopGifter: false, isBanned: false },
+                      { id: `test-sub-${Date.now()}`, user: 'test_suscriptor', nickname: 'Suscriptor Test', text: '[TEST] Suscriptor del canal', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: true, isTopGifter: false, isBanned: false },
+                      { id: `test-community-${Date.now()}`, user: 'test_chateando', nickname: 'Miembro Chateando', text: '[TEST] Usuario activo en chat', status: 'received', timestamp: new Date(), isDonor: false, isModerator: false, isSubscriber: false, isCommunityMember: true, isTopGifter: false, isBanned: false },
                     ]
                     setMessages(prev => [...prev, ...testMessages])
                   }}
@@ -4690,7 +4734,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                     darkMode ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30' : 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300'
                   }`}
                 >
-                  [TEST] Probar resaltado (mensajes de prueba)
+                  [TEST] Probar resaltado (YouTube)
                 </button>
               </div>
 

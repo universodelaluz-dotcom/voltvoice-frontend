@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Check, HelpCircle, Keyboard, ChevronRight, Ban, Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -422,7 +422,7 @@ function BotShortcutCapture({ darkMode, onCapture }) {
   )
 }
 
-export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode, config, updateConfig, user, forceUnrestricted = false }) {
+export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode, config, updateConfig, user, forceUnrestricted = false }) {
   const { t } = useTranslation()
   const effectiveUser = (() => {
     if (user) return user
@@ -629,6 +629,37 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
       updateConfig('userVoiceAssignments', [])
     }
   }, [userPlan, config, updateConfig, forceUnrestricted])
+
+  useEffect(() => {
+    if (config?.notifVoiceEnabled) updateConfig('notifVoiceEnabled', false)
+  }, [config?.notifVoiceEnabled, updateConfig])
+
+  useEffect(() => {
+    const announceKeys = [
+      'announceFollowers',
+      'announceGifts',
+      'announceViewers',
+      'announceLikes',
+      'announceShares',
+      'announceBattles',
+      'announcePolls',
+      'announceGoals',
+    ]
+    announceKeys.forEach((key) => {
+      if (config?.[key]) updateConfig(key, false)
+    })
+  }, [
+    config?.announceFollowers,
+    config?.announceGifts,
+    config?.announceViewers,
+    config?.announceLikes,
+    config?.announceShares,
+    config?.announceBattles,
+    config?.announcePolls,
+    config?.announceGoals,
+    updateConfig
+  ])
+
   const PREMIUM_BY_PLAN = {
     free: [],
     base: ['Diego', 'Lupita'],
@@ -961,16 +992,34 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     <CheckOption label={t('control.reading.onlyDonors')} checked={config.onlyDonors} onChange={() => {}} darkMode={darkMode} />
                     <CheckOption label={t('control.reading.onlyMods')} checked={config.onlyModerators} onChange={() => {}} darkMode={darkMode} />
                     <CheckOption label={t('control.reading.onlySubs')} checked={config.onlySubscribers} onChange={() => {}} darkMode={darkMode} />
-                    <CheckOption label={t('control.reading.onlyCommunity')} checked={config.onlyCommunityMembers} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label="Miembros chateando" checked={config.onlyCommunityMembers} onChange={() => {}} darkMode={darkMode} />
                   </div>
                 </div>
               ) : (
                 <>
                   <CheckOption label={t('control.reading.onlyQuestions')} checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} hint={t('control.reading.onlyQuestionsHint')} />
-                  <CheckOption label={t('control.reading.onlyDonors')} checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron regalos" />
-                  <CheckOption label={t('control.reading.onlyMods')} checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} hint={t('control.reading.onlyModsHint')} />
-                  <CheckOption label={t('control.reading.onlySubs')} checked={config.onlySubscribers} onChange={() => updateConfig('onlySubscribers', !config.onlySubscribers)} darkMode={darkMode} hint={t('control.reading.onlySubsHint')} />
-                  <CheckOption label={t('control.reading.onlyCommunity')} checked={config.onlyCommunityMembers} onChange={() => updateConfig('onlyCommunityMembers', !config.onlyCommunityMembers)} darkMode={darkMode} hint={t('control.reading.onlyCommunityHint')} />
+                  <CheckOption label={t('control.reading.onlyDonors')} checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron Super Chat o Super Sticker" />
+                  <CheckOption label={t('control.reading.onlyMods')} checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} hint="Solo lee mensajes de moderadores del chat de YouTube" />
+                  <CheckOption label={t('control.reading.onlySubs')} checked={config.onlySubscribers} onChange={() => updateConfig('onlySubscribers', !config.onlySubscribers)} darkMode={darkMode} hint="Solo lee mensajes de suscriptores del canal" />
+                  <CheckOption label="Miembros chateando" checked={config.onlyCommunityMembers} onChange={() => updateConfig('onlyCommunityMembers', !config.onlyCommunityMembers)} darkMode={darkMode} hint="Solo lee usuarios que sigan chateando dentro del tiempo configurado" />
+                  <div className={`mb-2 rounded-xl px-4 py-3 border transition-opacity ${
+                    darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
+                  } ${config.onlyCommunityMembers ? 'opacity-100' : 'opacity-45'}`}>
+                    <label className="text-xs font-semibold block">
+                      <span className={`${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>Tiempo entre mensaje y mensaje (min)</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={60}
+                        value={config.youtubeChattingWindowMinutes ?? 4}
+                        onChange={(e) => updateConfig('youtubeChattingWindowMinutes', Math.min(60, Math.max(1, Number(e.target.value) || 4)))}
+                        disabled={!config.onlyCommunityMembers}
+                        className={`mt-1 w-full px-3 py-1.5 text-sm rounded-lg border ${
+                          darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100 disabled:opacity-60 disabled:cursor-not-allowed' : 'bg-white border-gray-300 text-slate-800 disabled:opacity-60 disabled:cursor-not-allowed'
+                        }`}
+                      />
+                    </label>
+                  </div>
                 </>
               )}
 
@@ -1019,7 +1068,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     }`}>
                       {config.donorVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                     </div>
-                    <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.donorVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.donors')}<Hint text={t('control.voiceSection.donorsHint')} darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.donorVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz Super Chat / Sticker<Hint text="Voz prioritaria para usuarios que enviaron Super Chat o Super Sticker" darkMode={darkMode} /></span>
                   </button>
                   {config.donorVoiceEnabled && (
                     <div className="mt-2 ml-8">
@@ -1055,7 +1104,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   }`}>
                     {config.modVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.modVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.moderators')}<Hint text={t('control.voiceSection.moderatorsHint')} darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.modVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz moderadores<Hint text="Voz prioritaria para moderadores del chat de YouTube" darkMode={darkMode} /></span>
                 </button>
                 {config.modVoiceEnabled && (
                   <div className="mt-2 ml-8">
@@ -1091,7 +1140,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   }`}>
                     {config.subscriberVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.subscriberVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.subscribers')}<Hint text={t('control.voiceSection.subscribersHint')} darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.subscriberVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz suscriptores del canal<Hint text="Voz prioritaria para suscriptores detectados en YouTube" darkMode={darkMode} /></span>
                 </button>
                   {config.subscriberVoiceEnabled && (
                     <div className="mt-2 ml-8">
@@ -1128,7 +1177,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   }`}>
                     {config.communityMemberVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.communityMemberVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.communityMembers')}<Hint text={t('control.voiceSection.communityMembersHint')} darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.communityMemberVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz miembros chateando<Hint text="Voz prioritaria para usuarios activos segun el tiempo entre mensajes" darkMode={darkMode} /></span>
                 </button>
                   {config.communityMemberVoiceEnabled && (
                     <div className="mt-2 ml-8">
@@ -1165,7 +1214,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   }`}>
                     {config.questionVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                   </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.questionVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.questions')}<Hint text={t('control.voiceSection.questionsHint')} darkMode={darkMode} /></span>
+                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.questionVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz preguntas<Hint text="Voz prioritaria para mensajes con pregunta en el chat de YouTube" darkMode={darkMode} /></span>
                 </button>
                   {config.questionVoiceEnabled && (
                     <div className="mt-2 ml-8">
@@ -1202,7 +1251,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     }`}>
                       {config.commandVoiceEnabled && <Check className="w-4 h-4 text-white" />}
                     </div>
-                    <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.commandVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.commands')}<Hint text={t('control.voiceSection.commandsHint')} darkMode={darkMode} /></span>
+                    <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.commandVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>Voz comandos<Hint text="Voz para mensajes activados por tu prefijo de comando" darkMode={darkMode} /></span>
                   </button>
                   {config.commandVoiceEnabled && (
                     <div className="mt-2 ml-8">
@@ -1222,42 +1271,6 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 </div>
               </div>
 
-              {/* Voz notificaciones - BLOQUEADA */}
-              <div className={`relative mb-2 rounded-xl px-4 py-3 border transition-colors ${
-                darkMode
-                  ? config.notifVoiceEnabled
-                    ? 'bg-cyan-500/10 border-cyan-400/40'
-                    : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
-                  : config.notifVoiceEnabled
-                    ? 'bg-slate-100 border-slate-400 shadow-sm'
-                    : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
-              }`}>
-                <div>
-                  <button onClick={() => updateConfig('notifVoiceEnabled', !config.notifVoiceEnabled)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
-                  <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                    config.notifVoiceEnabled ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
-                  }`}>
-                    {config.notifVoiceEnabled && <Check className="w-4 h-4 text-white" />}
-                  </div>
-                  <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.notifVoiceEnabled ? 'font-semibold' : 'font-medium'}`}>{t('control.voiceSection.notifications')}<Hint text={t('control.voiceSection.notificationsHint')} darkMode={darkMode} /></span>
-                </button>
-                  {config.notifVoiceEnabled && (
-                    <div className="mt-2 ml-8">
-                      <select
-                        value={config.notifVoiceId || 'Lupita'}
-                        onChange={(e) => updateConfig('notifVoiceId', e.target.value)}
-                        className={`w-full px-3 py-1.5 text-sm rounded-lg border ${
-                          darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
-                        }`}
-                      >
-                        {premiumVoiceOptions.map(v => (
-                          <option key={v.id} value={v.id}>{v.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
-              </div>
               </div>
               </div>
 
@@ -1424,24 +1437,6 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 </div>
               </div>
 
-              {/* LEFT COLUMN - BLOQUE INDEPENDIENTE DE NOTIFICACIONES */}
-              <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-rose-400/25' : 'bg-white border-slate-200'} ${userPlan === 'free' ? 'opacity-45 pointer-events-none' : ''}`}>
-                <div className={`relative`}>
-                  {userPlan === 'free' && (
-                    <FeatureLockedOverlay darkMode={darkMode} message="Notificaciones disponibles en packs" showIcon showMessage />
-                  )}
-                  <SectionHeader title="Notificaciones en Vivo" tone="notificaciones" darkMode={darkMode} />
-
-                  <CheckWithInput label={t('control.announcements.followers')} checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} hint={t('control.announcements.followersHint')} />
-                  <CheckWithInput label={t('control.announcements.gifts')} checked={config.announceGifts} onToggle={() => updateConfig('announceGifts', !config.announceGifts)} value={config.giftCooldown} onValueChange={(v) => updateConfig('giftCooldown', v)} placeholder="5" darkMode={darkMode} hint={t('control.announcements.giftsHint')} />
-                  <CheckWithInput label={t('control.announcements.viewers')} checked={config.announceViewers} onToggle={() => updateConfig('announceViewers', !config.announceViewers)} value={config.viewerCooldown} onValueChange={(v) => updateConfig('viewerCooldown', v)} placeholder="120" darkMode={darkMode} hint={t('control.announcements.viewersHint')} />
-                  <CheckWithInput label={t('control.announcements.likes')} checked={config.announceLikes} onToggle={() => updateConfig('announceLikes', !config.announceLikes)} value={config.likeCooldown} onValueChange={(v) => updateConfig('likeCooldown', v)} placeholder="60" darkMode={darkMode} hint={t('control.announcements.likesHint')} />
-                  <CheckWithInput label={t('control.announcements.shares')} checked={config.announceShares} onToggle={() => updateConfig('announceShares', !config.announceShares)} value={config.shareCooldown} onValueChange={(v) => updateConfig('shareCooldown', v)} placeholder="15" darkMode={darkMode} hint={t('control.announcements.sharesHint')} />
-                  <CheckOption label={t('control.announcements.battles')} checked={config.announceBattles} onChange={() => updateConfig('announceBattles', !config.announceBattles)} darkMode={darkMode} hint={t('control.announcements.battlesHint')} />
-                  <CheckOption label={t('control.announcements.polls')} checked={config.announcePolls} onChange={() => updateConfig('announcePolls', !config.announcePolls)} darkMode={darkMode} hint={t('control.announcements.pollsHint')} />
-                  <CheckOption label={t('control.announcements.goals')} checked={config.announceGoals} onChange={() => updateConfig('announceGoals', !config.announceGoals)} darkMode={darkMode} hint={t('control.announcements.goalsHint')} />
-                </div>
-              </div>
             </div>
 
             {/* RIGHT COLUMN */}
@@ -1859,3 +1854,4 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     </div>
   )
 }
+

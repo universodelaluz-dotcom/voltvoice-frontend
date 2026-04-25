@@ -23,9 +23,11 @@ const getFrontendOrigin = () => {
   if (typeof window === 'undefined') return ''
   return String(window.location.origin || '').trim()
 }
-const getFrontendReturnUrl = () => {
+const getFrontendReturnUrl = (returnPath = '') => {
   if (typeof window === 'undefined') return ''
-  return `${window.location.origin}/`
+  const rawPath = String(returnPath || window.location.pathname || '/').trim()
+  const normalizedPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`
+  return `${window.location.origin}${normalizedPath.replace(/\/+$/, '') || '/'}${normalizedPath.endsWith('/') ? '' : '/'}`
 }
 
 const tokenPackages = [
@@ -100,7 +102,7 @@ const buildPlanCheckoutItem = ({ planId, billingCycle }) => {
   }
 }
 
-export function StripePayment({ isOpen, onClose, initialPackageTokens = null, initialCheckoutItem = null }) {
+export function StripePayment({ isOpen, onClose, initialPackageTokens = null, initialCheckoutItem = null, returnPath = '' }) {
   const { t } = useTranslation()
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
   const [selectedPackage, setSelectedPackage] = useState(tokenPackages[1])
@@ -285,8 +287,11 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
   const getReturnUrl = () => {
     if (typeof window === 'undefined') return undefined
     const origin = window.location.origin
-    return `${origin}/mercadopago-success.html`
+    const next = getFrontendReturnUrl(returnPath)
+    return `${origin}/mercadopago-success.html?next=${encodeURIComponent(next)}`
   }
+
+  const frontendReturnUrl = getFrontendReturnUrl(returnPath)
 
   const requestPayload = currentItem.type === 'plan'
     ? {
@@ -294,7 +299,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         billingCycle: currentItem.billingCycle,
         itemType: 'plan',
         frontendOrigin: getFrontendOrigin(),
-        frontendReturnUrl: getFrontendReturnUrl(),
+        frontendReturnUrl,
         returnUrlBase: getReturnUrl(),
         couponCode: validCoupon ? couponCode.trim() : undefined,
         couponId: validCoupon?.coupon?.id || undefined,
@@ -303,7 +308,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
         tokensPackage: currentItem.package.tokens,
         itemType: 'tokens',
         frontendOrigin: getFrontendOrigin(),
-        frontendReturnUrl: getFrontendReturnUrl(),
+        frontendReturnUrl,
         returnUrlBase: getReturnUrl(),
         couponCode: validCoupon ? couponCode.trim() : undefined,
         couponId: validCoupon?.coupon?.id || undefined,

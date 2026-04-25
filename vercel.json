@@ -7,6 +7,8 @@
     { "source": "/faq", "destination": "/faq/", "permanent": true },
     { "source": "/precios/(.*)", "destination": "/", "permanent": true },
     { "source": "/precios", "destination": "/", "permanent": true },
+    { "source": "/youtube", "destination": "/youtube.html", "permanent": false },
+    { "source": "/youtube/", "destination": "/youtube.html", "permanent": false },
     { "source": "/como-funciona", "destination": "/como-funciona/", "permanent": true }
   ],
   "rewrites": [

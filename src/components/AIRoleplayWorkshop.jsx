@@ -35,7 +35,7 @@ const getBaseVoices = (t, plan = 'free') => {
   ]
 }
 
-export default function AIRoleplayWorkshop({ darkMode = true }) {
+export default function AIRoleplayWorkshop({ darkMode = true, user = null }) {
   const { t } = useTranslation()
   const [characters, setCharacters] = useState([])
   const [loadingCharacters, setLoadingCharacters] = useState(true)
@@ -63,7 +63,17 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
   const [userVoices, setUserVoices] = useState([])
   const currentPlan = (() => {
     try {
-      const userData = JSON.parse(localStorage.getItem('sv-user') || '{}')
+      const cachedUser = JSON.parse(localStorage.getItem('sv-user') || '{}')
+      const userData = user || cachedUser
+      const role = String(userData?.role || '').trim().toLowerCase()
+      if (role === 'admin') return 'admin'
+
+      const addonRaw = userData?.subscription?.addonPack || null
+      const addonPlan = String(addonRaw?.planKey || '').trim().toLowerCase().replace(/\s+/g, '_')
+      const addonExpiresAtMs = addonRaw?.expiresAt ? Date.parse(addonRaw.expiresAt) : NaN
+      const addonValid = Boolean(addonRaw?.active) && Number.isFinite(addonExpiresAtMs) && addonExpiresAtMs > Date.now()
+      if (addonValid && ['pack_lite', 'pack_pro', 'pack_max'].includes(addonPlan)) return addonPlan
+
       return String(
         userData?.subscription?.backendPlan ||
         userData?.plan ||
@@ -75,7 +85,8 @@ export default function AIRoleplayWorkshop({ darkMode = true }) {
     }
   })()
   const normalizedCurrentPlan = ['on_demand', 'ondemand', 'free_plan', 'free_monthly', 'plan_free'].includes(currentPlan) ? 'free' : currentPlan
-  const isBasePlan = normalizedCurrentPlan === 'base' || normalizedCurrentPlan === 'plan base'
+  const isAdminPlan = normalizedCurrentPlan === 'admin'
+  const isBasePlan = !isAdminPlan && (normalizedCurrentPlan === 'base' || normalizedCurrentPlan === 'plan base')
   const baseVoices = getBaseVoices(t, normalizedCurrentPlan)
 
   // Cargar personajes al montar

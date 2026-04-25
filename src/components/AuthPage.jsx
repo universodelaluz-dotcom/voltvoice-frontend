@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Mail, Lock, Eye, EyeOff, Loader, AlertCircle, ArrowLeft, CheckCircle } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Loader, AlertCircle, ArrowLeft, CheckCircle, Bot, Clock3, Sparkles, MessageCircle, Volume2 } from 'lucide-react'
 
 const resolveApiUrl = () => {
   const configured = String(import.meta.env.VITE_API_URL || '').trim()
@@ -25,6 +25,8 @@ const maskEmail = (email) => {
   const visible = local.length > 2 ? local[0] + '***' + local[local.length - 1] : local[0] + '***'
   return `${visible}@${domain}`
 }
+
+const BRANDING_FEATURE_ICONS = [Bot, Clock3, Sparkles]
 
 export function AuthPage({ onLogin, onGoHome, darkMode }) {
   const { t } = useTranslation()
@@ -466,28 +468,34 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
         {/* Features */}
         <div className="relative z-10 space-y-4 w-full max-w-xs mb-10">
           {t('auth.branding.features', { returnObjects: true }).map((f, i) => (
+            (() => {
+              const FeatureIcon = BRANDING_FEATURE_ICONS[i] || Sparkles
+              return (
             <div key={i} className={`flex items-center gap-4 rounded-xl px-4 py-3 backdrop-blur-sm border ${
               darkMode ? 'bg-white/5 border-white/10' : 'bg-white/70 border-gray-200 shadow-sm'
             }`}>
-              <span className="text-2xl">{f.icon}</span>
+              <span className={`inline-flex items-center justify-center w-9 h-9 rounded-lg ${
+                darkMode ? 'bg-cyan-500/15 text-cyan-300' : 'bg-cyan-50 text-cyan-700'
+              }`}>
+                <FeatureIcon className="w-5 h-5" />
+              </span>
               <div>
                 <p className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-gray-800'}`}>{f.title}</p>
                 <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{f.desc}</p>
               </div>
             </div>
+              )
+            })()
           ))}
         </div>
 
         {/* Chat bubbles animados */}
         <div className="relative z-10 w-full max-w-xs space-y-2">
-          <div className={`float-1 border rounded-2xl rounded-tl-sm px-4 py-2 text-sm w-fit ${darkMode ? 'bg-white/5 border-cyan-500/20 text-gray-300' : 'bg-white border-cyan-300 text-gray-600 shadow-sm'}`}>
-            💬 <span className={`font-bold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>@alexgamer:</span> {t('auth.branding.chatBubble1')}
+          <div className={`float-1 border rounded-2xl rounded-tl-sm px-4 py-2 text-sm w-fit ${darkMode ? 'bg-white/5 border-cyan-500/20 text-gray-300' : 'bg-white border-cyan-300 text-gray-600 shadow-sm'}`}>            <MessageCircle className="inline-block w-4 h-4 mr-1 align-text-bottom" /> <span className={`font-bold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>@alexgamer:</span> {t('auth.branding.chatBubble1')}
           </div>
-          <div className={`float-2 border rounded-2xl rounded-tr-sm px-4 py-2 text-sm w-fit ml-auto ${darkMode ? 'bg-white/5 border-purple-500/20 text-gray-300' : 'bg-white border-purple-300 text-gray-600 shadow-sm'}`}>
-            🔊 <em className={darkMode ? 'text-purple-300' : 'text-purple-500'}>{t('auth.branding.reading')}</em>
+          <div className={`float-2 border rounded-2xl rounded-tr-sm px-4 py-2 text-sm w-fit ml-auto ${darkMode ? 'bg-white/5 border-purple-500/20 text-gray-300' : 'bg-white border-purple-300 text-gray-600 shadow-sm'}`}>            <Volume2 className="inline-block w-4 h-4 mr-1 align-text-bottom" /> <em className={darkMode ? 'text-purple-300' : 'text-purple-500'}>{t('auth.branding.reading')}</em>
           </div>
-          <div className={`float-3 border rounded-2xl rounded-tl-sm px-4 py-2 text-sm w-fit ${darkMode ? 'bg-white/5 border-cyan-500/20 text-gray-300' : 'bg-white border-cyan-300 text-gray-600 shadow-sm'}`}>
-            💬 <span className={`font-bold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>@sofia_art:</span> {t('auth.branding.chatBubble2')}
+          <div className={`float-3 border rounded-2xl rounded-tl-sm px-4 py-2 text-sm w-fit ${darkMode ? 'bg-white/5 border-cyan-500/20 text-gray-300' : 'bg-white border-cyan-300 text-gray-600 shadow-sm'}`}>            <MessageCircle className="inline-block w-4 h-4 mr-1 align-text-bottom" /> <span className={`font-bold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>@sofia_art:</span> {t('auth.branding.chatBubble2')}
           </div>
         </div>
 
@@ -535,6 +543,13 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       }`}>
         {/* Header */}
         <div className="text-center mb-8">
+          {(step === 'forgot-request' || step === 'forgot-reset' || step === 'forgot-user') && (
+            <div className={`mx-auto mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full ${
+              darkMode ? 'bg-cyan-500/15 text-cyan-300' : 'bg-cyan-50 text-cyan-700'
+            }`}>
+              {(step === 'forgot-user') ? <Mail className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+            </div>
+          )}
           <h1 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>
             {step === 'verification'
               ? t('auth.verify.title')
@@ -555,7 +570,7 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
               : step === 'forgot-reset'
               ? `${t('auth.forgot.codeDesc')} ${maskEmail(email)}`
               : step === 'forgot-user'
-              ? t('auth.forgotUser.helpDesc')
+              ? t('auth.forgotUser.desc')
               : showEmailForm
               ? (mode === 'login' ? t('auth.login.enterEmail') : t('auth.login.registerDesc'))
               : t('auth.login.welcomeDesc')
