@@ -5,7 +5,8 @@
   "redirects": [
     { "source": "/sitemap.xml", "destination": "/sitemap-main.xml", "permanent": false },
     { "source": "/faq", "destination": "/faq/", "permanent": true },
-    { "source": "/precios", "destination": "/precios/", "permanent": true },
+    { "source": "/precios/(.*)", "destination": "/", "permanent": true },
+    { "source": "/precios", "destination": "/", "permanent": true },
     { "source": "/como-funciona", "destination": "/como-funciona/", "permanent": true }
   ],
   "rewrites": [
