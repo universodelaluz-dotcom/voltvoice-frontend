@@ -2946,6 +2946,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 const isNextLocalVoice = nextVoiceId === 'es-ES' || nextVoiceId === 'en-US'
                 const authToken = getAuthToken()
 
+                // ADVERTENCIA: Sin autenticación, no se deducen tokens
+                if (!authToken && !isNextLocalVoice) {
+                  console.warn(`[Token Deduction] ⚠️ MISSING AUTH TOKEN (pre-gen) - voiceId: ${nextVoiceId}, username: ${nextItem.username}`)
+                  console.warn(`[Token Deduction] Tokens WILL NOT be deducted for this message. Please re-login to ensure proper token deduction.`)
+                }
+
                 const preGenerateFunc = isNextLocalVoice
                   ? // Google TTS
                     () => fetch(`${API_URL}/api/tts/say`, {
@@ -3053,6 +3059,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         const authToken = getAuthToken()
         let data = null
         let response = null
+
+        // ADVERTENCIA: Sin autenticación, no se deducen tokens
+        if (!authToken) {
+          console.warn(`[Token Deduction] ⚠️ MISSING AUTH TOKEN - voiceId: ${voiceId}, username: ${username}`)
+          console.warn(`[Token Deduction] Tokens WILL NOT be deducted for this message. Please re-login to ensure proper token deduction.`)
+        }
 
         // Revisar si ya está pre-generado Y es de la generación actual
         if (
@@ -3221,6 +3233,12 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 const nextVoiceId = nextItem.voiceId || (configRef.current.generalVoiceId || 'es-ES')
                 const authToken = getAuthToken()
                 console.log('[Pre-gen] Iniciando para', nextItem.username)
+
+                // ADVERTENCIA: Sin autenticación, no se deducen tokens
+                if (!authToken) {
+                  console.warn(`[Token Deduction] ⚠️ MISSING AUTH TOKEN (pre-gen #2) - voiceId: ${nextVoiceId}, username: ${nextItem.username}`)
+                  console.warn(`[Token Deduction] Tokens WILL NOT be deducted for this message. Please re-login to ensure proper token deduction.`)
+                }
 
                 fetch(`${API_URL}/api/tiktok/message`, {
                   method: 'POST',
