@@ -295,27 +295,6 @@ const extractKeywords = (text = '') => {
 // Obtener token del localStorage
 const getAuthToken = () => sessionStorage.getItem('sv-token') || ''
 
-// Refrescar balance de tokens después de síntesis
-const refreshTokenBalance = async () => {
-  if (!setTokens) return
-  try {
-    const authToken = getAuthToken()
-    if (!authToken) return
-    const response = await fetch(`${API_URL}/api/auth/me`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    })
-    if (response.ok) {
-      const data = await response.json()
-      if (data?.user?.tokens !== undefined) {
-        setTokens(data.user.tokens)
-        console.log(`[Token Balance] Updated: ${data.user.tokens} tokens`)
-      }
-    }
-  } catch (err) {
-    console.error('[Token Balance] Error refreshing:', err.message)
-  }
-}
-
 const defaultHighlightRules = {
   moderators: { enabled: false, color: '#a855f7' },
   donors: { enabled: false, color: '#f59e0b' },
@@ -623,6 +602,27 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
       ? darkModeOverride
       : localStorage.getItem('voltvoice-theme') !== 'light'
   )
+
+  // Refrescar balance de tokens después de síntesis
+  const refreshTokenBalance = async () => {
+    if (!setTokens) return
+    try {
+      const authToken = getAuthToken()
+      if (!authToken) return
+      const response = await fetch(`${API_URL}/api/auth/me`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        if (data?.user?.tokens !== undefined) {
+          setTokens(data.user.tokens)
+          console.log(`[Token Balance] Updated: ${data.user.tokens} tokens`)
+        }
+      }
+    } catch (err) {
+      console.error('[Token Balance] Error refreshing:', err.message)
+    }
+  }
 
   useEffect(() => {
     if (typeof darkModeOverride === 'boolean') {
