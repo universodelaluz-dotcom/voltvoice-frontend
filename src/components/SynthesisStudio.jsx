@@ -693,6 +693,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
           user={user}
           darkModeOverride={darkMode}
           platformMode={platformMode}
+          tokens={tokens}
+          setTokens={setTokens}
         />
 
         {/* Nav buttons - fila debajo del panel */}

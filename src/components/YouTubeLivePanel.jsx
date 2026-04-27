@@ -295,6 +295,27 @@ const extractKeywords = (text = '') => {
 // Obtener token del localStorage
 const getAuthToken = () => sessionStorage.getItem('sv-token') || ''
 
+// Refrescar balance de tokens después de síntesis
+const refreshTokenBalance = async () => {
+  if (!setTokens) return
+  try {
+    const authToken = getAuthToken()
+    if (!authToken) return
+    const response = await fetch(`${API_URL}/api/auth/me`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    })
+    if (response.ok) {
+      const data = await response.json()
+      if (data?.user?.tokens !== undefined) {
+        setTokens(data.user.tokens)
+        console.log(`[Token Balance] Updated: ${data.user.tokens} tokens`)
+      }
+    }
+  } catch (err) {
+    console.error('[Token Balance] Error refreshing:', err.message)
+  }
+}
+
 const defaultHighlightRules = {
   moderators: { enabled: false, color: '#a855f7' },
   donors: { enabled: false, color: '#f59e0b' },
@@ -550,7 +571,7 @@ const getPlanBadgeLabel = (planTier, billingCycle = 'monthly') => {
   return baseLabel
 }
 
-export default function YouTubeLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride, platformMode = 'tiktok' }) {
+export default function YouTubeLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride, platformMode = 'tiktok', tokens = 0, setTokens = null }) {
   const { t } = useTranslation()
   const isYouTubeMode = platformMode === 'youtube'
   const platformConnectPlaceholder = isYouTubeMode ? 'Canal de YouTube (ej. @canal)' : t('tiktok.connect.placeholderWithExample')
@@ -3135,6 +3156,10 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
             })
           })
           data = await response.json()
+          // Refrescar tokens después de síntesis exitosa (no en fallback/error)
+          if (data?.success && !data?.fallback && !data?.useLocalVoice && data?.tokensUsed) {
+            refreshTokenBalance()
+          }
         }
 
         if (isPausedRef.current || disconnectedRef.current || isAudioSuppressed()) {
