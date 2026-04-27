@@ -3156,9 +3156,9 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
             })
           })
           data = await response.json()
-          // Refrescar tokens después de síntesis exitosa (no en fallback/error)
-          if (data?.success && !data?.fallback && !data?.useLocalVoice && data?.tokensUsed) {
-            refreshTokenBalance()
+          // Refrescar tokens después de síntesis de voz premium
+          if (response.ok && data?.audio && !data?.fallback && !data?.useLocalVoice) {
+            setTimeout(() => refreshTokenBalance(), 100)
           }
         }
 
