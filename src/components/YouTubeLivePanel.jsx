@@ -284,6 +284,10 @@ const hasExcessiveNumericNoise = (text = '') => {
   return digitMatches.length >= 6 && (digitRatio >= 0.4 || hasLongNumericChunks || hasManyNumericChunks)
 }
 
+// Detecta caracteres fuera del rango Latino extendido (árabe, georgiano, CJK, etc.)
+// Permite: Basic Latin, Latin-1 (acentos españoles á é í ó ú ü ñ), Latin Extended A/B
+const hasForeignScript = (text = '') => /[^\x00-ɏ]/u.test(text)
+
 const extractKeywords = (text = '') => {
   const stopwords = new Set(['que', 'como', 'para', 'pero', 'porque', 'por', 'con', 'sin', 'una', 'unos', 'unas', 'the', 'and', 'you', 'y', 'de', 'del', 'las', 'los', 'pero', 'esta', 'este', 'eso', 'esa', 'al', 'el', 'la', 'un', 'me', 'te', 'se', 'lo', 'le'])
   return normalizeMessageForMatching(text)
@@ -1099,6 +1103,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
       if (!isQuestionMsg) { markFilteredMessage(); return }
     }
 
+    if (hasForeignScript(messageForRead)) { markFilteredMessage(); return }
     const profanityFilterEnabled = isEnabledFlag(c.profanityFilterEnabled)
     if (profanityFilterEnabled) {
       const profanityWords = parseProfanityWords(c.profanityWords)
@@ -2201,6 +2206,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
             // Solo filtro de preguntas: pasa si es pregunta
             if (!isQuestionMsg) { markFilteredMessage(); return }
           }
+          if (hasForeignScript(messageForRead)) { markFilteredMessage(); return }
           const profanityFilterEnabled = isEnabledFlag(c.profanityFilterEnabled)
           if (profanityFilterEnabled) {
             const profanityWords = parseProfanityWords(c.profanityWords)
@@ -2862,9 +2868,14 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
         markFilteredMessage()
         continue
       }
+      const contentToValidate = item.sourceText || item.rawText || item.text || ''
+      if (hasForeignScript(contentToValidate)) {
+        console.log('[YouTube] processQueue: DROP por script no-latino')
+        markFilteredMessage()
+        continue
+      }
       if (profanityFilterEnabled) {
         const profanityWords = parseProfanityWords(c.profanityWords)
-        const contentToValidate = item.sourceText || item.rawText || item.text || ''
         if (containsProfanity(contentToValidate, profanityWords)) {
           console.log('[TikTok] processQueue: DROP por filtro de palabrotas')
           markFilteredMessage()
