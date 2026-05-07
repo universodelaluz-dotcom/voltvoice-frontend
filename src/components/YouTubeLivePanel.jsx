@@ -284,9 +284,10 @@ const hasExcessiveNumericNoise = (text = '') => {
   return digitMatches.length >= 6 && (digitRatio >= 0.4 || hasLongNumericChunks || hasManyNumericChunks)
 }
 
-// Detecta caracteres fuera del rango Latino extendido (árabe, georgiano, CJK, etc.)
-// Permite: Basic Latin, Latin-1 (acentos españoles á é í ó ú ü ñ), Latin Extended A/B
-const hasForeignScript = (text = '') => /[^\x00-ɏ]/u.test(text)
+// Bloquea scripts de texto no-latinos (árabe, georgiano, CJK, cirílico, etc.)
+// PERMITE emojis, símbolos, puntuación, acentos latinos (á é í ó ú ü ñ), ASCII
+const hasForeignScript = (text = '') =>
+  /[Ͱ-ϿЀ-ԯ֐-ݿऀ-෿฀-࿿က-႟Ⴀ-ჿᄀ-ᇿሀ-፿Ꭰ-᏿぀-ヿ㐀-鿿가-힯ﭐ-﷿ﹰ-﻿]/u.test(text)
 
 const extractKeywords = (text = '') => {
   const stopwords = new Set(['que', 'como', 'para', 'pero', 'porque', 'por', 'con', 'sin', 'una', 'unos', 'unas', 'the', 'and', 'you', 'y', 'de', 'del', 'las', 'los', 'pero', 'esta', 'este', 'eso', 'esa', 'al', 'el', 'la', 'un', 'me', 'te', 'se', 'lo', 'le'])
