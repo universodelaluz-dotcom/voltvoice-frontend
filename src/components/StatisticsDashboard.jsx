@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react'
+﻿import React, { useEffect, useMemo, useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowLeft,
   BarChart3,
@@ -21,7 +22,7 @@ import {
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 const formatCompact = (value) => Number(value || 0).toLocaleString()
 
-/* ── Contador animado ─────────────────────────────────────────── */
+/* â”€â”€ Contador animado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function AnimatedNumber({ value, duration = 1000 }) {
   const [displayed, setDisplayed] = useState(0)
   const prev = useRef(0)
@@ -42,7 +43,7 @@ function AnimatedNumber({ value, duration = 1000 }) {
   return displayed.toLocaleString()
 }
 
-/* ── KPI Card con gradiente y animación ──────────────────────── */
+/* â”€â”€ KPI Card con gradiente y animaciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function KpiCard({ darkMode, icon: Icon, label, value, sub, accent = 'cyan', delay = 0, large = false }) {
   const accents = {
     cyan:    { border: 'border-cyan-500/30',   bg: 'bg-cyan-500/10',    text: 'text-cyan-400',    glow: 'shadow-cyan-500/20'   },
@@ -83,7 +84,7 @@ function KpiCard({ darkMode, icon: Icon, label, value, sub, accent = 'cyan', del
   )
 }
 
-/* ── Barra de progreso animada ───────────────────────────────── */
+/* â”€â”€ Barra de progreso animada â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function ProgressBar({ value, max, color = 'cyan', darkMode }) {
   const pct = Math.min(100, Math.round((value / Math.max(max, 1)) * 100))
   const colors = {
@@ -102,7 +103,7 @@ function ProgressBar({ value, max, color = 'cyan', darkMode }) {
   )
 }
 
-/* ── SectionCard con entrada animada ─────────────────────────── */
+/* â”€â”€ SectionCard con entrada animada â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function SectionCard({ darkMode, title, subtitle, children, delay = 0, accent }) {
   const accentBar = {
     cyan:    'bg-cyan-400',
@@ -128,10 +129,11 @@ function SectionCard({ darkMode, title, subtitle, children, delay = 0, accent })
   )
 }
 
-/* ── Gráfico de barras rediseñado ────────────────────────────── */
-function BarChart({ darkMode, values }) {
+/* â”€â”€ GrÃ¡fico de barras rediseÃ±ado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+function BarChart({ darkMode, values, isEnglish }) {
   const [hovered, setHovered] = useState(null)
 
+  const locale = isEnglish ? 'en-US' : 'es-MX'
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date()
     d.setDate(d.getDate() - (6 - i))
@@ -139,9 +141,9 @@ function BarChart({ darkMode, values }) {
     const found = values.find(v => v.date === key) || { date: key, messages: 0 }
     return {
       ...found,
-      dayName: d.toLocaleDateString('es-MX', { weekday: 'short' }),
-      dayNum:  d.toLocaleDateString('es-MX', { day: 'numeric' }),
-      month:   d.toLocaleDateString('es-MX', { month: 'short' }),
+      dayName: d.toLocaleDateString(locale, { weekday: 'short' }),
+      dayNum:  d.toLocaleDateString(locale, { day: 'numeric' }),
+      month:   d.toLocaleDateString(locale, { month: 'short' }),
     }
   })
 
@@ -152,7 +154,7 @@ function BarChart({ darkMode, values }) {
 
   return (
     <div className="space-y-4">
-      {/* Línea de promedio + barras */}
+      {/* LÃ­nea de promedio + barras */}
       <div className="relative h-52">
         {/* Grid de referencia */}
         {[0, 25, 50, 75, 100].map(pct => (
@@ -163,14 +165,14 @@ function BarChart({ darkMode, values }) {
           />
         ))}
 
-        {/* Línea de promedio */}
+        {/* LÃ­nea de promedio */}
         {avg > 0 && (
           <div
             className={`absolute w-full border-t-2 border-dashed z-10 flex items-center ${darkMode ? 'border-yellow-400/50' : 'border-yellow-500/60'}`}
             style={{ bottom: `${(avg / max) * 100}%` }}
           >
             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto mr-1 ${darkMode ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-100 text-yellow-700'}`}>
-              prom {avg}
+              {isEnglish ? 'avg' : 'prom'} {avg}
             </span>
           </div>
         )}
@@ -196,7 +198,7 @@ function BarChart({ darkMode, values }) {
                     style={{ bottom: `${heightPct + 8}%` }}
                   >
                     {item.dayName} {item.dayNum} {item.month}<br />
-                    <span className="text-cyan-400">{formatCompact(item.messages)} mensajes</span>
+                    <span className="text-cyan-400">{formatCompact(item.messages)} {isEnglish ? 'messages' : 'mensajes'}</span>
                   </div>
                 )}
 
@@ -244,13 +246,13 @@ function BarChart({ darkMode, values }) {
         </div>
       </div>
 
-      {/* Resumen debajo del gráfico */}
+      {/* Resumen debajo del grÃ¡fico */}
       <div className="grid grid-cols-4 gap-3">
         {[
-          { label: 'Mejor día', val: formatCompact(bestVal), color: darkMode ? 'text-emerald-400' : 'text-emerald-600' },
-          { label: 'Promedio',  val: avg,                    color: darkMode ? 'text-yellow-400' : 'text-yellow-600'  },
+          { label: isEnglish ? 'Best day' : 'Mejor día', val: formatCompact(bestVal), color: darkMode ? 'text-emerald-400' : 'text-emerald-600' },
+          { label: isEnglish ? 'Average' : 'Promedio',  val: avg,                    color: darkMode ? 'text-yellow-400' : 'text-yellow-600'  },
           { label: 'Total 7d',  val: formatCompact(total),   color: darkMode ? 'text-cyan-400'   : 'text-cyan-600'    },
-          { label: 'Con datos', val: `${days.filter(d => d.messages > 0).length}/7`, color: darkMode ? 'text-purple-400' : 'text-purple-600' },
+          { label: isEnglish ? 'With data' : 'Con datos', val: `${days.filter(d => d.messages > 0).length}/7`, color: darkMode ? 'text-purple-400' : 'text-purple-600' },
         ].map(({ label, val, color }) => (
           <div key={label} className={`rounded-xl p-3 text-center ${darkMode ? 'bg-white/5 border border-white/8' : 'bg-gray-50 border border-gray-200'}`}>
             <p className={`text-[10px] uppercase tracking-wider font-bold ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{label}</p>
@@ -262,8 +264,10 @@ function BarChart({ darkMode, values }) {
   )
 }
 
-/* ── Componente principal ────────────────────────────────────── */
+/* â”€â”€ Componente principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, authToken }) {
+  const { i18n } = useTranslation()
+  const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
   const [stats,      setStats]      = useState(null)
   const [loading,    setLoading]    = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -314,7 +318,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
              current_month, benefits, plan_info, all_time, top_voices: top_voices || [] }
   }, [stats])
 
-  /* ── Loading ─────────────────────────────────────────────── */
+  /* â”€â”€ Loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   if (loading) return (
     <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-[#07111f]' : 'bg-gray-50'}`}>
       <div className="text-center space-y-4">
@@ -322,13 +326,13 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
           <BarChart3 className="w-8 h-8 text-white" />
         </div>
         <div className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          Cargando estadísticas…
+          {isEnglish ? 'Loading statistics...' : 'Cargando estadísticas...'}
         </div>
       </div>
     </div>
   )
 
-  /* ── Error ───────────────────────────────────────────────── */
+  /* â”€â”€ Error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   if (error) return (
     <div className={`min-h-screen flex items-center justify-center px-6 ${darkMode ? 'bg-[#07111f]' : 'bg-gray-50'}`}>
       <div className={`max-w-sm w-full rounded-3xl border p-8 text-center ${darkMode ? 'border-red-400/20 bg-red-500/10 text-red-300' : 'border-red-200 bg-red-50 text-red-700'}`}>
@@ -347,8 +351,20 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
           avgPerDay, avgTokensPerMsg, usagePct, growth, top_voices } = derived
 
   const growthPositive = growth >= 0
+  const mapVoiceNameForEnglish = (name) => {
+    const raw = String(name || '').trim()
+    if (!raw) return ''
+    if (!isEnglish) return raw
+    return raw
+      .replace(/^Voz local/i, 'Local voice')
+      .replace(/^Voz natural/i, 'Natural voice')
+      .replace(/\(ilimitada\)/i, '(unlimited)')
+      .replace(/\bEspanol\b/i, 'Spanish')
+      .replace(/\bEspañol\b/i, 'Spanish')
+      .replace(/\bde\b/g, 'of')
+  }
 
-  /* ── Render principal ────────────────────────────────────── */
+  /* â”€â”€ Render principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   return (
     <div className={`min-h-screen pb-24 ${
       darkMode
@@ -360,24 +376,24 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
       <nav className={`sticky top-0 z-50 backdrop-blur-xl border-b ${darkMode ? 'bg-[#060d1a]/80 border-white/8' : 'bg-white/80 border-gray-200'}`}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <button onClick={onGoStudio} className={`flex items-center gap-2 text-sm font-semibold transition-colors ${darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
-            <ArrowLeft className="w-4 h-4" /> Volver
+            <ArrowLeft className="w-4 h-4" /> {isEnglish ? 'Back' : 'Volver'}
           </button>
           <h1 className="text-xl font-black bg-gradient-to-r from-cyan-400 via-sky-400 to-purple-500 bg-clip-text text-transparent">
-            Estadísticas del Stream
+            {isEnglish ? 'Stream Statistics' : 'Estadísticas del Stream'}
           </h1>
           <button
             onClick={() => loadStats(true)}
             className={`flex items-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-xl transition-all ${darkMode ? 'text-gray-300 hover:text-white hover:bg-white/8' : 'text-gray-600 hover:bg-gray-100'}`}
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Actualizar
+            {isEnglish ? 'Refresh' : 'Actualizar'}
           </button>
         </div>
       </nav>
 
       <div className="max-w-7xl mx-auto px-6 pt-8 space-y-6">
 
-        {/* ── HERO: KPIs principales ── */}
+        {/* â”€â”€ HERO: KPIs principales â”€â”€ */}
         <div
           className={`rounded-3xl border p-6 md:p-8 animate-slide-up ${
             darkMode
@@ -389,28 +405,28 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
           <div className="flex items-center gap-2 mb-6">
             <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-1.5
               ${darkMode ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'bg-cyan-50 text-cyan-700 border border-cyan-200'}`}>
-              <Sparkles className="w-3.5 h-3.5" /> Vista general
+              <Sparkles className="w-3.5 h-3.5" /> {isEnglish ? 'Overview' : 'Vista general'}
             </div>
             <div className={`ml-auto flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full
               ${growthPositive
                 ? (darkMode ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600')
                 : (darkMode ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-600')}`}>
               {growthPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-              {growthPositive ? '+' : ''}{growth.toFixed(1)}% vs mes anterior
+              {growthPositive ? '+' : ''}{growth.toFixed(1)}% {isEnglish ? 'vs previous month' : 'vs mes anterior'}
             </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <KpiCard darkMode={darkMode} icon={Wallet}       label="Tokens disponibles"  value={plan_info.tokens_balance}       sub={`Plan ${String(plan_info.current_plan || 'free').toUpperCase()} · ${usagePct}% disponible`} accent="cyan"    delay={0}   />
-            <KpiCard darkMode={darkMode} icon={MessageSquare} label="Mensajes este mes"   value={current_month.messages_count}   sub={`${avgPerDay} por día activo`}                                                            accent="purple"  delay={80}  />
-            <KpiCard darkMode={darkMode} icon={Clock3}       label="Horas recuperadas"   value={benefits.hours_saved.toFixed(1)} sub="Tiempo que ya no haces manualmente"                                                       accent="emerald" delay={160} />
-            <KpiCard darkMode={darkMode} icon={Activity}     label="Días activos"        value={activeDays}                     sub={`de los últimos 30 días`}                                                                 accent="amber"   delay={240} />
+            <KpiCard darkMode={darkMode} icon={Wallet}       label={isEnglish ? 'Available tokens' : 'Tokens disponibles'}  value={plan_info.tokens_balance}       sub={`${isEnglish ? 'Plan' : 'Plan'} ${String(plan_info.current_plan || 'free').toUpperCase()} - ${usagePct}% ${isEnglish ? 'available' : 'disponible'}`} accent="cyan"    delay={0}   />
+            <KpiCard darkMode={darkMode} icon={MessageSquare} label={isEnglish ? 'Messages this month' : 'Mensajes este mes'}   value={current_month.messages_count}   sub={`${avgPerDay} ${isEnglish ? 'per active day' : 'por día activo'}`}                                                            accent="purple"  delay={80}  />
+            <KpiCard darkMode={darkMode} icon={Clock3}       label={isEnglish ? 'Hours recovered' : 'Horas recuperadas'}   value={benefits.hours_saved.toFixed(1)} sub={isEnglish ? 'Time you no longer do manually' : 'Tiempo que ya no haces manualmente'}                                                       accent="emerald" delay={160} />
+            <KpiCard darkMode={darkMode} icon={Activity}     label={isEnglish ? 'Active days' : 'Días activos'}        value={activeDays}                     sub={`${isEnglish ? 'of the last 30 days' : 'de los últimos 30 días'}`}                                                                 accent="amber"   delay={240} />
           </div>
 
           {/* Barra de capacidad */}
           <div className="mt-6">
             <div className="flex justify-between mb-2">
-              <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Capacidad de tokens</span>
+              <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{isEnglish ? 'Token capacity' : 'Capacidad de tokens'}</span>
               <span className={`text-xs font-bold ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                 {formatCompact(plan_info.tokens_balance)} / {formatCompact(plan_info.token_limit)}
               </span>
@@ -424,31 +440,31 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
           </div>
         </div>
 
-        {/* ── GRÁFICO DE TENDENCIA ── */}
+        {/* â”€â”€ GRÃFICO DE TENDENCIA â”€â”€ */}
         <SectionCard
           darkMode={darkMode}
-          title="Tendencia de los últimos 7 días"
-          subtitle="Mensajes procesados día por día — el mejor día se marca en verde"
+          title={isEnglish ? 'Last 7 days trend' : 'Tendencia de los últimos 7 días'}
+          subtitle={isEnglish ? 'Processed messages day by day - best day is marked in green' : 'Mensajes procesados día por día - el mejor día se marca en verde'}
           accent="cyan"
           delay={200}
         >
           {last7.length > 0
-            ? <BarChart darkMode={darkMode} values={last7} />
+            ? <BarChart darkMode={darkMode} values={last7} isEnglish={isEnglish} />
             : <div className={`rounded-2xl border border-dashed p-8 text-center text-sm ${darkMode ? 'border-white/10 text-gray-500' : 'border-gray-200 text-gray-400'}`}>
-                Sin datos suficientes para mostrar tendencia. Usa StreamVoicer durante unos días y vuelve aquí.
+                {isEnglish ? 'Not enough data to show trend yet. Use StreamVoicer for a few days and come back here.' : 'Sin datos suficientes para mostrar tendencia. Usa StreamVoicer durante unos días y vuelve aquí.'}
               </div>
           }
         </SectionCard>
 
-        {/* ── RENDIMIENTO + IMPACTO ── */}
+        {/* â”€â”€ RENDIMIENTO + IMPACTO â”€â”€ */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          <SectionCard darkMode={darkMode} title="Consumo del mes" subtitle="Uso detallado de recursos" accent="purple" delay={300}>
+          <SectionCard darkMode={darkMode} title={isEnglish ? 'Monthly consumption' : 'Consumo del mes'} subtitle={isEnglish ? 'Detailed resource usage' : 'Uso detallado de recursos'} accent="purple" delay={300}>
             <div className="space-y-4">
               {[
-                { label: 'Tokens usados',          value: current_month.tokens_used,          total: plan_info.token_limit, unit: 'tokens',    color: 'purple', icon: Zap         },
-                { label: 'Caracteres sintetizados', value: current_month.characters_synthesized, total: null,                unit: 'caracteres', color: 'amber',  icon: Mic2        },
-                { label: 'Voces distintas',         value: current_month.unique_voices_used,   total: plan_info.voice_clone_limit, unit: 'voces', color: 'cyan', icon: Users       },
+                { label: isEnglish ? 'Tokens used' : 'Tokens usados',          value: current_month.tokens_used,          total: plan_info.token_limit, unit: isEnglish ? 'tokens' : 'tokens',    color: 'purple', icon: Zap         },
+                { label: isEnglish ? 'Synthesized characters' : 'Caracteres sintetizados', value: current_month.characters_synthesized, total: null,                unit: isEnglish ? 'characters' : 'caracteres', color: 'amber',  icon: Mic2        },
+                { label: isEnglish ? 'Distinct voices' : 'Voces distintas',         value: current_month.unique_voices_used,   total: plan_info.voice_clone_limit, unit: isEnglish ? 'voices' : 'voces', color: 'cyan', icon: Users       },
               ].map(({ label, value, total, unit, color, icon: Ic }) => (
                 <div key={label} className={`rounded-2xl p-4 ${darkMode ? 'bg-white/[0.03] border border-white/8' : 'bg-gray-50 border border-gray-200'}`}>
                   <div className="flex items-center justify-between mb-2">
@@ -461,25 +477,25 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
                     </span>
                   </div>
                   {total && <ProgressBar value={value} max={total} color={color} darkMode={darkMode} />}
-                  {!total && <div className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatCompact(value)} {unit} este mes</div>}
+                  {!total && <div className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{formatCompact(value)} {unit} {isEnglish ? 'this month' : 'este mes'}</div>}
                 </div>
               ))}
               <div className={`rounded-xl px-4 py-2.5 flex justify-between items-center ${darkMode ? 'bg-white/[0.02]' : 'bg-gray-50'}`}>
-                <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Promedio tokens/mensaje</span>
+                <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{isEnglish ? 'Average tokens/message' : 'Promedio tokens/mensaje'}</span>
                 <span className={`text-sm font-black ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>{avgTokensPerMsg}</span>
               </div>
             </div>
           </SectionCard>
 
-          <SectionCard darkMode={darkMode} title="Impacto de StreamVoicer" subtitle="El valor real de tu automatización" accent="emerald" delay={380}>
+          <SectionCard darkMode={darkMode} title={isEnglish ? 'StreamVoicer impact' : 'Impacto de StreamVoicer'} subtitle={isEnglish ? 'The real value of your automation' : 'El valor real de tu automatización'} accent="emerald" delay={380}>
             <div className="space-y-3 h-full">
               {[
-                { icon: MessageSquare, label: 'Mensajes automatizados',  val: formatCompact(current_month.messages_count),  color: 'cyan'    },
-                { icon: Clock3,        label: 'Horas recuperadas',        val: `${benefits.hours_saved.toFixed(1)} hrs`,     color: 'emerald' },
-                { icon: Users,         label: 'Voces utilizadas',         val: current_month.unique_voices_used,             color: 'purple'  },
-                { icon: Calendar,      label: 'Días activos este mes',    val: activeDays,                                   color: 'amber'   },
-                { icon: Star,          label: 'Total histórico',          val: formatCompact(all_time.total_messages),       color: 'pink'    },
-                { icon: Zap,           label: 'Antigüedad de la cuenta',  val: `${all_time.account_age_days} días`,          color: 'cyan'    },
+                { icon: MessageSquare, label: isEnglish ? 'Automated messages' : 'Mensajes automatizados',  val: formatCompact(current_month.messages_count),  color: 'cyan'    },
+                { icon: Clock3,        label: isEnglish ? 'Hours recovered' : 'Horas recuperadas',        val: `${benefits.hours_saved.toFixed(1)} hrs`,     color: 'emerald' },
+                { icon: Users,         label: isEnglish ? 'Voices used' : 'Voces utilizadas',         val: current_month.unique_voices_used,             color: 'purple'  },
+                { icon: Calendar,      label: isEnglish ? 'Active days this month' : 'Días activos este mes',    val: activeDays,                                   color: 'amber'   },
+                { icon: Star,          label: isEnglish ? 'All-time total' : 'Total histórico',          val: formatCompact(all_time.total_messages),       color: 'pink'    },
+                { icon: Zap,           label: isEnglish ? 'Account age' : 'Antigüedad de la cuenta',  val: `${all_time.account_age_days} ${isEnglish ? 'days' : 'días'}`,          color: 'cyan'    },
               ].map(({ icon: Ic, label, val, color }, i) => (
                 <div key={label}
                   className={`flex items-center justify-between px-4 py-3 rounded-xl group transition-all duration-200 cursor-default
@@ -500,8 +516,8 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
           </SectionCard>
         </div>
 
-        {/* ── RANKING DE VOCES ── */}
-        <SectionCard darkMode={darkMode} title="Ranking de voces" subtitle="Las voces más usadas en tu stream este mes" accent="amber" delay={450}>
+        {/* â”€â”€ RANKING DE VOCES â”€â”€ */}
+        <SectionCard darkMode={darkMode} title={isEnglish ? 'Voice ranking' : 'Ranking de voces'} subtitle={isEnglish ? 'Most used voices in your stream this month' : 'Las voces más usadas en tu stream este mes'} accent="amber" delay={450}>
           {top_voices.length > 0 ? (
             <div className="space-y-3">
               {top_voices.map((voice, i) => {
@@ -523,16 +539,16 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
                         <span className="text-xl">{medals[i] || `#${i + 1}`}</span>
                         <div>
                           <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                            {voice.voice_name || 'Sin nombre'}
+                            {mapVoiceNameForEnglish(voice.voice_name) || (isEnglish ? 'Unnamed' : 'Sin nombre')}
                           </p>
                           <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                            {formatCompact(voice.tokens_used)} tokens usados
+                            {formatCompact(voice.tokens_used)} {isEnglish ? 'tokens used' : 'tokens usados'}
                           </p>
                         </div>
                       </div>
                       <span className={`text-2xl font-black ${i === 0 ? (darkMode ? 'text-amber-400' : 'text-amber-600') : (darkMode ? 'text-gray-300' : 'text-gray-700')}`}>
                         {formatCompact(voice.count)}
-                        <span className={`text-xs font-normal ml-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>usos</span>
+                        <span className={`text-xs font-normal ml-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{isEnglish ? 'uses' : 'usos'}</span>
                       </span>
                     </div>
                     <ProgressBar value={voice.count} max={maxCount} color={i === 0 ? 'amber' : 'cyan'} darkMode={darkMode} />
@@ -542,7 +558,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
             </div>
           ) : (
             <div className={`rounded-2xl border border-dashed p-8 text-center text-sm ${darkMode ? 'border-white/10 text-gray-500' : 'border-gray-200 text-gray-400'}`}>
-              Aún no hay suficiente uso registrado para mostrar ranking de voces.
+              {isEnglish ? 'There is not enough recorded usage yet to show voice ranking.' : 'Aún no hay suficiente uso registrado para mostrar ranking de voces.'}
             </div>
           )}
         </SectionCard>
@@ -551,3 +567,6 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
     </div>
   )
 }
+
+
+

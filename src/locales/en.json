@@ -1,4 +1,4 @@
-{
+﻿{
   "landing": {
     "nav": {
       "features": "Features",
@@ -90,73 +90,73 @@
       ]
     },
     "pricing": {
-      "title": "💰 COMPLETE PACKAGES",
-      "subtitle": "Choose the perfect plan for your stream",
-      "comparison": "📋 Detailed Comparison"
+      "title": "✨ Complete Packages 🚀",
+      "subtitle": "🎯 Choose the perfect plan for your stream",
+      "comparison": "Detailed Comparison"
     },
     "faq": {
-      "title": "❓ Frequently Asked Questions",
-      "subtitle": "Resolve your doubts about Stream Voicer",
+      "title": "🧠 Frequently Asked Questions ✨",
+      "subtitle": "💬 Get clear answers about Stream Voicer",
       "items": [
         {
-          "icon": "🔊",
+          "icon": "?",
           "q": "How does Stream Voicer work?",
-          "a": "Stream Voicer reads your TikTok LIVE chat messages in real time and plays them with voice to maintain constant interaction in your stream."
+          "a": "Stream Voicer reads your TikTok LIVE chat messages in real time and plays them with voice to keep interaction constant in your stream."
         },
         {
-          "icon": "🧩",
+          "icon": "?",
           "q": "What is a token?",
-          "a": "1 token equals 1 character generated. Consumption applies when using premium or custom voices."
+          "a": "1 token equals 1 generated character. Usage applies when you use premium voices or custom voices."
         },
         {
-          "icon": "🎙️",
+          "icon": "?",
           "q": "Which voices consume tokens?",
           "a": "Premium voices and custom voices consume tokens. The essential voice does not consume tokens."
         },
         {
-          "icon": "♻️",
-          "q": "Are tokens charged if audio comes from cache?",
-          "a": "Yes. Cache optimizes performance and internal processing costs, but user token consumption is maintained based on characters generated in premium/custom voices."
+          "icon": "?",
+          "q": "Does Stream Voicer really increase engagement and retention in my lives?",
+          "a": "Yes. By reading messages in real time with voice, your chat stays active, more users participate, and dead air is reduced. This leads to stronger retention, more comments, and a more dynamic experience for your audience."
         },
         {
-          "icon": "💳",
-          "q": "What do I do if I run out of tokens?",
-          "a": "You can top up instantly from the Token Top-Up section. If you have no tokens, premium/custom voices stop playing until you recharge."
+          "icon": "?",
+          "q": "What should I do if I run out of tokens?",
+          "a": "You can add a cloned voice pack (Lite, Pro, or Max) from the platform. If you have no tokens, premium and cloned voices stop playing until you recharge."
         },
         {
-          "icon": "⏳",
-          "q": "How does the FREE plan work?",
-          "a": "The FREE plan includes 1 essential voice with 2 daily hours. The counter resets every 24 hours."
+          "icon": "?",
+          "q": "How much does the Base Plan cost?",
+          "a": "The Base Plan costs $9.99 USD/month and includes 2 unlimited essential voices, 2 premium voices, 20,000 monthly characters, and all features: advanced filters, smart filter, anti-spam, and analytics."
         },
         {
-          "icon": "🔄",
-          "q": "Can I change or cancel my plan anytime?",
-          "a": "Yes. Upgrades apply immediately with proportional adjustment for remaining cycle time. Downgrades apply on the next cycle. You can cancel anytime."
+          "icon": "?",
+          "q": "What are cloned voice packs?",
+          "a": "They are add-ons to the Base Plan that expand your capacity to create your own AI cloned voices. They do not include prebuilt characters: you upload and clone your own voices. Lite Pack ($9.99, +1 voice, 50K tokens), Pro Pack ($24.99, +3 voices, 250K tokens), and Max Pack ($49.99, +6 voices, 500K tokens)."
         },
         {
-          "icon": "🌍",
-          "q": "Does it work with other languages?",
-          "a": "Stream Voicer is currently optimized for Spanish. More languages will be integrated soon."
+          "icon": "?",
+          "q": "Can I cancel my Base Plan anytime?",
+          "a": "Yes. You can cancel anytime. You will keep access until the end of your already paid period."
         },
         {
-          "icon": "⚡",
+          "icon": "?",
+          "q": "Does it support other languages?",
+          "a": "Stream Voicer is currently optimized for Spanish and English. More languages will be added soon."
+        },
+        {
+          "icon": "?",
           "q": "How long does it take to process a message?",
-          "a": "Processed in real time. Usually 1 to 5 seconds depending on message length, chosen voice and system load."
+          "a": "Processing is real time. It usually takes between 1 and 3 seconds depending on message length, selected voice, and system load."
         },
         {
-          "icon": "🔐",
+          "icon": "?",
           "q": "Is connecting my TikTok safe?",
-          "a": "Yes. Only the necessary access is used to read public activity of your LIVE. We don't share your data with third parties."
+          "a": "Yes. Only the access required to read public activity from your LIVE is used. We do not share your data with third parties."
         },
         {
-          "icon": "🆓",
-          "q": "Is there a free trial?",
-          "a": "Yes. You can start with FREE and upgrade to START, CREATOR or PRO when you need more capacity and more voices."
-        },
-        {
-          "icon": "🛠️",
-          "q": "Can I create and edit my custom voices?",
-          "a": "Yes. You can manage custom voices from your panel. The available amount depends on your active plan."
+          "icon": "?",
+          "q": "Can I create and edit my cloned voices?",
+          "a": "Yes. You can manage your cloned voices from the panel. The available amount depends on the pack you added to your Base Plan."
         }
       ]
     },
@@ -173,24 +173,27 @@
       "items": [
         {
           "metric": "+150%",
-          "label": "From 50K → 125K followers in 3 months",
+          "label": "From 50K -> 125K followers in 3 months",
           "creator": "🎮 Alex Gaming",
           "category": "Gaming Live",
-          "description": "Active live chat thanks to voices that react in real time."
+          "description": "Active live chat thanks to voices that react in real time.",
+          "img": "https://voltvoice-frontend.vercel.app/images/web1.png"
         },
         {
           "metric": "+2,500",
           "label": "Comments per LIVE",
           "creator": "🎮 Max JuanGamingPro",
           "category": "Gaming Live",
-          "description": "The chat comes alive with voices and becomes part of the show."
+          "description": "The chat comes alive with voices and becomes part of the show.",
+          "img": "https://voltvoice-frontend.vercel.app/images/web%207.png"
         },
         {
           "metric": "+85%",
           "label": "Increase in donations",
           "creator": "😂 Carlos Comedy",
           "category": "Comedy Live",
-          "description": "Live voices make the stream more fun and participative."
+          "description": "Live voices make the stream more fun and participative.",
+          "img": "https://voltvoice-frontend.vercel.app/images/web3.png"
         }
       ]
     },
@@ -209,33 +212,33 @@
       }
     ],
     "packages": {
-      "badge": "💰 EXTRA PACKAGES (TOP-UPS) →",
+      "badge": "💰 EXTRA PACKAGES (TOP-UPS) ->",
       "title": "Token Top-Up",
       "subtitle": "If your monthly plan runs short, top up instantly without waiting for next month.",
-      "popular": "🔥 MOST POPULAR",
+      "popular": "Most Popular",
       "characters": "🎙️ Characters",
       "approxMxn": "Approx. {{mxn}} MXN",
-      "buyNow": "Buy now →",
-      "buyNowPopular": "🚀 Buy now →",
+      "buyNow": "Buy now ->",
+      "buyNowPopular": "🚀 Buy now ->",
       "note": "🧠 NOTE: Consumption depends on chat activity and configuration. You can extend duration using smart filters and selective reading.",
       "items": [
         {
           "size": "MINI BOOST",
           "tokens": "150,000",
           "price": "$4.99",
-          "hours": "1.5–3 hours"
+          "hours": "1.5-3 hours"
         },
         {
           "size": "POWER BOOST",
           "tokens": "350,000",
           "price": "$9.99",
-          "hours": "4–7 hours"
+          "hours": "4-7 hours"
         },
         {
           "size": "MAX BOOST",
           "tokens": "700,000",
           "price": "$14.99",
-          "hours": "8–12 hours"
+          "hours": "8-12 hours"
         }
       ]
     },
@@ -1039,13 +1042,13 @@
   },
   "cookies": {
     "title": "🍪 COOKIE POLICY",
-    "text": "We use cookies to improve your experience, analyze how you use Stream Voicer and personalize content. By continuing to browse, you accept our policy.",
+    "text": "We use cookies to improve your experience, measure performance, and personalize content. You can accept all cookies or manage your preferences.",
     "details": "👉 View full details",
     "acceptAll": "✅ ACCEPT ALL",
-    "reject": "Reject",
+    "reject": "Reject non-essential",
     "whatAre": "What are cookies?",
     "whatAreText": "Cookies are small text files saved on your device when you visit our site. They help us improve your experience and analyze how you use Stream Voicer.",
-    "weUse": "We use cookies for:",
+    "weUse": "We use cookies to:",
     "thirdParty": "We use third-party services like Google Analytics that may also save cookies. Check their policies for more information.",
     "control": "You can control or delete cookies from your browser settings. Note that disabling them may affect site functionality.",
     "shortText": "We use cookies to improve your experience and analyze service usage."
@@ -1079,9 +1082,9 @@
     "loginRequired": "Sign in to continue with payment."
   },
   "pricing": {
-    "header": "💰 COMPLETE PACKAGES",
-    "subtitle": "Choose the perfect plan for your stream",
-    "popular": "🔥 MOST POPULAR",
+    "header": "✨ Complete Packages 🚀",
+    "subtitle": "🎯 Choose the perfect plan for your stream",
+    "popular": "🔥 Most Popular",
     "toggle": {
       "monthly": "Monthly",
       "annual": "Annual"
@@ -1089,7 +1092,7 @@
     "perMonth": "USD",
     "perYear": "USD / year",
     "approxMonth": "(~${{price}} USD/mo)",
-    "note": "🧠 NOTE",
+    "note": "Note",
     "noteText1": "Consumption depends on chat activity and configuration.",
     "noteText2": "You can extend duration using smart filters and selective reading.",
     "noteRef": "Approximate MXN reference; adapts to daily USD/MXN exchange rate.",

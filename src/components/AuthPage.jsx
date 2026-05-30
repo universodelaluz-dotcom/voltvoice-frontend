@@ -543,6 +543,13 @@ export function AuthPage({ onLogin, onGoHome, darkMode }) {
       }`}>
         {/* Header */}
         <div className="text-center mb-8">
+          {step === 'form' && (
+            <img
+              src="/images/logo-main.png"
+              alt="Stream Voicer"
+              className="h-10 mx-auto mb-3 object-contain"
+            />
+          )}
           {(step === 'forgot-request' || step === 'forgot-reset' || step === 'forgot-user') && (
             <div className={`mx-auto mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full ${
               darkMode ? 'bg-cyan-500/15 text-cyan-300' : 'bg-cyan-50 text-cyan-700'

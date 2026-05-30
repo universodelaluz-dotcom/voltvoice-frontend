@@ -5,11 +5,13 @@
   "redirects": [
     { "source": "/sitemap.xml", "destination": "/sitemap-main.xml", "permanent": false },
     { "source": "/faq", "destination": "/faq/", "permanent": true },
+    { "source": "/faq-en", "destination": "/faq-en/", "permanent": true },
     { "source": "/precios/(.*)", "destination": "/", "permanent": true },
     { "source": "/precios", "destination": "/", "permanent": true },
     { "source": "/youtube", "destination": "/youtube.html", "permanent": false },
     { "source": "/youtube/", "destination": "/youtube.html", "permanent": false },
-    { "source": "/como-funciona", "destination": "/como-funciona/", "permanent": true }
+    { "source": "/como-funciona", "destination": "/como-funciona/", "permanent": true },
+    { "source": "/how-it-works", "destination": "/how-it-works/", "permanent": true }
   ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" }

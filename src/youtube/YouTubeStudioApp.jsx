@@ -40,6 +40,7 @@ const DEFAULT_CONFIG = {
   readByCommandPrefix: 'bot/',
   skipRepeated: false,
   onlyDonors: false,
+  onlySuperChatMessages: false,
   onlySubscribers: false,
   onlyCommunityMembers: false,
   onlyQuestions: false,

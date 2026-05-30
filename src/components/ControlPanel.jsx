@@ -423,7 +423,8 @@ function BotShortcutCapture({ darkMode, onCapture }) {
 }
 
 export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode, config, updateConfig, user, forceUnrestricted = false }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
   const effectiveUser = (() => {
     if (user) return user
     try {
@@ -1428,9 +1429,9 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               <div className={`space-y-1 rounded-xl border p-4 ${darkMode ? 'bg-slate-900/70 border-rose-400/25' : 'bg-white border-slate-200'} ${userPlan === 'free' ? 'opacity-45 pointer-events-none' : ''}`}>
                 <div className={`relative`}>
                   {userPlan === 'free' && (
-                    <FeatureLockedOverlay darkMode={darkMode} message="Notificaciones disponibles en packs" showIcon showMessage />
+                    <FeatureLockedOverlay darkMode={darkMode} message={isEnglish ? 'Notifications available in packs' : 'Notificaciones disponibles en packs'} showIcon showMessage />
                   )}
-                  <SectionHeader title="Notificaciones en Vivo" tone="notificaciones" darkMode={darkMode} />
+                  <SectionHeader title={isEnglish ? 'Live Notifications' : 'Notificaciones en Vivo'} tone="notificaciones" darkMode={darkMode} />
 
                   <CheckWithInput label={t('control.announcements.followers')} checked={config.announceFollowers} onToggle={() => updateConfig('announceFollowers', !config.announceFollowers)} value={config.followCooldown} onValueChange={(v) => updateConfig('followCooldown', v)} placeholder="10" darkMode={darkMode} hint={t('control.announcements.followersHint')} />
                   <CheckWithInput label={t('control.announcements.gifts')} checked={config.announceGifts} onToggle={() => updateConfig('announceGifts', !config.announceGifts)} value={config.giftCooldown} onValueChange={(v) => updateConfig('giftCooldown', v)} placeholder="5" darkMode={darkMode} hint={t('control.announcements.giftsHint')} />
@@ -1456,7 +1457,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
                   }`}>
                     <div>
-                      <CheckOption label="Ignorar enlaces/URLs" checked={false} onChange={() => {}} darkMode={darkMode} />
+                      <CheckOption label={isEnglish ? 'Ignore links/URLs' : 'Ignorar enlaces/URLs'} checked={false} onChange={() => {}} darkMode={darkMode} />
                       <CheckOption label={t('control.filterSection.profanity')} checked={false} onChange={() => {}} darkMode={darkMode} />
                       <CheckWithInput label="Ignorar emojis excesivos del chat a cantidad máxima permitida:" checked={false} onToggle={() => {}} value={config.maxEmojisAllowed} onValueChange={() => {}} placeholder="3" darkMode={darkMode} />
                       <CheckWithInput label="Ignorar mensajes muy cortos (mínimo de caracteres)" checked={false} onToggle={() => {}} value={config.minMessageLength} onValueChange={() => {}} placeholder="3" darkMode={darkMode} />
@@ -1468,7 +1469,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
               ) : (
                 <>
                   {/* FILTROS EN START+ */}
-                  <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} hint="No lee links ni URLs en los mensajes" />
+                  <CheckOption label={isEnglish ? 'Ignore links/URLs' : 'Ignorar enlaces/URLs'} checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} hint={isEnglish ? "Doesn't read links or URLs in messages" : 'No lee links ni URLs en los mensajes'} />
                   <div className={`relative`}>
                     
                     <CheckOption
@@ -1494,12 +1495,12 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                               : 'text-slate-700 border-slate-300 hover:bg-white'
                           }`}
                         >
-                          {showProfanityEditor ? 'Ocultar lista' : 'Agregar otras propias'}
+                          {showProfanityEditor ? (isEnglish ? 'Hide list' : 'Ocultar lista') : (isEnglish ? 'Add custom words' : 'Agregar otras propias')}
                         </button>
                         {showProfanityEditor && (
                           <div className="mt-2">
                             <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-200' : 'text-slate-700'}`}>
-                              Palabras prohibidas (separadas por coma o salto de línea)
+                              {isEnglish ? 'Banned words (comma or line-break separated)' : 'Palabras prohibidas (separadas por coma o salto de línea)'}
                             </label>
                             <textarea
                               value={config.profanityWords || ''}
@@ -1522,7 +1523,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   <div className={`relative`}>
                     
                     <CheckWithInput
-                      label="Ignorar emojis excesivos del chat a cantidad máxima permitida:"
+                      label={isEnglish ? 'Ignore excessive chat emojis above this maximum:' : 'Ignorar emojis excesivos del chat a cantidad máxima permitida:'}
                       checked={config.ignoreExcessiveEmojis}
                       onToggle={() => updateConfig('ignoreExcessiveEmojis', !config.ignoreExcessiveEmojis)}
                       value={config.maxEmojisAllowed}
@@ -1537,14 +1538,14 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   <div className={`relative`}>
                     
                     <CheckWithInput
-                      label="Ignorar mensajes muy cortos (mínimo de caracteres)"
+                      label={isEnglish ? 'Ignore very short messages (minimum characters)' : 'Ignorar mensajes muy cortos (mínimo de caracteres)'}
                       checked={config.minMessageLengthEnabled}
                       onToggle={() => updateConfig('minMessageLengthEnabled', !config.minMessageLengthEnabled)}
                       value={config.minMessageLength}
                       onValueChange={(v) => updateConfig('minMessageLength', v)}
                       placeholder="3"
                       darkMode={darkMode}
-                      hint="Ignora mensajes con menos caracteres del mínimo"
+                      hint={isEnglish ? 'Ignore messages below the minimum character count' : 'Ignora mensajes con menos caracteres del mínimo'}
                     />
                   </div>
 
@@ -1552,7 +1553,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   <div className={`relative`}>
                     
                     <CheckWithInput
-                      label="Límite de caracteres en todos los mensajes (máximo)"
+                      label={isEnglish ? 'Character limit for all messages (maximum)' : 'Límite de caracteres en todos los mensajes (máximo)'}
                       checked={config.donorCharLimitEnabled}
                       onToggle={() => updateConfig('donorCharLimitEnabled', !config.donorCharLimitEnabled)}
                       value={config.donorCharLimit}
@@ -1567,7 +1568,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   <div className={`relative`}>
                     
                     <CheckWithInput
-                      label="Límite de mensajes en espera (descarta nuevos si se llena)"
+                      label={isEnglish ? 'Queue message limit (drop new messages if full)' : 'Límite de mensajes en espera (descarta nuevos si se llena)'}
                       checked={config.maxQueueEnabled}
                       onToggle={() => updateConfig('maxQueueEnabled', !config.maxQueueEnabled)}
                       value={config.maxQueueSize}
@@ -1592,7 +1593,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 >
                   <span className="text-[15px] font-semibold">
                     <Ban className="inline-block w-4 h-4 mr-1 align-[-2px]" />
-                    Lista de baneados/silenciados
+                    {isEnglish ? 'Banned / silenced list' : 'Lista de baneados/silenciados'}
                   </span>
                   <span className={`inline-flex items-center gap-2 text-xs ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>
                     {moderationList.length}
@@ -1605,7 +1606,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     <div className={`mt-2 pt-2 border-t ${darkMode ? 'border-gray-700/50' : 'border-slate-200'}`} />
                     {moderationList.length === 0 ? (
                       <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-600'}`}>
-                        Sin usuarios baneados/silenciados.
+                        {isEnglish ? 'No banned/silenced users.' : 'Sin usuarios baneados/silenciados.'}
                       </p>
                     ) : (
                       <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
@@ -1631,9 +1632,9 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                                   ? 'border-red-300/40 text-red-200 hover:bg-red-500/20'
                                   : 'border-red-300 text-red-700 hover:bg-red-100'
                               }`}
-                              title={`Quitar bloqueo de @${entry.username}`}
+                              title={isEnglish ? `Remove block for @${entry.username}` : `Quitar bloqueo de @${entry.username}`}
                             >
-                              Quitar
+                              {isEnglish ? 'Remove' : 'Quitar'}
                             </button>
                           </div>
                         ))}
@@ -1648,13 +1649,13 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                 {isAIAssistantBlockedInConfig && (
                   <FeatureLockedOverlay
                     darkMode={darkMode}
-                    message="Asistente disponible en packs"
+                    message={isEnglish ? 'Assistant available in packs' : 'Asistente disponible en packs'}
                     showIcon
                     showMessage
                   />
                 )}
                 <div>
-                  <SectionHeader title="Asistente de IA" tone="asistente" darkMode={darkMode} />
+                  <SectionHeader title={isEnglish ? 'AI Assistant' : 'Asistente de IA'} tone="asistente" darkMode={darkMode} />
 
                   <div className={`mb-2 rounded-xl px-4 py-3 border ${
                     darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
@@ -1734,7 +1735,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                     darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
                   }`}>
                     <label className={`text-xs font-semibold whitespace-nowrap ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
-                      Largo de respuesta
+                      {isEnglish ? 'Response length' : 'Largo de respuesta'}
                     </label>
                     <input
                       type="number"
@@ -1770,15 +1771,15 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                         {config.botShortcutEnabled && <Check className="w-4 h-4 text-white" />}
                       </div>
                       <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.botShortcutEnabled ? 'font-semibold' : 'font-medium'}`}>
-                        Activar shortcut de teclado (Push-to-Talk)
-                        <Hint text="MantAn presionada la tecla para hablar con el bot sin usar el mouse" darkMode={darkMode} />
+                        {isEnglish ? 'Enable keyboard shortcut (Push-to-Talk)' : 'Activar shortcut de teclado (Push-to-Talk)'}
+                        <Hint text={isEnglish ? 'Hold the key to talk to the bot without using the mouse' : 'Mantén presionada la tecla para hablar con el bot sin usar el mouse'} darkMode={darkMode} />
                       </span>
                     </button>
 
                     {config.botShortcutEnabled && (
                       <div className="mt-3 ml-8 space-y-2">
                         <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          Tecla actual:
+                          {isEnglish ? 'Current key:' : 'Tecla actual:'}
                         </span>
                         <div className="flex items-center gap-3">
                           <kbd className={`px-3 py-1.5 text-sm font-bold rounded-lg border-2 ${
@@ -1794,7 +1795,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                           />
                         </div>
                         <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                          Y Sugerida: <code className="text-cyan-400">F9</code> a no interfiere con OBS ni TikTok, fAcil de alcanzar
+                          {isEnglish ? 'Suggested:' : 'Sugerida:'} <code className="text-cyan-400">F9</code> {isEnglish ? "it doesn't interfere with OBS or TikTok and it's easy to reach" : 'no interfiere con OBS ni TikTok, fácil de alcanzar'}
                         </p>
                       </div>
                     )}
@@ -1820,15 +1821,15 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                         {config.interactorShortcutEnabled && <Check className="w-4 h-4 text-white" />}
                       </div>
                       <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.interactorShortcutEnabled ? 'font-semibold' : 'font-medium'}`}>
-                        Activar shortcut de teclado (Interactuador)
-                        <Hint text="Dispara una intervención del animador para opinar sobre el chat al instante" darkMode={darkMode} />
+                        {isEnglish ? 'Enable keyboard shortcut (Interactor)' : 'Activar shortcut de teclado (Interactuador)'}
+                        <Hint text={isEnglish ? 'Trigger an interactor intervention to react to chat instantly' : 'Dispara una intervención del animador para opinar sobre el chat al instante'} darkMode={darkMode} />
                       </span>
                     </button>
 
                     {config.interactorShortcutEnabled && (
                       <div className="mt-3 ml-8 space-y-2">
                         <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          Tecla actual:
+                          {isEnglish ? 'Current key:' : 'Tecla actual:'}
                         </span>
                         <div className="flex items-center gap-3">
                           <kbd className={`px-3 py-1.5 text-sm font-bold rounded-lg border-2 ${
@@ -1844,7 +1845,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                           />
                         </div>
                         <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                          Sugerida: <code className="text-cyan-400">F8</code> o rápida para invocar al interactuador manualmente
+                          {isEnglish ? 'Suggested:' : 'Sugerida:'} <code className="text-cyan-400">F8</code> {isEnglish ? 'quick key to trigger the interactor manually' : 'rápida para invocar al interactuador manualmente'}
                         </p>
                       </div>
                     )}

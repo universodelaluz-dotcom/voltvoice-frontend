@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Check, HelpCircle, Keyboard, ChevronRight, Ban, Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-// Determina si una feature está bloqueada según el plan del usuario
+// Determina si una feature estÃ¡ bloqueada segÃºn el plan del usuario
 const isFeatureBlocked = (feature, userPlan, rawPlan = '') => {
   const plan = userPlan?.toLowerCase() || 'free'
 
@@ -114,7 +114,7 @@ const normalizeUserPlan = (rawPlan = 'free') => {
 // Componente wrapper para mostrar secciones bloqueadas
 function FeatureLockedOverlay({
   darkMode,
-  message = 'Función no disponible en tu plan',
+  message = 'FunciÃ³n no disponible en tu plan',
   showIcon = false,
   showMessage = false
 }) {
@@ -154,7 +154,7 @@ function Hint({ text, darkMode }) {
   return (
     <span className="relative group ml-1 inline-flex">
       <HelpCircle className={`w-3.5 h-3.5 cursor-help ${darkMode ? 'text-gray-500 hover:text-cyan-400' : 'text-slate-500 hover:text-slate-700'} transition-colors`} />
-      <span className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 ${
+      <span className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs rounded-lg max-w-[240px] whitespace-normal break-words text-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 ${
         darkMode ? 'bg-gray-800 text-gray-200 border border-cyan-500/30' : 'bg-gray-900 text-white'
       } shadow-lg`}>{text}</span>
     </span>
@@ -365,7 +365,8 @@ const formatModerationSource = (source, t) => {
 }
 
 function BotShortcutCapture({ darkMode, onCapture }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
   const [capturing, setCapturing] = useState(false)
   const captureRef = useRef(null)
 
@@ -423,7 +424,8 @@ function BotShortcutCapture({ darkMode, onCapture }) {
 }
 
 export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode, config, updateConfig, user, forceUnrestricted = false }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
   const effectiveUser = (() => {
     if (user) return user
     try {
@@ -557,6 +559,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
       'readByCommandEnabled',
       'onlyQuestions',
       'onlyDonors',
+      'onlySuperChatMessages',
       'onlyModerators',
       'onlySubscribers',
       'onlyCommunityMembers',
@@ -990,6 +993,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                   <div>
                     <CheckOption label={t('control.reading.onlyQuestions')} checked={config.onlyQuestions} onChange={() => {}} darkMode={darkMode} />
                     <CheckOption label={t('control.reading.onlyDonors')} checked={config.onlyDonors} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label="Solo Super Chat/Super Sticker (mensaje)" checked={config.onlySuperChatMessages} onChange={() => {}} darkMode={darkMode} />
                     <CheckOption label={t('control.reading.onlyMods')} checked={config.onlyModerators} onChange={() => {}} darkMode={darkMode} />
                     <CheckOption label={t('control.reading.onlySubs')} checked={config.onlySubscribers} onChange={() => {}} darkMode={darkMode} />
                     <CheckOption label="Miembros chateando" checked={config.onlyCommunityMembers} onChange={() => {}} darkMode={darkMode} />
@@ -999,6 +1003,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                 <>
                   <CheckOption label={t('control.reading.onlyQuestions')} checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} hint={t('control.reading.onlyQuestionsHint')} />
                   <CheckOption label={t('control.reading.onlyDonors')} checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron Super Chat o Super Sticker" />
+                  <CheckOption label="Solo Super Chat/Super Sticker (mensaje)" checked={config.onlySuperChatMessages} onChange={() => updateConfig('onlySuperChatMessages', !config.onlySuperChatMessages)} darkMode={darkMode} hint="Solo lee mensaje de Super Chat/Sticker" />
                   <CheckOption label={t('control.reading.onlyMods')} checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} hint="Solo lee mensajes de moderadores del chat de YouTube" />
                   <CheckOption label={t('control.reading.onlySubs')} checked={config.onlySubscribers} onChange={() => updateConfig('onlySubscribers', !config.onlySubscribers)} darkMode={darkMode} hint="Solo lee mensajes de suscriptores del canal" />
                   <CheckOption label="Miembros chateando" checked={config.onlyCommunityMembers} onChange={() => updateConfig('onlyCommunityMembers', !config.onlyCommunityMembers)} darkMode={darkMode} hint="Solo lee usuarios que sigan chateando dentro del tiempo configurado" />
@@ -1023,7 +1028,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                 </>
               )}
 
-              {/* SECCIÓN VOCES */}
+              {/* SECCIÃ“N VOCES */}
               <div className={`relative ${userPlan === 'free' ? 'opacity-45 pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
                 {userPlan === 'free' && (
                   <FeatureLockedOverlay darkMode={darkMode} message="Voces disponibles en packs" showIcon showMessage />
@@ -1323,7 +1328,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                     {config.variedVoicesSelected && config.variedVoicesSelected.length > 0 && (
                       <div className={`text-xs p-2 rounded mt-2 ${darkMode ? 'bg-cyan-900/20 text-cyan-300 border border-cyan-500/20' : 'bg-cyan-50/50 text-cyan-700 border border-cyan-200'}`}>
                         <p className="font-mono text-[11px] break-words">
-                          {config.variedVoicesSelected.map((v, i) => `${i + 1}. ${v || '(vacío)'}`).join(' | ')}
+                          {config.variedVoicesSelected.map((v, i) => `${i + 1}. ${v || '(vacÃ­o)'}`).join(' | ')}
                         </p>
                       </div>
                     )}
@@ -1423,9 +1428,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                               className={`ml-2 px-2 py-1 text-xs rounded font-medium transition-colors ${
                                 darkMode ? 'bg-red-900/30 hover:bg-red-900/50 text-red-400' : 'bg-red-100 hover:bg-red-200 text-red-600'
                               }`}
-                            >
-                              Quitar
-                            </button>
+                            >{isEnglish ? 'Remove' : 'Quitar'}</button>
                           </div>
                         ))}
                       </div>
@@ -1451,19 +1454,19 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                     darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
                   }`}>
                     <div>
-                      <CheckOption label="Ignorar enlaces/URLs" checked={false} onChange={() => {}} darkMode={darkMode} />
+                      <CheckOption label={isEnglish ? 'Ignore links/URLs' : 'Ignorar enlaces/URLs'} checked={false} onChange={() => {}} darkMode={darkMode} />
                       <CheckOption label={t('control.filterSection.profanity')} checked={false} onChange={() => {}} darkMode={darkMode} />
-                      <CheckWithInput label="Ignorar emojis excesivos del chat a cantidad máxima permitida:" checked={false} onToggle={() => {}} value={config.maxEmojisAllowed} onValueChange={() => {}} placeholder="3" darkMode={darkMode} />
-                      <CheckWithInput label="Ignorar mensajes muy cortos (mínimo de caracteres)" checked={false} onToggle={() => {}} value={config.minMessageLength} onValueChange={() => {}} placeholder="3" darkMode={darkMode} />
-                      <CheckWithInput label="Límite de caracteres en todos los mensajes (máximo)" checked={false} onToggle={() => {}} value={config.donorCharLimit} onValueChange={() => {}} placeholder="200" darkMode={darkMode} />
-                      <CheckWithInput label="Límite de mensajes en espera (descarta nuevos si se llena)" checked={false} onToggle={() => {}} value={config.maxQueueSize} onValueChange={() => {}} placeholder="20" darkMode={darkMode} />
+                      <CheckWithInput label={isEnglish ? 'Ignore excessive chat emojis above this maximum:' : 'Ignorar emojis excesivos del chat a cantidad máxima permitida:'} checked={false} onToggle={() => {}} value={config.maxEmojisAllowed} onValueChange={() => {}} placeholder="3" darkMode={darkMode} />
+                      <CheckWithInput label={isEnglish ? 'Ignore very short messages (minimum characters)' : 'Ignorar mensajes muy cortos (mínimo de caracteres)'} checked={false} onToggle={() => {}} value={config.minMessageLength} onValueChange={() => {}} placeholder="3" darkMode={darkMode} />
+                      <CheckWithInput label={isEnglish ? 'Character limit for all messages (maximum)' : 'Límite de caracteres en todos los mensajes (máximo)'} checked={false} onToggle={() => {}} value={config.donorCharLimit} onValueChange={() => {}} placeholder="200" darkMode={darkMode} />
+                      <CheckWithInput label={isEnglish ? 'Queue message limit (drop new messages if full)' : 'Límite de mensajes en espera (descarta nuevos si se llena)'} checked={false} onToggle={() => {}} value={config.maxQueueSize} onValueChange={() => {}} placeholder="20" darkMode={darkMode} />
                     </div>
                   </div>
                 </>
               ) : (
                 <>
                   {/* FILTROS EN START+ */}
-                  <CheckOption label="Ignorar enlaces/URLs" checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} hint="No lee links ni URLs en los mensajes" />
+                  <CheckOption label={isEnglish ? 'Ignore links/URLs' : 'Ignorar enlaces/URLs'} checked={config.ignoreLinks} onChange={() => updateConfig('ignoreLinks', !config.ignoreLinks)} darkMode={darkMode} hint={isEnglish ? "Doesn't read links or URLs in messages" : 'No lee links ni URLs en los mensajes'} />
                   <div className={`relative`}>
                     
                     <CheckOption
@@ -1489,12 +1492,12 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                               : 'text-slate-700 border-slate-300 hover:bg-white'
                           }`}
                         >
-                          {showProfanityEditor ? 'Ocultar lista' : 'Agregar otras propias'}
+                          {showProfanityEditor ? (isEnglish ? 'Hide list' : 'Ocultar lista') : (isEnglish ? 'Add custom words' : 'Agregar otras propias')}
                         </button>
                         {showProfanityEditor && (
                           <div className="mt-2">
                             <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-200' : 'text-slate-700'}`}>
-                              Palabras prohibidas (separadas por coma o salto de línea)
+                              {isEnglish ? 'Banned words (comma or line-break separated)' : 'Palabras prohibidas (separadas por coma o salto de línea)'}
                             </label>
                             <textarea
                               value={config.profanityWords || ''}
@@ -1517,7 +1520,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                   <div className={`relative`}>
                     
                     <CheckWithInput
-                      label="Ignorar emojis excesivos del chat a cantidad máxima permitida:"
+                      label={isEnglish ? 'Ignore excessive chat emojis above this maximum:' : 'Ignorar emojis excesivos del chat a cantidad máxima permitida:'}
                       checked={config.ignoreExcessiveEmojis}
                       onToggle={() => updateConfig('ignoreExcessiveEmojis', !config.ignoreExcessiveEmojis)}
                       value={config.maxEmojisAllowed}
@@ -1532,22 +1535,22 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                   <div className={`relative`}>
                     
                     <CheckWithInput
-                      label="Ignorar mensajes muy cortos (mínimo de caracteres)"
+                      label={isEnglish ? 'Ignore very short messages (minimum characters)' : 'Ignorar mensajes muy cortos (mínimo de caracteres)'}
                       checked={config.minMessageLengthEnabled}
                       onToggle={() => updateConfig('minMessageLengthEnabled', !config.minMessageLengthEnabled)}
                       value={config.minMessageLength}
                       onValueChange={(v) => updateConfig('minMessageLength', v)}
                       placeholder="3"
                       darkMode={darkMode}
-                      hint="Ignora mensajes con menos caracteres del mínimo"
+                      hint={isEnglish ? 'Ignore messages below the minimum character count' : 'Ignora mensajes con menos caracteres del mínimo'}
                     />
                   </div>
 
-                  {/* LÍMITE DE CARACTERES - BLOQUEADO EN FREE Y START */}
+                  {/* LÃMITE DE CARACTERES - BLOQUEADO EN FREE Y START */}
                   <div className={`relative`}>
                     
                     <CheckWithInput
-                      label="Límite de caracteres en todos los mensajes (máximo)"
+                      label={isEnglish ? 'Character limit for all messages (maximum)' : 'Límite de caracteres en todos los mensajes (máximo)'}
                       checked={config.donorCharLimitEnabled}
                       onToggle={() => updateConfig('donorCharLimitEnabled', !config.donorCharLimitEnabled)}
                       value={config.donorCharLimit}
@@ -1558,11 +1561,11 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                     />
                   </div>
 
-                  {/* LÍMITE DE MENSAJES EN ESPERA - BLOQUEADO EN FREE Y START */}
+                  {/* LÃMITE DE MENSAJES EN ESPERA - BLOQUEADO EN FREE Y START */}
                   <div className={`relative`}>
                     
                     <CheckWithInput
-                      label="Límite de mensajes en espera (descarta nuevos si se llena)"
+                      label={isEnglish ? 'Queue message limit (drop new messages if full)' : 'Límite de mensajes en espera (descarta nuevos si se llena)'}
                       checked={config.maxQueueEnabled}
                       onToggle={() => updateConfig('maxQueueEnabled', !config.maxQueueEnabled)}
                       value={config.maxQueueSize}
@@ -1587,7 +1590,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                 >
                   <span className="text-[15px] font-semibold">
                     <Ban className="inline-block w-4 h-4 mr-1 align-[-2px]" />
-                    Lista de baneados/silenciados
+                    {isEnglish ? 'Banned / silenced list' : 'Lista de baneados/silenciados'}
                   </span>
                   <span className={`inline-flex items-center gap-2 text-xs ${darkMode ? 'text-gray-300' : 'text-slate-600'}`}>
                     {moderationList.length}
@@ -1600,7 +1603,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                     <div className={`mt-2 pt-2 border-t ${darkMode ? 'border-gray-700/50' : 'border-slate-200'}`} />
                     {moderationList.length === 0 ? (
                       <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-600'}`}>
-                        Sin usuarios baneados/silenciados.
+                        {isEnglish ? 'No banned/silenced users.' : 'Sin usuarios baneados/silenciados.'}
                       </p>
                     ) : (
                       <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
@@ -1626,10 +1629,8 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                                   ? 'border-red-300/40 text-red-200 hover:bg-red-500/20'
                                   : 'border-red-300 text-red-700 hover:bg-red-100'
                               }`}
-                              title={`Quitar bloqueo de @${entry.username}`}
-                            >
-                              Quitar
-                            </button>
+                              title={isEnglish ? `Remove block for @${entry.username}` : `Quitar bloqueo de @${entry.username}`}
+                            >{isEnglish ? 'Remove' : 'Quitar'}</button>
                           </div>
                         ))}
                       </div>
@@ -1638,18 +1639,18 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                 )}
               </div>
 
-              {/* ASISTENTE DE IA - en BASE solo esta sección queda bloqueada */}
+              {/* ASISTENTE DE IA - en BASE solo esta secciÃ³n queda bloqueada */}
               <div className={`relative ${isAIAssistantBlockedInConfig ? 'opacity-45 pointer-events-none [&_.lucide-circle-help]:opacity-0 [&_.lucide-help-circle]:opacity-0' : ''}`}>
                 {isAIAssistantBlockedInConfig && (
                   <FeatureLockedOverlay
                     darkMode={darkMode}
-                    message="Asistente disponible en packs"
+                    message={isEnglish ? 'Assistant available in packs' : 'Asistente disponible en packs'}
                     showIcon
                     showMessage
                   />
                 )}
                 <div>
-                  <SectionHeader title="Asistente de IA" tone="asistente" darkMode={darkMode} />
+                  <SectionHeader title={isEnglish ? 'AI Assistant' : 'Asistente de IA'} tone="asistente" darkMode={darkMode} />
 
                   <div className={`mb-2 rounded-xl px-4 py-3 border ${
                     darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
@@ -1729,7 +1730,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                     darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'
                   }`}>
                     <label className={`text-xs font-semibold whitespace-nowrap ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
-                      Largo de respuesta
+                      {isEnglish ? 'Response length' : 'Largo de respuesta'}
                     </label>
                     <input
                       type="number"
@@ -1742,7 +1743,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                         darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
                       }`}
                     />
-                    <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-slate-400'}`}>50–500 chars</span>
+                    <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-slate-400'}`}>50-500 chars</span>
                   </div>
 
                   {/* === SHORTCUT PUSH-TO-TALK === */}
@@ -1765,15 +1766,15 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                         {config.botShortcutEnabled && <Check className="w-4 h-4 text-white" />}
                       </div>
                       <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.botShortcutEnabled ? 'font-semibold' : 'font-medium'}`}>
-                        Activar shortcut de teclado (Push-to-Talk)
-                        <Hint text="MantAn presionada la tecla para hablar con el bot sin usar el mouse" darkMode={darkMode} />
+                        {isEnglish ? 'Enable keyboard shortcut (Push-to-Talk)' : 'Activar shortcut de teclado (Push-to-Talk)'}
+                        <Hint text={isEnglish ? 'Hold the key to talk to the bot without using the mouse' : 'Mantén presionada la tecla para hablar con el bot sin usar el mouse'} darkMode={darkMode} />
                       </span>
                     </button>
 
                     {config.botShortcutEnabled && (
                       <div className="mt-3 ml-8 space-y-2">
                         <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          Tecla actual:
+                          {isEnglish ? 'Current key:' : 'Tecla actual:'}
                         </span>
                         <div className="flex items-center gap-3">
                           <kbd className={`px-3 py-1.5 text-sm font-bold rounded-lg border-2 ${
@@ -1789,7 +1790,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                           />
                         </div>
                         <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                          Y Sugerida: <code className="text-cyan-400">F9</code> a no interfiere con OBS ni TikTok, fAcil de alcanzar
+                          {isEnglish ? 'Suggested:' : 'Sugerida:'} <code className="text-cyan-400">F9</code> {isEnglish ? "it doesn't interfere with OBS or TikTok and it's easy to reach" : 'no interfiere con OBS ni TikTok, fácil de alcanzar'}
                         </p>
                       </div>
                     )}
@@ -1815,15 +1816,15 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                         {config.interactorShortcutEnabled && <Check className="w-4 h-4 text-white" />}
                       </div>
                       <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.interactorShortcutEnabled ? 'font-semibold' : 'font-medium'}`}>
-                        Activar shortcut de teclado (Interactuador)
-                        <Hint text="Dispara una intervención del animador para opinar sobre el chat al instante" darkMode={darkMode} />
+                        {isEnglish ? 'Enable keyboard shortcut (Interactor)' : 'Activar shortcut de teclado (Interactuador)'}
+                        <Hint text={isEnglish ? 'Trigger an interactor intervention to react to chat instantly' : 'Dispara una intervención del animador para opinar sobre el chat al instante'} darkMode={darkMode} />
                       </span>
                     </button>
 
                     {config.interactorShortcutEnabled && (
                       <div className="mt-3 ml-8 space-y-2">
                         <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          Tecla actual:
+                          {isEnglish ? 'Current key:' : 'Tecla actual:'}
                         </span>
                         <div className="flex items-center gap-3">
                           <kbd className={`px-3 py-1.5 text-sm font-bold rounded-lg border-2 ${
@@ -1839,7 +1840,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                           />
                         </div>
                         <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                          Sugerida: <code className="text-cyan-400">F8</code> o rápida para invocar al interactuador manualmente
+                          {isEnglish ? 'Suggested:' : 'Sugerida:'} <code className="text-cyan-400">F8</code> {isEnglish ? 'quick key to trigger the interactor manually' : 'rápida para invocar al interactuador manualmente'}
                         </p>
                       </div>
                     )}
@@ -1854,4 +1855,5 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
     </div>
   )
 }
+
 

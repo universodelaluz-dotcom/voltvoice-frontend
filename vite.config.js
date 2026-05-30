@@ -5,7 +5,9 @@ import path from 'path'
 
 const staticPages = {
   '/faq/': path.resolve(__dirname, 'public', 'faq', 'index.html'),
+  '/faq-en/': path.resolve(__dirname, 'public', 'faq-en', 'index.html'),
   '/como-funciona/': path.resolve(__dirname, 'public', 'como-funciona', 'index.html'),
+  '/how-it-works/': path.resolve(__dirname, 'public', 'how-it-works', 'index.html'),
   '/precios/': path.resolve(__dirname, 'public', 'precios', 'index.html'),
   '/youtube/': path.resolve(__dirname, 'youtube.html'),
 }

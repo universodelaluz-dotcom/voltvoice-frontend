@@ -562,7 +562,24 @@ function PublicTestResetCard({ darkMode, onAssumeUser }) {
 }
 
 export function App() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
+  const fixMojibake = (value) => {
+    if (typeof value === 'string') {
+      if (!/[ÃÂâð]/.test(value)) return value
+      try {
+        return decodeURIComponent(escape(value))
+      } catch {
+        return value
+      }
+    }
+    if (Array.isArray(value)) return value.map((item) => fixMojibake(item))
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, fixMojibake(v)]))
+    }
+    return value
+  }
+  const tl = (key, opts) => fixMojibake(t(key, opts))
   const [currentPage, setCurrentPage] = useState(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('payment') === 'success') return 'studio'
@@ -1239,8 +1256,10 @@ export function App() {
     if (canOpenStudioWithoutAuth) return
     setPaymentNotice({
       status: 'error',
-      title: 'Inicia sesión primero',
-      message: 'Para entrar al Studio debes iniciar sesión con tu cuenta.'
+      title: isEnglish ? 'Sign in first' : 'Inicia sesión primero',
+      message: isEnglish
+        ? 'To enter Studio, you need to sign in with your account.'
+        : 'Para entrar al Studio debes iniciar sesión con tu cuenta.'
     })
     setCurrentPage('auth')
   }, [currentPage, canOpenStudioWithoutAuth])
@@ -1307,10 +1326,11 @@ export function App() {
     // Nunca confiar en "done" cacheado para mostrar exito: siempre revalidar estado real.
     if (callbackState === 'done') sessionStorage.removeItem(callbackKey)
     if (callbackState === 'inflight') return
+
     setCurrentPage('studio')
     setPaymentNotice({
-      title: 'Procesando pago...',
-      message: 'Estamos acreditando tu compra en este momento.',
+      title: isEnglish ? 'Processing payment...' : 'Procesando pago...',
+      message: isEnglish ? 'We are crediting your purchase right now.' : 'Estamos acreditando tu compra en este momento.',
       status: 'processing'
     })
 
@@ -1332,8 +1352,8 @@ export function App() {
           // Confirmacion inmediata para UX: la sincronizacion fina sigue en segundo plano.
           sessionStorage.setItem(callbackKey, 'done')
           showPaymentSuccessOnce(paymentFlowKey, {
-            title: 'Gracias, pago confirmado',
-            message: 'PayPal confirmó tu pago. Estamos sincronizando tus tokens automáticamente.',
+            title: isEnglish ? 'Thanks, payment confirmed' : 'Gracias, pago confirmado',
+            message: isEnglish ? 'PayPal confirmed your payment. We are syncing your tokens automatically.' : 'PayPal confirmó tu pago. Estamos sincronizando tus tokens automáticamente.',
           })
           return
         }
@@ -1342,12 +1362,12 @@ export function App() {
           sessionStorage.setItem(callbackKey, 'done')
           localStorage.removeItem(PAYMENT_PENDING_KEY)
           showPaymentSuccessOnce(paymentFlowKey, {
-            title: '✓ Pago Realizado',
+            title: isEnglish ? '✓ Payment Completed' : '✓ Pago Realizado',
             message: isScheduledAction
-              ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
+              ? (isEnglish ? 'Your payment was processed correctly and your change was scheduled for the next billing cycle.' : 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.')
               : refreshedUser
-                ? `Tu compra se procesó correctamente. Tokens actualizados: ${Number(refreshedUser?.tokens ?? previousTokens).toLocaleString()}. Ya tienes acceso a todos tus beneficios.`
-                : 'Tu compra se procesó correctamente. Ya tienes acceso a tus beneficios.',
+                ? (isEnglish ? `Your purchase was processed successfully. Updated tokens: ${Number(refreshedUser?.tokens ?? previousTokens).toLocaleString()}. You now have access to all your benefits.` : `Tu compra se procesó correctamente. Tokens actualizados: ${Number(refreshedUser?.tokens ?? previousTokens).toLocaleString()}. Ya tienes acceso a todos tus beneficios.`)
+                : (isEnglish ? 'Your purchase was processed successfully. You now have access to your benefits.' : 'Tu compra se procesó correctamente. Ya tienes acceso a tus beneficios.'),
           })
           return
         }
@@ -1358,8 +1378,8 @@ export function App() {
         if (!paymentSeemsApplied && !isScheduledAction && isPaypalPending && paypalProviderConfirmed) {
           sessionStorage.setItem(callbackKey, 'done')
           showPaymentSuccessOnce(paymentFlowKey, {
-            title: 'Gracias, pago confirmado',
-            message: 'PayPal confirmó tu pago. Estamos sincronizando tus tokens automáticamente.',
+            title: isEnglish ? 'Thanks, payment confirmed' : 'Gracias, pago confirmado',
+            message: isEnglish ? 'PayPal confirmed your payment. We are syncing your tokens automatically.' : 'PayPal confirmó tu pago. Estamos sincronizando tus tokens automáticamente.',
           })
           return
         }
@@ -1368,20 +1388,20 @@ export function App() {
           sessionStorage.setItem(callbackKey, 'done')
           localStorage.removeItem(PAYMENT_PENDING_KEY)
           showPaymentSuccessOnce(paymentFlowKey, {
-            title: '✓ Pago Realizado',
+            title: isEnglish ? '✓ Payment Completed' : '✓ Pago Realizado',
             message: isScheduledAction
-              ? 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.'
+              ? (isEnglish ? 'Your payment was processed correctly and your change was scheduled for the next billing cycle.' : 'Tu pago se procesó correctamente y tu cambio quedo programado para el siguiente ciclo.')
               : refreshedUser
-                ? `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`
-                : 'Tu compra se procesó correctamente. Ya tienes acceso a tus beneficios.',
+                ? (isEnglish ? `Your purchase was processed successfully. Updated tokens: ${refreshedTokens.toLocaleString()}. You now have access to all your benefits.` : `Tu compra se procesó correctamente. Tokens actualizados: ${refreshedTokens.toLocaleString()}. Ya tienes acceso a todos tus beneficios.`)
+                : (isEnglish ? 'Your purchase was processed successfully. You now have access to your benefits.' : 'Tu compra se procesó correctamente. Ya tienes acceso a tus beneficios.'),
           })
           return
         }
         sessionStorage.removeItem(callbackKey)
         console.error('[PAYMENT] Error completing payment callback:', error?.message || error)
         setPaymentNotice({
-          title: 'No se pudo acreditar el pago',
-          message: 'Hubo un problema al confirmar la compra. Intenta de nuevo en unos segundos.',
+          title: isEnglish ? 'Payment could not be credited' : 'No se pudo acreditar el pago',
+          message: isEnglish ? 'There was a problem confirming your purchase. Please try again in a few seconds.' : 'Hubo un problema al confirmar la compra. Intenta de nuevo en unos segundos.',
           status: 'error'
         })
       } finally {
@@ -1678,12 +1698,12 @@ export function App() {
           <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
             <button
               onClick={() => {
-                setCurrentPage('studio')
+                setCurrentPage(canOpenStudioWithoutAuth ? 'studio' : 'auth')
                 setPaymentNotice(null)
               }}
               className="px-5 py-2.5 text-sm md:text-base font-bold rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90 transition"
             >
-              Ir a Studio
+              {canOpenStudioWithoutAuth ? (isEnglish ? 'Go to Studio' : 'Ir a Studio') : (isEnglish ? 'Go to Sign in' : 'Ir a Iniciar sesión')}
             </button>
             <button
               onClick={() => setPaymentNotice(null)}
@@ -1691,13 +1711,14 @@ export function App() {
                 darkMode ? 'text-slate-200 bg-white/10 hover:bg-white/20' : 'text-slate-700 bg-slate-100 hover:bg-slate-200'
               }`}
             >
-              Cerrar
+              {isEnglish ? 'Close' : 'Cerrar'}
             </button>
           </div>
         </div>
       </div>
     </div>
   ) : null
+
   // Auth Page - también accesible por ?preview=auth en local
   if (currentPage === 'auth' || window.location.search.includes('preview=auth')) {
     return (
@@ -1860,7 +1881,13 @@ export function App() {
           {darkMode ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
         </button>
         <button
-          onClick={() => canOpenStudioWithoutAuth ? setCurrentPage('studio') : setCurrentPage('auth')}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            setIsPaymentOpen(false)
+            setPaymentNotice(null)
+            setCurrentPage(canOpenStudioWithoutAuth ? 'studio' : 'auth')
+          }}
           className={`flex items-center px-5 text-sm font-bold transition-all ${user?.role === 'admin' ? 'border-r' : ''} ${darkMode ? 'border-white/10 bg-slate-800 text-cyan-300 hover:bg-slate-700' : 'border-slate-300 bg-white text-cyan-700 hover:bg-slate-100'}`}
         >
           Studio
@@ -1891,7 +1918,13 @@ export function App() {
           </div>
         ) : (
           <button
-            onClick={() => canOpenStudioWithoutAuth ? setCurrentPage('studio') : setCurrentPage('auth')}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsPaymentOpen(false)
+              setPaymentNotice(null)
+              setCurrentPage(canOpenStudioWithoutAuth ? 'studio' : 'auth')
+            }}
             className={`h-11 px-5 rounded-xl border text-sm font-bold transition-all ${darkMode ? 'border-white/10 bg-slate-800 text-white hover:bg-slate-700' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100 shadow-sm'}`}
           >
             {canOpenStudioWithoutAuth ? t('landing.enterStudio') : t('auth.login.title')}
@@ -1912,7 +1945,7 @@ export function App() {
           <div className="mb-2 md:mb-3 flex justify-center">
             <img
               src="/images/streamvoicer6.png"
-              alt="StreamVoicer - Lector de chat para TikTok Live con voz IA"
+              alt={isEnglish ? 'StreamVoicer - TikTok Live chat reader with AI voice' : 'StreamVoicer - Lector de chat para TikTok Live con voz IA'}
               fetchPriority="high"
               decoding="async"
               className="w-full max-w-4xl h-auto object-contain opacity-90"
@@ -1920,19 +1953,19 @@ export function App() {
           </div>
 
           <h1 className="relative -top-8 md:-top-10 text-5xl md:text-7xl font-black mb-8 md:mb-10 leading-tight">
-            {t('landing.hero.title')}
+            {tl('landing.hero.title')}
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-orange-400">
-              {t('landing.hero.titleHighlight')}
+              {tl('landing.hero.titleHighlight')}
             </span>
           </h1>
 
           <p className={"text-xl md:text-2xl mb-8 max-w-2xl mx-auto " + (darkMode ? "text-gray-300" : "text-gray-600")}>
-              {t('landing.hero.subtitle')}
+              {tl('landing.hero.subtitle')}
           </p>
 
           <div className="flex flex-wrap gap-3 mb-8 justify-center">
-            {t('landing.hero.tags', { returnObjects: true }).map((tag) => (
+            {tl('landing.hero.tags', { returnObjects: true }).map((tag) => (
               <span
                 key={tag}
                 className={"px-3 py-2 rounded-lg text-sm border " + (darkMode ? "bg-white/5 border-cyan-400/20 text-cyan-200" : "bg-white border-cyan-200 text-cyan-700")}
@@ -1955,7 +1988,7 @@ export function App() {
                   ? "bg-gradient-to-r from-cyan-400 to-blue-500 text-white hover:shadow-cyan-400/50"
                   : "bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:shadow-cyan-300/70")}
               >
-                {t('landing.hero.viewPlans')}
+                {tl('landing.hero.viewPlans')}
                 <ChevronRight className="w-5 h-5" />
               </button>
               <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-orange-400 animate-ping pointer-events-none" />
@@ -1974,16 +2007,16 @@ export function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h3 className={`text-4xl font-black mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              {t('landing.successCases.title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{t('landing.successCases.titleHighlight')}</span>
+              {tl('landing.successCases.title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{tl('landing.successCases.titleHighlight')}</span>
             </h3>
             <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              {t('landing.successCases.subtitle')}
+              {tl('landing.successCases.subtitle')}
             </p>
           </div>
 
           {/* Success Cases Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {t('landing.successCases.items', { returnObjects: true }).map((caseItem, idx) => (
+            {tl('landing.successCases.items', { returnObjects: true }).map((caseItem, idx) => (
               <div
                 key={idx}
                 className={`rounded-xl overflow-hidden border transition-all duration-300 hover:shadow-xl hover:-translate-y-2 ${
@@ -2013,6 +2046,10 @@ export function App() {
                     alt={caseItem.creator}
                     className="w-full h-full object-cover"
                     loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null
+                      e.currentTarget.src = '/images/web1.png'
+                    }}
                   />
                 </div>
 
@@ -2034,7 +2071,7 @@ export function App() {
 
           <div className="mt-14 md:mt-20 mb-0">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
-              {t('landing.metrics', { returnObjects: true }).map((item) => (
+              {tl('landing.metrics', { returnObjects: true }).map((item) => (
                 <div
                   key={item.title}
                   className="text-center"
@@ -2059,7 +2096,7 @@ export function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h3 className={`text-4xl font-black mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              {t('landing.testimonials.title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{t('landing.testimonials.titleHighlight')}</span>
+              {tl('landing.testimonials.title')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{tl('landing.testimonials.titleHighlight')}</span>
             </h3>
           </div>
 
@@ -2068,7 +2105,7 @@ export function App() {
             <div className="testimonials-track flex gap-6 w-max">
               {/* Cards duplicated for seamless infinite loop (CSS translateX -50%) */}
               {[...Array(2)].flatMap((_, copy) =>
-                t('landing.testimonials.items', { returnObjects: true }).map((testimonial, idx) => (
+                tl('landing.testimonials.items', { returnObjects: true }).map((testimonial, idx) => (
                   <div
                     key={`${copy}-${idx}`}
                     aria-hidden={copy === 1}
@@ -2121,9 +2158,11 @@ export function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
             <h3 className="text-4xl font-black mb-4">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">✨ {t('landing.pricing.title')} ✨</span>
+              <span className="mr-3">✨</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{tl('landing.pricing.title').replace(/[^\p{L}\p{N}\s]/gu, '').trim()}</span>
+              <span className="ml-3">🚀</span>
             </h3>
-            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>🎯 {t('landing.pricing.subtitle')} 🚀</p>
+            <p className={darkMode ? "text-gray-400" : "text-gray-600"}><span className="mr-2">🎯</span>{tl('landing.pricing.subtitle').replace(/[^\p{L}\p{N}\s]/gu, '').trim()}<span className="ml-2">🎉</span></p>
           </div>
           <PricingCards darkMode={darkMode} showToggle={true} onPlanAction={handlePlanAction} />
         </div>
@@ -2134,9 +2173,11 @@ export function App() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-black mb-4">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{t('landing.faq.title')}</span>
+              <span className="mr-3">🧠</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{tl('landing.faq.title').replace(/[^\p{L}\p{N}\s]/gu, '').trim()}</span>
+              <span className="ml-3">✨</span>
             </h3>
-            <p className={darkMode ? "text-gray-400" : "text-gray-600"}>{t('landing.faq.subtitle')}</p>
+            <p className={darkMode ? "text-gray-400" : "text-gray-600"}><span className="mr-2">💬</span>{tl('landing.faq.subtitle').replace(/[^\p{L}\p{N}\s]/gu, '').trim()}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2201,7 +2242,7 @@ export function App() {
                     : 'border-slate-200 text-white hover:bg-white/10'
                 }`}
               >
-                {t('landing.hero.viewPlans')}
+                {tl('landing.hero.viewPlans')}
               </button>
             </div>
           </div>
@@ -2214,7 +2255,7 @@ export function App() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <h4 className="font-bold mb-4">Stream Voicer</h4>
-              <p className="text-sm text-gray-400">{'La mejor soluci\u00f3n para leer chats en vivo'}</p>
+              <p className="text-sm text-gray-400">{isEnglish ? 'The best solution for reading live chats' : 'La mejor solución para leer chats en vivo'}</p>
             </div>
             <div>
               <h4 className="font-bold mb-4">Legal</h4>
@@ -2225,12 +2266,12 @@ export function App() {
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Soporte</h4>
+              <h4 className="font-bold mb-4">{isEnglish ? 'Support' : 'Soporte'}</h4>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><button onClick={() => setShowContact(true)} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">{t('landing.footer.contact')}</button></li>
-                <li><button onClick={() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Precios</button></li>
-                <li><button onClick={() => window.location.assign('/faq/')} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">FAQ</button></li>
-                <li><button onClick={() => window.location.assign('/como-funciona/')} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">Cómo funciona</button></li>
+                <li><button onClick={() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">{isEnglish ? 'Pricing' : 'Precios'}</button></li>
+                <li><button onClick={() => window.location.assign(isEnglish ? '/faq-en/' : '/faq/')} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">FAQ</button></li>
+                <li><button onClick={() => window.location.assign(isEnglish ? '/how-it-works/' : '/como-funciona/')} className="hover:text-cyan-400 transition cursor-pointer bg-none border-none p-0">{isEnglish ? 'How it works' : 'Cómo funciona'}</button></li>
               </ul>
             </div>
           </div>
@@ -2256,55 +2297,55 @@ export function App() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
           <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Términos de Servicio</h2>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{isEnglish ? 'Terms of Service' : 'Términos de Servicio'}</h2>
               <button onClick={() => setShowTerms(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
             </div>
             <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
-                <p><strong>Última actualización:</strong> 19 de abril de 2026</p>
+                <p><strong>{isEnglish ? 'Last updated:' : 'Última actualización:'}</strong> {isEnglish ? 'April 19, 2026' : '19 de abril de 2026'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. Aceptación</h3>
-                <p>Al crear una cuenta o usar Stream Voicer, aceptas estos términos y nuestra política de privacidad. Si no estás de acuerdo, no utilices el servicio.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '1. Acceptance' : '1. Aceptación'}</h3>
+                <p>{isEnglish ? 'By creating an account or using Stream Voicer, you agree to these terms and our privacy policy. If you do not agree, do not use the service.' : 'Al crear una cuenta o usar Stream Voicer, aceptas estos términos y nuestra política de privacidad. Si no estás de acuerdo, no utilices el servicio.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. Descripción del servicio</h3>
-                <p>Stream Voicer es una plataforma de voz para creadores y streamers. Ofrece lectura de mensajes en vivo, voces TTS, funciones con IA y herramientas de configuración para contenido en directo.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '2. Service description' : '2. Descripción del servicio'}</h3>
+                <p>{isEnglish ? 'Stream Voicer is a voice platform for creators and streamers. It provides live message reading, TTS voices, AI features, and configuration tools for live content.' : 'Stream Voicer es una plataforma de voz para creadores y streamers. Ofrece lectura de mensajes en vivo, voces TTS, funciones con IA y herramientas de configuración para contenido en directo.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Uso permitido</h3>
-                <p>Debes usar la plataforma de forma legal, ética y respetuosa. Queda prohibido:</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '3. Acceptable use' : '3. Uso permitido'}</h3>
+                <p>{isEnglish ? 'You must use the platform lawfully, ethically, and respectfully. The following is prohibited:' : 'Debes usar la plataforma de forma legal, ética y respetuosa. Queda prohibido:'}</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li>Generar o difundir contenido ilegal, ofensivo o discriminatorio</li>
-                  <li>Intentar acceder sin autorización a cuentas, sistemas o datos</li>
-                  <li>Spam o abuso del servicio</li>
-                  <li>Infringir derechos de terceros (propiedad intelectual, imagen, privacidad)</li>
+                  <li>{isEnglish ? 'Generating or distributing illegal, offensive, or discriminatory content' : 'Generar o difundir contenido ilegal, ofensivo o discriminatorio'}</li>
+                  <li>{isEnglish ? 'Attempting unauthorized access to accounts, systems, or data' : 'Intentar acceder sin autorización a cuentas, sistemas o datos'}</li>
+                  <li>{isEnglish ? 'Spam or abuse of the service' : 'Spam o abuso del servicio'}</li>
+                  <li>{isEnglish ? 'Infringing third-party rights (intellectual property, image rights, privacy)' : 'Infringir derechos de terceros (propiedad intelectual, imagen, privacidad)'}</li>
                 </ul>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Cuenta y seguridad</h3>
-                <p>Eres responsable de mantener la confidencialidad de tu cuenta y credenciales. También eres responsable de la actividad realizada desde tu cuenta.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '4. Account and security' : '4. Cuenta y seguridad'}</h3>
+                <p>{isEnglish ? 'You are responsible for keeping your account and credentials confidential. You are also responsible for activity carried out through your account.' : 'Eres responsable de mantener la confidencialidad de tu cuenta y credenciales. También eres responsable de la actividad realizada desde tu cuenta.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Suscripciones, pagos y tokens</h3>
-                <p>Los cambios de plan, renovaciones y cancelaciones se procesan según la configuración de tu cuenta y tu ciclo de facturación. Puedes cancelar cuando quieras y conservarás acceso hasta el cierre del periodo vigente.</p>
-                <p className="mt-2"><strong>Paquetes de tokens:</strong> Los tokens son bienes digitales de consumo inmediato dentro de la plataforma. Una vez acreditados, no son reembolsables salvo obligación legal aplicable o error de cobro verificable.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '5. Subscriptions, payments, and tokens' : '5. Suscripciones, pagos y tokens'}</h3>
+                <p>{isEnglish ? 'Plan changes, renewals, and cancellations are processed based on your account settings and billing cycle. You may cancel anytime and keep access until the end of the current paid period.' : 'Los cambios de plan, renovaciones y cancelaciones se procesan según la configuración de tu cuenta y tu ciclo de facturación. Puedes cancelar cuando quieras y conservarás acceso hasta el cierre del periodo vigente.'}</p>
+                <p className="mt-2"><strong>{isEnglish ? 'Token packages:' : 'Paquetes de tokens:'}</strong> {isEnglish ? 'Tokens are digital goods for immediate consumption within the platform. Once credited, they are non-refundable except where required by applicable law or in case of verifiable billing errors.' : 'Los tokens son bienes digitales de consumo inmediato dentro de la plataforma. Una vez acreditados, no son reembolsables salvo obligación legal aplicable o error de cobro verificable.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Disponibilidad y límites</h3>
-                <p>Nos esforzamos por mantener el servicio disponible, pero puede haber interrupciones, mantenimiento o cambios técnicos. El servicio se ofrece "tal cual", sin garantía de disponibilidad ininterrumpida.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '6. Availability and limitations' : '6. Disponibilidad y límites'}</h3>
+                <p>{isEnglish ? 'We strive to keep the service available, but interruptions, maintenance, or technical changes may occur. The service is provided "as is", without guarantee of uninterrupted availability.' : 'Nos esforzamos por mantener el servicio disponible, pero puede haber interrupciones, mantenimiento o cambios técnicos. El servicio se ofrece "tal cual", sin garantía de disponibilidad ininterrumpida.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>7. Terminación o suspensión</h3>
-                <p>Podemos suspender o finalizar cuentas que incumplan estos términos, representen riesgo de seguridad o hagan uso fraudulento de la plataforma.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '7. Suspension or termination' : '7. Terminación o suspensión'}</h3>
+                <p>{isEnglish ? 'We may suspend or terminate accounts that violate these terms, pose security risks, or engage in fraudulent use of the platform.' : 'Podemos suspender o finalizar cuentas que incumplan estos términos, representen riesgo de seguridad o hagan uso fraudulento de la plataforma.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>8. Cambios en estos términos</h3>
-                <p>Podemos actualizar estos términos para reflejar mejoras del producto, cambios legales o ajustes operativos. Si los cambios son relevantes, te avisaremos por medios razonables.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '8. Changes to these terms' : '8. Cambios en estos términos'}</h3>
+                <p>{isEnglish ? 'We may update these terms to reflect product improvements, legal changes, or operational adjustments. If changes are significant, we will notify you through reasonable channels.' : 'Podemos actualizar estos términos para reflejar mejoras del producto, cambios legales o ajustes operativos. Si los cambios son relevantes, te avisaremos por medios razonables.'}</p>
               </section>
             </div>
             <button onClick={() => setShowTerms(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
-              Cerrar
+              {isEnglish ? 'Close' : 'Cerrar'}
             </button>
           </div>
         </div>
@@ -2315,58 +2356,58 @@ export function App() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4 overflow-y-auto">
           <div className={`rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Política de Privacidad</h2>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{isEnglish ? 'Privacy Policy' : 'Política de Privacidad'}</h2>
               <button onClick={() => setShowPrivacy(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
             </div>
             <div className={`space-y-4 text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               <section>
-                <p><strong>Última actualización:</strong> 19 de abril de 2026</p>
+                <p><strong>{isEnglish ? 'Last updated:' : 'Última actualización:'}</strong> {isEnglish ? 'April 19, 2026' : '19 de abril de 2026'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>1. Información que recopilamos</h3>
-                <p>Recopilamos datos que proporcionas al registrarte o usar la plataforma, como nombre, correo, plan, consumo de tokens y preferencias de configuración.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '1. Information we collect' : '1. Información que recopilamos'}</h3>
+                <p>{isEnglish ? 'We collect information you provide when registering or using the platform, such as name, email, plan, token usage, and configuration preferences.' : 'Recopilamos datos que proporcionas al registrarte o usar la plataforma, como nombre, correo, plan, consumo de tokens y preferencias de configuración.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>2. Cómo usamos tu información</h3>
-                <p>Usamos tus datos para:</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '2. How we use your information' : '2. Cómo usamos tu información'}</h3>
+                <p>{isEnglish ? 'We use your data to:' : 'Usamos tus datos para:'}</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li>Prestar y mejorar las funciones de voz, IA y configuración</li>
-                  <li>Administrar pagos, suscripciones y saldo de tokens</li>
-                  <li>Enviar avisos operativos, de seguridad o facturación</li>
-                  <li>Prevenir fraude, abuso y accesos no autorizados</li>
+                  <li>{isEnglish ? 'Provide and improve voice, AI, and configuration features' : 'Prestar y mejorar las funciones de voz, IA y configuración'}</li>
+                  <li>{isEnglish ? 'Manage payments, subscriptions, and token balances' : 'Administrar pagos, suscripciones y saldo de tokens'}</li>
+                  <li>{isEnglish ? 'Send operational, security, and billing notices' : 'Enviar avisos operativos, de seguridad o facturación'}</li>
+                  <li>{isEnglish ? 'Prevent fraud, abuse, and unauthorized access' : 'Prevenir fraude, abuso y accesos no autorizados'}</li>
                 </ul>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>3. Base legal y conservación</h3>
-                <p>Tratamos tus datos para ejecutar el servicio, cumplir obligaciones legales y proteger intereses legítimos de seguridad y operación. Conservamos la información el tiempo necesario para estos fines.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '3. Legal basis and retention' : '3. Base legal y conservación'}</h3>
+                <p>{isEnglish ? 'We process your data to provide the service, comply with legal obligations, and protect legitimate security and operational interests. We retain information as long as necessary for these purposes.' : 'Tratamos tus datos para ejecutar el servicio, cumplir obligaciones legales y proteger intereses legítimos de seguridad y operación. Conservamos la información el tiempo necesario para estos fines.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>4. Compartición con terceros</h3>
-                <p>Podemos compartir datos con proveedores que nos ayudan a operar la plataforma (por ejemplo, autenticación, pagos, hosting, analítica o servicios de voz/IA), bajo medidas contractuales y de seguridad razonables.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '4. Sharing with third parties' : '4. Compartición con terceros'}</h3>
+                <p>{isEnglish ? 'We may share data with providers that help us operate the platform (for example authentication, payments, hosting, analytics, or voice/AI services), under reasonable contractual and security safeguards.' : 'Podemos compartir datos con proveedores que nos ayudan a operar la plataforma (por ejemplo, autenticación, pagos, hosting, analítica o servicios de voz/IA), bajo medidas contractuales y de seguridad razonables.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>5. Cookies y tecnologías similares</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '5. Cookies and similar technologies' : '5. Cookies y tecnologías similares'}</h3>
                 <p>{t('cookies.shortText')}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>6. Seguridad de datos</h3>
-                <p>Aplicamos medidas técnicas y organizativas razonables para proteger tu información. Ningún sistema es infalible, pero trabajamos para reducir riesgos de acceso indebido o pérdida de datos.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '6. Data security' : '6. Seguridad de datos'}</h3>
+                <p>{isEnglish ? 'We apply reasonable technical and organizational measures to protect your information. No system is infallible, but we work to reduce risks of unauthorized access or data loss.' : 'Aplicamos medidas técnicas y organizativas razonables para proteger tu información. Ningún sistema es infalible, pero trabajamos para reducir riesgos de acceso indebido o pérdida de datos.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>7. Derechos del usuario</h3>
-                <p>Puedes solicitar acceso, corrección, actualización o eliminación de tus datos personales, así como retirar tu consentimiento cuando aplique. Para ejercer tus derechos, escríbenos al correo de soporte.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '7. User rights' : '7. Derechos del usuario'}</h3>
+                <p>{isEnglish ? 'You may request access, correction, updating, or deletion of your personal data, and withdraw consent where applicable. To exercise your rights, contact us via support email.' : 'Puedes solicitar acceso, corrección, actualización o eliminación de tus datos personales, así como retirar tu consentimiento cuando aplique. Para ejercer tus derechos, escríbenos al correo de soporte.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>8. Cambios en esta política</h3>
-                <p>Podemos actualizar esta política para reflejar cambios del servicio o requisitos legales. Publicaremos la versión vigente en esta misma sección.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '8. Changes to this policy' : '8. Cambios en esta política'}</h3>
+                <p>{isEnglish ? 'We may update this policy to reflect service changes or legal requirements. We will publish the current version in this section.' : 'Podemos actualizar esta política para reflejar cambios del servicio o requisitos legales. Publicaremos la versión vigente en esta misma sección.'}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>9. Contacto</h3>
-                <p>Para consultas sobre privacidad, contáctanos en: soporte@streamvoicer.com</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? '9. Contact' : '9. Contacto'}</h3>
+                <p>{isEnglish ? 'For privacy-related questions, contact us at: soporte@streamvoicer.com' : 'Para consultas sobre privacidad, contáctanos en: soporte@streamvoicer.com'}</p>
               </section>
             </div>
             <button onClick={() => setShowPrivacy(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
-              Cerrar
+              {isEnglish ? 'Close' : 'Cerrar'}
             </button>
           </div>
         </div>
@@ -2377,7 +2418,7 @@ export function App() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[999] p-4">
           <div className={`rounded-2xl p-8 max-w-md w-full ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Contacto</h2>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{isEnglish ? 'Contact' : 'Contacto'}</h2>
               <button onClick={() => setShowContact(false)} className="text-2xl opacity-50 hover:opacity-100">×</button>
             </div>
             <div className={`space-y-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -2385,13 +2426,13 @@ export function App() {
               {!user && (
                 <div>
                   <label className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Correo de contacto
+                    {isEnglish ? 'Contact email' : 'Correo de contacto'}
                   </label>
                   <input
                     type="email"
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
-                    placeholder="tu@email.com"
+                    placeholder={isEnglish ? 'you@email.com' : 'tu@email.com'}
                     className={`mt-1 w-full px-3 py-2 rounded-lg text-sm ${
                       darkMode
                         ? 'bg-[#0b1327] border border-cyan-400/30 text-white placeholder:text-gray-500 focus:border-cyan-300'
@@ -2403,8 +2444,8 @@ export function App() {
 
               {contactDone ? (
                 <div className={`text-center py-4 rounded-xl ${darkMode ? 'bg-green-500/10 border border-green-400/30' : 'bg-green-50 border border-green-300'}`}>
-                  <p className={`font-bold ${darkMode ? 'text-green-300' : 'text-green-700'}`}>Mensaje enviado correctamente.</p>
-                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Te responderemos en 24-48 hrs.</p>
+                  <p className={`font-bold ${darkMode ? 'text-green-300' : 'text-green-700'}`}>{isEnglish ? 'Message sent successfully.' : 'Mensaje enviado correctamente.'}</p>
+                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{isEnglish ? 'We will reply within 24-48 hrs.' : 'Te responderemos en 24-48 hrs.'}</p>
                 </div>
               ) : (
                 <div>
@@ -2435,10 +2476,10 @@ export function App() {
                   </button>
                 </div>
               )}
-              <p className="text-sm">Responderemos tu mensaje lo antes posible. Esperamos tu contacto.</p>
+              <p className="text-sm">{isEnglish ? 'We will reply as soon as possible. We look forward to your message.' : 'Responderemos tu mensaje lo antes posible. Esperamos tu contacto.'}</p>
             </div>
             <button onClick={() => setShowContact(false)} className="mt-6 w-full py-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:opacity-90">
-              Cerrar
+              {isEnglish ? 'Close' : 'Cerrar'}
             </button>
           </div>
         </div>
@@ -2451,7 +2492,7 @@ export function App() {
           <div className={`rounded-2xl w-full max-w-4xl my-8 flex flex-col ${darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`} style={{maxHeight: 'calc(100vh - 64px)'}}>
             {/* Header */}
             <div className={`flex justify-between items-center p-8 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Política de Cookies</h2>
+              <h2 className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>{isEnglish ? 'Cookie Policy' : 'Política de Cookies'}</h2>
               <button onClick={() => setShowCookies(false)} className="text-2xl opacity-50 hover:opacity-100 font-bold">×</button>
             </div>
 
@@ -2462,43 +2503,43 @@ export function App() {
                 <p>{t('cookies.whatAreText')}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Tipos de Cookies que Usamos</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? 'Types of cookies we use' : 'Tipos de Cookies que Usamos'}</h3>
                 <ul className="list-disc pl-5 space-y-2">
-                  <li><strong>Cookies Esenciales:</strong> Necesarias para el funcionamiento básico del sitio (autenticación, seguridad)</li>
-                  <li><strong>Cookies de Rendimiento:</strong> Nos ayudan a entender cómo usas el sitio y mejorarlo</li>
-                  <li><strong>Cookies de Análisis:</strong> Rastrean cómo interactúas con Stream Voicer para optimizar la experiencia</li>
-                  <li><strong>Cookies de Publicidad:</strong> Permiten mostrar anuncios relevantes según tus intereses</li>
+                  <li><strong>{isEnglish ? 'Essential cookies:' : 'Cookies Esenciales:'}</strong> {isEnglish ? 'Required for core site functionality (authentication, security).' : 'Necesarias para el funcionamiento básico del sitio (autenticación, seguridad)'}</li>
+                  <li><strong>{isEnglish ? 'Performance cookies:' : 'Cookies de Rendimiento:'}</strong> {isEnglish ? 'Help us understand how you use the site and improve it.' : 'Nos ayudan a entender cómo usas el sitio y mejorarlo'}</li>
+                  <li><strong>{isEnglish ? 'Analytics cookies:' : 'Cookies de Análisis:'}</strong> {isEnglish ? 'Track how you interact with Stream Voicer to optimize experience.' : 'Rastrean cómo interactúas con Stream Voicer para optimizar la experiencia'}</li>
+                  <li><strong>{isEnglish ? 'Advertising cookies:' : 'Cookies de Publicidad:'}</strong> {isEnglish ? 'Allow us to show relevant ads based on your interests.' : 'Permiten mostrar anuncios relevantes según tus intereses'}</li>
                 </ul>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{'\u00bfC\u00f3mo Usamos las Cookies?'}</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? 'How we use cookies' : '¿Cómo Usamos las Cookies?'}</h3>
                 <p>{t('cookies.weUse')}</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li>Mantener tu sesión iniciada</li>
-                  <li>Recordar tus preferencias de idioma y tema</li>
-                  <li>Analizar el tráfico del sitio con Google Analytics</li>
-                  <li>Personalizar contenido según tu actividad</li>
-                  <li>Prevenir fraude y mejorar la seguridad</li>
+                  <li>{isEnglish ? 'Keep your session signed in' : 'Mantener tu sesión iniciada'}</li>
+                  <li>{isEnglish ? 'Remember language and theme preferences' : 'Recordar tus preferencias de idioma y tema'}</li>
+                  <li>{isEnglish ? 'Analyze site traffic with Google Analytics' : 'Analizar el tráfico del sitio con Google Analytics'}</li>
+                  <li>{isEnglish ? 'Personalize content based on your activity' : 'Personalizar contenido según tu actividad'}</li>
+                  <li>{isEnglish ? 'Prevent fraud and improve security' : 'Prevenir fraude y mejorar la seguridad'}</li>
                 </ul>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Control de Cookies</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? 'Cookie controls' : 'Control de Cookies'}</h3>
                 <p>{t('cookies.control')}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cookies de Terceros</h3>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? 'Third-party cookies' : 'Cookies de Terceros'}</h3>
                 <p>{t('cookies.thirdParty')}</p>
               </section>
               <section>
-                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>Cambios en la Política</h3>
-                <p>Nos reservamos el derecho de actualizar esta política en cualquier momento. Te notificaremos de cambios significativos.</p>
+                <h3 className={`font-bold mb-2 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{isEnglish ? 'Policy updates' : 'Cambios en la Política'}</h3>
+                <p>{isEnglish ? 'We may update this policy at any time. We will notify you of significant changes.' : 'Nos reservamos el derecho de actualizar esta política en cualquier momento. Te notificaremos de cambios significativos.'}</p>
               </section>
             </div>
 
             {/* Footer con botón */}
             <div className={`p-8 border-t ${darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gray-50'}`}>
               <button onClick={() => setShowCookies(false)} className="w-full py-3 bg-gradient-to-r from-cyan-400 to-purple-500 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-cyan-400/50 transition-all">
-                {'\u2705 Cerrar'}
+                {isEnglish ? 'Close' : '\u2705 Cerrar'}
               </button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { X, Zap, Check, AlertCircle, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -103,7 +103,8 @@ const buildPlanCheckoutItem = ({ planId, billingCycle }) => {
 }
 
 export function StripePayment({ isOpen, onClose, initialPackageTokens = null, initialCheckoutItem = null, returnPath = '' }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('voltvoice-theme') !== 'light')
   const [selectedPackage, setSelectedPackage] = useState(tokenPackages[1])
   const [checkoutItem, setCheckoutItem] = useState(() => initialCheckoutItem || { type: 'tokens', package: tokenPackages[1] })
@@ -234,7 +235,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
       const data = await res.json()
       setCouponValidation(data)
     } catch (e) {
-      setCouponValidation({ valid: false, message: 'Error validando cupón' })
+      setCouponValidation({ valid: false, message: isEnglish ? 'Error validating coupon' : 'Error validando cupon' })
     }
     setCouponLoading(false)
   }, [couponCode, checkoutItem, selectedPackage])
@@ -276,11 +277,17 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     if (!isScheduledPlanAction(action)) return true
     const planLabel = String(currentItem?.label || '').trim() || 'nuevo plan'
     const cycleLabel = currentItem?.billingCycle === 'annual' ? 'anual' : 'mensual'
-    const message = [
-      `Aviso importante: el cambio a ${planLabel} (${cycleLabel}) se aplicará en tu siguiente ciclo de facturación.`,
-      'Hoy se procesa el pago, pero mantendrás tu plan actual hasta la renovación.',
-      '¿Deseas continuar al pago?'
-    ].join('\n\n')
+    const message = isEnglish
+      ? [
+          `Important: your change to ${planLabel} (${cycleLabel}) will apply on your next billing cycle.`,
+          'Payment is processed today, but you keep your current plan until renewal.',
+          'Do you want to continue to payment?'
+        ].join('\n\n')
+      : [
+          `Aviso importante: el cambio a ${planLabel} (${cycleLabel}) se aplicara en tu siguiente ciclo de facturacion.`,
+          'Hoy se procesa el pago, pero mantendras tu plan actual hasta la renovacion.',
+          'Deseas continuar al pago?'
+        ].join('\n\n')
     return window.confirm(message)
   }
 
@@ -355,7 +362,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
       const backendPlan = await fetchCurrentUserPlan(headers)
       const effectivePlan = backendPlan || (isCurrentUserFreePlan() ? 'free' : '')
       if (currentItem.type === 'tokens' && FREE_PLANS.has(effectivePlan)) {
-        alert('Primero debes adquirir un plan de pago para poder comprar paquetes de tokens.')
+        alert(isEnglish ? 'You need a paid plan before buying token packages.' : 'Primero debes adquirir un plan de pago para poder comprar paquetes de tokens.')
         setLoading(null)
         return
       }
@@ -418,7 +425,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
       const backendPlan = await fetchCurrentUserPlan(headers)
       const effectivePlan = backendPlan || (isCurrentUserFreePlan() ? 'free' : '')
       if (currentItem.type === 'tokens' && FREE_PLANS.has(effectivePlan)) {
-        alert('Primero debes adquirir un plan de pago para poder comprar paquetes de tokens.')
+        alert(isEnglish ? 'You need a paid plan before buying token packages.' : 'Primero debes adquirir un plan de pago para poder comprar paquetes de tokens.')
         return
       }
       if (
@@ -520,7 +527,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
             <div className={`rounded-xl p-3 mb-3 flex items-center gap-2 ${dm ? 'bg-white/5 border border-white/10' : 'bg-indigo-50 border border-indigo-100'}`}>
               <Zap className="w-4 h-4 text-cyan-400 flex-shrink-0" />
               <p className={`text-sm ${dm ? 'text-gray-300' : 'text-gray-600'}`}>
-                <span className="font-bold text-cyan-400">{currentItem.label}</span>{' '}por{' '}
+                <span className="font-bold text-cyan-400">{isEnglish ? currentItem.label.replace(/\bMensual\b/g, 'Monthly').replace(/\bAnual\b/g, 'Annual') : currentItem.label}</span>{' '}{isEnglish ? 'for' : 'por'}{' '}
                 <span className="font-bold">${currentItem.price} USD</span>{' '}
                 <span>- {currentItem.billingCycle === 'annual' ? t('payment.billingAnnual') : t('payment.billingMonthly')}</span>
                 <span className={`block text-[11px] ${dm ? 'text-gray-500' : 'text-gray-500'}`}>
@@ -534,14 +541,14 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
                 onClick={() => switchPlanBillingCycle('monthly')}
                 className={`flex-1 px-4 py-2 rounded-lg text-xs font-black transition-all ${planBillingCycle === 'monthly' ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white' : dm ? 'text-gray-300' : 'text-gray-700'}`}
               >
-                Mensual
+                {isEnglish ? 'Monthly' : 'Mensual'}
               </button>
               <button
                 type="button"
                 onClick={() => switchPlanBillingCycle('annual')}
                 className={`flex-1 px-4 py-2 rounded-lg text-xs font-black transition-all ${planBillingCycle === 'annual' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' : dm ? 'text-gray-300' : 'text-gray-700'}`}
               >
-                Anual (2 meses gratis)
+                {isEnglish ? 'Annual (2 free months)' : 'Anual (2 meses gratis)'}
               </button>
             </div>
           </div>
@@ -570,6 +577,7 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
           >
             {loading === 'paypal' ? t('payment.processing') : t('payment.paypal')}
           </button>
+
 
           <div className="pt-0.5">
             <label className={`block text-[10px] font-medium mb-1 ${dm ? 'text-gray-500' : 'text-gray-500'}`}>
@@ -657,4 +665,5 @@ export function StripePayment({ isOpen, onClose, initialPackageTokens = null, in
     </div>
   )
 }
+
 

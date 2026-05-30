@@ -77,7 +77,8 @@ const normalizePlanTier = (rawPlan = 'free') => {
 }
 
 export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAdmin, onGoPricingPage, darkMode, setDarkMode, config, updateConfig, configReady = true, user, platformMode = 'tiktok' }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
   const audioSpeed = config.audioSpeed || 1.0
   const PREMIUM_TEST_CHAR_LIMIT = 500
   const FREE_LOCAL_LIMIT_CODE = 'FREE_LOCAL_VOICE_DAILY_LIMIT_REACHED'
@@ -152,6 +153,27 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
   ])
   const [newChatMessage, setNewChatMessage] = useState('')
   const [currentChatUser, setCurrentChatUser] = useState('viewer123')
+
+  const PLAN_TOKEN_LIMITS = {
+    free: 100,
+    base: 200000,
+    pack_lite: 500000,
+    pack_pro: 800000,
+    pack_max: 800000,
+    admin: 1000000,
+  }
+  const configuredTokenLimitCandidates = [
+    user?.subscription?.token_limit,
+    user?.subscription?.tokenLimit,
+    user?.token_limit,
+    user?.tokenLimit,
+  ]
+  const configuredTokenLimit = configuredTokenLimitCandidates
+    .map((v) => Number(v))
+    .find((v) => Number.isFinite(v) && v > 0)
+  const planTokenLimit = configuredTokenLimit || PLAN_TOKEN_LIMITS[currentPlan] || 100
+  const rawTokensRemainingPct = Math.max(0, Math.min(100, Math.round((Number(tokens || 0) / planTokenLimit) * 100)))
+  const tokensRemainingPct = Number(tokens || 0) > 0 ? Math.max(1, rawTokensRemainingPct) : 0
 
   // Reproducir automaticamente cuando haya audio
   useEffect(() => {
@@ -854,7 +876,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
                     <Volume2 className="w-5 h-5 text-white" />
                   </button>
                   <div className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>
-                    <span className="text-cyan-400 font-bold">{tokensUsed}</span> tokens usados
+                    <span className="text-cyan-400 font-bold">{tokensUsed}</span> {isEnglish ? 'tokens used' : 'tokens usados'}
                   </div>
                 </div>
               )}
@@ -880,12 +902,17 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
               <div className={`rounded-full h-2 overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-indigo-100'}`}>
                 <div
                   className="bg-gradient-to-r from-cyan-500 to-purple-500 h-full rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: `${Math.min(100, Math.round((tokens / (totalTokensUsed + tokens || 1)) * 100))}%` }}
+                  style={{ width: `${tokensRemainingPct}%` }}
                 />
               </div>
               <div className="flex justify-between mt-2">
-                <span className={`text-[11px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{totalTokensUsed.toLocaleString()} usados</span>
-                <span className="text-[11px] font-semibold text-cyan-400">{Math.min(100, Math.round((tokens / (totalTokensUsed + tokens || 1)) * 100))}% restante</span>
+                <span className={`text-[11px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{totalTokensUsed.toLocaleString()} {isEnglish ? 'used' : 'usados'}</span>
+                <span className="text-[11px] font-semibold text-cyan-400">{tokensRemainingPct}% {isEnglish ? 'remaining' : 'restante'}</span>
+              </div>
+              <div className="mt-1 text-right">
+                <span className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  {isEnglish ? `100% according to plan (${planTokenLimit.toLocaleString()} tokens)` : `100% según plan (${planTokenLimit.toLocaleString()} tokens)`}
+                </span>
               </div>
             </div>
 
@@ -897,10 +924,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
     </div>
   )
 }
-
-
-
-
 
 
 
