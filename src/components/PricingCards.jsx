@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const BASE_PLAN = {
   name: 'PLAN BASE',
@@ -11,30 +12,31 @@ const BASE_PLAN = {
   voices: [
     '2 voces esenciales ilimitadas',
     '2 voces premium',
+    '1 voz clonada incluida',
     'Control de calidad de audio',
     'Soporte prioritario'
   ],
   features: [
-    { icon: '🎨', label: 'Filtros avanzados' },
-    { icon: '🤖', label: 'Smart filter' },
-    { icon: '👤', label: 'Cambiar nick' },
-    { icon: '🔇', label: 'Silenciado' },
-    { icon: '🛡️', label: 'Anti-spam' },
-    { icon: '📊', label: 'Analytics' }
+    { icon: '\uD83C\uDFA8', label: 'Filtros avanzados' },
+    { icon: '\uD83E\uDD16', label: 'Smart filter' },
+    { icon: '\uD83D\uDC64', label: 'Cambiar nick' },
+    { icon: '\uD83D\uDD07', label: 'Silenciado' },
+    { icon: '\uD83D\uDEE1\uFE0F', label: 'Anti-spam' },
+    { icon: '\uD83D\uDCCA', label: 'Analytics' }
   ]
 }
 
 const PACKS = [
   {
     planId: 'pack_lite',
-    icon: '⚡',
+    icon: '\u26A1',
     name: 'PACK LITE',
     bundleName: 'BASE + LITE',
     price: 9.99,
     annualPrice: 199.8,
     tokenCount: 50000,
     subtitle: 'Un personaje clonado para tu stream',
-    voices: '+1 Voz clonada',
+    voices: '1 Voz clonada incluida',
     estimate: '50 min - 1.5 h',
     tokensDesc: 'Impulsa voces premium y personajes IA. Optimiza con filtros y multiplica el rendimiento hasta 15x.',
     priceGradient: 'from-cyan-400 to-blue-500',
@@ -43,7 +45,7 @@ const PACKS = [
   },
   {
     planId: 'pack_pro',
-    icon: '🔥',
+    icon: '\uD83D\uDD25',
     name: 'PACK PRO',
     bundleName: 'BASE + PRO',
     price: 24.99,
@@ -60,7 +62,7 @@ const PACKS = [
   },
   {
     planId: 'pack_max',
-    icon: '⭐',
+    icon: '\u2B50',
     name: 'PACK MAX',
     bundleName: 'BASE + MAX',
     price: 49.99,
@@ -77,6 +79,8 @@ const PACKS = [
 ]
 
 export function PricingCards({ darkMode, showToggle = true, onPlanAction, layout = 'landing' }) {
+  const { i18n } = useTranslation()
+  const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
   const [usdMxn, setUsdMxn] = useState(18)
   const [billingCycle, setBillingCycle] = useState('monthly')
   const [bundleWithBaseByPlan, setBundleWithBaseByPlan] = useState({
@@ -131,6 +135,45 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction, layout
     : `text-sm md:text-base mb-7 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`
   const toggleWrapClass = isPricingLayout ? 'mb-10 flex justify-center' : 'mb-8 flex justify-center'
   const packsGridClass = isPricingLayout ? 'grid grid-cols-1 md:grid-cols-3 gap-6' : 'grid grid-cols-1 md:grid-cols-3 gap-5'
+  const baseVoices = isEnglish
+    ? ['🎙️ 2 unlimited essential voices', '🌟 2 premium voices', '🎤 1 cloned voice included', '🎚️ Audio quality control', '🛟 Priority support']
+    : BASE_PLAN.voices
+  const baseFeatures = isEnglish
+    ? [
+        { icon: '\uD83C\uDFA8', label: 'Advanced filters' },
+        { icon: '\uD83E\uDD16', label: 'Smart filter' },
+        { icon: '\uD83D\uDC64', label: 'Change nickname' },
+        { icon: '\uD83D\uDD07', label: 'Mute users' },
+        { icon: '\uD83D\uDEE1\uFE0F', label: 'Anti-spam' },
+        { icon: '\uD83D\uDCCA', label: 'Analytics' }
+      ]
+    : BASE_PLAN.features
+  const localizedPacks = isEnglish
+    ? PACKS.map((pack) => {
+        if (pack.planId === 'pack_lite') {
+          return {
+            ...pack,
+            subtitle: 'One cloned character for your stream',
+            voices: '1 cloned voice included',
+            tokensDesc: 'Boost premium voices and AI characters. Optimize with filters and multiply performance up to 15x.'
+          }
+        }
+        if (pack.planId === 'pack_pro') {
+          return {
+            ...pack,
+            subtitle: 'Three cloned characters for your cast',
+            voices: '+3 cloned voices',
+            tokensDesc: 'Boost premium voices and AI characters. Optimize with filters and multiply performance up to 15x.'
+          }
+        }
+        return {
+          ...pack,
+          subtitle: 'Six cloned characters for your universe',
+          voices: '+6 cloned voices',
+          tokensDesc: 'Boost premium voices and AI characters. Optimize with filters and multiply performance up to 15x.'
+        }
+      })
+    : PACKS
 
   return (
     <div className="py-8">
@@ -150,32 +193,32 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction, layout
       `}</style>
       <div className="max-w-6xl mx-auto px-4">
         <h2 className={`text-base md:text-lg font-black mb-4 ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>
-          Plan Base - incluido en tu suscripción
+          {isEnglish ? 'Base Plan - included with your subscription' : 'Plan Base - incluido en tu suscripción'}
         </h2>
 
         <article className={`relative overflow-hidden rounded-2xl p-7 md:p-8 border ${darkMode ? 'bg-gradient-to-br from-[#141734] via-[#121633] to-[#10142f] border-cyan-400/40 shadow-[0_0_28px_rgba(34,211,238,0.14)]' : 'bg-white border-cyan-200 shadow-sm'}`}>
           <span className="pointer-events-none absolute -top-10 -right-10 h-28 w-28 rounded-full bg-cyan-400/20 blur-2xl animate-pulse" />
           <div className="mb-5 inline-flex rounded-full px-3 py-1 text-[11px] font-bold text-white bg-gradient-to-r from-cyan-500 to-blue-500">
-            EL MAS POPULAR
+            {isEnglish ? '🔥 MOST POPULAR' : 'EL MAS POPULAR'}
           </div>
 
-          <h3 className="text-[32px] leading-tight font-black mb-2">🎯 {baseLabel}</h3>
-          <p className={`text-base mb-5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{BASE_PLAN.subtitle}</p>
+          <h3 className="text-[32px] leading-tight font-black mb-2">{isEnglish ? `🎯 ${baseLabel}` : baseLabel}</h3>
+          <p className={`text-base mb-5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{isEnglish ? 'The perfect plan to start streaming with AI' : BASE_PLAN.subtitle}</p>
 
           <div className="mb-3 flex items-baseline gap-2">
             <span className="text-[44px] leading-none font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
               ${basePrice.toFixed(2)}
             </span>
-            <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>USD / {isAnnual ? 'ano' : 'mes'}</span>
+            <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>USD / {isAnnual ? (isEnglish ? 'year' : 'ano') : (isEnglish ? 'month' : 'mes')}</span>
           </div>
           <p className={`text-sm mb-6 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>~ {formatMxnApprox(basePrice)} MXN</p>
 
           <div className={`inline-block rounded-md px-3 py-2 mb-6 text-sm font-bold ${darkMode ? 'bg-cyan-500/10 border border-cyan-400/30 text-cyan-300' : 'bg-cyan-50 border border-cyan-200 text-cyan-700'}`}>
-            {BASE_PLAN.tokens}
+            {isEnglish ? '20,000 characters / month included' : BASE_PLAN.tokens}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-            {BASE_PLAN.voices.map((voice) => (
+            {baseVoices.map((voice) => (
               <div key={voice} className="flex items-center gap-2 text-sm">
                 <Check className="w-4 h-4 text-emerald-400" />
                 <span className={darkMode ? 'text-gray-200' : 'text-gray-700'}>{voice}</span>
@@ -184,7 +227,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction, layout
           </div>
 
           <div className="grid grid-cols-3 md:grid-cols-6 gap-2.5 mb-6">
-            {BASE_PLAN.features.map((feature) => (
+            {baseFeatures.map((feature) => (
               <div key={feature.label} className={`rounded-md px-2 py-2 text-center text-xs font-semibold ${darkMode ? 'bg-white/5 text-gray-200' : 'bg-cyan-50 text-gray-700'}`}>
                 <div className="text-sm">{feature.icon}</div>
                 {feature.label}
@@ -196,16 +239,16 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction, layout
             onClick={() => onPlanAction?.({ ...BASE_PLAN, name: baseLabel, price: basePrice, planId: 'base' }, { billingCycle, planId: 'base' })}
             className="w-full py-3.5 rounded-lg font-bold text-base text-white bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 transition-all hover:shadow-[0_0_18px_rgba(34,211,238,0.28)]"
           >
-            {isAnnual ? '🚀 Comprar Plan Base Anual' : '🚀 Comprar Plan Base'}
+            {isAnnual ? (isEnglish ? 'Buy Base Plan Annual' : 'Comprar Plan Base Anual') : (isEnglish ? 'Buy Base Plan' : 'Comprar Plan Base')}
           </button>
         </article>
 
         <section className={packsSectionClass}>
           <h2 className={packsTitleClass}>
-            Packs de voces clonadas - añade personajes a tu stream
+            {isEnglish ? 'Cloned voice packs - add characters to your stream' : 'Packs de voces clonadas - añade personajes a tu stream'}
           </h2>
           <p className={packsDescClass}>
-            Los packs son compras independientes que se suman a tu Plan Base. Combínalos para crear tu elenco de personajes con voz propia.
+            {isEnglish ? 'Packs are standalone purchases added to your Base Plan. Combine them to build your own cast of voiced characters.' : 'Los packs son compras independientes que se suman a tu Plan Base. Combínalos para crear tu elenco de personajes con voz propia.'}
           </p>
 
           {showToggle && (
@@ -214,21 +257,19 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction, layout
                 <button
                   onClick={() => setBillingCycle('monthly')}
                   className={`px-5 py-2.5 min-h-10 rounded-md text-base font-black ${billingCycle === 'monthly' ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                >
-                  Mensual
-                </button>
+                >{isEnglish ? 'Monthly' : 'Mensual'}</button>
                 <button
                   onClick={() => setBillingCycle('annual')}
                   className={`px-5 py-2.5 min-h-10 rounded-md text-base font-black ${billingCycle === 'annual' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}
                 >
-                  Anual (2 meses gratis)
+                  {isEnglish ? 'Annual (2 free months)' : 'Anual (2 meses gratis)'}
                 </button>
               </div>
             </div>
           )}
 
           <div className={packsGridClass}>
-            {PACKS.map((pack) => {
+            {localizedPacks.map((pack) => {
               const bundleWithBase = Boolean(bundleWithBaseByPlan[pack.planId])
               const comboPrice = BASE_PLAN.price + pack.price
               const activePrice = isAnnual ? pack.annualPrice : (bundleWithBase ? comboPrice : pack.price)
@@ -248,7 +289,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction, layout
                   <span className={`pointer-events-none absolute -top-10 -right-10 h-24 w-24 rounded-full blur-2xl opacity-60 animate-pulse ${pack.popular ? 'bg-pink-400/30' : 'bg-cyan-400/20'}`} />
                   {pack.popular && (
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex rounded-full px-3 py-1 text-[11px] font-bold text-white bg-gradient-to-r from-pink-500 to-rose-500" style={{ animation: 'svBadgeBlink 1.4s ease-in-out infinite' }}>
-                      ⭐ RECOMENDADO
+                      {isEnglish ? 'RECOMMENDED' : 'RECOMENDADO'}
                     </span>
                   )}
 
@@ -269,9 +310,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction, layout
                           type="button"
                           onClick={() => setBundleWithBaseByPlan((prev) => ({ ...prev, [pack.planId]: false }))}
                           className={`rounded-md px-3 py-2.5 min-h-10 text-xs font-bold ${!bundleWithBase ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white' : darkMode ? 'text-gray-300' : 'text-gray-700'}`}
-                        >
-                          Solo pack
-                        </button>
+                        >{isEnglish ? 'Pack only' : 'Solo pack'}</button>
                         <button
                           type="button"
                           onClick={() => setBundleWithBaseByPlan((prev) => ({ ...prev, [pack.planId]: true }))}
@@ -285,7 +324,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction, layout
 
                   <div className={`rounded-xl px-4 py-3 mb-3 text-white bg-gradient-to-r ${pack.voicesClass}`}>
                     <div className="text-xs font-semibold">{pack.voices}</div>
-                    <div className="text-xs opacity-90">Para usar voces premium y tus personajes</div>
+                    <div className="text-xs opacity-90">{isEnglish ? 'For premium voices and your characters' : 'Para usar voces premium y tus personajes'}</div>
                   </div>
 
                   <div className={`rounded-xl px-4 py-3 mb-3 ${darkMode ? 'bg-gray-700/35 border border-gray-600/70' : 'bg-gray-100 border border-gray-300'}`}>
@@ -304,7 +343,7 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction, layout
                     className={`w-full mt-auto py-3 rounded-lg font-bold text-sm text-white transition-all hover:shadow-[0_0_18px_rgba(56,189,248,0.28)] ${pack.buttonClass}`}
                     style={{ animation: 'svBadgeBlink 2s ease-in-out infinite' }}
                   >
-                    {isAnnual ? 'Elegir anual' : (bundleWithBase ? `Comprar ${pack.bundleName}` : `Agregar ${pack.name}`)}
+                    {isAnnual ? (isEnglish ? 'Choose annual' : 'Elegir anual') : (bundleWithBase ? (isEnglish ? `Buy ${pack.bundleName}` : `Comprar ${pack.bundleName}`) : (isEnglish ? `Add ${pack.name}` : `Agregar ${pack.name}`))}
                   </button>
                 </article>
               )
@@ -313,11 +352,15 @@ export function PricingCards({ darkMode, showToggle = true, onPlanAction, layout
         </section>
 
         <p className={`mt-4 text-xs text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          Los tiempos mostrados son estimaciones bajo condiciones promedio de uso.
+          {isEnglish ? 'Displayed times are estimates under average usage conditions.' : 'Los tiempos mostrados son estimaciones bajo condiciones promedio de uso.'}
         </p>
       </div>
     </div>
   )
 }
+
+
+
+
 
 

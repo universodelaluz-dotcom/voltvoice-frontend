@@ -14,7 +14,8 @@ const formatTimeMinutesSeconds = (ms) => {
 }
 
 export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, config, updateConfig, user, forceUnrestricted = false }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
   const resolveEffectiveUser = () => {
     if (user) return user
     try {
@@ -80,6 +81,9 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       normalized === 'pack_max' ||
       normalized === 'pack max' ||
       normalized === 'max' ||
+      normalized === 'maxx' ||
+      normalized === 'elite' ||
+      normalized === 'plan_elite' ||
       normalized === 'pack_max_monthly' ||
       normalized === 'pack_max_annual' ||
       normalized === 'max_monthly' ||
@@ -120,7 +124,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   const planKey = getActualPlan(effectiveUser)
   const PLAN_MAX_CLONED_VOICES = {
     free: 0,
-    base: 0,
+    base: 1,
     pack_lite: 1,
     pack_pro: 3,
     pack_max: 6,
@@ -482,7 +486,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     if (file) {
       const allowedMimes = ['audio/mpeg', 'audio/wav', 'audio/x-wav', 'video/mp4', 'video/x-msvideo', 'video/quicktime', 'video/x-matroska']
       if (!allowedMimes.some(mime => file.type.includes(mime.split('/')[0]))) {
-        setError('Formato de archivo no soportado. Usa video (MP4, AVI, MOV) o audio (MP3, WAV)')
+        setError(isEnglish ? 'Unsupported file format. Use video (MP4, AVI, MOV) or audio (MP3, WAV).' : 'Formato de archivo no soportado. Usa video (MP4, AVI, MOV) o audio (MP3, WAV)')
         return
       }
       if (file.size > 150 * 1024 * 1024) {
@@ -531,7 +535,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           endMs: data.duration,
           uploading: false
         }))
-        setMessage(`Archivo subido exitosamente. Duración: ${(data.duration / 1000).toFixed(1)}s`)
+        setMessage(isEnglish ? `File uploaded successfully. Duration: ${(data.duration / 1000).toFixed(1)}s` : `Archivo subido exitosamente. Duración: ${(data.duration / 1000).toFixed(1)}s`)
         setTimeout(() => setMessage(null), 3000)
       } else {
         setError(data.error || t('voiceClone.errors.upload'))
@@ -693,7 +697,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     <div className={`${darkMode ? 'bg-[#1a1a2e] border border-cyan-400/30 rounded-lg p-6' : 'bg-white border border-indigo-200 rounded-lg p-6 shadow-sm'}`}>
       <div className="flex items-center gap-3 mb-4">
         <Mic2 className="w-6 h-6 text-purple-400" />
-        <h2 className={darkMode ? 'text-xl font-bold text-white' : 'text-xl font-bold text-gray-900'}>Mis Voces Creadas</h2>
+        <h2 className={darkMode ? 'text-xl font-bold text-white' : 'text-xl font-bold text-gray-900'}>{t('bot.myClonedVoices')}</h2>
         <span className={`ml-auto text-xs font-semibold px-2 py-1 rounded-full ${darkMode ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-50 text-purple-600'}`}>
           {voices.length}/{maxVoicesAllowed}
         </span>
@@ -763,7 +767,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         <div className="space-y-4">
           {voices.length === 0 && (
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Aun no tienes voces clonadas para probar.
+              {isEnglish ? "You don't have cloned voices to test yet." : 'Aún no tienes voces clonadas para probar.'}
             </p>
           )}
           <div>
@@ -781,7 +785,9 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
             </select>
           </div>
           <div>
-            <label className={darkMode ? 'block text-sm font-medium text-cyan-300 mb-2' : 'block text-sm font-medium text-indigo-600 mb-2'}>Escribe un texto para probar</label>
+            <label className={darkMode ? 'block text-sm font-medium text-cyan-300 mb-2' : 'block text-sm font-medium text-indigo-600 mb-2'}>
+              {isEnglish ? 'Write text to test' : 'Escribe un texto para probar'}
+            </label>
             <textarea
               value={testText}
               onChange={(e) => setTestText(e.target.value)}
@@ -790,7 +796,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
               className={darkMode ? 'w-full bg-[#0f0f23] border border-cyan-400/30 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-400 min-h-20' : 'w-full bg-gray-50 border border-indigo-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-indigo-500 min-h-20'}
             />
             <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              {testText.length} caracteres · 1 token = 1 caracter
+              {isEnglish ? `${testText.length} characters · 1 token = 1 character` : `${testText.length} caracteres · 1 token = 1 caracter`}
             </p>
           </div>
           <button
@@ -802,7 +808,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
           </button>
           {testAudioUrl && (
             <div className={darkMode ? 'bg-gray-800/60 border border-gray-700/50 rounded-lg p-4' : 'bg-gray-50 border border-gray-200 rounded-lg p-4'}>
-              <p className={`text-sm mb-2 ${darkMode ? 'text-cyan-300' : 'text-gray-700'}`}>Escucha el resultado:</p>
+              <p className={`text-sm mb-2 ${darkMode ? 'text-cyan-300' : 'text-gray-700'}`}>{isEnglish ? 'Listen to the result:' : 'Escucha el resultado:'}</p>
               <audio
                 key={testAudioUrl}
                 ref={testAudioRef}
@@ -956,9 +962,9 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
 
           {/* Requerimientos */}
           <div className={darkMode ? "text-xs text-gray-400 space-y-1" : "text-xs text-gray-500 space-y-1"}>
-            <p>Duración ideal: 10-15 segundos (máx. 15 seg)</p>
-            <p>Audio claro, sin ruido de fondo ni música</p>
-            <p>Formato: MP3 o WAV</p>
+            <p>{isEnglish ? 'Ideal duration: 10-15 seconds (max. 15 sec)' : 'Duración ideal: 10-15 segundos (máx. 15 seg)'}</p>
+            <p>{isEnglish ? 'Clear audio, no background noise or music' : 'Audio claro, sin ruido de fondo ni música'}</p>
+            <p>{isEnglish ? 'Format: MP3 or WAV' : 'Formato: MP3 o WAV'}</p>
           </div>
 
           {/* Submit */}
@@ -1027,7 +1033,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                 <div className="space-y-3">
                   <div>
                     <label className={darkMode ? "block text-sm font-medium text-gray-300 mb-2" : "block text-sm font-medium text-gray-700 mb-2"}>
-                      Video o Audio (Máx 150MB, 10 min)
+                      {isEnglish ? 'Video or Audio (Max 150MB, 10 min)' : 'Video o Audio (Máx 150MB, 10 min)'}
                     </label>
                     <div className="relative">
                       <input
@@ -1240,7 +1246,7 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                         onChange={(e) => setStudioPro(prev => ({ ...prev, langCode: e.target.value }))}
                         className={darkMode ? "w-full bg-[#0f0f23] border border-cyan-400/30 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-400" : "w-full bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 text-sm focus:outline-none focus:border-orange-400"}
                       >
-                        <option value="ES_ES">Español</option>
+                        <option value="ES_ES">{isEnglish ? 'Spanish' : 'Español'}</option>
                         <option value="EN_US">English (USA)</option>
                         <option value="EN_GB">English (UK)</option>
                         <option value="PT_BR">Português</option>

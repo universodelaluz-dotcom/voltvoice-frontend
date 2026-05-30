@@ -120,6 +120,13 @@ const removeEmojis = (text) => {
   return text.replace(emojiFullRegex, '').trim()
 }
 
+// Elimina shortcodes de emoji estilo :face-green-smiling: o :red-heart: (YouTube/Discord/etc.)
+// Se aplica siempre porque la voz los lee literalmente como texto.
+const removeEmojiShortcodes = (text = '') => String(text || '')
+  .replace(/:[a-z][a-z0-9-]{1,50}:/gi, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
 const removeTikTokEmojiTags = (text = '') => String(text || '')
   // TikTok suele enviar algunos emotes como tokens: [heart] [thumb] [laughcry]
   // Incluye variaciones como :[laughcry] y nombres no estandar de emotes LIVE/subs.
@@ -283,11 +290,6 @@ const hasExcessiveNumericNoise = (text = '') => {
   const hasManyNumericChunks = (raw.match(/\d{2,}/g) || []).length >= 3
   return digitMatches.length >= 6 && (digitRatio >= 0.4 || hasLongNumericChunks || hasManyNumericChunks)
 }
-
-// Bloquea scripts de texto no-latinos (árabe, georgiano, CJK, cirílico, etc.)
-// PERMITE emojis, símbolos, puntuación, acentos latinos (á é í ó ú ü ñ), ASCII
-const hasForeignScript = (text = '') =>
-  /[Ͱ-ϿЀ-ԯ֐-ݿऀ-෿฀-࿿က-႟Ⴀ-ჿᄀ-ᇿሀ-፿Ꭰ-᏿぀-ヿ㐀-鿿가-힯ﭐ-﷿ﹰ-﻿]/u.test(text)
 
 const extractKeywords = (text = '') => {
   const stopwords = new Set(['que', 'como', 'para', 'pero', 'porque', 'por', 'con', 'sin', 'una', 'unos', 'unas', 'the', 'and', 'you', 'y', 'de', 'del', 'las', 'los', 'pero', 'esta', 'este', 'eso', 'esa', 'al', 'el', 'la', 'un', 'me', 'te', 'se', 'lo', 'le'])
@@ -556,7 +558,8 @@ const getPlanBadgeLabel = (planTier, billingCycle = 'monthly') => {
 }
 
 export default function TikTokLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride, platformMode = 'tiktok', tokens = 0, setTokens = null }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
   const isYouTubeMode = platformMode === 'youtube'
   const platformConnectPlaceholder = isYouTubeMode ? 'Canal de YouTube (ej. @canal)' : t('tiktok.connect.placeholderWithExample')
   const platformSessionLabel = isYouTubeMode ? 'Sesion YouTube' : t('tiktok.panel.sessionTab')
@@ -1062,7 +1065,6 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       if (!isQuestionMsg) { markFilteredMessage(); return }
     }
 
-    if (hasForeignScript(messageForRead)) { markFilteredMessage(); return }
     const profanityFilterEnabled = isEnabledFlag(c.profanityFilterEnabled)
     if (profanityFilterEnabled) {
       const profanityWords = parseProfanityWords(c.profanityWords)
@@ -1099,7 +1101,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
     const smartMetrics = smartChatActive ? getSmartMetrics() : null
 
-    let textToProcess = messageForRead
+    let textToProcess = removeEmojiShortcodes(messageForRead)
     const shouldSanitizeEmojiTags = smartChatActive || c.stripChatEmojis || c.ignoreExcessiveEmojis
     if (shouldSanitizeEmojiTags) {
       textToProcess = removeTikTokEmojiTags(textToProcess)
@@ -1442,7 +1444,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       return
     }
 
+    // Al reanudar: limpiar todo lo acumulado durante la pausa y empezar solo con mensajes nuevos.
+    markPlayingMessagesAsDone()
+    speakQueueRef.current = []
     isProcessingRef.current = false
+    stopPlaybackNow()
     processQueue()
   }, [isPaused])
   // Si cambia la voz, solo detener audio actual - NO borrar cola
@@ -2139,7 +2145,6 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
           const onlySubscribers = isEnabledFlag(c.onlySubscribers)
           const onlyCommunityMembers = isEnabledFlag(c.onlyCommunityMembers)
           const onlyQuestions = isEnabledFlag(c.onlyQuestions)
-
           const roleFiltersActive = onlyDonors || onlyModerators || onlySubscribers || onlyCommunityMembers
           const isQuestionMsg = isQuestion(messageForRead)
 
@@ -2164,7 +2169,6 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             // Solo filtro de preguntas: pasa si es pregunta
             if (!isQuestionMsg) { markFilteredMessage(); return }
           }
-          if (hasForeignScript(messageForRead)) { markFilteredMessage(); return }
           const profanityFilterEnabled = isEnabledFlag(c.profanityFilterEnabled)
           if (profanityFilterEnabled) {
             const profanityWords = parseProfanityWords(c.profanityWords)
@@ -2826,14 +2830,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         markFilteredMessage()
         continue
       }
-      const contentToValidate = item.sourceText || item.rawText || item.text || ''
-      if (hasForeignScript(contentToValidate)) {
-        console.log('[TikTok] processQueue: DROP por script no-latino')
-        markFilteredMessage()
-        continue
-      }
       if (profanityFilterEnabled) {
         const profanityWords = parseProfanityWords(c.profanityWords)
+        const contentToValidate = item.sourceText || item.rawText || item.text || ''
         if (containsProfanity(contentToValidate, profanityWords)) {
           console.log('[TikTok] processQueue: DROP por filtro de palabrotas')
           markFilteredMessage()
@@ -4642,7 +4641,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
               {/* Color Nick */}
               <div>
-                <p className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Nick</p>
+                <p className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{isEnglish ? 'Nick' : 'Nick'}</p>
                 <div className="grid grid-cols-5 gap-1.5">
                   {['#22d3ee','#a855f7','#f59e0b','#ef4444','#22c55e','#3b82f6','#ec4899','#f97316','#ffffff','#94a3b8'].map(c => (
                     <button key={c} onClick={() => setChatNickColor(c)}
@@ -4655,7 +4654,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
               {/* Color Mensaje */}
               <div>
-                <p className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Mensaje</p>
+                <p className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{isEnglish ? 'Message' : 'Mensaje'}</p>
                 <div className="grid grid-cols-5 gap-1.5">
                   {['#ffffff','#d1d5db','#94a3b8','#22d3ee','#a855f7','#f59e0b','#22c55e','#3b82f6','#ec4899','#f97316'].map(c => (
                     <button key={c} onClick={() => setChatMsgColor(c)}
@@ -4668,8 +4667,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
               {/* Preview */}
               <div className={`rounded-lg p-2.5 border ${darkMode ? 'bg-[#0f0f23] border-white/10' : 'bg-slate-50 border-slate-200'}`} style={{ fontSize: `${chatFontSize}px` }}>
-                <span style={{ color: chatNickColor }} className="font-bold">NickEjemplo: </span>
-                <span style={{ color: chatMsgColor }}>Hola, mensaje de prueba!</span>
+                <span style={{ color: chatNickColor }} className="font-bold">{isEnglish ? 'NickExample: ' : 'NickEjemplo: '}</span>
+                <span style={{ color: chatMsgColor }}>{isEnglish ? 'Hello, test message!' : 'Hola, mensaje de prueba!'}</span>
               </div>
             </div>
           )}
@@ -4689,11 +4688,11 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               {/* Reglas por tipo */}
               {[
                 { key: 'moderators', label: t('tiktok.highlight.moderators') },
-                { key: 'donors', label: 'Donadores' },
-                { key: 'subscribers', label: 'Suscriptores' },
-                { key: 'communityMembers', label: 'Miembros de comunidad' },
+                { key: 'donors', label: isEnglish ? 'Donors' : 'Donadores' },
+                { key: 'subscribers', label: isEnglish ? 'Subscribers' : 'Suscriptores' },
+                { key: 'communityMembers', label: isEnglish ? 'Community members' : 'Miembros de comunidad' },
                 { key: 'topFans', label: 'Top Fans / Gifters' },
-                { key: 'banned', label: 'Baneados (silenciados)' },
+                { key: 'banned', label: isEnglish ? 'Banned (silenced)' : 'Baneados (silenciados)' },
               ].map(({ key, label }) => {
                 const rule = highlightRules[key] || defaultHighlightRules[key]
                 return (
@@ -4745,7 +4744,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                     darkMode ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30' : 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300'
                   }`}
                 >
-                  [TEST] Probar resaltado (mensajes de prueba)
+                  {isEnglish ? '[TEST] Test highlight (sample messages)' : '[TEST] Probar resaltado (mensajes de prueba)'}
                 </button>
               </div>
 
@@ -4766,7 +4765,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                     }`}
                   >
                     <Highlighter className="w-3 h-3" />
-                    {highlightMode ? 'Seleccionando...' : 'Click en nick'}
+                    {highlightMode ? (isEnglish ? 'Selecting...' : 'Seleccionando...') : (isEnglish ? 'Click a nickname' : 'Click en nick')}
                   </button>
                   <div className="flex gap-1">
                     {['#06b6d4', '#a855f7', '#f59e0b', '#ef4444', '#22c55e', '#3b82f6', '#ec4899'].map(c => (
@@ -4785,7 +4784,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                       onClick={() => setHighlightedUsers({})}
                       className="text-[10px] text-gray-400 hover:text-red-400 ml-auto"
                     >
-                      Limpiar todo
+                      {isEnglish ? 'Clear all' : 'Limpiar todo'}
                     </button>
                   )}
                 </div>

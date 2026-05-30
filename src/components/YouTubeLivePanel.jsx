@@ -120,6 +120,13 @@ const removeEmojis = (text) => {
   return text.replace(emojiFullRegex, '').trim()
 }
 
+// Elimina shortcodes de emoji estilo :face-green-smiling: o :red-heart: (YouTube/Discord/etc.)
+// Se aplica siempre porque la voz los lee literalmente como texto.
+const removeEmojiShortcodes = (text = '') => String(text || '')
+  .replace(/:[a-z][a-z0-9-]{1,50}:/gi, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
 const removeTikTokEmojiTags = (text = '') => String(text || '')
   // TikTok suele enviar algunos emotes como tokens: [heart] [thumb] [laughcry]
   // Incluye variaciones como :[laughcry] y nombres no estandar de emotes LIVE/subs.
@@ -283,11 +290,6 @@ const hasExcessiveNumericNoise = (text = '') => {
   const hasManyNumericChunks = (raw.match(/\d{2,}/g) || []).length >= 3
   return digitMatches.length >= 6 && (digitRatio >= 0.4 || hasLongNumericChunks || hasManyNumericChunks)
 }
-
-// Bloquea scripts de texto no-latinos (árabe, georgiano, CJK, cirílico, etc.)
-// PERMITE emojis, símbolos, puntuación, acentos latinos (á é í ó ú ü ñ), ASCII
-const hasForeignScript = (text = '') =>
-  /[Ͱ-ϿЀ-ԯ֐-ݿऀ-෿฀-࿿က-႟Ⴀ-ჿᄀ-ᇿሀ-፿Ꭰ-᏿぀-ヿ㐀-鿿가-힯ﭐ-﷿ﹰ-﻿]/u.test(text)
 
 const extractKeywords = (text = '') => {
   const stopwords = new Set(['que', 'como', 'para', 'pero', 'porque', 'por', 'con', 'sin', 'una', 'unos', 'unas', 'the', 'and', 'you', 'y', 'de', 'del', 'las', 'los', 'pero', 'esta', 'este', 'eso', 'esa', 'al', 'el', 'la', 'un', 'me', 'te', 'se', 'lo', 'le'])
@@ -556,7 +558,8 @@ const getPlanBadgeLabel = (planTier, billingCycle = 'monthly') => {
 }
 
 export default function YouTubeLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride, platformMode = 'tiktok', tokens = 0, setTokens = null }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
   const isYouTubeMode = platformMode === 'youtube'
   const platformConnectPlaceholder = isYouTubeMode ? 'Canal de YouTube (ej. @canal)' : t('tiktok.connect.placeholderWithExample')
   const platformSessionLabel = isYouTubeMode ? 'Sesion YouTube' : t('tiktok.panel.sessionTab')
@@ -1073,7 +1076,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
     const readByCommandEnabled = isEnabledFlag(c.readByCommandEnabled)
     const configuredCommandPrefix = String(c.readByCommandPrefix || 'bot/').trim() || 'bot/'
     const commandRead = parseCommandReadMessage(String(msg.text || ''), configuredCommandPrefix)
-    const messageForRead = readByCommandEnabled ? commandRead.payload : String(msg.text || '')
+    let messageForRead = readByCommandEnabled ? commandRead.payload : String(msg.text || '')
     const username = String(msg.username || msg.user || 'usuario')
     const nickname = String(msg.nickname || msg.user || username)
 
@@ -1084,14 +1087,39 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
     if (!messageForRead.trim()) { markFilteredMessage(); return }
 
     const onlyDonors = isEnabledFlag(c.onlyDonors)
+    const onlySuperChatMessages = isEnabledFlag(c.onlySuperChatMessages)
     const onlyModerators = isEnabledFlag(c.onlyModerators)
     const onlySubscribers = isEnabledFlag(c.onlySubscribers)
     const onlyCommunityMembers = isEnabledFlag(c.onlyCommunityMembers)
     const onlyQuestions = isEnabledFlag(c.onlyQuestions)
-    const roleFiltersActive = onlyDonors || onlyModerators || onlySubscribers || onlyCommunityMembers
+
+    // En donaciones de YouTube (Super Chat/Sticker), evitar que el TTS lea montos/cantidades.
+    if (!!msg.isDonor) {
+      messageForRead = messageForRead
+        .replace(/sent\s+[\$€£¥₩₹]?\s?\d[\d.,]*\s+(through|via)\s+super\s*chat!?/gi, '')
+        .replace(/envi[oó]\s+[\$€£¥₩₹]?\s?\d[\d.,]*\s+(por|en)\s+super\s*chat!?/gi, '')
+        .replace(/super\s*chat\s*[\$€£¥₩₹]?\s?\d[\d.,]*/gi, 'super chat')
+        .replace(/super\s*sticker\s*[\$€£¥₩₹]?\s?\d[\d.,]*/gi, 'super sticker')
+        .replace(/[$€£¥₩₹]\s?\d[\d.,]*/g, '')
+        .replace(/\b\d[\d.,]*\s?(usd|mxn|eur|cop|ars|clp|pen|brl)\b/gi, '')
+        .replace(/\b\d[\d.,]*\b/g, (m) => (m.length >= 3 ? '' : m))
+        .replace(/\s{2,}/g, ' ')
+        .replace(/\s+([,.:;!?])/g, '$1')
+        .trim()
+
+      // Si el superchat/supersticker no trae mensaje real, no se lee.
+      const donorNormalized = messageForRead.toLowerCase().replace(/\s+/g, ' ').trim()
+      if (!donorNormalized || donorNormalized === 'super chat' || donorNormalized === 'super sticker') {
+        markFilteredMessage()
+        return
+      }
+    }
+
+    const roleFiltersActive = onlyDonors || onlySuperChatMessages || onlyModerators || onlySubscribers || onlyCommunityMembers
     const isQuestionMsg = isQuestion(messageForRead)
     const passRoleFilter =
       (onlyDonors && isKnownDonor) ||
+      (onlySuperChatMessages && !!msg.isDonor) ||
       (onlyModerators && !!msg.isModerator) ||
       (onlySubscribers && !!msg.isSubscriber) ||
       (onlyCommunityMembers && !!msg.isCommunityMember)
@@ -1104,7 +1132,6 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
       if (!isQuestionMsg) { markFilteredMessage(); return }
     }
 
-    if (hasForeignScript(messageForRead)) { markFilteredMessage(); return }
     const profanityFilterEnabled = isEnabledFlag(c.profanityFilterEnabled)
     if (profanityFilterEnabled) {
       const profanityWords = parseProfanityWords(c.profanityWords)
@@ -1141,7 +1168,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
 
     const smartMetrics = smartChatActive ? getSmartMetrics() : null
 
-    let textToProcess = messageForRead
+    let textToProcess = removeEmojiShortcodes(messageForRead)
     const shouldSanitizeEmojiTags = smartChatActive || c.stripChatEmojis || c.ignoreExcessiveEmojis
     if (shouldSanitizeEmojiTags) {
       textToProcess = removeTikTokEmojiTags(textToProcess)
@@ -1416,6 +1443,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
             nickname: item.nickname || item.user,
             text: item.text,
             timestamp: item.timestamp,
+            isDonor: !!item.isDonor,
             isModerator: !!item.isModerator,
             isSubscriber: !!item.isSubscriber,
             isCommunityMember: !!item.isCommunityMember,
@@ -1485,7 +1513,11 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
       return
     }
 
+    // Al reanudar: limpiar todo lo acumulado durante la pausa y empezar solo con mensajes nuevos.
+    markPlayingMessagesAsDone()
+    speakQueueRef.current = []
     isProcessingRef.current = false
+    stopPlaybackNow()
     processQueue()
   }, [isPaused])
   // Si cambia la voz, solo detener audio actual - NO borrar cola
@@ -1813,6 +1845,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
 
   // Conectar a WebSocket cuando el usuario se conecte a TikTok
   useEffect(() => {
+    if (isYouTubeMode) return
     if (!isConnected || !connectedTikTokUser) return
 
     let isCleaningUp = false
@@ -2178,17 +2211,19 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
           // PUNTO 4: Filtros de rol - trabajan como OR entre si (pasa si cumple CUALQUIERA)
           // Ejemplo: donor + moderador = lee a cualquiera de los dos, no a ambos a la vez
           const onlyDonors = isEnabledFlag(c.onlyDonors)
+          const onlySuperChatMessages = isEnabledFlag(c.onlySuperChatMessages)
           const onlyModerators = isEnabledFlag(c.onlyModerators)
           const onlySubscribers = isEnabledFlag(c.onlySubscribers)
           const onlyCommunityMembers = isEnabledFlag(c.onlyCommunityMembers)
           const onlyQuestions = isEnabledFlag(c.onlyQuestions)
 
-          const roleFiltersActive = onlyDonors || onlyModerators || onlySubscribers || onlyCommunityMembers
+          const roleFiltersActive = onlyDonors || onlySuperChatMessages || onlyModerators || onlySubscribers || onlyCommunityMembers
           const isQuestionMsg = isQuestion(messageForRead)
 
           // Calcula si pasa filtro de rol: cumple CUALQUIERA de los roles activos (OR lógico)
           const passRoleFilter =
             (onlyDonors && isKnownDonor) ||
+            (onlySuperChatMessages && !!msg.isDonor) ||
             (onlyModerators && msg.isModerator) ||
             (onlySubscribers && (msg.isSubscriber || false)) ||
             (onlyCommunityMembers && msg.isCommunityMember)
@@ -2207,7 +2242,6 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
             // Solo filtro de preguntas: pasa si es pregunta
             if (!isQuestionMsg) { markFilteredMessage(); return }
           }
-          if (hasForeignScript(messageForRead)) { markFilteredMessage(); return }
           const profanityFilterEnabled = isEnabledFlag(c.profanityFilterEnabled)
           if (profanityFilterEnabled) {
             const profanityWords = parseProfanityWords(c.profanityWords)
@@ -2360,7 +2394,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
       }
       wsRef.current = null
     }
-  }, [isConnected, connectedTikTokUser])
+  }, [isYouTubeMode, isConnected, connectedTikTokUser])
 
   // Timer local de uptime - sube 1 segundo cada segundo mientras esta conectado
   useEffect(() => {
@@ -2843,17 +2877,19 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
       const remaining = speakQueueRef.current.length
       const c = configRef.current
       const onlyDonors = isEnabledFlag(c.onlyDonors)
+      const onlySuperChatMessages = isEnabledFlag(c.onlySuperChatMessages)
       const onlyModerators = isEnabledFlag(c.onlyModerators)
       const onlySubscribers = isEnabledFlag(c.onlySubscribers)
       const onlyCommunityMembers = isEnabledFlag(c.onlyCommunityMembers)
       const onlyQuestions = isEnabledFlag(c.onlyQuestions)
       const profanityFilterEnabled = isEnabledFlag(c.profanityFilterEnabled)
       const roleFiltersActive =
-        onlyDonors || onlyModerators || onlySubscribers || onlyCommunityMembers
+        onlyDonors || onlySuperChatMessages || onlyModerators || onlySubscribers || onlyCommunityMembers
       if (roleFiltersActive) {
         const normalizedItemUsername = normalizeTikTokUsername(username)
         const passRoleFilter =
           (onlyDonors && (item.isDonor || donors.has(username) || donors.has(normalizedItemUsername))) ||
+          (onlySuperChatMessages && item.isDonor) ||
           (onlyModerators && item.isModerator) ||
           (onlySubscribers && item.isSubscriber) ||
           (onlyCommunityMembers && item.isCommunityMember)
@@ -2869,14 +2905,9 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
         markFilteredMessage()
         continue
       }
-      const contentToValidate = item.sourceText || item.rawText || item.text || ''
-      if (hasForeignScript(contentToValidate)) {
-        console.log('[YouTube] processQueue: DROP por script no-latino')
-        markFilteredMessage()
-        continue
-      }
       if (profanityFilterEnabled) {
         const profanityWords = parseProfanityWords(c.profanityWords)
+        const contentToValidate = item.sourceText || item.rawText || item.text || ''
         if (containsProfanity(contentToValidate, profanityWords)) {
           console.log('[TikTok] processQueue: DROP por filtro de palabrotas')
           markFilteredMessage()
@@ -4089,7 +4120,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
             <div className="flex-1">
               <div
                 style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain' }}
-                className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-64 overflow-y-auto space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-64 overflow-y-auto space-y-2"}
+                className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-4 h-64 overflow-y-auto overflow-x-hidden space-y-2" : "bg-gray-50 border border-indigo-200 rounded-lg p-4 h-64 overflow-y-auto overflow-x-hidden space-y-2"}
               >
                 {messages.length === 0 ? (
                   <div className="text-center text-gray-400 py-8">
@@ -4122,7 +4153,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                           )}
                         </button>
                       </div>
-                      <p style={{ color: chatMsgColor, fontSize: `${chatFontSize}px` }}>{msg.text}</p>
+                      <p className="break-words [overflow-wrap:anywhere]" style={{ color: chatMsgColor, fontSize: `${chatFontSize}px` }}>{msg.text}</p>
                     </div>
                   ))
                 )}
@@ -4268,7 +4299,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                         <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
                       </span>
                     </div>
-                    <p className="text-sm leading-snug line-clamp-2">
+                    <p className="text-sm leading-snug line-clamp-2 break-words [overflow-wrap:anywhere]">
                       <span className="font-bold mr-1" style={{ color: chatNickColor }}>
                         {getNickOverrideValue(nickOverrides, currentReadingMessage.user) || currentReadingMessage.nickname || currentReadingMessage.user}:
                       </span>
@@ -4292,7 +4323,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                 <div
                   ref={chatContainerRef}
                   style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain', height: 'clamp(220px, 35vh, calc(100vh - 380px))', minHeight: '220px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                  className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-3 overflow-y-auto space-y-1" : "bg-gray-50 border border-indigo-200 rounded-lg p-3 overflow-y-auto space-y-1"}
+                  className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-3 overflow-y-auto overflow-x-hidden space-y-1" : "bg-gray-50 border border-indigo-200 rounded-lg p-3 overflow-y-auto overflow-x-hidden space-y-1"}
                 >
                   {messages.length === 0 ? (
                     <div className="text-center text-gray-400 py-8">
@@ -4492,7 +4523,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                       </span>
                     )}
                   </div>
-                  <p className={msg.status === 'playing' ? "font-medium" : ""}
+                  <p className={`${msg.status === 'playing' ? "font-medium" : ""} break-words [overflow-wrap:anywhere]`}
                     style={{ color: chatMsgColor }}
                   >{msg.text}</p>
                 </div>
@@ -4701,7 +4732,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
 
               {/* Color Mensaje */}
               <div>
-                <p className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Mensaje</p>
+                <p className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{isEnglish ? 'Message' : 'Mensaje'}</p>
                 <div className="grid grid-cols-5 gap-1.5">
                   {['#ffffff','#d1d5db','#94a3b8','#22d3ee','#a855f7','#f59e0b','#22c55e','#3b82f6','#ec4899','#f97316'].map(c => (
                     <button key={c} onClick={() => setChatMsgColor(c)}
@@ -4714,8 +4745,8 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
 
               {/* Preview */}
               <div className={`rounded-lg p-2.5 border ${darkMode ? 'bg-[#0f0f23] border-white/10' : 'bg-slate-50 border-slate-200'}`} style={{ fontSize: `${chatFontSize}px` }}>
-                <span style={{ color: chatNickColor }} className="font-bold">NickEjemplo: </span>
-                <span style={{ color: chatMsgColor }}>Hola, mensaje de prueba!</span>
+                <span style={{ color: chatNickColor }} className="font-bold">{isEnglish ? 'NickExample: ' : 'NickEjemplo: '}</span>
+                <span style={{ color: chatMsgColor }}>{isEnglish ? 'Hello, test message!' : 'Hola, mensaje de prueba!'}</span>
               </div>
             </div>
           )}
@@ -4727,18 +4758,18 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
             }`}>
               <div className="flex items-center justify-between">
                 <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-amber-400/80' : 'text-amber-600'}`}>
-                  Remarcar por tipo (YouTube)
+                  {isEnglish ? 'Highlight by type (YouTube)' : 'Remarcar por tipo (YouTube)'}
                 </span>
                 <button onClick={() => setShowHighlightPanel(false)} className="text-gray-400 hover:text-gray-200"><X className="w-3.5 h-3.5" /></button>
               </div>
 
               {/* Reglas por tipo */}
               {[
-                { key: 'moderators', label: 'Moderadores' },
-                { key: 'donors', label: 'Super Chat / Sticker' },
-                { key: 'subscribers', label: 'Suscriptores del canal' },
-                { key: 'communityMembers', label: 'Miembros chateando' },
-                { key: 'banned', label: 'Silenciados' },
+                { key: 'moderators', label: isEnglish ? 'Moderators' : 'Moderadores' },
+                { key: 'donors', label: isEnglish ? 'Super Chat / Sticker' : 'Super Chat / Sticker' },
+                { key: 'subscribers', label: isEnglish ? 'Channel subscribers' : 'Suscriptores del canal' },
+                { key: 'communityMembers', label: isEnglish ? 'Chatting members' : 'Miembros chateando' },
+                { key: 'banned', label: isEnglish ? 'Silenced users' : 'Silenciados' },
               ].map(({ key, label }) => {
                 const rule = highlightRules[key] || defaultHighlightRules[key]
                 return (
@@ -4789,7 +4820,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                     darkMode ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30' : 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300'
                   }`}
                 >
-                  [TEST] Probar resaltado (YouTube)
+                  {isEnglish ? '[TEST] Test highlight (YouTube)' : '[TEST] Probar resaltado (YouTube)'}
                 </button>
               </div>
 
@@ -4810,7 +4841,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                     }`}
                   >
                     <Highlighter className="w-3 h-3" />
-                    {highlightMode ? 'Seleccionando...' : 'Click en nick'}
+                    {highlightMode ? (isEnglish ? 'Selecting...' : 'Seleccionando...') : (isEnglish ? 'Click a nickname' : 'Click en nick')}
                   </button>
                   <div className="flex gap-1">
                     {['#06b6d4', '#a855f7', '#f59e0b', '#ef4444', '#22c55e', '#3b82f6', '#ec4899'].map(c => (
@@ -4829,7 +4860,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                       onClick={() => setHighlightedUsers({})}
                       className="text-[10px] text-gray-400 hover:text-red-400 ml-auto"
                     >
-                      Limpiar todo
+                      {isEnglish ? 'Clear all' : 'Limpiar todo'}
                     </button>
                   )}
                 </div>
