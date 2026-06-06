@@ -2596,8 +2596,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     // PRIORIDAD 0: Voz personalizada por usuario (MÁXIMA PRIORIDAD)
     if (canUseAdvancedVoiceTools && c.userVoiceAssignments && c.userVoiceAssignments.length > 0) {
       // Normalizar username: quitar @ si lo tiene para comparación
-      const normalizedUsername = username.toLowerCase().replace(/^@+/, '')
-      const userAssignment = c.userVoiceAssignments.find(a => a.username.toLowerCase() === normalizedUsername)
+      const normalizedUsername = username ? username.toLowerCase().replace(/^@+/, '') : ''
+      const userAssignment = normalizedUsername ? c.userVoiceAssignments.find(a => a.username && a.username.toLowerCase() === normalizedUsername) : null
       if (userAssignment) {
         console.log(`[Voice Priority] User custom voice used for "${username}": "${userAssignment.voiceId}"`)
         return userAssignment.voiceId
@@ -2788,6 +2788,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     console.log('[TikTok] processQueue: ALL GUARDS PASSED - starting queue processing')
     isProcessingRef.current = true
 
+    try {
     while (speakQueueRef.current.length > 0) {
       if (disconnectedRef.current) break
       if (isPausedRef.current || isAudioSuppressed()) break
@@ -3110,20 +3111,27 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         } else {
           // No hay pre-generado, hacer request directo
           console.log('[Pre-gen] [NEW] Generando nuevo para', item.username)
-          response = await fetch(`${API_URL}/api/tiktok/message`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
-            },
-            body: JSON.stringify({
-              username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
-              messageUsername: username,
-              messageText: text,
-              voiceId
+          const abortCtrl = new AbortController()
+          const abortTimeout = setTimeout(() => abortCtrl.abort(), 15000)
+          try {
+            response = await fetch(`${API_URL}/api/tiktok/message`, {
+              method: 'POST',
+              signal: abortCtrl.signal,
+              headers: {
+                'Content-Type': 'application/json',
+                ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+              },
+              body: JSON.stringify({
+                username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
+                messageUsername: username,
+                messageText: text,
+                voiceId
+              })
             })
-          })
-          data = await response.json()
+            data = await response.json()
+          } finally {
+            clearTimeout(abortTimeout)
+          }
           // Refrescar tokens después de síntesis de voz premium
           if (response.ok && data?.audio && !data?.fallback && !data?.useLocalVoice) {
             setTimeout(() => refreshTokenBalance(), 100)
@@ -3329,8 +3337,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         await new Promise((r) => setTimeout(r, 220))
       }
     }
-
-    isProcessingRef.current = false
+    } finally {
+      isProcessingRef.current = false
+    }
   }
 
   const handleConnect = async (e) => {

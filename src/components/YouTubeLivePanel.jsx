@@ -300,7 +300,7 @@ const extractKeywords = (text = '') => {
 }
 
 // Obtener token del localStorage
-const getAuthToken = () => sessionStorage.getItem('sv-token') || ''
+const getAuthToken = () => sessionStorage.getItem('sv-token') || localStorage.getItem('sv-token-persist') || ''
 
 const defaultHighlightRules = {
   moderators: { enabled: false, color: '#a855f7' },
@@ -982,6 +982,8 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
   const sessionUserCountsRef = useRef({})
   const sessionPeakMessagesPerMinuteRef = useRef(0)
   const youtubePollTimerRef = useRef(null)
+  const youtubeStreamUrlRef = useRef(youtubeStreamUrl)
+  const youtubeAutoReconnectAttemptsRef = useRef(0)
   const youtubeSeenIdsRef = useRef(new Set())
   const youtubeInitialBatchConsumedRef = useRef(false)
   const youtubeKnownModeratorsRef = useRef(new Set())
@@ -1309,10 +1311,39 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
         })
         const data = await response.json().catch(() => ({}))
         if (!response.ok || !data?.success) {
+          // Si la sesión se perdió en el backend (reinicio del servidor), intentar auto-reconectar
+          const isSessionLost = response.status === 400 &&
+            String(data?.error || '').toLowerCase().includes('no conectado')
+          if (isSessionLost && !cancelled && youtubeStreamUrlRef.current) {
+            const MAX_AUTO_RECONNECT = 5
+            if (youtubeAutoReconnectAttemptsRef.current < MAX_AUTO_RECONNECT) {
+              youtubeAutoReconnectAttemptsRef.current += 1
+              console.log(`[YouTube] Session lost, auto-reconnecting (attempt ${youtubeAutoReconnectAttemptsRef.current})...`)
+              try {
+                const reconnectToken = getAuthToken()
+                const reconnectRes = await fetch(`${API_URL}/api/youtube/chat/connect`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${reconnectToken}` },
+                  body: JSON.stringify({ streamUrl: youtubeStreamUrlRef.current })
+                })
+                if (reconnectRes.ok) {
+                  console.log('[YouTube] Auto-reconnect successful')
+                  youtubeAutoReconnectAttemptsRef.current = 0
+                  scheduleNextPoll(5000)
+                  return
+                }
+              } catch (reconnectErr) {
+                console.warn('[YouTube] Auto-reconnect failed:', reconnectErr?.message)
+              }
+            }
+          }
           if (!cancelled && data?.error) setError(String(data.error))
           scheduleNextPoll(getAdaptivePollDelay({ hadError: true }))
           return
         }
+
+        // Reconexión exitosa: resetear contador de intentos
+        youtubeAutoReconnectAttemptsRef.current = 0
 
         const incomingRaw = Array.isArray(data.messages) ? data.messages : []
         const incoming = !youtubeInitialBatchConsumedRef.current
@@ -1498,6 +1529,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
 
   // Mantener refs actualizados para acceso en callbacks del WebSocket
   useEffect(() => { configRef.current = config }, [config])
+  useEffect(() => { youtubeStreamUrlRef.current = youtubeStreamUrl }, [youtubeStreamUrl])
   useEffect(() => {
     const normalizedSmartChat = canUseAiFilter && smartChatEnabled
     smartChatEnabledRef.current = normalizedSmartChat
@@ -2669,8 +2701,8 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
     // PRIORIDAD 0: Voz personalizada por usuario (MÁXIMA PRIORIDAD)
     if (canUseAdvancedVoiceTools && c.userVoiceAssignments && c.userVoiceAssignments.length > 0) {
       // Normalizar username: quitar @ si lo tiene para comparación
-      const normalizedUsername = username.toLowerCase().replace(/^@+/, '')
-      const userAssignment = c.userVoiceAssignments.find(a => a.username.toLowerCase() === normalizedUsername)
+      const normalizedUsername = username ? username.toLowerCase().replace(/^@+/, '') : ''
+      const userAssignment = normalizedUsername ? c.userVoiceAssignments.find(a => a.username && a.username.toLowerCase() === normalizedUsername) : null
       if (userAssignment) {
         console.log(`[Voice Priority] User custom voice used for "${username}": "${userAssignment.voiceId}"`)
         return userAssignment.voiceId
@@ -2861,6 +2893,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
     console.log('[TikTok] processQueue: ALL GUARDS PASSED - starting queue processing')
     isProcessingRef.current = true
 
+    try {
     while (speakQueueRef.current.length > 0) {
       if (disconnectedRef.current) break
       if (isPausedRef.current || isAudioSuppressed()) break
@@ -3185,20 +3218,27 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
         } else {
           // No hay pre-generado, hacer request directo
           console.log('[Pre-gen] [NEW] Generando nuevo para', item.username)
-          response = await fetch(`${API_URL}/api/tiktok/message`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
-            },
-            body: JSON.stringify({
-              username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
-              messageUsername: username,
-              messageText: text,
-              voiceId
+          const abortCtrl = new AbortController()
+          const abortTimeout = setTimeout(() => abortCtrl.abort(), 15000)
+          try {
+            response = await fetch(`${API_URL}/api/tiktok/message`, {
+              method: 'POST',
+              signal: abortCtrl.signal,
+              headers: {
+                'Content-Type': 'application/json',
+                ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+              },
+              body: JSON.stringify({
+                username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
+                messageUsername: username,
+                messageText: text,
+                voiceId
+              })
             })
-          })
-          data = await response.json()
+            data = await response.json()
+          } finally {
+            clearTimeout(abortTimeout)
+          }
           // Refrescar tokens después de síntesis de voz premium
           if (response.ok && data?.audio && !data?.fallback && !data?.useLocalVoice) {
             setTimeout(() => refreshTokenBalance(), 100)
@@ -3404,8 +3444,9 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
         await new Promise((r) => setTimeout(r, 220))
       }
     }
-
-    isProcessingRef.current = false
+    } finally {
+      isProcessingRef.current = false
+    }
   }
 
   const handleConnect = async (e) => {
@@ -3532,6 +3573,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
 
         disconnectedRef.current = false
         connectedAtRef.current = Date.now()
+        youtubeAutoReconnectAttemptsRef.current = 0
         setStats({ count: 0, uptime: 0 })
         clearSmoothIncoming()
         setMessages([])
@@ -3542,6 +3584,17 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
         youtubeCommunityActivityRef.current = new Map()
         setIsConnected(true)
         setConnectedTikTokUser(String(data.channelTitle || getYouTubeSessionLabel(cleanStreamUrl)))
+
+        // Cargar bans y nicks desde BD (mismo flujo que TikTok usa en ws.onopen)
+        try {
+          const [bans, nicks] = await Promise.all([apiBans.getAll(), apiNicks.getAll()])
+          const bannedSet = new Set(bans.flatMap((b) => getBanCandidateKeys(b.banned_username)))
+          setBannedUsers(bannedSet)
+          setNickOverrides(nicks)
+          // Los useEffects sincronizan refs y chatStore automáticamente
+        } catch (loadErr) {
+          console.warn('[YouTube] Error cargando bans/nicks:', loadErr?.message)
+        }
       } catch (err) {
         setError(err?.message || 'No se pudo conectar al chat de YouTube')
       } finally {
