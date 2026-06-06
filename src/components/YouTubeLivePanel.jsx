@@ -1567,6 +1567,24 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
   useEffect(() => { nickOverridesRef.current = nickOverrides; chatStore.syncNickOverrides(nickOverrides) }, [nickOverrides])
   useEffect(() => { chatStore.syncHighlightedUsers(highlightedUsers) }, [highlightedUsers])
 
+  // Cargar nicks y bans desde DB al montar el componente (sin necesidad de conectar chat)
+  useEffect(() => {
+    let cancelled = false
+    const loadInitialData = async () => {
+      try {
+        const [bans, nicks] = await Promise.all([apiBans.getAll(), apiNicks.getAll()])
+        if (cancelled) return
+        const bannedSet = new Set(bans.flatMap((b) => getBanCandidateKeys(b.banned_username)))
+        setBannedUsers(bannedSet)
+        setNickOverrides(nicks)
+      } catch (e) {
+        // silencioso — si no hay sesión, simplemente no carga
+      }
+    }
+    loadInitialData()
+    return () => { cancelled = true }
+  }, [])
+
   useEffect(() => {
     return () => {
       if (liveRetryTimerRef.current) {
