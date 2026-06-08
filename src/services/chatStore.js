@@ -4,7 +4,7 @@
  */
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
-const getAuthToken = () => sessionStorage.getItem('sv-token') || ''
+const getAuthToken = () => sessionStorage.getItem('sv-token') || localStorage.getItem('sv-token-persist') || ''
 
 class ChatStore {
   constructor() {

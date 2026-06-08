@@ -1410,6 +1410,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   // Sin requestAnimationFrame para evitar reflow que mueve la página entera
   useEffect(() => {
     if (!chatContainerRef.current) return
+    // Solo seguir al fondo si el usuario está abajo; si subió a leer, no lo arrastramos.
+    if (!autoScrollPinnedRef.current) return
     const container = chatContainerRef.current
     // Scroll DIRECTO sin delays para evitar que se mueva la página
     container.scrollTop = container.scrollHeight
@@ -4253,7 +4255,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               <div className="flex-1">
                 <div
                   ref={chatContainerRef}
-                  style={{ overflowAnchor: 'auto', overscrollBehavior: 'contain', height: 'clamp(220px, 35vh, calc(100vh - 380px))', minHeight: '220px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  style={{ overflowAnchor: 'none', overscrollBehavior: 'contain', height: 'clamp(220px, 35vh, calc(100vh - 380px))', minHeight: '220px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                   className={darkMode ? "bg-[#0f0f23]/80 border border-cyan-400/20 rounded-lg p-3 overflow-y-auto space-y-1" : "bg-gray-50 border border-indigo-200 rounded-lg p-3 overflow-y-auto space-y-1"}
                 >
                   {messages.length === 0 ? (
