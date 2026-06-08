@@ -1394,7 +1394,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                           className={`w-full px-3 py-1.5 text-sm rounded-lg font-semibold transition-colors border ${
                             !newAssignmentUsername.trim() || !newAssignmentVoiceId
                               ? darkMode ? 'bg-gray-600 text-gray-200 border-gray-500 cursor-not-allowed' : 'bg-slate-300 text-slate-700 border-slate-500 cursor-not-allowed'
-                              : darkMode ? 'bg-cyan-600 hover:bg-cyan-500 text-white border-cyan-500' : 'bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-600'
+                              : darkMode ? 'bg-cyan-600 hover:bg-cyan-500 text-white border-cyan-500' : 'bg-cyan-600 hover:bg-cyan-700 text-white border-cyan-700'
                           }`}
                         >
                           + Agregar
