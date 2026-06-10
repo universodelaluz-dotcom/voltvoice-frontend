@@ -899,6 +899,21 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
                   </>
                 )}
               </button>
+              <button
+                onClick={downloadAudioAsWav}
+                disabled={!audioUrl}
+                title={isEnglish ? 'Download WAV' : 'Descargar archivo WAV'}
+                className={`py-4 px-4 rounded-lg font-bold transition-all duration-300 flex items-center justify-center gap-2 flex-shrink-0 ${
+                  audioUrl
+                    ? darkMode
+                      ? 'bg-white/10 text-cyan-300 hover:bg-white/20'
+                      : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                    : 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
+                }`}
+              >
+                <Download className="w-5 h-5" />
+                <span className="text-sm uppercase tracking-wide">{isEnglish ? 'WAV' : 'WAV'}</span>
+              </button>
             </div>
 
             {hasInsufficientTokens && (
