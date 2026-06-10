@@ -4,7 +4,7 @@ import TikTokLivePanel from './TikTokLivePanel'
 import YouTubeLivePanel from './YouTubeLivePanel'
 import AudioVisualizer from './AudioVisualizer'
 import BotInvoker from './BotInvoker'
-import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Shield, Lock } from 'lucide-react'
+import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Shield, Lock, Download } from 'lucide-react'
 
 const getEffectiveUserPlan = (userObj = null) => {
   const normalizePlan = (rawPlan = 'free') => {
@@ -80,7 +80,7 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const { t, i18n } = useTranslation()
   const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
   const audioSpeed = config.audioSpeed || 1.0
-  const PREMIUM_TEST_CHAR_LIMIT = 500
+  const PREMIUM_TEST_CHAR_LIMIT = 3500
   const FREE_LOCAL_LIMIT_CODE = 'FREE_LOCAL_VOICE_DAILY_LIMIT_REACHED'
   const effectivePlanRaw = getEffectiveUserPlan(user)
   const currentPlan = normalizePlanTier(effectivePlanRaw)
@@ -574,6 +574,66 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
     }
   }
 
+  const downloadAudioAsWav = async () => {
+    if (!audioUrl) return
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+      const base64 = audioUrl.split(',')[1]
+      const binary = atob(base64)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      const decoded = await audioCtx.decodeAudioData(bytes.buffer)
+
+      const numChannels = decoded.numberOfChannels
+      const sampleRate = decoded.sampleRate
+      const numSamples = decoded.length
+      const pcmData = []
+      for (let ch = 0; ch < numChannels; ch++) pcmData.push(decoded.getChannelData(ch))
+
+      const interleaved = new Float32Array(numSamples * numChannels)
+      for (let i = 0; i < numSamples; i++) {
+        for (let ch = 0; ch < numChannels; ch++) interleaved[i * numChannels + ch] = pcmData[ch][i]
+      }
+
+      const pcm16 = new Int16Array(interleaved.length)
+      for (let i = 0; i < interleaved.length; i++) {
+        const s = Math.max(-1, Math.min(1, interleaved[i]))
+        pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff
+      }
+
+      const dataLength = pcm16.buffer.byteLength
+      const wavBuffer = new ArrayBuffer(44 + dataLength)
+      const view = new DataView(wavBuffer)
+      const writeStr = (off, str) => { for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i)) }
+      writeStr(0, 'RIFF')
+      view.setUint32(4, 36 + dataLength, true)
+      writeStr(8, 'WAVE')
+      writeStr(12, 'fmt ')
+      view.setUint32(16, 16, true)
+      view.setUint16(20, 1, true)
+      view.setUint16(22, numChannels, true)
+      view.setUint32(24, sampleRate, true)
+      view.setUint32(28, sampleRate * numChannels * 2, true)
+      view.setUint16(32, numChannels * 2, true)
+      view.setUint16(34, 16, true)
+      writeStr(36, 'data')
+      view.setUint32(40, dataLength, true)
+      const pcmArray = new Uint8Array(pcm16.buffer)
+      for (let i = 0; i < pcmArray.length; i++) view.setUint8(44 + i, pcmArray[i])
+
+      const blob = new Blob([wavBuffer], { type: 'audio/wav' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `streamvoicer-${Date.now()}.wav`
+      a.click()
+      URL.revokeObjectURL(url)
+      audioCtx.close()
+    } catch (err) {
+      console.error('[Download WAV] Error:', err)
+    }
+  }
+
   const charCount = text.length
   const estimatedTokens = charCount
   const selectedVoiceObj = voices.find(v => v.id === selectedVoice)
@@ -875,9 +935,21 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
                   >
                     <Volume2 className="w-5 h-5 text-white" />
                   </button>
-                  <div className={`${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>
+                  <div className={`flex-1 ${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>
                     <span className="text-cyan-400 font-bold">{tokensUsed}</span> {isEnglish ? 'tokens used' : 'tokens usados'}
                   </div>
+                  <button
+                    onClick={downloadAudioAsWav}
+                    title={isEnglish ? 'Download WAV' : 'Descargar archivo WAV'}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex-shrink-0 ${
+                      darkMode
+                        ? 'bg-white/10 text-cyan-300 hover:bg-white/20'
+                        : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                    }`}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>{isEnglish ? 'Download WAV' : 'Descargar WAV'}</span>
+                  </button>
                 </div>
               )}
             </div>

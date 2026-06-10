@@ -1044,6 +1044,14 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     if (readByCommandEnabled && !commandRead.matched) { markFilteredMessage(); return }
     if (!messageForRead.trim()) { markFilteredMessage(); return }
 
+    if (isEnabledFlag(c.onlyAllowedUsers)) {
+      const allowedList = (Array.isArray(c.allowedUsersList) ? c.allowedUsersList : []).map(u => String(u).toLowerCase().replace(/^@+/, ''))
+      if (allowedList.length > 0) {
+        const msgUser = String(msg.username || '').toLowerCase().replace(/^@+/, '')
+        if (!allowedList.includes(msgUser)) { markFilteredMessage(); return }
+      }
+    }
+
     const onlyDonors = isEnabledFlag(c.onlyDonors)
     const onlyModerators = isEnabledFlag(c.onlyModerators)
     const onlySubscribers = isEnabledFlag(c.onlySubscribers)
@@ -2142,6 +2150,16 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
 
           // PUNTO 4: Filtros de rol - trabajan como OR entre si (pasa si cumple CUALQUIERA)
           // Ejemplo: donor + moderador = lee a cualquiera de los dos, no a ambos a la vez
+
+          // Lista de usuarios permitidos (whitelist)
+          if (isEnabledFlag(c.onlyAllowedUsers)) {
+            const allowedList = (Array.isArray(c.allowedUsersList) ? c.allowedUsersList : []).map(u => String(u).toLowerCase().replace(/^@+/, ''))
+            if (allowedList.length > 0) {
+              const msgUser = String(msg.username || '').toLowerCase().replace(/^@+/, '')
+              if (!allowedList.includes(msgUser)) { markFilteredMessage(); return }
+            }
+          }
+
           const onlyDonors = isEnabledFlag(c.onlyDonors)
           const onlyModerators = isEnabledFlag(c.onlyModerators)
           const onlySubscribers = isEnabledFlag(c.onlySubscribers)

@@ -1088,6 +1088,14 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
     if (readByCommandEnabled && !commandRead.matched) { markFilteredMessage(); return }
     if (!messageForRead.trim()) { markFilteredMessage(); return }
 
+    if (isEnabledFlag(c.onlyAllowedUsers)) {
+      const allowedList = (Array.isArray(c.allowedUsersList) ? c.allowedUsersList : []).map(u => String(u).toLowerCase().replace(/^@+/, ''))
+      if (allowedList.length > 0) {
+        const msgUser = String(msg.username || '').toLowerCase().replace(/^@+/, '')
+        if (!allowedList.includes(msgUser)) { markFilteredMessage(); return }
+      }
+    }
+
     const onlyDonors = isEnabledFlag(c.onlyDonors)
     const onlySuperChatMessages = isEnabledFlag(c.onlySuperChatMessages)
     const onlyModerators = isEnabledFlag(c.onlyModerators)
@@ -2262,6 +2270,16 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
 
           // PUNTO 4: Filtros de rol - trabajan como OR entre si (pasa si cumple CUALQUIERA)
           // Ejemplo: donor + moderador = lee a cualquiera de los dos, no a ambos a la vez
+
+          // Lista de usuarios permitidos (whitelist)
+          if (isEnabledFlag(c.onlyAllowedUsers)) {
+            const allowedList = (Array.isArray(c.allowedUsersList) ? c.allowedUsersList : []).map(u => String(u).toLowerCase().replace(/^@+/, ''))
+            if (allowedList.length > 0) {
+              const msgUser = String(msg.username || '').toLowerCase().replace(/^@+/, '')
+              if (!allowedList.includes(msgUser)) { markFilteredMessage(); return }
+            }
+          }
+
           const onlyDonors = isEnabledFlag(c.onlyDonors)
           const onlySuperChatMessages = isEnabledFlag(c.onlySuperChatMessages)
           const onlyModerators = isEnabledFlag(c.onlyModerators)
@@ -2340,7 +2358,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
           const smartMetrics = smartChatActive ? getSmartMetrics() : null
 
           // Modo bruto: solo limpiar tags de emojis TikTok cuando hay filtros activos o smart chat.
-          let textToProcess = messageForRead
+          let textToProcess = removeEmojiShortcodes(messageForRead)
           const shouldSanitizeTikTokTags = smartChatActive || c.stripChatEmojis || c.ignoreExcessiveEmojis
           if (shouldSanitizeTikTokTags) {
             textToProcess = removeTikTokEmojiTags(textToProcess)
@@ -4501,7 +4519,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                             }`}
                             title={t('common.copyUserClick')}
                           >
-                            (@{msg.user})
+                            (@{String(msg.user || '').replace(/^@+/, '')})
                           </button>
                         </div>
                         <span className={`text-[10px] leading-none ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>

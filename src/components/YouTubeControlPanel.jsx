@@ -443,6 +443,8 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
   const [showUserVoiceAssignments, setShowUserVoiceAssignments] = useState(false)
   const [newAssignmentUsername, setNewAssignmentUsername] = useState('')
   const [newAssignmentVoiceId, setNewAssignmentVoiceId] = useState('')
+  const [showAllowedUsersList, setShowAllowedUsersList] = useState(false)
+  const [newAllowedUser, setNewAllowedUser] = useState('')
   const moderationList = normalizeModerationList(config?.sessionModerationList)
   const quickBasicChecks = {
     skipRepeated: true,
@@ -715,6 +717,24 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
     updateConfig('userVoiceAssignments', updated)
   }
 
+  const allowedUsersList = Array.isArray(config?.allowedUsersList) ? config.allowedUsersList : []
+
+  const addAllowedUser = () => {
+    if (!newAllowedUser.trim()) return
+    const username = newAllowedUser.trim().toLowerCase().replace(/^@+/, '')
+    if (!username) return
+    if (allowedUsersList.includes(username)) { setNewAllowedUser(''); return }
+    const updated = [...allowedUsersList, username].slice(0, 100)
+    updateConfig('allowedUsersList', updated)
+    if (!config.onlyAllowedUsers) updateConfig('onlyAllowedUsers', true)
+    setNewAllowedUser('')
+  }
+
+  const removeAllowedUser = (username) => {
+    const updated = allowedUsersList.filter(u => u !== username)
+    updateConfig('allowedUsersList', updated)
+  }
+
   const updateUserVoiceAssignment = (username, newVoiceId) => {
     const updated = userVoiceAssignments.map(a =>
       a.username === username ? { ...a, voiceId: newVoiceId } : a
@@ -983,7 +1003,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
               />
 
               {/* SIEMPRE LIBRE EN TODOS LOS PLANES */}
-              <CheckOption label={t('control.reading.skipRepeated')} checked={config.skipRepeated} onChange={() => updateConfig('skipRepeated', !config.skipRepeated)} darkMode={darkMode} hint="Ignora mensajes idAnticos consecutivos para evitar spam" />
+              <CheckOption label={t('control.reading.skipRepeated')} checked={config.skipRepeated} onChange={() => updateConfig('skipRepeated', !config.skipRepeated)} darkMode={darkMode} hint="Ignora mensajes idénticos consecutivos para evitar spam" />
 
               {/* BLOQUEADO EN FREE */}
               {userPlan === 'free' ? (
@@ -1024,6 +1044,85 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                         }`}
                       />
                     </label>
+                  </div>
+
+                  {/* Leer solo lista elegida */}
+                  <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
+                    darkMode
+                      ? config.onlyAllowedUsers
+                        ? 'bg-cyan-500/10 border-cyan-400/40'
+                        : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
+                      : config.onlyAllowedUsers
+                        ? 'bg-slate-100 border-slate-400 shadow-sm'
+                        : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
+                  }`}>
+                    <button onClick={() => {
+                      const next = !config.onlyAllowedUsers
+                      updateConfig('onlyAllowedUsers', next)
+                      if (next) setShowAllowedUsersList(true)
+                    }} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+                      <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                        config.onlyAllowedUsers ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
+                      }`}>
+                        {config.onlyAllowedUsers && <Check className="w-4 h-4 text-white" />}
+                      </div>
+                      <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.onlyAllowedUsers ? 'font-semibold' : 'font-medium'}`}>
+                        Leer solo lista elegida
+                        <Hint text="Solo lee mensajes de los usuarios que agregues a la lista. Ignora a todos los demás." darkMode={darkMode} />
+                      </span>
+                      {allowedUsersList.length > 0 && <span className={`ml-auto text-xs font-semibold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{allowedUsersList.length}</span>}
+                    </button>
+                    {(config.onlyAllowedUsers || showAllowedUsersList) && (
+                      <div className="mt-4 space-y-3">
+                        <div className="space-y-2 p-3 rounded-lg" style={{backgroundColor: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)'}}>
+                          <p className={`text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Agregar usuario:</p>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Usuario con @ (ej: @karlitaaviles10)"
+                              value={newAllowedUser}
+                              onChange={(e) => setNewAllowedUser(e.target.value)}
+                              onKeyPress={(e) => e.key === 'Enter' && addAllowedUser()}
+                              className={`flex-1 px-3 py-1.5 text-sm rounded-lg border ${
+                                darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'
+                              }`}
+                            />
+                            <button
+                              onClick={addAllowedUser}
+                              disabled={!newAllowedUser.trim()}
+                              className={`px-3 py-1.5 text-sm rounded-lg font-semibold transition-colors border ${
+                                !newAllowedUser.trim()
+                                  ? darkMode ? 'bg-gray-600 text-gray-400 border-gray-500 cursor-not-allowed' : 'bg-slate-300 text-slate-500 border-slate-400 cursor-not-allowed'
+                                  : darkMode ? 'bg-cyan-600 hover:bg-cyan-500 text-white border-cyan-500' : 'bg-cyan-600 hover:bg-cyan-700 text-white border-cyan-700'
+                              }`}
+                            >
+                              + Agregar
+                            </button>
+                          </div>
+                        </div>
+                        {allowedUsersList.length > 0 ? (
+                          <div className="space-y-1 max-h-48 overflow-y-auto">
+                            {allowedUsersList.map((username) => (
+                              <div key={username} className={`flex items-center justify-between px-3 py-1.5 rounded-lg border ${
+                                darkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-gray-50 border-gray-200'
+                              }`}>
+                                <span className={`text-sm font-medium ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>@{username}</span>
+                                <button
+                                  onClick={() => removeAllowedUser(username)}
+                                  className={`text-xs px-2 py-0.5 rounded font-medium transition-colors ${
+                                    darkMode ? 'bg-red-900/30 hover:bg-red-900/50 text-red-400' : 'bg-red-100 hover:bg-red-200 text-red-600'
+                                  }`}
+                                >
+                                  Quitar
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className={`text-xs italic text-center py-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Sin usuarios en la lista</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </>
               )}
