@@ -3609,6 +3609,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
           return
         }
 
+        const connectedStreamUrl = String(data.streamUrl || cleanStreamUrl)
         disconnectedRef.current = false
         connectedAtRef.current = Date.now()
         youtubeAutoReconnectAttemptsRef.current = 0
@@ -3620,8 +3621,10 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
         youtubeKnownModeratorsRef.current = new Set()
         youtubeKnownSubscribersRef.current = new Set()
         youtubeCommunityActivityRef.current = new Map()
+        setYoutubeStreamUrl(connectedStreamUrl)
+        youtubeStreamUrlRef.current = connectedStreamUrl
         setIsConnected(true)
-        setConnectedTikTokUser(String(data.channelTitle || getYouTubeSessionLabel(cleanStreamUrl)))
+        setConnectedTikTokUser(String(data.channelTitle || getYouTubeSessionLabel(connectedStreamUrl)))
 
         // Cargar bans y nicks desde BD (mismo flujo que TikTok usa en ws.onopen)
         try {
@@ -4132,7 +4135,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                   type="text"
                   value={youtubeStreamUrl}
                   onChange={(e) => setYoutubeStreamUrl(e.target.value)}
-                  placeholder="Link del stream (youtube.com/watch?v=...)"
+                  placeholder="Link del stream (youtube.com/live o YouTube Studio)"
                   style={{ padding: '7px 12px', fontSize: '13px' }}
                   className={darkMode ? "flex-1 min-w-0 bg-[#0f0f23] border border-cyan-400/30 rounded-lg text-white focus:outline-none focus:border-cyan-400" : "flex-1 min-w-0 bg-gray-50 border border-indigo-300 rounded-lg text-gray-900 focus:outline-none focus:border-indigo-500"}
                   disabled={isConnecting}
@@ -4287,7 +4290,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                       type="text"
                       value={youtubeStreamUrl}
                       onChange={(e) => setYoutubeStreamUrl(e.target.value)}
-                      placeholder="Link del stream de YouTube"
+                      placeholder="Link del stream de YouTube o Studio"
                       className={`flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none ${darkMode ? 'bg-[#0f0f23] border border-cyan-400/30 text-white' : 'bg-white border border-indigo-300 text-gray-900'}`}
                       disabled={isConnecting}
                     />
