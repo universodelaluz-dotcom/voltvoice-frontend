@@ -779,14 +779,18 @@ function NicksManagerPanel({ nickOverrides, setNickOverrides, editingNickInTable
 }
 
 const SENTIMENT_STATES = {
-  euphoric:  { emoji: '🔥', label: 'EUFÓRICO',   color: '#ef4444', bg: 'rgba(239,68,68,0.10)',    border: 'rgba(239,68,68,0.28)',    insight: 'El chat está en su pico. Lo que hacés ahora tiene impacto inmediato.' },
-  energized: { emoji: '⚡', label: 'ENERGIZADO',  color: '#f97316', bg: 'rgba(249,115,22,0.10)',   border: 'rgba(249,115,22,0.28)',   insight: 'Alta energía y buena onda. Buen momento para proponer algo al chat.' },
-  positive:  { emoji: '😄', label: 'POSITIVO',    color: '#22c55e', bg: 'rgba(34,197,94,0.10)',    border: 'rgba(34,197,94,0.28)',    insight: 'Buen ambiente. El contenido está conectando con la gente.' },
-  curious:   { emoji: '🤔', label: 'CURIOSO',     color: '#3b82f6', bg: 'rgba(59,130,246,0.10)',   border: 'rgba(59,130,246,0.28)',   insight: 'El chat tiene preguntas. Pausá y respondé directo.' },
-  neutral:   { emoji: '😐', label: 'NEUTRO',      color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.22)', insight: 'Chat estable. Sin tendencia clara aún.' },
-  quiet:     { emoji: '😴', label: 'APAGADO',     color: '#64748b', bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.22)', insight: 'Poca actividad. Un momento ideal para hacer una pregunta directa al chat.' },
-  tense:     { emoji: '😤', label: 'TENSO',       color: '#eab308', bg: 'rgba(234,179,8,0.10)',    border: 'rgba(234,179,8,0.28)',    insight: 'Hay negatividad o molestia. Algo no está cayendo bien.' },
-  chaotic:   { emoji: '🌪️', label: 'CAÓTICO',    color: '#a855f7', bg: 'rgba(168,85,247,0.10)',   border: 'rgba(168,85,247,0.28)',   insight: 'Mucho ruido, poca señal. El chat perdió el hilo.' },
+  euphoric:     { emoji: '🔥', label: 'EUFÓRICO',    color: '#ef4444', bg: 'rgba(239,68,68,0.10)',    border: 'rgba(239,68,68,0.28)',    insight: 'El chat está en su pico. Lo que hacés ahora tiene impacto inmediato.' },
+  chaotic:      { emoji: '🌪️', label: 'CAÓTICO',     color: '#a855f7', bg: 'rgba(168,85,247,0.10)',   border: 'rgba(168,85,247,0.28)',   insight: 'Mucho ruido, poca señal. El chat perdió el hilo.' },
+  joyful:       { emoji: '😂', label: 'RISUEÑO',     color: '#facc15', bg: 'rgba(250,204,21,0.10)',   border: 'rgba(250,204,21,0.30)',   insight: 'El chat se está riendo. Ideal para improvisar o soltar un chiste.' },
+  surprised:    { emoji: '🤯', label: 'SORPRENDIDO', color: '#fb923c', bg: 'rgba(251,146,60,0.10)',   border: 'rgba(251,146,60,0.28)',   insight: 'Algo los impactó. Aprovechá el momento para anclar la emoción.' },
+  affectionate: { emoji: '🥰', label: 'CARIÑOSO',    color: '#ec4899', bg: 'rgba(236,72,153,0.10)',   border: 'rgba(236,72,153,0.28)',   insight: 'El chat te quiere. Hay mucho apoyo emocional en este momento.' },
+  energized:    { emoji: '⚡', label: 'ENERGIZADO',  color: '#f97316', bg: 'rgba(249,115,22,0.10)',   border: 'rgba(249,115,22,0.28)',   insight: 'Alta energía y buena onda. Buen momento para proponer algo al chat.' },
+  tense:        { emoji: '😤', label: 'TENSO',       color: '#eab308', bg: 'rgba(234,179,8,0.10)',    border: 'rgba(234,179,8,0.28)',    insight: 'Hay negatividad o molestia. Algo no está cayendo bien.' },
+  curious:      { emoji: '🤔', label: 'CURIOSO',     color: '#3b82f6', bg: 'rgba(59,130,246,0.10)',   border: 'rgba(59,130,246,0.28)',   insight: 'El chat tiene preguntas. Pausá y respondé directo.' },
+  awkward:      { emoji: '😬', label: 'INCÓMODO',    color: '#94a3b8', bg: 'rgba(148,163,184,0.10)', border: 'rgba(148,163,184,0.28)',  insight: 'El chat está dividido. Señales mezcladas, puede haber tensión oculta.' },
+  positive:     { emoji: '😄', label: 'POSITIVO',    color: '#22c55e', bg: 'rgba(34,197,94,0.10)',    border: 'rgba(34,197,94,0.28)',    insight: 'Buen ambiente. El contenido está conectando con la gente.' },
+  neutral:      { emoji: '😐', label: 'NEUTRO',      color: '#64748b', bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.22)', insight: 'Chat estable. Sin tendencia clara aún.' },
+  quiet:        { emoji: '😴', label: 'APAGADO',     color: '#475569', bg: 'rgba(71,85,105,0.08)',   border: 'rgba(71,85,105,0.22)',   insight: 'Poca actividad. Un momento ideal para hacer una pregunta directa al chat.' },
 }
 
 export default function TikTokLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride, platformMode = 'tiktok', tokens = 0, setTokens = null }) {
@@ -948,6 +952,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   const [canWriteConfig, setCanWriteConfig] = useState(false)
   const canWriteConfigNow = canPersistConfig && canWriteConfig
   const [showSentimentTip, setShowSentimentTip] = useState(false)
+  const sentimentHistoryRef = useRef([])
 
   useEffect(() => {
     donorsRef.current = donors
@@ -3877,37 +3882,46 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     const recent = messages.filter(m => Number(m.timestamp || 0) >= recentCutoff)
     if (recent.length < 1) return null
 
-    const positiveWords = ['bien', 'bueno', 'genial', 'increible', 'hermoso', 'excelente',
-      'chevere', 'jaja', 'jeje', 'amor', 'wow', 'nice', 'great', 'good', 'love',
-      'top', 'crack', 'fuego', 'brutal', 'epico', 'lindo', 'amo', 'gana', 'gano',
-      'campeon', 'ganaaa', 'omg', 'risa', 'feliz', 'happy', 'perfecto', 'woww']
-    const negativeWords = ['malo', 'feo', 'pesimo', 'aburrido', 'odio', 'horrible',
-      'boring', 'bad', 'asco', 'hate', 'mentira', 'fake', 'trampa', 'robo',
-      'noiiiiii', 'noooo', 'wtf', 'pff', 'meh', 'cayo', 'murio']
+    const laughWords      = ['jaja', 'jeje', 'xd', 'lol', 'haha', 'jajaj', 'lmao', 'kkk', 'kkkk', 'muero', 'me mato', 'cague']
+    const surpriseWords   = ['omg', 'nooo', 'noooo', 'dios', 'serio', 'mentira', 'no mames', 'wowww', 'impresionante', 'increible', 'no puede', 'que paso', 'como', 'diablos', 'wtfffff']
+    const affectionWords  = ['te amo', 'amor', 'corazon', 'hermosa', 'hermoso', 'lindo', 'bonito', 'te quiero', 'me encanta', 'eres lo', 'fan de', 'eres mi', 'te adoro', 'muah']
+    const positiveWords   = ['bien', 'bueno', 'genial', 'excelente', 'chevere', 'nice', 'great', 'good', 'love', 'top', 'crack', 'fuego', 'brutal', 'epico', 'amo', 'gana', 'gano', 'campeon', 'ganaaa', 'feliz', 'happy', 'perfecto', 'wow', 'woww']
+    const negativeWords   = ['malo', 'feo', 'pesimo', 'aburrido', 'odio', 'horrible', 'boring', 'bad', 'asco', 'hate', 'fake', 'trampa', 'robo', 'noiiiiii', 'noooo', 'wtf', 'pff', 'meh', 'cayo', 'murio']
 
-    let posScore = 0, negScore = 0, questionCount = 0, giftCount = 0, spamCount = 0
+    let posScore = 0, negScore = 0, laughScore = 0, surpriseScore = 0, affectionScore = 0
+    let questionCount = 0, giftCount = 0, spamCount = 0
     for (const msg of recent) {
       const text = normalizeMessageForMatching(msg.text || '')
-      posScore += positiveWords.filter(w => text.includes(w)).length
-      negScore += negativeWords.filter(w => text.includes(w)).length
+      posScore      += positiveWords.filter(w => text.includes(w)).length
+      negScore      += negativeWords.filter(w => text.includes(w)).length
+      laughScore    += laughWords.filter(w => text.includes(w)).length > 0 ? 1 : 0
+      surpriseScore += surpriseWords.filter(w => text.includes(w)).length > 0 ? 1 : 0
+      affectionScore+= affectionWords.filter(w => text.includes(w)).length > 0 ? 1 : 0
       if (isQuestion(msg.text || '')) questionCount++
       if (msg.isGift || msg.type === 'gift') giftCount++
       if (isEmojiOrSymbolOnly(msg.text || '') || hasLowLegibility(msg.text || '')) spamCount++
     }
 
-    const total = recent.length
-    const posRatio = posScore / total
-    const negRatio = negScore / total
-    const questionRatio = questionCount / total
-    const giftRatio = giftCount / total
-    const spamRatio = spamCount / total
-    const v = messagesPerMinute
+    const total        = recent.length
+    const posRatio     = posScore / total
+    const negRatio     = negScore / total
+    const laughRatio   = laughScore / total
+    const surpriseRatio= surpriseScore / total
+    const affectionRatio = affectionScore / total
+    const questionRatio= questionCount / total
+    const giftRatio    = giftCount / total
+    const spamRatio    = spamCount / total
+    const v            = messagesPerMinute
 
     if (v >= 20 && (giftRatio >= 0.07 || posRatio >= 0.35)) return 'euphoric'
     if (spamRatio >= 0.55 && v >= 8) return 'chaotic'
+    if (laughRatio >= 0.25) return 'joyful'
+    if (surpriseRatio >= 0.20) return 'surprised'
+    if (affectionRatio >= 0.20) return 'affectionate'
     if (v >= 12 && posRatio >= 0.12) return 'energized'
     if (negRatio >= 0.18) return 'tense'
     if (questionRatio >= 0.28) return 'curious'
+    if (posRatio >= 0.06 && negRatio >= 0.06) return 'awkward'
     if (posRatio >= 0.08) return 'positive'
     if (v <= 2) return 'quiet'
     return 'neutral'
@@ -3955,6 +3969,41 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     keepReadMessageVisible({ force: true })
   }
 
+  useEffect(() => {
+    if (!isConnected || !chatSentiment) return
+    const id = setInterval(() => {
+      if (chatSentiment) sentimentHistoryRef.current.push({ state: chatSentiment, ts: Date.now() })
+    }, 30000)
+    return () => clearInterval(id)
+  }, [isConnected, chatSentiment])
+
+  const saveSentimentSession = () => {
+    const history = sentimentHistoryRef.current
+    if (history.length === 0) return
+    const counts = {}
+    for (const { state } of history) counts[state] = (counts[state] || 0) + 1
+    const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0]
+    const dominantPct = dominant ? Math.round((counts[dominant] / history.length) * 100) : 0
+    const now = new Date()
+    const isoDate = now.toISOString().split('T')[0]
+    const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
+    const dayNum = d.getUTCDay() || 7
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+    const weekLabel = `${d.getUTCFullYear()}-W${String(Math.ceil((((d - yearStart) / 86400000) + 1) / 7)).padStart(2, '0')}`
+    const session = {
+      id: Date.now(), date: isoDate, week: weekLabel, month: isoDate.slice(0, 7),
+      dominant, dominantPct, stateCounts: counts, totalSamples: history.length,
+    }
+    try {
+      const stored = JSON.parse(localStorage.getItem('voltvoice_sentiment_sessions') || '[]')
+      stored.push(session)
+      if (stored.length > 90) stored.splice(0, stored.length - 90)
+      localStorage.setItem('voltvoice_sentiment_sessions', JSON.stringify(stored))
+    } catch { /* ignore */ }
+    sentimentHistoryRef.current = []
+  }
+
   const handleDisconnect = async () => {
     if (isYouTubeMode) {
       try {
@@ -3972,6 +4021,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       speakQueueRef.current = []
       isProcessingRef.current = false
       stopPlaybackNow()
+      saveSentimentSession()
       setSessionSummary(buildSessionSummary())
       setShowSessionSummary(true)
       setIsConnected(false)
@@ -4021,6 +4071,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         wsRef.current = null
       }
 
+      saveSentimentSession()
       setSessionSummary(buildSessionSummary())
       setShowSessionSummary(true)
       setIsConnected(false)
@@ -4499,7 +4550,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               <p className={`text-lg sm:text-xl font-black tabular-nums leading-none ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>{messagesPerMinute}</p>
             </div>
             {/* Tiempo */}
-            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-2 sm:px-5 py-2 sm:py-3 ${isConnected ? `border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}` : ''}`}>
+            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-2 sm:px-5 py-2 sm:py-3 border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}`}>
               <div className="flex items-center gap-1 sm:gap-2">
                 <Clock3 className={`w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 ${darkMode ? 'text-purple-400/60' : 'text-purple-500/60'}`} />
                 <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-purple-400/60' : 'text-purple-600/70'}`}>{t('tiktok.stats.time')}</span>
@@ -4508,6 +4559,39 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                 {stats.uptime < 60 ? `${stats.uptime}s` : `${Math.floor(stats.uptime / 60)}m ${stats.uptime % 60}s`}
               </p>
             </div>
+            {/* Pulso del chat (sentimiento) */}
+            {(() => {
+              const s = chatSentiment && isConnected ? SENTIMENT_STATES[chatSentiment] : null
+              return (
+                <div
+                  className={`relative flex flex-col items-center justify-center gap-0.5 px-2 sm:px-4 py-2 cursor-default select-none transition-colors ${isConnected ? 'border-r' : ''} ${darkMode ? 'border-white/8' : 'border-slate-200'}`}
+                  style={s ? { backgroundColor: s.bg } : {}}
+                  onMouseEnter={() => s && setShowSentimentTip(true)}
+                  onMouseLeave={() => setShowSentimentTip(false)}
+                >
+                  <div className="flex items-center gap-1">
+                    <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>PULSO</span>
+                  </div>
+                  {s ? (
+                    <div className="flex items-center gap-1">
+                      <span className="text-base leading-none">{s.emoji}</span>
+                      <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest leading-none hidden sm:block" style={{ color: s.color }}>{s.label}</span>
+                    </div>
+                  ) : (
+                    <span className={`text-base leading-none ${darkMode ? 'text-slate-600' : 'text-slate-300'}`}>—</span>
+                  )}
+                  {showSentimentTip && s && (
+                    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-30 px-3 py-2 rounded-lg text-xs shadow-xl border whitespace-nowrap max-w-[240px] ${
+                      darkMode ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'
+                    }`}>
+                      <span className="font-bold" style={{ color: s.color }}>{s.emoji} {s.label}</span>
+                      <br />
+                      <span className={darkMode ? 'text-slate-400' : 'text-slate-500'}>{s.insight}</span>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
             {/* Desconectar */}
             {isConnected && (
               <button
@@ -4521,37 +4605,6 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               </button>
             )}
           </div>
-
-          {/* Indicador de sentimiento del chat */}
-          {chatSentiment && isConnected && (() => {
-            const s = SENTIMENT_STATES[chatSentiment]
-            return (
-              <div
-                className="relative flex items-center gap-2.5 px-3 py-2 rounded-lg border cursor-default select-none"
-                style={{ backgroundColor: s.bg, borderColor: s.border }}
-                onMouseEnter={() => setShowSentimentTip(true)}
-                onMouseLeave={() => setShowSentimentTip(false)}
-              >
-                <span className="text-sm leading-none">{s.emoji}</span>
-                <span className="text-[10px] font-black uppercase tracking-widest shrink-0" style={{ color: s.color }}>
-                  {s.label}
-                </span>
-                <span className={`text-[11px] hidden sm:block truncate ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {s.insight}
-                </span>
-                <span className={`ml-auto text-[9px] font-bold uppercase tracking-widest shrink-0 hidden sm:block ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>
-                  PULSO DEL CHAT
-                </span>
-                {showSentimentTip && (
-                  <div className={`absolute bottom-full left-0 mb-2 z-30 px-3 py-2 rounded-lg text-xs shadow-xl border max-w-[260px] sm:hidden ${
-                    darkMode ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'
-                  }`}>
-                    {s.insight}
-                  </div>
-                )}
-              </div>
-            )
-          })()}
 
           {/* Flex: chat izq + controles der - en movil apilados verticalmente */}
           <div className="flex flex-col sm:flex-row gap-3 items-start">
