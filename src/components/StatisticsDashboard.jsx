@@ -126,10 +126,14 @@ function SentimentHistorySection({ darkMode, isEnglish, delay }) {
     } catch { return [] }
   }, [])
 
+  const sectionTitle    = isEnglish ? 'Chat pulse history' : 'Historial del pulso del chat'
+  const sectionSubtitle = isEnglish ? 'Dominant emotion recorded at end of each stream' : 'Emoción dominante registrada al finalizar cada stream'
+  const emptyMsg        = isEnglish ? 'No data yet. Sentiment is recorded when you disconnect from a stream.' : 'Sin datos aún. El pulso se registra al desconectarte de un stream.'
+
   if (sessions.length === 0) return (
-    <SectionCard darkMode={darkMode} title={isEnglish ? 'Chat pulse history' : 'Historial del pulso del chat'} subtitle={isEnglish ? 'Dominant emotion per stream session' : 'Emoción dominante por sesión de stream'} accent=”purple” delay={delay}>
+    <SectionCard darkMode={darkMode} title={sectionTitle} subtitle={sectionSubtitle} accent=”purple” delay={delay}>
       <div className={`rounded-2xl border border-dashed p-8 text-center text-sm ${darkMode ? 'border-white/10 text-gray-500' : 'border-gray-200 text-gray-400'}`}>
-        {isEnglish ? 'No data yet. Sentiment is recorded when you disconnect from a stream.' : 'Sin datos aún. El pulso se registra al desconectarte de un stream.'}
+        {emptyMsg}
       </div>
     </SectionCard>
   )
@@ -172,8 +176,8 @@ function SentimentHistorySection({ darkMode, isEnglish, delay }) {
   return (
     <SectionCard
       darkMode={darkMode}
-      title={isEnglish ? 'Chat pulse history' : 'Historial del pulso del chat'}
-      subtitle={isEnglish ? 'Dominant emotion recorded at end of each stream' : 'Emoción dominante registrada al finalizar cada stream'}
+      title={sectionTitle}
+      subtitle={sectionSubtitle}
       accent=”purple”
       delay={delay}
     >
