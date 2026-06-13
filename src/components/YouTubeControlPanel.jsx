@@ -559,12 +559,12 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
     const forcedOffInFree = [
       'readOnlyMessage',
       'readByCommandEnabled',
-      'onlyQuestions',
-      'onlyDonors',
-      'onlySuperChatMessages',
-      'onlyModerators',
-      'onlySubscribers',
-      'onlyCommunityMembers',
+      'yt_onlyQuestions',
+      'yt_onlyDonors',
+      'yt_onlySuperChatMessages',
+      'yt_onlyModerators',
+      'yt_onlySubscribers',
+      'yt_onlyCommunityMembers',
       'ignoreLinks',
       'profanityFilterEnabled',
       'ignoreExcessiveEmojis',
@@ -1011,25 +1011,25 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                   darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
                 }`}>
                   <div>
-                    <CheckOption label={t('control.reading.onlyQuestions')} checked={config.onlyQuestions} onChange={() => {}} darkMode={darkMode} />
-                    <CheckOption label={t('control.reading.onlyDonors')} checked={config.onlyDonors} onChange={() => {}} darkMode={darkMode} />
-                    <CheckOption label="Solo Super Chat/Super Sticker (mensaje)" checked={config.onlySuperChatMessages} onChange={() => {}} darkMode={darkMode} />
-                    <CheckOption label={t('control.reading.onlyMods')} checked={config.onlyModerators} onChange={() => {}} darkMode={darkMode} />
-                    <CheckOption label={t('control.reading.onlySubs')} checked={config.onlySubscribers} onChange={() => {}} darkMode={darkMode} />
-                    <CheckOption label="Miembros chateando" checked={config.onlyCommunityMembers} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label={t('control.reading.onlyQuestions')} checked={config.yt_onlyQuestions} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label={t('control.reading.onlyDonors')} checked={config.yt_onlyDonors} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label="Solo Super Chat/Super Sticker (mensaje)" checked={config.yt_onlySuperChatMessages} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label={t('control.reading.onlyMods')} checked={config.yt_onlyModerators} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label={t('control.reading.onlySubs')} checked={config.yt_onlySubscribers} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label="Miembros chateando" checked={config.yt_onlyCommunityMembers} onChange={() => {}} darkMode={darkMode} />
                   </div>
                 </div>
               ) : (
                 <>
-                  <CheckOption label={t('control.reading.onlyQuestions')} checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} hint={t('control.reading.onlyQuestionsHint')} />
-                  <CheckOption label={t('control.reading.onlyDonors')} checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron Super Chat o Super Sticker" />
-                  <CheckOption label="Solo Super Chat/Super Sticker (mensaje)" checked={config.onlySuperChatMessages} onChange={() => updateConfig('onlySuperChatMessages', !config.onlySuperChatMessages)} darkMode={darkMode} hint="Solo lee mensaje de Super Chat/Sticker" />
-                  <CheckOption label={t('control.reading.onlyMods')} checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} hint="Solo lee mensajes de moderadores del chat de YouTube" />
-                  <CheckOption label={t('control.reading.onlySubs')} checked={config.onlySubscribers} onChange={() => updateConfig('onlySubscribers', !config.onlySubscribers)} darkMode={darkMode} hint="Solo lee mensajes de suscriptores del canal" />
-                  <CheckOption label="Miembros chateando" checked={config.onlyCommunityMembers} onChange={() => updateConfig('onlyCommunityMembers', !config.onlyCommunityMembers)} darkMode={darkMode} hint="Solo lee usuarios que sigan chateando dentro del tiempo configurado" />
+                  <CheckOption label={t('control.reading.onlyQuestions')} checked={config.yt_onlyQuestions} onChange={() => updateConfig('yt_onlyQuestions', !config.yt_onlyQuestions)} darkMode={darkMode} hint={t('control.reading.onlyQuestionsHint')} />
+                  <CheckOption label={t('control.reading.onlyDonors')} checked={config.yt_onlyDonors} onChange={() => updateConfig('yt_onlyDonors', !config.yt_onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron Super Chat o Super Sticker" />
+                  <CheckOption label="Solo Super Chat/Super Sticker (mensaje)" checked={config.yt_onlySuperChatMessages} onChange={() => updateConfig('yt_onlySuperChatMessages', !config.yt_onlySuperChatMessages)} darkMode={darkMode} hint="Solo lee mensaje de Super Chat/Sticker" />
+                  <CheckOption label={t('control.reading.onlyMods')} checked={config.yt_onlyModerators} onChange={() => updateConfig('yt_onlyModerators', !config.yt_onlyModerators)} darkMode={darkMode} hint="Solo lee mensajes de moderadores del chat de YouTube" />
+                  <CheckOption label={t('control.reading.onlySubs')} checked={config.yt_onlySubscribers} onChange={() => updateConfig('yt_onlySubscribers', !config.yt_onlySubscribers)} darkMode={darkMode} hint="Solo lee mensajes de suscriptores del canal" />
+                  <CheckOption label="Miembros chateando" checked={config.yt_onlyCommunityMembers} onChange={() => updateConfig('yt_onlyCommunityMembers', !config.yt_onlyCommunityMembers)} darkMode={darkMode} hint="Solo lee usuarios que sigan chateando dentro del tiempo configurado" />
                   <div className={`mb-2 rounded-xl px-4 py-3 border transition-opacity ${
                     darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
-                  } ${config.onlyCommunityMembers ? 'opacity-100' : 'opacity-45'}`}>
+                  } ${config.yt_onlyCommunityMembers ? 'opacity-100' : 'opacity-45'}`}>
                     <label className="text-xs font-semibold block">
                       <span className={`${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>Tiempo entre mensaje y mensaje (min)</span>
                       <input
@@ -1038,7 +1038,7 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                         max={60}
                         value={config.youtubeChattingWindowMinutes ?? 4}
                         onChange={(e) => updateConfig('youtubeChattingWindowMinutes', Math.min(60, Math.max(1, Number(e.target.value) || 4)))}
-                        disabled={!config.onlyCommunityMembers}
+                        disabled={!config.yt_onlyCommunityMembers}
                         className={`mt-1 w-full px-3 py-1.5 text-sm rounded-lg border ${
                           darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100 disabled:opacity-60 disabled:cursor-not-allowed' : 'bg-white border-gray-300 text-slate-800 disabled:opacity-60 disabled:cursor-not-allowed'
                         }`}

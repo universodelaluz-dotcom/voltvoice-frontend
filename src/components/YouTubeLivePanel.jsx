@@ -557,6 +557,189 @@ const getPlanBadgeLabel = (planTier, billingCycle = 'monthly') => {
   return baseLabel
 }
 
+function NicksManagerPanel({ nickOverrides, setNickOverrides, editingNickInTable, setEditingNickInTable, editingNickValueInTable, setEditingNickValueInTable, onClose, darkMode, t }) {
+  const [search, setSearch] = useState('')
+  const [confirmClearAll, setConfirmClearAll] = useState(false)
+  const totalCount = Object.keys(nickOverrides).length
+
+  const filtered = Object.entries(nickOverrides).filter(([username, nickname]) => {
+    if (!search.trim()) return true
+    const q = search.trim().toLowerCase()
+    return username.toLowerCase().includes(q) || String(nickname).toLowerCase().includes(q)
+  })
+
+  const handleDeleteOne = async (username) => {
+    await apiNicks.remove(username)
+    setNickOverrides(prev => {
+      const next = { ...prev }
+      delete next[username]
+      return next
+    })
+    if (editingNickInTable === username) setEditingNickInTable(null)
+  }
+
+  const handleClearAll = async () => {
+    const usernames = Object.keys(nickOverrides)
+    await Promise.all(usernames.map(u => apiNicks.remove(u)))
+    setNickOverrides({})
+    setEditingNickInTable(null)
+    setConfirmClearAll(false)
+  }
+
+  return (
+    <div className={`rounded-lg border p-3 space-y-2.5 ${
+      darkMode ? 'bg-gray-900/80 border-cyan-500/30' : 'bg-cyan-50 border-cyan-200'
+    }`}>
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className={`text-xs font-bold uppercase tracking-widest shrink-0 ${darkMode ? 'text-cyan-400/80' : 'text-cyan-600'}`}>
+            {t('tiktok.nicks.savedTitle')}
+          </span>
+          {totalCount > 0 && (
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${darkMode ? 'bg-cyan-500/20 text-cyan-300' : 'bg-cyan-100 text-cyan-700'}`}>
+              {totalCount}
+            </span>
+          )}
+        </div>
+        <button onClick={onClose} className={`shrink-0 ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Buscador */}
+      {totalCount > 0 && (
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Buscar usuario o nick..."
+          className={`w-full px-2.5 py-1.5 text-xs rounded-lg border outline-none ${
+            darkMode
+              ? 'bg-gray-800 border-cyan-500/30 text-gray-100 placeholder-gray-500 focus:border-cyan-400'
+              : 'bg-white border-cyan-200 text-gray-800 placeholder-gray-400 focus:border-cyan-400'
+          }`}
+        />
+      )}
+
+      {/* Lista con scroll fijo */}
+      <div className="overflow-y-auto max-h-72 space-y-1 pr-0.5">
+        {totalCount === 0 ? (
+          <p className={`text-xs text-center py-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('tiktok.nicks.empty')}</p>
+        ) : filtered.length === 0 ? (
+          <p className={`text-xs text-center py-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Sin resultados para "{search}"</p>
+        ) : (
+          filtered.map(([username, nickname]) => (
+            <div
+              key={username}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border transition-colors ${
+                darkMode ? 'bg-gray-800/60 border-gray-700/50 hover:bg-gray-800' : 'bg-white border-cyan-100 hover:bg-cyan-50'
+              }`}
+            >
+              <span className={`text-[11px] truncate flex-1 min-w-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} title={username}>
+                {username}
+              </span>
+              <div className="flex-1 min-w-0">
+                {editingNickInTable === username ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    value={editingNickValueInTable}
+                    onChange={e => setEditingNickValueInTable(e.target.value)}
+                    onKeyDown={async (e) => {
+                      if (e.key === 'Enter') {
+                        const newNick = editingNickValueInTable.trim()
+                        if (newNick) {
+                          await apiNicks.set(username, newNick)
+                          setNickOverrides(prev => ({ ...prev, [username]: newNick }))
+                        }
+                        setEditingNickInTable(null)
+                      }
+                      if (e.key === 'Escape') setEditingNickInTable(null)
+                    }}
+                    onBlur={async () => {
+                      const newNick = editingNickValueInTable.trim()
+                      if (newNick) {
+                        await apiNicks.set(username, newNick)
+                        setNickOverrides(prev => ({ ...prev, [username]: newNick }))
+                      }
+                      setEditingNickInTable(null)
+                    }}
+                    className={`text-xs px-2 py-0.5 rounded border outline-none w-full ${
+                      darkMode ? 'bg-gray-700 text-cyan-300 border-cyan-500/50' : 'bg-white text-cyan-600 border-cyan-300'
+                    }`}
+                  />
+                ) : (
+                  <span
+                    className={`text-[11px] font-semibold truncate block cursor-pointer ${darkMode ? 'text-cyan-300' : 'text-cyan-600'}`}
+                    title="Click para editar"
+                    onClick={() => { setEditingNickInTable(username); setEditingNickValueInTable(nickname) }}
+                  >
+                    {nickname}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-0.5 shrink-0">
+                <button
+                  onClick={() => { setEditingNickInTable(username); setEditingNickValueInTable(nickname) }}
+                  className={`p-1 rounded transition-colors ${darkMode ? 'hover:bg-gray-700 text-cyan-400/70 hover:text-cyan-300' : 'hover:bg-cyan-100 text-cyan-500'}`}
+                  title="Editar nick"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => handleDeleteOne(username)}
+                  className={`p-1 rounded transition-colors ${darkMode ? 'hover:bg-red-900/40 text-red-400/70 hover:text-red-400' : 'hover:bg-red-100 text-red-400 hover:text-red-600'}`}
+                  title="Borrar nick"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Borrar todos */}
+      {totalCount > 0 && (
+        <div className={`pt-1 border-t ${darkMode ? 'border-gray-700/50' : 'border-cyan-200'}`}>
+          {confirmClearAll ? (
+            <div className="flex items-center gap-2">
+              <span className={`text-[11px] ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>¿Borrar los {totalCount} nicks?</span>
+              <button
+                onClick={handleClearAll}
+                className="text-[11px] font-bold px-2 py-1 rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
+              >
+                Sí, borrar
+              </button>
+              <button
+                onClick={() => setConfirmClearAll(false)}
+                className={`text-[11px] font-bold px-2 py-1 rounded transition-colors ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+              >
+                Cancelar
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmClearAll(true)}
+              className={`text-[11px] font-semibold flex items-center gap-1.5 transition-colors ${darkMode ? 'text-red-400/70 hover:text-red-400' : 'text-red-400 hover:text-red-600'}`}
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Borrar todos ({totalCount})
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function YouTubeLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride, platformMode = 'tiktok', tokens = 0, setTokens = null }) {
   const { t, i18n } = useTranslation()
   const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
@@ -1096,12 +1279,12 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
       }
     }
 
-    const onlyDonors = isEnabledFlag(c.onlyDonors)
-    const onlySuperChatMessages = isEnabledFlag(c.onlySuperChatMessages)
-    const onlyModerators = isEnabledFlag(c.onlyModerators)
-    const onlySubscribers = isEnabledFlag(c.onlySubscribers)
-    const onlyCommunityMembers = isEnabledFlag(c.onlyCommunityMembers)
-    const onlyQuestions = isEnabledFlag(c.onlyQuestions)
+    const onlyDonors = isEnabledFlag(c.yt_onlyDonors)
+    const onlySuperChatMessages = isEnabledFlag(c.yt_onlySuperChatMessages)
+    const onlyModerators = isEnabledFlag(c.yt_onlyModerators)
+    const onlySubscribers = isEnabledFlag(c.yt_onlySubscribers)
+    const onlyCommunityMembers = isEnabledFlag(c.yt_onlyCommunityMembers)
+    const onlyQuestions = isEnabledFlag(c.yt_onlyQuestions)
 
     // En donaciones de YouTube (Super Chat/Sticker), evitar que el TTS lea montos/cantidades.
     if (!!msg.isDonor) {
@@ -2280,12 +2463,12 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
             }
           }
 
-          const onlyDonors = isEnabledFlag(c.onlyDonors)
-          const onlySuperChatMessages = isEnabledFlag(c.onlySuperChatMessages)
-          const onlyModerators = isEnabledFlag(c.onlyModerators)
-          const onlySubscribers = isEnabledFlag(c.onlySubscribers)
-          const onlyCommunityMembers = isEnabledFlag(c.onlyCommunityMembers)
-          const onlyQuestions = isEnabledFlag(c.onlyQuestions)
+          const onlyDonors = isEnabledFlag(c.yt_onlyDonors)
+          const onlySuperChatMessages = isEnabledFlag(c.yt_onlySuperChatMessages)
+          const onlyModerators = isEnabledFlag(c.yt_onlyModerators)
+          const onlySubscribers = isEnabledFlag(c.yt_onlySubscribers)
+          const onlyCommunityMembers = isEnabledFlag(c.yt_onlyCommunityMembers)
+          const onlyQuestions = isEnabledFlag(c.yt_onlyQuestions)
 
           const roleFiltersActive = onlyDonors || onlySuperChatMessages || onlyModerators || onlySubscribers || onlyCommunityMembers
           const isQuestionMsg = isQuestion(messageForRead)
@@ -2947,17 +3130,18 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
       const { text, username } = item
       const remaining = speakQueueRef.current.length
       const c = configRef.current
-      const onlyDonors = isEnabledFlag(c.onlyDonors)
-      const onlySuperChatMessages = isEnabledFlag(c.onlySuperChatMessages)
-      const onlyModerators = isEnabledFlag(c.onlyModerators)
-      const onlySubscribers = isEnabledFlag(c.onlySubscribers)
-      const onlyCommunityMembers = isEnabledFlag(c.onlyCommunityMembers)
-      const onlyQuestions = isEnabledFlag(c.onlyQuestions)
+      const onlyDonors = isEnabledFlag(c.yt_onlyDonors)
+      const onlySuperChatMessages = isEnabledFlag(c.yt_onlySuperChatMessages)
+      const onlyModerators = isEnabledFlag(c.yt_onlyModerators)
+      const onlySubscribers = isEnabledFlag(c.yt_onlySubscribers)
+      const onlyCommunityMembers = isEnabledFlag(c.yt_onlyCommunityMembers)
+      const onlyQuestions = isEnabledFlag(c.yt_onlyQuestions)
       const profanityFilterEnabled = isEnabledFlag(c.profanityFilterEnabled)
       const roleFiltersActive =
         onlyDonors || onlySuperChatMessages || onlyModerators || onlySubscribers || onlyCommunityMembers
-      if (roleFiltersActive) {
+      if (roleFiltersActive || onlyQuestions) {
         const normalizedItemUsername = normalizeTikTokUsername(username)
+        const isQuestionItem = item.isQuestion || isQuestion(item.rawText || item.text || '')
         const passRoleFilter =
           (onlyDonors && (item.isDonor || donors.has(username) || donors.has(normalizedItemUsername))) ||
           (onlySuperChatMessages && item.isDonor) ||
@@ -2965,16 +3149,22 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
           (onlySubscribers && item.isSubscriber) ||
           (onlyCommunityMembers && item.isCommunityMember)
 
-        if (!passRoleFilter) {
-          console.log('[TikTok] processQueue: DROP por filtro de rol activo (item fuera de reglas)')
+        let shouldDrop
+        if (roleFiltersActive && onlyQuestions) {
+          // Ambos activos: pasa si cumple algún rol O es pregunta
+          shouldDrop = !passRoleFilter && !isQuestionItem
+        } else if (roleFiltersActive) {
+          // Solo roles: pasa si cumple algún rol activo
+          shouldDrop = !passRoleFilter
+        } else {
+          // Solo preguntas: pasa si es pregunta
+          shouldDrop = !isQuestionItem
+        }
+
+        if (shouldDrop) {
           markFilteredMessage()
           continue
         }
-      }
-      if (onlyQuestions && !(item.isQuestion || isQuestion(item.rawText || item.text || ''))) {
-        console.log('[TikTok] processQueue: DROP por onlyQuestions (mensaje sin pregunta)')
-        markFilteredMessage()
-        continue
       }
       if (profanityFilterEnabled) {
         const profanityWords = parseProfanityWords(c.profanityWords)
@@ -4991,106 +5181,17 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
 
           {/* Panel de Nicks Guardados */}
           {showNicksPanel && (
-            <div className={`rounded-lg border p-3 space-y-3 ${
-              darkMode ? 'bg-gray-900/80 border-cyan-500/30' : 'bg-cyan-50 border-cyan-200'
-            }`}>
-              <div className="flex items-center justify-between">
-                <span className={`text-xs font-bold uppercase tracking-widest ${darkMode ? 'text-cyan-400/80' : 'text-cyan-600'}`}>
-                  {t('tiktok.nicks.savedTitle')}
-                </span>
-                <button onClick={() => setShowNicksPanel(false)} className="text-gray-400 hover:text-gray-200"><X className="w-3.5 h-3.5" /></button>
-              </div>
-
-              {/* Tabla de nicks */}
-              <div className="overflow-x-auto">
-                {Object.entries(nickOverrides).length === 0 ? (
-                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{t('tiktok.nicks.empty')}</p>
-                ) : (
-                  <table className={`w-full text-xs ${darkMode ? 'border-gray-700' : 'border-cyan-200'}`}>
-                    <thead>
-                      <tr className={`border-b ${darkMode ? 'border-gray-700' : 'border-cyan-200'}`}>
-                        <th className="text-left px-2 py-2 font-semibold">{t('tiktok.nicks.table.user')}</th>
-                        <th className="text-left px-2 py-2 font-semibold">{t('tiktok.nicks.table.nick')}</th>
-                        <th className="text-center px-2 py-2 font-semibold">{t('tiktok.nicks.table.actions')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(nickOverrides).map(([username, nickname]) => (
-                        <tr key={username} className={`border-b ${darkMode ? 'border-gray-700/50 hover:bg-gray-800/30' : 'border-cyan-100 hover:bg-cyan-100/50'} transition-colors`}>
-                          <td className={`px-2 py-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{username}</td>
-                          <td className={`px-2 py-2 font-semibold ${darkMode ? 'text-cyan-300' : 'text-cyan-600'}`}>
-                            {editingNickInTable === username ? (
-                              <input
-                                autoFocus
-                                type="text"
-                                value={editingNickValueInTable}
-                                onChange={(e) => setEditingNickValueInTable(e.target.value)}
-                                onKeyDown={async (e) => {
-                                  if (e.key === 'Enter') {
-                                    const newNick = editingNickValueInTable.trim()
-                                    if (newNick) {
-                                      await apiNicks.set(username, newNick)
-                                      setNickOverrides(prev => ({ ...prev, [username]: newNick }))
-                                    }
-                                    setEditingNickInTable(null)
-                                  }
-                                  if (e.key === 'Escape') setEditingNickInTable(null)
-                                }}
-                                onBlur={async () => {
-                                  const newNick = editingNickValueInTable.trim()
-                                  if (newNick) {
-                                    await apiNicks.set(username, newNick)
-                                    setNickOverrides(prev => ({ ...prev, [username]: newNick }))
-                                  }
-                                  setEditingNickInTable(null)
-                                }}
-                                className={`text-xs px-2 py-1 rounded border outline-none w-32 ${
-                                  darkMode ? 'bg-gray-700 text-cyan-300 border-cyan-500/50' : 'bg-white text-cyan-600 border-cyan-300'
-                                }`}
-                              />
-                            ) : (
-                              nickname
-                            )}
-                          </td>
-                          <td className="px-2 py-2 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <button
-                                onClick={() => {
-                                  setEditingNickInTable(username)
-                                  setEditingNickValueInTable(nickname)
-                                }}
-                                className={`p-1 rounded transition-colors ${darkMode ? 'hover:bg-gray-700 text-cyan-400' : 'hover:bg-cyan-200 text-cyan-600'}`}
-                                title="Editar nick"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={async () => {
-                                  await apiNicks.remove(username)
-                                  setNickOverrides(prev => {
-                                    const next = { ...prev }
-                                    delete next[username]
-                                    return next
-                                  })
-                                }}
-                                className={`p-1 rounded transition-colors ${darkMode ? 'hover:bg-red-900/30 text-red-400' : 'hover:bg-red-100 text-red-600'}`}
-                                title="Borrar nick"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </div>
+            <NicksManagerPanel
+              nickOverrides={nickOverrides}
+              setNickOverrides={setNickOverrides}
+              editingNickInTable={editingNickInTable}
+              setEditingNickInTable={setEditingNickInTable}
+              editingNickValueInTable={editingNickValueInTable}
+              setEditingNickValueInTable={setEditingNickValueInTable}
+              onClose={() => setShowNicksPanel(false)}
+              darkMode={darkMode}
+              t={t}
+            />
           )}
 
             </div>

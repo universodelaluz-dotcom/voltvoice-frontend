@@ -116,6 +116,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
   const [assistantAudioElement, setAssistantAudioElement] = useState(null)
   const [pttRecordingActive, setPttRecordingActive] = useState(false)
   const audioRef = useRef(null)
+  const synthesisCache = useRef({ text: null, voiceId: null, audioUrl: null })
   const [tokensUsed, setTokensUsed] = useState(0)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
@@ -449,6 +450,19 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
       return
     }
 
+    // Si ya existe audio para este mismo texto y voz, solo reproducir sin consumir tokens
+    if (
+      synthesisCache.current.audioUrl &&
+      text.trim() === synthesisCache.current.text &&
+      selectedVoice === synthesisCache.current.voiceId
+    ) {
+      setError(null)
+      setAudioUrl(synthesisCache.current.audioUrl)
+      setAudioPlaybackNonce((prev) => prev + 1)
+      setIsPlaying(true)
+      return
+    }
+
     setLoading(true)
     setError(null)
     setSuccess(false)
@@ -482,6 +496,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
           }
         setError(data.error || t('studio.errors.synthesis'))
         } else {
+          synthesisCache.current = { text: text.trim(), voiceId: selectedVoice, audioUrl: data.audio }
           setAudioUrl(data.audio)
           setAudioPlaybackNonce((prev) => prev + 1)
           setIsPlaying(true)
@@ -523,7 +538,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
         const data = await response.json()
 
         if (response.ok && (data.audio || data.success)) {
-          setAudioUrl(data.audio || data.audioUrl)
+          const generatedAudioUrl = data.audio || data.audioUrl
+          synthesisCache.current = { text: text.trim(), voiceId: selectedVoice, audioUrl: generatedAudioUrl }
+          setAudioUrl(generatedAudioUrl)
           setAudioPlaybackNonce((prev) => prev + 1)
           const estTokens = text.length
           const usedTokens = Number(data.tokensUsed || estTokens)
@@ -953,18 +970,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
                   <div className={`flex-1 ${darkMode ? "text-xs text-gray-400" : "text-xs text-gray-600"}`}>
                     <span className="text-cyan-400 font-bold">{tokensUsed}</span> {isEnglish ? 'tokens used' : 'tokens usados'}
                   </div>
-                  <button
-                    onClick={downloadAudioAsWav}
-                    title={isEnglish ? 'Download WAV' : 'Descargar archivo WAV'}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex-shrink-0 ${
-                      darkMode
-                        ? 'bg-white/10 text-cyan-300 hover:bg-white/20'
-                        : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-                    }`}
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>{isEnglish ? 'Download WAV' : 'Descargar WAV'}</span>
-                  </button>
                 </div>
               )}
             </div>
@@ -978,6 +983,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
               tiktokUsername="test_stream"
               config={config}
               updateConfig={updateConfig}
+              platformMode={platformMode}
             />
 
             {/* Tokens - minimalista */}

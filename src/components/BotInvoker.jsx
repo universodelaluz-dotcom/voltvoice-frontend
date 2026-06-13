@@ -244,7 +244,10 @@ const CONFIG_COMMANDS = [
   }
 ]
 
-export default function BotInvoker({ user, onGoPricingPage, darkMode = true, onClose, config, updateConfig }) {
+const PLATFORM_LECTURA_KEYS = new Set(['onlyModerators', 'onlyDonors', 'onlyQuestions'])
+
+export default function BotInvoker({ user, onGoPricingPage, darkMode = true, onClose, config, updateConfig, platformMode = 'tiktok' }) {
+  const platformPrefix = platformMode === 'youtube' ? 'yt_' : 'tt_'
   const { t } = useTranslation()
   const [characters, setCharacters] = useState([])
   const [userVoices, setUserVoices] = useState([])
@@ -806,9 +809,10 @@ const formatResetWait = (seconds = 0) => {
       })
 
       if (commandMatched || aliasTokenMatched) {
+        const resolvedKey = PLATFORM_LECTURA_KEYS.has(command.key) ? platformPrefix + command.key : command.key
         return {
           type: 'set_config_boolean',
-          key: command.key,
+          key: resolvedKey,
           label: command.label,
           value: explicitState ?? true
         }

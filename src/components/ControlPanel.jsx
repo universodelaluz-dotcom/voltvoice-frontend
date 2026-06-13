@@ -558,11 +558,11 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
     const forcedOffInFree = [
       'readOnlyMessage',
       'readByCommandEnabled',
-      'onlyQuestions',
-      'onlyDonors',
-      'onlyModerators',
-      'onlySubscribers',
-      'onlyCommunityMembers',
+      'tt_onlyQuestions',
+      'tt_onlyDonors',
+      'tt_onlyModerators',
+      'tt_onlySubscribers',
+      'tt_onlyCommunityMembers',
       'ignoreLinks',
       'profanityFilterEnabled',
       'ignoreExcessiveEmojis',
@@ -978,20 +978,20 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-gray-200 shadow-sm'
                 }`}>
                   <div>
-                    <CheckOption label={t('control.reading.onlyQuestions')} checked={config.onlyQuestions} onChange={() => {}} darkMode={darkMode} />
-                    <CheckOption label={t('control.reading.onlyDonors')} checked={config.onlyDonors} onChange={() => {}} darkMode={darkMode} />
-                    <CheckOption label={t('control.reading.onlyMods')} checked={config.onlyModerators} onChange={() => {}} darkMode={darkMode} />
-                    <CheckOption label={t('control.reading.onlySubs')} checked={config.onlySubscribers} onChange={() => {}} darkMode={darkMode} />
-                    <CheckOption label={t('control.reading.onlyCommunity')} checked={config.onlyCommunityMembers} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label={t('control.reading.onlyQuestions')} checked={config.tt_onlyQuestions} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label={t('control.reading.onlyDonors')} checked={config.tt_onlyDonors} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label={t('control.reading.onlyMods')} checked={config.tt_onlyModerators} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label={t('control.reading.onlySubs')} checked={config.tt_onlySubscribers} onChange={() => {}} darkMode={darkMode} />
+                    <CheckOption label={t('control.reading.onlyCommunity')} checked={config.tt_onlyCommunityMembers} onChange={() => {}} darkMode={darkMode} />
                   </div>
                 </div>
               ) : (
                 <>
-                  <CheckOption label={t('control.reading.onlyQuestions')} checked={config.onlyQuestions} onChange={() => updateConfig('onlyQuestions', !config.onlyQuestions)} darkMode={darkMode} hint={t('control.reading.onlyQuestionsHint')} />
-                  <CheckOption label={t('control.reading.onlyDonors')} checked={config.onlyDonors} onChange={() => updateConfig('onlyDonors', !config.onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron regalos" />
-                  <CheckOption label={t('control.reading.onlyMods')} checked={config.onlyModerators} onChange={() => updateConfig('onlyModerators', !config.onlyModerators)} darkMode={darkMode} hint={t('control.reading.onlyModsHint')} />
-                  <CheckOption label={t('control.reading.onlySubs')} checked={config.onlySubscribers} onChange={() => updateConfig('onlySubscribers', !config.onlySubscribers)} darkMode={darkMode} hint={t('control.reading.onlySubsHint')} />
-                  <CheckOption label={t('control.reading.onlyCommunity')} checked={config.onlyCommunityMembers} onChange={() => updateConfig('onlyCommunityMembers', !config.onlyCommunityMembers)} darkMode={darkMode} hint={t('control.reading.onlyCommunityHint')} />
+                  <CheckOption label={t('control.reading.onlyQuestions')} checked={config.tt_onlyQuestions} onChange={() => updateConfig('tt_onlyQuestions', !config.tt_onlyQuestions)} darkMode={darkMode} hint={t('control.reading.onlyQuestionsHint')} />
+                  <CheckOption label={t('control.reading.onlyDonors')} checked={config.tt_onlyDonors} onChange={() => updateConfig('tt_onlyDonors', !config.tt_onlyDonors)} darkMode={darkMode} hint="Solo lee mensajes de usuarios que enviaron regalos" />
+                  <CheckOption label={t('control.reading.onlyMods')} checked={config.tt_onlyModerators} onChange={() => updateConfig('tt_onlyModerators', !config.tt_onlyModerators)} darkMode={darkMode} hint={t('control.reading.onlyModsHint')} />
+                  <CheckOption label={t('control.reading.onlySubs')} checked={config.tt_onlySubscribers} onChange={() => updateConfig('tt_onlySubscribers', !config.tt_onlySubscribers)} darkMode={darkMode} hint={t('control.reading.onlySubsHint')} />
+                  <CheckOption label={t('control.reading.onlyCommunity')} checked={config.tt_onlyCommunityMembers} onChange={() => updateConfig('tt_onlyCommunityMembers', !config.tt_onlyCommunityMembers)} darkMode={darkMode} hint={t('control.reading.onlyCommunityHint')} />
 
                   {/* Leer solo lista elegida */}
                   <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
