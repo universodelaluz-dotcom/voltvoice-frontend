@@ -587,155 +587,193 @@ function NicksManagerPanel({ nickOverrides, setNickOverrides, editingNickInTable
   }
 
   return (
-    <div className={`rounded-lg border p-3 space-y-2.5 ${
-      darkMode ? 'bg-gray-900/80 border-cyan-500/30' : 'bg-cyan-50 border-cyan-200'
-    }`}>
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className={`text-xs font-bold uppercase tracking-widest shrink-0 ${darkMode ? 'text-cyan-400/80' : 'text-cyan-600'}`}>
-            {t('tiktok.nicks.savedTitle')}
-          </span>
-          {totalCount > 0 && (
-            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${darkMode ? 'bg-cyan-500/20 text-cyan-300' : 'bg-cyan-100 text-cyan-700'}`}>
-              {totalCount}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className={`relative w-full max-w-2xl max-h-[88vh] flex flex-col rounded-2xl border shadow-2xl ${
+        darkMode ? 'bg-[#0d0f1f] border-cyan-500/30' : 'bg-white border-gray-200'
+      }`}>
+
+        {/* Header */}
+        <div className={`flex items-center justify-between gap-3 px-6 py-4 border-b shrink-0 ${
+          darkMode ? 'border-gray-700/60' : 'border-gray-200'
+        }`}>
+          <div className="flex items-center gap-3">
+            <span className={`text-sm font-black uppercase tracking-widest ${darkMode ? 'text-cyan-400' : 'text-cyan-700'}`}>
+              {t('tiktok.nicks.savedTitle')}
             </span>
-          )}
-        </div>
-        <button onClick={onClose} className={`shrink-0 ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}>
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      {/* Buscador */}
-      {totalCount > 0 && (
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar usuario o nick..."
-          className={`w-full px-2.5 py-1.5 text-xs rounded-lg border outline-none ${
-            darkMode
-              ? 'bg-gray-800 border-cyan-500/30 text-gray-100 placeholder-gray-500 focus:border-cyan-400'
-              : 'bg-white border-cyan-200 text-gray-800 placeholder-gray-400 focus:border-cyan-400'
-          }`}
-        />
-      )}
-
-      {/* Lista con scroll fijo */}
-      <div className="overflow-y-auto max-h-72 space-y-1 pr-0.5">
-        {totalCount === 0 ? (
-          <p className={`text-xs text-center py-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('tiktok.nicks.empty')}</p>
-        ) : filtered.length === 0 ? (
-          <p className={`text-xs text-center py-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Sin resultados para "{search}"</p>
-        ) : (
-          filtered.map(([username, nickname]) => (
-            <div
-              key={username}
-              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border transition-colors ${
-                darkMode ? 'bg-gray-800/60 border-gray-700/50 hover:bg-gray-800' : 'bg-white border-cyan-100 hover:bg-cyan-50'
-              }`}
-            >
-              <span className={`text-[11px] truncate flex-1 min-w-0 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} title={username}>
-                {username}
+            {totalCount > 0 && (
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                darkMode ? 'bg-cyan-500/20 text-cyan-300' : 'bg-cyan-100 text-cyan-700'
+              }`}>
+                {totalCount}
               </span>
-              <div className="flex-1 min-w-0">
-                {editingNickInTable === username ? (
-                  <input
-                    autoFocus
-                    type="text"
-                    value={editingNickValueInTable}
-                    onChange={e => setEditingNickValueInTable(e.target.value)}
-                    onKeyDown={async (e) => {
-                      if (e.key === 'Enter') {
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className={`p-1.5 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-200' : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'}`}
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className={`px-6 py-3 border-b shrink-0 ${darkMode ? 'border-gray-700/60' : 'border-gray-200'}`}>
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar por usuario o nick..."
+            className={`w-full px-3 py-2 text-sm rounded-lg border outline-none transition-colors ${
+              darkMode
+                ? 'bg-gray-800 border-gray-600 text-gray-100 placeholder-gray-500 focus:border-cyan-400'
+                : 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-400 focus:border-cyan-400'
+            }`}
+          />
+        </div>
+
+        {/* Column headers */}
+        {totalCount > 0 && (
+          <div className={`grid gap-3 px-6 py-2 text-[11px] font-bold uppercase tracking-widest shrink-0 ${
+            darkMode ? 'text-gray-500' : 'text-gray-400'
+          }`} style={{ gridTemplateColumns: '1fr 1fr 72px' }}>
+            <span>Usuario original</span>
+            <span>Nick guardado</span>
+            <span className="text-right">Acción</span>
+          </div>
+        )}
+
+        {/* Scrollable list */}
+        <div className="flex-1 overflow-y-auto min-h-0 px-6 py-2 space-y-1">
+          {totalCount === 0 ? (
+            <p className={`text-sm text-center py-16 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{t('tiktok.nicks.empty')}</p>
+          ) : filtered.length === 0 ? (
+            <p className={`text-sm text-center py-16 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Sin resultados para "{search}"</p>
+          ) : (
+            filtered.map(([username, nickname]) => (
+              <div
+                key={username}
+                className={`grid items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${
+                  editingNickInTable === username
+                    ? darkMode ? 'bg-gray-700/60 border-cyan-500/40' : 'bg-cyan-50 border-cyan-300'
+                    : darkMode ? 'bg-gray-800/50 border-gray-700/40 hover:bg-gray-800/80' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'
+                }`}
+                style={{ gridTemplateColumns: '1fr 1fr 72px' }}
+              >
+                <span
+                  className={`text-sm truncate font-mono ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}
+                  title={username}
+                >
+                  {username}
+                </span>
+
+                <div className="min-w-0">
+                  {editingNickInTable === username ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={editingNickValueInTable}
+                      onChange={e => setEditingNickValueInTable(e.target.value)}
+                      onKeyDown={async (e) => {
+                        if (e.key === 'Enter') {
+                          const newNick = editingNickValueInTable.trim()
+                          if (newNick) {
+                            await apiNicks.set(username, newNick)
+                            setNickOverrides(prev => ({ ...prev, [username]: newNick }))
+                          }
+                          setEditingNickInTable(null)
+                        }
+                        if (e.key === 'Escape') setEditingNickInTable(null)
+                      }}
+                      onBlur={async () => {
                         const newNick = editingNickValueInTable.trim()
                         if (newNick) {
                           await apiNicks.set(username, newNick)
                           setNickOverrides(prev => ({ ...prev, [username]: newNick }))
                         }
                         setEditingNickInTable(null)
-                      }
-                      if (e.key === 'Escape') setEditingNickInTable(null)
-                    }}
-                    onBlur={async () => {
-                      const newNick = editingNickValueInTable.trim()
-                      if (newNick) {
-                        await apiNicks.set(username, newNick)
-                        setNickOverrides(prev => ({ ...prev, [username]: newNick }))
-                      }
-                      setEditingNickInTable(null)
-                    }}
-                    className={`text-xs px-2 py-0.5 rounded border outline-none w-full ${
-                      darkMode ? 'bg-gray-700 text-cyan-300 border-cyan-500/50' : 'bg-white text-cyan-600 border-cyan-300'
-                    }`}
-                  />
-                ) : (
-                  <span
-                    className={`text-[11px] font-semibold truncate block cursor-pointer ${darkMode ? 'text-cyan-300' : 'text-cyan-600'}`}
-                    title="Click para editar"
-                    onClick={() => { setEditingNickInTable(username); setEditingNickValueInTable(nickname) }}
-                  >
-                    {nickname}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-0.5 shrink-0">
-                <button
-                  onClick={() => { setEditingNickInTable(username); setEditingNickValueInTable(nickname) }}
-                  className={`p-1 rounded transition-colors ${darkMode ? 'hover:bg-gray-700 text-cyan-400/70 hover:text-cyan-300' : 'hover:bg-cyan-100 text-cyan-500'}`}
-                  title="Editar nick"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => handleDeleteOne(username)}
-                  className={`p-1 rounded transition-colors ${darkMode ? 'hover:bg-red-900/40 text-red-400/70 hover:text-red-400' : 'hover:bg-red-100 text-red-400 hover:text-red-600'}`}
-                  title="Borrar nick"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+                      }}
+                      className={`text-sm px-2 py-1 rounded-lg border outline-none w-full ${
+                        darkMode ? 'bg-gray-600 text-cyan-200 border-cyan-400/60' : 'bg-white text-cyan-700 border-cyan-300'
+                      }`}
+                    />
+                  ) : (
+                    <span
+                      className={`text-sm font-semibold truncate block cursor-pointer hover:underline ${darkMode ? 'text-cyan-300' : 'text-cyan-600'}`}
+                      title="Clic para editar"
+                      onClick={() => { setEditingNickInTable(username); setEditingNickValueInTable(nickname) }}
+                    >
+                      {nickname}
+                    </span>
+                  )}
+                </div>
 
-      {/* Borrar todos */}
-      {totalCount > 0 && (
-        <div className={`pt-1 border-t ${darkMode ? 'border-gray-700/50' : 'border-cyan-200'}`}>
-          {confirmClearAll ? (
-            <div className="flex items-center gap-2">
-              <span className={`text-[11px] ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>¿Borrar los {totalCount} nicks?</span>
-              <button
-                onClick={handleClearAll}
-                className="text-[11px] font-bold px-2 py-1 rounded bg-red-500 hover:bg-red-600 text-white transition-colors"
-              >
-                Sí, borrar
-              </button>
-              <button
-                onClick={() => setConfirmClearAll(false)}
-                className={`text-[11px] font-bold px-2 py-1 rounded transition-colors ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-              >
-                Cancelar
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setConfirmClearAll(true)}
-              className={`text-[11px] font-semibold flex items-center gap-1.5 transition-colors ${darkMode ? 'text-red-400/70 hover:text-red-400' : 'text-red-400 hover:text-red-600'}`}
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Borrar todos ({totalCount})
-            </button>
+                <div className="flex items-center gap-1 justify-end">
+                  <button
+                    onClick={() => { setEditingNickInTable(username); setEditingNickValueInTable(nickname) }}
+                    className={`p-1.5 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-600 text-cyan-400/70 hover:text-cyan-300' : 'hover:bg-cyan-100 text-cyan-500 hover:text-cyan-700'}`}
+                    title="Editar nick"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteOne(username)}
+                    className={`p-1.5 rounded-lg transition-colors ${darkMode ? 'hover:bg-red-900/50 text-red-400/60 hover:text-red-400' : 'hover:bg-red-50 text-red-400 hover:text-red-600'}`}
+                    title="Borrar nick"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))
           )}
         </div>
-      )}
+
+        {/* Footer */}
+        {totalCount > 0 && (
+          <div className={`px-6 py-3 border-t shrink-0 flex items-center justify-between gap-4 ${
+            darkMode ? 'border-gray-700/60' : 'border-gray-200'
+          }`}>
+            {confirmClearAll ? (
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>¿Borrar los {totalCount} nicks?</span>
+                <button
+                  onClick={handleClearAll}
+                  className="text-sm font-bold px-4 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
+                >
+                  Sí, borrar todos
+                </button>
+                <button
+                  onClick={() => setConfirmClearAll(false)}
+                  className={`text-sm font-bold px-4 py-1.5 rounded-lg transition-colors ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                >
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmClearAll(true)}
+                className={`text-sm font-semibold flex items-center gap-2 transition-colors ${darkMode ? 'text-red-400/70 hover:text-red-400' : 'text-red-400 hover:text-red-600'}`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Borrar todos ({totalCount})
+              </button>
+            )}
+            <span className={`text-xs shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+              {search.trim() ? `${filtered.length} de ${totalCount}` : `${totalCount} nicks`}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
