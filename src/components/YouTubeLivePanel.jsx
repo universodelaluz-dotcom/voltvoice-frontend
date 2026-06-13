@@ -941,6 +941,13 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
     donorsRef.current = donors
   }, [donors])
 
+  useEffect(() => {
+    if (!showNicksPanel) return
+    apiNicks.getAll().then(data => {
+      if (data && typeof data === 'object') setNickOverrides(data)
+    }).catch(() => {})
+  }, [showNicksPanel])
+
   const getYouTubeSessionLabel = (rawUrl = '') => {
     const input = String(rawUrl || '').trim()
     if (!input) return youtubeAuthState.channelLabel || 'Canal de YouTube'
