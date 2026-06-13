@@ -451,7 +451,7 @@ const apiBans = {
 const apiNicks = {
   async getAll() {
     try {
-      const res = await fetch(`${API_URL}/api/nicks`, {
+      const res = await fetch(`${API_URL}/api/nicks?platform=tiktok`, {
         headers: { 'Authorization': `Bearer ${getAuthToken()}` }
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -471,7 +471,7 @@ const apiNicks = {
           'Authorization': `Bearer ${getAuthToken()}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username: normalizedUsername, newNickname })
+        body: JSON.stringify({ username: normalizedUsername, newNickname, platform: 'tiktok' })
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       return await res.json()
@@ -484,7 +484,7 @@ const apiNicks = {
   async remove(username) {
     try {
       const normalizedUsername = normalizeTikTokUsername(username)
-      const res = await fetch(`${API_URL}/api/nicks/${normalizedUsername}`, {
+      const res = await fetch(`${API_URL}/api/nicks/${normalizedUsername}?platform=tiktok`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${getAuthToken()}` }
       })
