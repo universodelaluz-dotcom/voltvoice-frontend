@@ -3875,7 +3875,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     if (!isConnected || messages.length === 0) return null
     const recentCutoff = Date.now() - 60000
     const recent = messages.filter(m => Number(m.timestamp || 0) >= recentCutoff)
-    if (recent.length < 4) return null
+    if (recent.length < 1) return null
 
     const positiveWords = ['bien', 'bueno', 'genial', 'increible', 'hermoso', 'excelente',
       'chevere', 'jaja', 'jeje', 'amor', 'wow', 'nice', 'great', 'good', 'love',
