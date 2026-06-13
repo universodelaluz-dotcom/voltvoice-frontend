@@ -107,7 +107,7 @@ function ProgressBar({ value, max, color = 'cyan', darkMode }) {
 const SENTIMENT_META = {
   euphoric:     { emoji: '🔥', label: 'Eufórico',    color: '#ef4444' },
   chaotic:      { emoji: '🌪️', label: 'Caótico',     color: '#a855f7' },
-  joyful:       { emoji: '😂', label: 'Risueño',     color: '#facc15' },
+  joyful:       { emoji: '😂', label: 'Riseño',     color: '#facc15' },
   surprised:    { emoji: '🤯', label: 'Sorprendido', color: '#fb923c' },
   affectionate: { emoji: '🥰', label: 'Cariñoso',    color: '#ec4899' },
   energized:    { emoji: '⚡', label: 'Energizado',  color: '#f97316' },
@@ -117,150 +117,6 @@ const SENTIMENT_META = {
   positive:     { emoji: '😄', label: 'Positivo',    color: '#22c55e' },
   neutral:      { emoji: '😐', label: 'Neutro',      color: '#64748b' },
   quiet:        { emoji: '😴', label: 'Apagado',     color: '#475569' },
-}
-
-function SentimentHistorySection({ darkMode, isEnglish, delay }) {
-  const sessions = useMemo(() => {
-    try {
-      return JSON.parse(localStorage.getItem('voltvoice_sentiment_sessions') || '[]')
-    } catch { return [] }
-  }, [])
-
-  const sectionTitle    = isEnglish ? 'Chat pulse history' : 'Historial del pulso del chat'
-  const sectionSubtitle = isEnglish ? 'Dominant emotion recorded at end of each stream' : 'Emoción dominante registrada al finalizar cada stream'
-  const emptyMsg        = isEnglish ? 'No data yet. Sentiment is recorded when you disconnect from a stream.' : 'Sin datos aún. El pulso se registra al desconectarte de un stream.'
-
-  if (sessions.length === 0) return (
-    <SectionCard darkMode={darkMode} title={sectionTitle} subtitle={sectionSubtitle} accent=”purple” delay={delay}>
-      <div className={`rounded-2xl border border-dashed p-8 text-center text-sm ${darkMode ? 'border-white/10 text-gray-500' : 'border-gray-200 text-gray-400'}`}>
-        {emptyMsg}
-      </div>
-    </SectionCard>
-  )
-
-  const allStateCounts = {}
-  for (const s of sessions) {
-    for (const [k, v] of Object.entries(s.stateCounts || {})) {
-      allStateCounts[k] = (allStateCounts[k] || 0) + v
-    }
-  }
-  const totalAllSamples = Object.values(allStateCounts).reduce((a, b) => a + b, 0)
-  const sortedStates = Object.entries(allStateCounts).sort((a, b) => b[1] - a[1])
-
-  const nowDate = new Date()
-  const thisWeek = (() => {
-    const d = new Date(Date.UTC(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate()))
-    const day = d.getUTCDay() || 7
-    d.setUTCDate(d.getUTCDate() + 4 - day)
-    const ys = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-    return `${d.getUTCFullYear()}-W${String(Math.ceil((((d - ys) / 86400000) + 1) / 7)).padStart(2, '0')}`
-  })()
-  const thisMonth = nowDate.toISOString().slice(0, 7)
-
-  const weekSessions   = sessions.filter(s => s.week === thisWeek)
-  const monthSessions  = sessions.filter(s => s.month === thisMonth)
-  const recentSessions = [...sessions].reverse().slice(0, 8)
-
-  const dominantInGroup = (group) => {
-    if (!group.length) return null
-    const counts = {}
-    for (const s of group) {
-      if (s.dominant) counts[s.dominant] = (counts[s.dominant] || 0) + 1
-    }
-    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0]
-  }
-
-  const weekDom  = dominantInGroup(weekSessions)
-  const monthDom = dominantInGroup(monthSessions)
-
-  return (
-    <SectionCard
-      darkMode={darkMode}
-      title={sectionTitle}
-      subtitle={sectionSubtitle}
-      accent=”purple”
-      delay={delay}
-    >
-      <div className=”space-y-5”>
-        {/* Resumen semanal + mensual */}
-        <div className=”grid grid-cols-2 gap-3”>
-          {[
-            { label: isEnglish ? 'This week' : 'Esta semana', dom: weekDom,  count: weekSessions.length  },
-            { label: isEnglish ? 'This month' : 'Este mes',   dom: monthDom, count: monthSessions.length },
-          ].map(({ label, dom, count }) => {
-            const meta = dom ? (SENTIMENT_META[dom] || {}) : null
-            return (
-              <div key={label} className={`rounded-2xl p-4 border ${darkMode ? 'bg-white/[0.03] border-white/8' : 'bg-gray-50 border-gray-200'}`}>
-                <p className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{label}</p>
-                {meta ? (
-                  <div className=”flex items-center gap-2”>
-                    <span className=”text-2xl”>{meta.emoji}</span>
-                    <div>
-                      <p className=”text-sm font-black” style={{ color: meta.color }}>{meta.label}</p>
-                      <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{count} {isEnglish ? 'sessions' : 'sesiones'}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className={`text-sm ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>{isEnglish ? 'No sessions' : 'Sin sesiones'}</p>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Distribución global de emociones */}
-        {sortedStates.length > 0 && (
-          <div>
-            <p className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-              {isEnglish ? 'All-time emotion breakdown' : 'Distribución histórica de emociones'}
-            </p>
-            <div className=”space-y-2”>
-              {sortedStates.slice(0, 8).map(([state, count]) => {
-                const meta = SENTIMENT_META[state] || { emoji: '❓', label: state, color: '#94a3b8' }
-                const pct = totalAllSamples > 0 ? Math.round((count / totalAllSamples) * 100) : 0
-                return (
-                  <div key={state} className=”flex items-center gap-3”>
-                    <span className=”text-base w-6 text-center shrink-0”>{meta.emoji}</span>
-                    <span className={`text-xs font-bold w-24 shrink-0 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{meta.label}</span>
-                    <div className={`flex-1 h-2 rounded-full overflow-hidden ${darkMode ? 'bg-white/8' : 'bg-gray-200'}`}>
-                      <div className=”h-full rounded-full transition-all duration-700” style={{ width: `${pct}%`, backgroundColor: meta.color }} />
-                    </div>
-                    <span className=”text-xs font-black w-10 text-right shrink-0” style={{ color: meta.color }}>{pct}%</span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Últimas sesiones */}
-        <div>
-          <p className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-            {isEnglish ? 'Recent sessions' : 'Sesiones recientes'}
-          </p>
-          <div className=”space-y-1.5”>
-            {recentSessions.map((s, i) => {
-              const meta = s.dominant ? (SENTIMENT_META[s.dominant] || { emoji: '❓', label: s.dominant, color: '#94a3b8' }) : null
-              return (
-                <div key={s.id || i} className={`flex items-center gap-3 px-3 py-2 rounded-xl ${darkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'} transition-colors`}>
-                  <span className={`text-[11px] font-bold tabular-nums shrink-0 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{s.date}</span>
-                  {meta ? (
-                    <>
-                      <span className=”text-base shrink-0”>{meta.emoji}</span>
-                      <span className=”text-xs font-bold flex-1” style={{ color: meta.color }}>{meta.label}</span>
-                      <span className={`text-[11px] font-bold ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>{s.dominantPct}%</span>
-                    </>
-                  ) : (
-                    <span className={`text-xs flex-1 ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>—</span>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-    </SectionCard>
-  )
 }
 
 /* â”€â”€ SectionCard con entrada animada â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -287,6 +143,138 @@ function SectionCard({ darkMode, title, subtitle, children, delay = 0, accent })
       {children}
     </section>
   )
+}
+
+function SentimentHistorySection({ darkMode, isEnglish, delay }) {
+  const sessions = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem('voltvoice_sentiment_sessions') || '[]'); }
+    catch (e) { return []; }
+  }, []);
+
+  const titleStr    = isEnglish ? 'Chat pulse history' : 'Historial del pulso del chat';
+  const subtitleStr = isEnglish ? 'Dominant emotion per stream session' : 'Emocion dominante por sesion de stream';
+  const emptyStr    = isEnglish ? 'No data yet. Sentiment is recorded when you disconnect from a stream.' : 'Sin datos aun. El pulso se registra al desconectarte de un stream.';
+
+  if (sessions.length === 0) {
+    return (
+      <SectionCard darkMode={darkMode} title={titleStr} subtitle={subtitleStr} accent=”purple” delay={delay}>
+        <div className={['rounded-2xl border border-dashed p-8 text-center text-sm', darkMode ? 'border-white/10 text-gray-500' : 'border-gray-200 text-gray-400'].join(' ')}>
+          {emptyStr}
+        </div>
+      </SectionCard>
+    );
+  }
+
+  const allCounts = {};
+  for (const s of sessions) {
+    for (const [k, v] of Object.entries(s.stateCounts || {})) {
+      allCounts[k] = (allCounts[k] || 0) + v;
+    }
+  }
+  const totalSamples   = Object.values(allCounts).reduce((a, b) => a + b, 0);
+  const sortedStates   = Object.entries(allCounts).sort((a, b) => b[1] - a[1]);
+  const nowDate        = new Date();
+  const isoNow         = nowDate.toISOString().split('T')[0];
+  const thisMonth      = isoNow.slice(0, 7);
+  const d              = new Date(Date.UTC(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate()));
+  const wd             = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - wd);
+  const ys             = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const thisWeek       = d.getUTCFullYear() + '-W' + String(Math.ceil((((d - ys) / 86400000) + 1) / 7)).padStart(2, '0');
+  const weekSessions   = sessions.filter(s => s.week === thisWeek);
+  const monthSessions  = sessions.filter(s => s.month === thisMonth);
+  const recentSessions = [...sessions].reverse().slice(0, 8);
+
+  const dominant = (group) => {
+    if (!group.length) return null;
+    const c = {};
+    for (const s of group) { if (s.dominant) c[s.dominant] = (c[s.dominant] || 0) + 1; }
+    return Object.entries(c).sort((a, b) => b[1] - a[1])[0]?.[0];
+  };
+  const weekDom  = dominant(weekSessions);
+  const monthDom = dominant(monthSessions);
+
+  const periodCards = [
+    { label: isEnglish ? 'This week' : 'Esta semana', dom: weekDom,  count: weekSessions.length  },
+    { label: isEnglish ? 'This month' : 'Este mes',   dom: monthDom, count: monthSessions.length },
+  ];
+
+  return (
+    <SectionCard darkMode={darkMode} title={titleStr} subtitle={subtitleStr} accent=”purple” delay={delay}>
+      <div className=”space-y-5”>
+        <div className=”grid grid-cols-2 gap-3”>
+          {periodCards.map(({ label, dom, count }) => {
+            const meta = dom ? (SENTIMENT_META[dom] || {}) : null;
+            return (
+              <div key={label} className={['rounded-2xl p-4 border', darkMode ? 'bg-white/[0.03] border-white/8' : 'bg-gray-50 border-gray-200'].join(' ')}>
+                <p className={['text-[10px] font-bold uppercase tracking-widest mb-2', darkMode ? 'text-gray-500' : 'text-gray-400'].join(' ')}>{label}</p>
+                {meta && meta.emoji ? (
+                  <div className=”flex items-center gap-2”>
+                    <span className=”text-2xl”>{meta.emoji}</span>
+                    <div>
+                      <p className=”text-sm font-black” style={{ color: meta.color }}>{meta.label}</p>
+                      <p className={['text-xs', darkMode ? 'text-gray-500' : 'text-gray-400'].join(' ')}>{count} {isEnglish ? 'sessions' : 'sesiones'}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className={['text-sm', darkMode ? 'text-gray-600' : 'text-gray-400'].join(' ')}>{isEnglish ? 'No sessions' : 'Sin sesiones'}</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {sortedStates.length > 0 && (
+          <div>
+            <p className={['text-[10px] font-bold uppercase tracking-widest mb-3', darkMode ? 'text-gray-500' : 'text-gray-400'].join(' ')}>
+              {isEnglish ? 'All-time emotion breakdown' : 'Distribucion historica de emociones'}
+            </p>
+            <div className=”space-y-2”>
+              {sortedStates.slice(0, 8).map(([state, count]) => {
+                const meta = SENTIMENT_META[state] || { emoji: '?', label: state, color: '#94a3b8' };
+                const pct  = totalSamples > 0 ? Math.round((count / totalSamples) * 100) : 0;
+                return (
+                  <div key={state} className=”flex items-center gap-3”>
+                    <span className=”text-base w-6 text-center shrink-0”>{meta.emoji}</span>
+                    <span className={['text-xs font-bold w-24 shrink-0', darkMode ? 'text-gray-300' : 'text-gray-700'].join(' ')}>{meta.label}</span>
+                    <div className={['flex-1 h-2 rounded-full overflow-hidden', darkMode ? 'bg-white/8' : 'bg-gray-200'].join(' ')}>
+                      <div className=”h-full rounded-full transition-all duration-700” style={{ width: pct + '%', backgroundColor: meta.color }} />
+                    </div>
+                    <span className=”text-xs font-black w-10 text-right shrink-0” style={{ color: meta.color }}>{pct}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div>
+          <p className={['text-[10px] font-bold uppercase tracking-widest mb-3', darkMode ? 'text-gray-500' : 'text-gray-400'].join(' ')}>
+            {isEnglish ? 'Recent sessions' : 'Sesiones recientes'}
+          </p>
+          <div className=”space-y-1.5”>
+            {recentSessions.map((s, i) => {
+              const meta = s.dominant ? (SENTIMENT_META[s.dominant] || { emoji: '?', label: s.dominant, color: '#94a3b8' }) : null;
+              return (
+                <div key={s.id || i} className={['flex items-center gap-3 px-3 py-2 rounded-xl transition-colors', darkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'].join(' ')}>
+                  <span className={['text-[11px] font-bold tabular-nums shrink-0', darkMode ? 'text-gray-500' : 'text-gray-400'].join(' ')}>{s.date}</span>
+                  {meta && meta.emoji ? (
+                    <React.Fragment>
+                      <span className=”text-base shrink-0”>{meta.emoji}</span>
+                      <span className=”text-xs font-bold flex-1” style={{ color: meta.color }}>{meta.label}</span>
+                      <span className={['text-[11px] font-bold', darkMode ? 'text-gray-600' : 'text-gray-400'].join(' ')}>{s.dominantPct}%</span>
+                    </React.Fragment>
+                  ) : (
+                    <span className={['text-xs flex-1', darkMode ? 'text-gray-600' : 'text-gray-400'].join(' ')}>-</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </SectionCard>
+  );
 }
 
 /* â”€â”€ GrÃ¡fico de barras rediseÃ±ado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
