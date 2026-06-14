@@ -22,7 +22,7 @@ import {
 const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onrender.com'
 const formatCompact = (value) => Number(value || 0).toLocaleString()
 
-/* â”€â”€ Contador animado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â"€â"€ Contador animado â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
 function AnimatedNumber({ value, duration = 1000 }) {
   const [displayed, setDisplayed] = useState(0)
   const prev = useRef(0)
@@ -43,7 +43,7 @@ function AnimatedNumber({ value, duration = 1000 }) {
   return displayed.toLocaleString()
 }
 
-/* â”€â”€ KPI Card con gradiente y animaciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â"€â"€ KPI Card con gradiente y animaciÃ³n â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
 function KpiCard({ darkMode, icon: Icon, label, value, sub, accent = 'cyan', delay = 0, large = false }) {
   const accents = {
     cyan:    { border: 'border-cyan-500/30',   bg: 'bg-cyan-500/10',    text: 'text-cyan-400',    glow: 'shadow-cyan-500/20'   },
@@ -84,7 +84,7 @@ function KpiCard({ darkMode, icon: Icon, label, value, sub, accent = 'cyan', del
   )
 }
 
-/* â”€â”€ Barra de progreso animada â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â"€â"€ Barra de progreso animada â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
 function ProgressBar({ value, max, color = 'cyan', darkMode }) {
   const pct = Math.min(100, Math.round((value / Math.max(max, 1)) * 100))
   const colors = {
@@ -103,11 +103,11 @@ function ProgressBar({ value, max, color = 'cyan', darkMode }) {
   )
 }
 
-/* â”€â”€ Emociones del chat â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â"€â"€ Emociones del chat â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
 const SENTIMENT_META = {
   euphoric:     { emoji: '🔥', label: 'Eufórico',    color: '#ef4444' },
   chaotic:      { emoji: '🌪️', label: 'Caótico',     color: '#a855f7' },
-  joyful:       { emoji: '😂', label: 'Riseño',     color: '#facc15' },
+  joyful:       { emoji: '😂', label: 'Risueño',     color: '#facc15' },
   surprised:    { emoji: '🤯', label: 'Sorprendido', color: '#fb923c' },
   affectionate: { emoji: '🥰', label: 'Cariñoso',    color: '#ec4899' },
   energized:    { emoji: '⚡', label: 'Energizado',  color: '#f97316' },
@@ -119,7 +119,7 @@ const SENTIMENT_META = {
   quiet:        { emoji: '😴', label: 'Apagado',     color: '#475569' },
 }
 
-/* â”€â”€ SectionCard con entrada animada â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â"€â"€ SectionCard con entrada animada â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
 function SectionCard({ darkMode, title, subtitle, children, delay = 0, accent }) {
   const accentBar = {
     cyan:    'bg-cyan-400',
@@ -146,7 +146,7 @@ function SectionCard({ darkMode, title, subtitle, children, delay = 0, accent })
 }
 
 
-/* â”€â”€ GrÃ¡fico de barras rediseÃ±ado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â"€â"€ GrÃ¡fico de barras rediseÃ±ado â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
 function BarChart({ darkMode, values, isEnglish }) {
   const [hovered, setHovered] = useState(null)
 
@@ -281,7 +281,7 @@ function BarChart({ darkMode, values, isEnglish }) {
   )
 }
 
-/* â”€â”€ Componente principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* â"€â"€ Componente principal â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
 export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, authToken }) {
   const { i18n } = useTranslation()
   const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
@@ -335,7 +335,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
              current_month, benefits, plan_info, all_time, top_voices: top_voices || [] }
   }, [stats])
 
-  /* â”€â”€ Loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* â"€â"€ Loading â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
   if (loading) return (
     <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-[#07111f]' : 'bg-gray-50'}`}>
       <div className="text-center space-y-4">
@@ -349,7 +349,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
     </div>
   )
 
-  /* â”€â”€ Error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* â"€â"€ Error â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
   if (error) return (
     <div className={`min-h-screen flex items-center justify-center px-6 ${darkMode ? 'bg-[#07111f]' : 'bg-gray-50'}`}>
       <div className={`max-w-sm w-full rounded-3xl border p-8 text-center ${darkMode ? 'border-red-400/20 bg-red-500/10 text-red-300' : 'border-red-200 bg-red-50 text-red-700'}`}>
@@ -381,7 +381,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
       .replace(/\bde\b/g, 'of')
   }
 
-  /* â”€â”€ Render principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* â"€â"€ Render principal â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */
   return (
     <div className={`min-h-screen pb-24 ${
       darkMode
@@ -410,7 +410,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
 
       <div className="max-w-7xl mx-auto px-6 pt-8 space-y-6">
 
-        {/* â”€â”€ HERO: KPIs principales â”€â”€ */}
+        {/* â"€â"€ HERO: KPIs principales â"€â"€ */}
         <div
           className={`rounded-3xl border p-6 md:p-8 animate-slide-up ${
             darkMode
@@ -457,7 +457,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
           </div>
         </div>
 
-        {/* â”€â”€ GRÃFICO DE TENDENCIA â”€â”€ */}
+        {/* â"€â"€ GRÃFICO DE TENDENCIA â"€â"€ */}
         <SectionCard
           darkMode={darkMode}
           title={isEnglish ? 'Last 7 days trend' : 'Tendencia de los últimos 7 días'}
@@ -473,7 +473,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
           }
         </SectionCard>
 
-        {/* â”€â”€ RENDIMIENTO + IMPACTO â”€â”€ */}
+        {/* â"€â"€ RENDIMIENTO + IMPACTO â"€â"€ */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           <SectionCard darkMode={darkMode} title={isEnglish ? 'Monthly consumption' : 'Consumo del mes'} subtitle={isEnglish ? 'Detailed resource usage' : 'Uso detallado de recursos'} accent="purple" delay={300}>
@@ -533,7 +533,7 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
           </SectionCard>
         </div>
 
-        {/* â”€â”€ HISTORIAL DE EMOCIONES â”€â”€ */}
+        {/* â"€â"€ HISTORIAL DE EMOCIONES â"€â"€ */}
         {/* ── HISTORIAL PULSO DEL CHAT ── */}
         {(() => {
           let sentSessions = []
@@ -644,8 +644,8 @@ export function StatisticsDashboard({ onGoHome, onGoStudio, darkMode, user, auth
           )
         })()}
 
-        {/* â”€â”€ RANKING DE VOCES â”€â”€ */}
-        <SectionCard darkMode={darkMode} title={isEnglish ? 'Voice ranking' : 'Ranking de voces'} subtitle={isEnglish ? 'Most used voices in your stream this month' : 'Las voces más usadas en tu stream este mes'} accent=”amber” delay={500}>
+        {/* â"€â"€ RANKING DE VOCES â"€â"€ */}
+        <SectionCard darkMode={darkMode} title={isEnglish ? 'Voice ranking' : 'Ranking de voces'} subtitle={isEnglish ? 'Most used voices in your stream this month' : 'Las voces más usadas en tu stream este mes'} accent="amber" delay={500}>
           {top_voices.length > 0 ? (
             <div className="space-y-3">
               {top_voices.map((voice, i) => {
