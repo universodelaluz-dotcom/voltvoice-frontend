@@ -717,7 +717,12 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
     updateConfig('userVoiceAssignments', updated)
   }
 
-  const allowedUsersList = Array.isArray(config?.allowedUsersList) ? config.allowedUsersList : []
+  // Lista de lectura separada por plataforma (YouTube). Fallback a la clave vieja
+  // compartida para no perder la lista de usuarios que ya existian.
+  const allowedUsersList = Array.isArray(config?.yt_allowedUsersList)
+    ? config.yt_allowedUsersList
+    : (Array.isArray(config?.allowedUsersList) ? config.allowedUsersList : [])
+  const onlyAllowedUsers = config?.yt_onlyAllowedUsers !== undefined ? config.yt_onlyAllowedUsers : config?.onlyAllowedUsers
 
   const addAllowedUser = () => {
     if (!newAllowedUser.trim()) return
@@ -725,14 +730,16 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
     if (!username) return
     if (allowedUsersList.includes(username)) { setNewAllowedUser(''); return }
     const updated = [...allowedUsersList, username].slice(0, 100)
-    updateConfig('allowedUsersList', updated)
-    if (!config.onlyAllowedUsers) updateConfig('onlyAllowedUsers', true)
+    updateConfig('yt_allowedUsersList', updated)
+    if (!onlyAllowedUsers) updateConfig('yt_onlyAllowedUsers', true)
     setNewAllowedUser('')
   }
 
   const removeAllowedUser = (username) => {
     const updated = allowedUsersList.filter(u => u !== username)
-    updateConfig('allowedUsersList', updated)
+    updateConfig('yt_allowedUsersList', updated)
+    // Al vaciarse la lista, apagar el modo "solo elegidos" para no leer a nadie.
+    if (updated.length === 0) updateConfig('yt_onlyAllowedUsers', false)
   }
 
   const updateUserVoiceAssignment = (username, newVoiceId) => {
@@ -1049,30 +1056,30 @@ export function YouTubeControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, da
                   {/* Leer solo lista elegida */}
                   <div className={`mb-2 rounded-xl px-4 py-3 border transition-colors ${
                     darkMode
-                      ? config.onlyAllowedUsers
+                      ? onlyAllowedUsers
                         ? 'bg-cyan-500/10 border-cyan-400/40'
                         : 'bg-white/5 border-gray-700/40 hover:border-gray-600/60'
-                      : config.onlyAllowedUsers
+                      : onlyAllowedUsers
                         ? 'bg-slate-100 border-slate-400 shadow-sm'
                         : 'bg-white border-slate-300 hover:border-slate-400 shadow-sm'
                   }`}>
                     <button onClick={() => {
-                      const next = !config.onlyAllowedUsers
-                      updateConfig('onlyAllowedUsers', next)
+                      const next = !onlyAllowedUsers
+                      updateConfig('yt_onlyAllowedUsers', next)
                       if (next) setShowAllowedUsersList(true)
                     }} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                       <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                        config.onlyAllowedUsers ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
+                        onlyAllowedUsers ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
                       }`}>
-                        {config.onlyAllowedUsers && <Check className="w-4 h-4 text-white" />}
+                        {onlyAllowedUsers && <Check className="w-4 h-4 text-white" />}
                       </div>
-                      <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${config.onlyAllowedUsers ? 'font-semibold' : 'font-medium'}`}>
+                      <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${onlyAllowedUsers ? 'font-semibold' : 'font-medium'}`}>
                         Leer solo lista elegida
                         <Hint text="Solo lee mensajes de los usuarios que agregues a la lista. Ignora a todos los demás." darkMode={darkMode} />
                       </span>
                       {allowedUsersList.length > 0 && <span className={`ml-auto text-xs font-semibold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{allowedUsersList.length}</span>}
                     </button>
-                    {(config.onlyAllowedUsers || showAllowedUsersList) && (
+                    {(onlyAllowedUsers || showAllowedUsersList) && (
                       <div className="mt-4 space-y-3">
                         <div className="space-y-2 p-3 rounded-lg" style={{backgroundColor: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)'}}>
                           <p className={`text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Agregar usuario:</p>

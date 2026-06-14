@@ -925,6 +925,32 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
   const [highlightMode, setHighlightMode] = useState(false)
   const [selectedColor, setSelectedColor] = useState(config.highlightSelectedColor || '#06b6d4')
   const [showHighlightPanel, setShowHighlightPanel] = useState(false)
+  // "Dar voz por click": modo armado de un disparo. Al activarlo, el siguiente
+  // click en un nick le da (o le quita) voz y el modo se desarma solo.
+  const [voiceClickArmed, setVoiceClickArmed] = useState(false)
+
+  const VOICE_LIST_KEY = 'yt_allowedUsersList'
+  const VOICE_FLAG_KEY = 'yt_onlyAllowedUsers'
+  const voiceAllowedList = Array.isArray(config[VOICE_LIST_KEY])
+    ? config[VOICE_LIST_KEY]
+    : (Array.isArray(config.allowedUsersList) ? config.allowedUsersList : [])
+  const userHasVoice = (rawUser) => {
+    const u = String(rawUser || '').toLowerCase().replace(/^@+/, '')
+    if (!u) return false
+    return voiceAllowedList.some(x => String(x).toLowerCase().replace(/^@+/, '') === u)
+  }
+  const toggleVoiceForUser = (rawUser) => {
+    if (!updateConfig) return
+    const u = String(rawUser || '').toLowerCase().replace(/^@+/, '')
+    if (!u) return
+    const current = voiceAllowedList.map(x => String(x).toLowerCase().replace(/^@+/, ''))
+    const has = current.includes(u)
+    const updated = has ? current.filter(x => x !== u) : [...current, u].slice(0, 100)
+    updateConfig(VOICE_LIST_KEY, updated)
+    // Modo "solo elegidos": se prende al agregar el primero y se apaga al vaciarse.
+    if (updated.length === 0) updateConfig(VOICE_FLAG_KEY, false)
+    else if (!isEnabledFlag(config[VOICE_FLAG_KEY])) updateConfig(VOICE_FLAG_KEY, true)
+  }
   const [sessionModerationList, setSessionModerationList] = useState(() => normalizeModerationList(config.sessionModerationList))
   const [chatFontSize, setChatFontSize] = useState(config.chatFontSize || 14)
   const [chatNickColor, setChatNickColor] = useState(() => getThemeChatNickColor(config, localStorage.getItem('voltvoice-theme') !== 'light'))
@@ -1333,8 +1359,10 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
     if (readByCommandEnabled && !commandRead.matched) { markFilteredMessage(); return }
     if (!messageForRead.trim()) { markFilteredMessage(); return }
 
-    if (isEnabledFlag(c.onlyAllowedUsers)) {
-      const allowedList = (Array.isArray(c.allowedUsersList) ? c.allowedUsersList : []).map(u => String(u).toLowerCase().replace(/^@+/, ''))
+    const onlyAllowedFlag = c.yt_onlyAllowedUsers !== undefined ? c.yt_onlyAllowedUsers : c.onlyAllowedUsers
+    const onlyAllowedSource = c.yt_allowedUsersList !== undefined ? c.yt_allowedUsersList : c.allowedUsersList
+    if (isEnabledFlag(onlyAllowedFlag)) {
+      const allowedList = (Array.isArray(onlyAllowedSource) ? onlyAllowedSource : []).map(u => String(u).toLowerCase().replace(/^@+/, ''))
       if (allowedList.length > 0) {
         const msgUser = String(msg.username || '').toLowerCase().replace(/^@+/, '')
         if (!allowedList.includes(msgUser)) { markFilteredMessage(); return }
@@ -2517,8 +2545,10 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
           // Ejemplo: donor + moderador = lee a cualquiera de los dos, no a ambos a la vez
 
           // Lista de usuarios permitidos (whitelist)
-          if (isEnabledFlag(c.onlyAllowedUsers)) {
-            const allowedList = (Array.isArray(c.allowedUsersList) ? c.allowedUsersList : []).map(u => String(u).toLowerCase().replace(/^@+/, ''))
+          const onlyAllowedFlag = c.yt_onlyAllowedUsers !== undefined ? c.yt_onlyAllowedUsers : c.onlyAllowedUsers
+          const onlyAllowedSource = c.yt_allowedUsersList !== undefined ? c.yt_allowedUsersList : c.allowedUsersList
+          if (isEnabledFlag(onlyAllowedFlag)) {
+            const allowedList = (Array.isArray(onlyAllowedSource) ? onlyAllowedSource : []).map(u => String(u).toLowerCase().replace(/^@+/, ''))
             if (allowedList.length > 0) {
               const msgUser = String(msg.username || '').toLowerCase().replace(/^@+/, '')
               if (!allowedList.includes(msgUser)) { markFilteredMessage(); return }
@@ -4913,6 +4943,12 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                         {/* Nick: click izquierdo = editar, click derecho = ban toggle */}
                         <p
                           onClick={() => {
+                            if (voiceClickArmed) {
+                              // Modo "dar voz por click": un disparo y se desarma.
+                              toggleVoiceForUser(msg.user)
+                              setVoiceClickArmed(false)
+                              return
+                            }
                             if (highlightMode) {
                               // En modo remarcar: toggle highlight del usuario
                               setHighlightedUsers(prev => {
@@ -4968,6 +5004,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                           style={!isUserBannedBySet(bannedUsers, msg.user) ? { color: chatNickColor } : undefined}
                           title={highlightMode ? "Click para remarcar/desmarcar este usuario" : isUserBannedBySet(bannedUsers, msg.user) ? "Click derecho para desbloquear" : "Click para editar · Click derecho para silenciar"}
                         >
+                          {userHasVoice(msg.user) && <Volume2 className="inline-block w-3.5 h-3.5 mr-1 text-emerald-400 align-[-2px]" />}
                           {hlColor && <span className="inline-block w-2.5 h-2.5 rounded-full mr-1 ring-1 ring-white/30" style={{ backgroundColor: hlColor }} />}
                             {getNickOverrideValue(nickOverrides, msg.user) || msg.nickname || msg.user}
                           {badgeLabel && <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded" style={{ backgroundColor: hlColor || '#666', color: '#fff' }}>{badgeLabel}</span>}
@@ -5124,6 +5161,18 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
               title={t('tiktok.controls.highlightTitle')}
             >
               <Highlighter className="w-4 h-4 shrink-0" />{t('tiktok.controls.highlight')}
+            </button>
+            {/* Voz por click */}
+            <button
+              onClick={() => setVoiceClickArmed(v => !v)}
+              className={`flex items-center gap-2 px-3 py-2.5 text-xs font-bold border-b transition-all w-full ${
+                voiceClickArmed
+                  ? 'bg-emerald-600 text-white hover:bg-emerald-500 animate-pulse'
+                  : darkMode ? 'bg-emerald-500/12 text-emerald-100 hover:bg-emerald-500/20 border-white/10' : 'bg-white text-slate-800 hover:bg-slate-200 border-slate-300'
+              }`}
+              title="Da o quita voz a alguien con un click. Actívalo y haz click en un nick del chat: lo agrega a 'leer solo lista elegida' (o se la quita si ya la tenía)."
+            >
+              <Volume2 className="w-4 h-4 shrink-0" />{voiceClickArmed ? 'Elige nick…' : 'Voz x click'}
             </button>
             {/* Estilo */}
             <button
