@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef, useMemo } from 'react'
 import { Play, Square, AlertCircle, Loader, MessageCircle, Volume2, VolumeX, Ban, Pause, RotateCcw, Highlighter, X, Users, Clock3, TrendingUp, Filter, Trophy, Sparkles, BookOpen, Copy, CheckCircle, Lock, Mail, Youtube, Link2 } from 'lucide-react'
 import chatStore from '../services/chatStore.js'
 import { useTranslation } from 'react-i18next'
@@ -778,6 +778,21 @@ function NicksManagerPanel({ nickOverrides, setNickOverrides, editingNickInTable
   )
 }
 
+const SENTIMENT_STATES = {
+  euphoric:     { emoji: '🔥', label: 'EUFÓRICO',    color: '#ef4444', bg: 'rgba(239,68,68,0.10)',    border: 'rgba(239,68,68,0.28)',    insight: 'El chat está en su pico. Lo que hacés ahora tiene impacto inmediato.' },
+  chaotic:      { emoji: '🌪️', label: 'CAÓTICO',     color: '#a855f7', bg: 'rgba(168,85,247,0.10)',   border: 'rgba(168,85,247,0.28)',   insight: 'Mucho ruido, poca señal. El chat perdió el hilo.' },
+  joyful:       { emoji: '😂', label: 'RISUEÑO',     color: '#facc15', bg: 'rgba(250,204,21,0.10)',   border: 'rgba(250,204,21,0.30)',   insight: 'El chat se está riendo. Ideal para improvisar o soltar un chiste.' },
+  surprised:    { emoji: '🤯', label: 'SORPRENDIDO', color: '#fb923c', bg: 'rgba(251,146,60,0.10)',   border: 'rgba(251,146,60,0.28)',   insight: 'Algo los impactó. Aprovechá el momento para anclar la emoción.' },
+  affectionate: { emoji: '🥰', label: 'CARIÑOSO',    color: '#ec4899', bg: 'rgba(236,72,153,0.10)',   border: 'rgba(236,72,153,0.28)',   insight: 'El chat te quiere. Hay mucho apoyo emocional en este momento.' },
+  energized:    { emoji: '⚡', label: 'ENERGIZADO',  color: '#f97316', bg: 'rgba(249,115,22,0.10)',   border: 'rgba(249,115,22,0.28)',   insight: 'Alta energía y buena onda. Buen momento para proponer algo al chat.' },
+  tense:        { emoji: '😤', label: 'TENSO',       color: '#eab308', bg: 'rgba(234,179,8,0.10)',    border: 'rgba(234,179,8,0.28)',    insight: 'Hay negatividad o molestia. Algo no está cayendo bien.' },
+  curious:      { emoji: '🤔', label: 'CURIOSO',     color: '#3b82f6', bg: 'rgba(59,130,246,0.10)',   border: 'rgba(59,130,246,0.28)',   insight: 'El chat tiene preguntas. Pausá y respondé directo.' },
+  awkward:      { emoji: '😬', label: 'INCÓMODO',    color: '#94a3b8', bg: 'rgba(148,163,184,0.10)', border: 'rgba(148,163,184,0.28)',  insight: 'El chat está dividido. Señales mezcladas, puede haber tensión oculta.' },
+  positive:     { emoji: '😄', label: 'POSITIVO',    color: '#22c55e', bg: 'rgba(34,197,94,0.10)',    border: 'rgba(34,197,94,0.28)',    insight: 'Buen ambiente. El contenido está conectando con la gente.' },
+  neutral:      { emoji: '😐', label: 'NEUTRO',      color: '#64748b', bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.22)', insight: 'Chat estable. Sin tendencia clara aún.' },
+  quiet:        { emoji: '😴', label: 'APAGADO',     color: '#475569', bg: 'rgba(71,85,105,0.08)',   border: 'rgba(71,85,105,0.22)',   insight: 'Poca actividad. Un momento ideal para hacer una pregunta directa al chat.' },
+}
+
 export default function YouTubeLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride, platformMode = 'tiktok', tokens = 0, setTokens = null }) {
   const { t, i18n } = useTranslation()
   const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
@@ -936,6 +951,8 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
   const canPersistConfig = Boolean(updateConfig) && Boolean(configReady)
   const [canWriteConfig, setCanWriteConfig] = useState(false)
   const canWriteConfigNow = canPersistConfig && canWriteConfig
+  const [showSentimentTip, setShowSentimentTip] = useState(false)
+  const sentimentHistoryRef = useRef([])
 
   useEffect(() => {
     donorsRef.current = donors
@@ -3914,7 +3931,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
     sessionPeakMessagesPerMinuteRef.current = 0
   }
 
-  const buildSessionSummary = () => {
+  const buildSessionSummary = (sentInfo = null) => {
     const uniqueUsers = Array.from(sessionUniqueUsersRef.current)
     const mostActiveEntry = Object.entries(sessionUserCountsRef.current)
       .sort((a, b) => b[1] - a[1])[0]
@@ -3930,8 +3947,40 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
       uniqueUsers: uniqueUsers.length,
       readPercentage: receivedCount > 0 ? (readCount / receivedCount) * 100 : 0,
       filteredPercentage: receivedCount > 0 ? (filteredCount / receivedCount) * 100 : 0,
-      mostActiveUser: mostActiveEntry ? { username: mostActiveEntry[0], count: mostActiveEntry[1] } : null
+      mostActiveUser: mostActiveEntry ? { username: mostActiveEntry[0], count: mostActiveEntry[1] } : null,
+      dominantEmotion: sentInfo?.dominant || null,
+      dominantEmotionPct: sentInfo?.dominantPct || 0
     }
+  }
+
+  const saveSentimentSession = () => {
+    const history = [...sentimentHistoryRef.current]
+    // Asegura al menos una muestra usando el sentimiento actual (sesiones cortas)
+    if (chatSentiment) history.push({ state: chatSentiment, ts: Date.now() })
+    if (history.length === 0) { sentimentHistoryRef.current = []; return null }
+    const counts = {}
+    for (const { state } of history) counts[state] = (counts[state] || 0) + 1
+    const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0]
+    const dominantPct = dominant ? Math.round((counts[dominant] / history.length) * 100) : 0
+    const now = new Date()
+    const isoDate = now.toISOString().split('T')[0]
+    const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
+    const dayNum = d.getUTCDay() || 7
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+    const weekLabel = `${d.getUTCFullYear()}-W${String(Math.ceil((((d - yearStart) / 86400000) + 1) / 7)).padStart(2, '0')}`
+    const session = {
+      id: Date.now(), date: isoDate, week: weekLabel, month: isoDate.slice(0, 7),
+      dominant, dominantPct, stateCounts: counts, totalSamples: history.length,
+    }
+    try {
+      const stored = JSON.parse(localStorage.getItem('voltvoice_sentiment_sessions') || '[]')
+      stored.push(session)
+      if (stored.length > 90) stored.splice(0, stored.length - 90)
+      localStorage.setItem('voltvoice_sentiment_sessions', JSON.stringify(stored))
+    } catch { /* ignore */ }
+    sentimentHistoryRef.current = []
+    return { dominant, dominantPct }
   }
 
   const closeSessionSummary = () => {
@@ -4000,6 +4049,66 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
     : messagesPerMinute >= 8
       ? { color: '#f59e0b', label: 'Medio' }
       : { color: '#22c55e', label: 'Leve' }
+
+  const chatSentiment = useMemo(() => {
+    if (!isConnected || messages.length === 0) return null
+    const recentCutoff = Date.now() - 60000
+    const recent = messages.filter(m => Number(m.timestamp || 0) >= recentCutoff)
+    if (recent.length < 1) return null
+
+    const laughWords      = ['jaja', 'jeje', 'xd', 'lol', 'haha', 'jajaj', 'lmao', 'kkk', 'kkkk', 'muero', 'me mato', 'cague']
+    const surpriseWords   = ['omg', 'nooo', 'noooo', 'dios', 'serio', 'mentira', 'no mames', 'wowww', 'impresionante', 'increible', 'no puede', 'que paso', 'como', 'diablos', 'wtfffff']
+    const affectionWords  = ['te amo', 'amor', 'corazon', 'hermosa', 'hermoso', 'lindo', 'bonito', 'te quiero', 'me encanta', 'eres lo', 'fan de', 'eres mi', 'te adoro', 'muah']
+    const positiveWords   = ['bien', 'bueno', 'genial', 'excelente', 'chevere', 'nice', 'great', 'good', 'love', 'top', 'crack', 'fuego', 'brutal', 'epico', 'amo', 'gana', 'gano', 'campeon', 'ganaaa', 'feliz', 'happy', 'perfecto', 'wow', 'woww']
+    const negativeWords   = ['malo', 'feo', 'pesimo', 'aburrido', 'odio', 'horrible', 'boring', 'bad', 'asco', 'hate', 'fake', 'trampa', 'robo', 'noiiiiii', 'noooo', 'wtf', 'pff', 'meh', 'cayo', 'murio']
+
+    let posScore = 0, negScore = 0, laughScore = 0, surpriseScore = 0, affectionScore = 0
+    let questionCount = 0, giftCount = 0, spamCount = 0
+    for (const msg of recent) {
+      const text = normalizeMessageForMatching(msg.text || '')
+      posScore      += positiveWords.filter(w => text.includes(w)).length
+      negScore      += negativeWords.filter(w => text.includes(w)).length
+      laughScore    += laughWords.filter(w => text.includes(w)).length > 0 ? 1 : 0
+      surpriseScore += surpriseWords.filter(w => text.includes(w)).length > 0 ? 1 : 0
+      affectionScore+= affectionWords.filter(w => text.includes(w)).length > 0 ? 1 : 0
+      if (isQuestion(msg.text || '')) questionCount++
+      if (msg.isGift || msg.type === 'gift') giftCount++
+      if (isEmojiOrSymbolOnly(msg.text || '') || hasLowLegibility(msg.text || '')) spamCount++
+    }
+
+    const total        = recent.length
+    const posRatio     = posScore / total
+    const negRatio     = negScore / total
+    const laughRatio   = laughScore / total
+    const surpriseRatio= surpriseScore / total
+    const affectionRatio = affectionScore / total
+    const questionRatio= questionCount / total
+    const giftRatio    = giftCount / total
+    const spamRatio    = spamCount / total
+    const v            = messagesPerMinute
+
+    if (v >= 20 && (giftRatio >= 0.07 || posRatio >= 0.35)) return 'euphoric'
+    if (spamRatio >= 0.55 && v >= 8) return 'chaotic'
+    if (laughRatio >= 0.25) return 'joyful'
+    if (surpriseRatio >= 0.20) return 'surprised'
+    if (affectionRatio >= 0.20) return 'affectionate'
+    if (v >= 12 && posRatio >= 0.12) return 'energized'
+    if (negRatio >= 0.18) return 'tense'
+    if (questionRatio >= 0.28) return 'curious'
+    if (posRatio >= 0.06 && negRatio >= 0.06) return 'awkward'
+    if (posRatio >= 0.08) return 'positive'
+    if (v <= 2) return 'quiet'
+    return 'neutral'
+  }, [messages, messagesPerMinute, isConnected])
+
+  useEffect(() => {
+    if (!isConnected || !chatSentiment) return
+    const id = setInterval(() => {
+      if (chatSentiment) sentimentHistoryRef.current.push({ state: chatSentiment, ts: Date.now() })
+    }, 30000)
+    return () => clearInterval(id)
+  }, [isConnected, chatSentiment])
+
   const summaryTone = sessionSummary?.peakMessagesPerMinute >= 35
     ? t('tiktok.panel.sessionExplosive')
     : sessionSummary?.peakMessagesPerMinute >= 15
@@ -4060,7 +4169,8 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
       speakQueueRef.current = []
       isProcessingRef.current = false
       stopPlaybackNow()
-      setSessionSummary(buildSessionSummary())
+      const sentInfoYT = saveSentimentSession()
+      setSessionSummary(buildSessionSummary(sentInfoYT))
       setShowSessionSummary(true)
       setIsConnected(false)
       setConnectedTikTokUser('')
@@ -4110,7 +4220,8 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
         wsRef.current = null
       }
 
-      setSessionSummary(buildSessionSummary())
+      const sentInfoTk = saveSentimentSession()
+      setSessionSummary(buildSessionSummary(sentInfoTk))
       setShowSessionSummary(true)
       setIsConnected(false)
       setConnectedTikTokUser('')
@@ -4588,7 +4699,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
               <p className={`text-lg sm:text-xl font-black tabular-nums leading-none ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>{messagesPerMinute}</p>
             </div>
             {/* Tiempo */}
-            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-2 sm:px-5 py-2 sm:py-3 ${isConnected ? `border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}` : ''}`}>
+            <div className={`flex-1 flex flex-col justify-center gap-0.5 px-2 sm:px-5 py-2 sm:py-3 border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}`}>
               <div className="flex items-center gap-1 sm:gap-2">
                 <Clock3 className={`w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 ${darkMode ? 'text-purple-400/60' : 'text-purple-500/60'}`} />
                 <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-purple-400/60' : 'text-purple-600/70'}`}>{t('tiktok.stats.time')}</span>
@@ -4597,6 +4708,39 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                 {stats.uptime < 60 ? `${stats.uptime}s` : `${Math.floor(stats.uptime / 60)}m ${stats.uptime % 60}s`}
               </p>
             </div>
+            {/* Emocion del chat */}
+            {(() => {
+              const s = chatSentiment && isConnected ? SENTIMENT_STATES[chatSentiment] : null
+              return (
+                <div
+                  className={`relative flex flex-col items-center justify-center gap-0.5 px-2 sm:px-4 py-2 cursor-default select-none transition-colors ${isConnected ? 'border-r' : ''} ${darkMode ? 'border-white/8' : 'border-slate-200'}`}
+                  style={s ? { backgroundColor: s.bg } : {}}
+                  onMouseEnter={() => s && setShowSentimentTip(true)}
+                  onMouseLeave={() => setShowSentimentTip(false)}
+                >
+                  <div className="flex items-center gap-1">
+                    <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>EMOCIÓN</span>
+                  </div>
+                  {s ? (
+                    <div className="flex items-center gap-1">
+                      <span className="text-base leading-none">{s.emoji}</span>
+                      <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest leading-none hidden sm:block" style={{ color: s.color }}>{s.label}</span>
+                    </div>
+                  ) : (
+                    <span className={`text-base leading-none ${darkMode ? 'text-slate-600' : 'text-slate-300'}`}>—</span>
+                  )}
+                  {showSentimentTip && s && (
+                    <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-30 px-3 py-2 rounded-lg text-xs shadow-xl border whitespace-nowrap max-w-[240px] ${
+                      darkMode ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'
+                    }`}>
+                      <span className="font-bold" style={{ color: s.color }}>{s.emoji} {s.label}</span>
+                      <br />
+                      <span className={darkMode ? 'text-slate-400' : 'text-slate-500'}>{s.insight}</span>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
             {/* Desconectar */}
             {isConnected && (
               <button
@@ -5247,9 +5391,9 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
       )}
 
       {showSessionSummary && sessionSummary && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center p-4 sm:p-6">
+        <div className="absolute inset-0 z-30 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/55 backdrop-blur-md" />
-          <div className={`relative w-full max-w-4xl rounded-[28px] border shadow-2xl overflow-hidden ${
+          <div className={`relative w-full max-w-2xl rounded-3xl border shadow-2xl overflow-hidden ${
             darkMode
               ? 'bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_rgba(15,23,42,0.96)_48%,_rgba(2,6,23,0.98)_100%)] border-cyan-400/25'
               : 'bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_rgba(255,255,255,0.96)_45%,_rgba(241,245,249,0.98)_100%)] border-cyan-200'
@@ -5258,49 +5402,68 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
               <div className="absolute -top-16 right-10 h-40 w-40 rounded-full bg-cyan-400/20 blur-3xl" />
               <div className="absolute bottom-0 left-10 h-40 w-40 rounded-full bg-fuchsia-500/15 blur-3xl" />
             </div>
-            <div className="relative p-6 sm:p-8">
-              <div className="flex items-start justify-between gap-4 mb-6">
+            <div className="relative p-5 sm:p-6">
+              <div className="flex items-start justify-between gap-4 mb-4">
                 <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-300 text-xs font-semibold uppercase tracking-[0.2em]">
-                    <Sparkles className="w-3.5 h-3.5" />
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-300 text-[10px] font-semibold uppercase tracking-[0.2em]">
+                    <Sparkles className="w-3 h-3" />
                     {t('tiktok.summary.title')}
                   </div>
-                  <h3 className={`mt-3 text-3xl sm:text-4xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                  <h3 className={`mt-2 text-2xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                     Cierre del directo
                   </h3>
-                  <p className={`mt-2 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                  <p className={`mt-1 text-sm ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
                     {summaryTone}. {t('tiktok.summary.desc')}
                   </p>
                 </div>
                 <button
                   onClick={closeSessionSummary}
-                  className={`rounded-full p-2 border transition-colors ${
+                  className={`rounded-full p-1.5 border transition-colors shrink-0 ${
                     darkMode ? 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10' : 'border-slate-200 bg-white/70 text-slate-700 hover:bg-white'
                   }`}
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
-                <div className="grid grid-cols-2 gap-4">
+              {/* Emocion predominante */}
+              {(() => {
+                const e = sessionSummary.dominantEmotion ? SENTIMENT_STATES[sessionSummary.dominantEmotion] : null
+                if (!e) return null
+                return (
+                  <div className="mb-4 rounded-2xl border p-3.5 flex items-center gap-3.5" style={{ backgroundColor: e.bg, borderColor: e.border }}>
+                    <span className="text-3xl leading-none shrink-0">{e.emoji}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-[10px] uppercase tracking-[0.18em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Emocion predominante</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: e.color, backgroundColor: e.color + '22' }}>{sessionSummary.dominantEmotionPct}% del directo</span>
+                      </div>
+                      <p className="text-lg font-black leading-tight" style={{ color: e.color }}>{e.label}</p>
+                      <p className={`text-xs leading-snug ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{e.insight}</p>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-stretch">
+                <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: t('tiktok.summary.received'), value: sessionSummary.receivedCount, icon: MessageCircle, color: 'text-cyan-300' },
                     { label: 'Mensajes leidos', value: sessionSummary.readCount, icon: Volume2, color: 'text-emerald-300' },
                     { label: t('tiktok.summary.uptime'), value: sessionSummary.uptimeSeconds, icon: Clock3, color: 'text-violet-300', format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s` },
                     { label: t('tiktok.summary.peak'), value: sessionSummary.peakMessagesPerMinute, icon: TrendingUp, color: 'text-amber-300' },
-                  ].map((stat, index) => {
+                  ].map((stat) => {
                     const Icon = stat.icon
                     return (
                       <div
                         key={stat.label}
-                        className={`rounded-2xl border px-4 py-5 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-200'}`}
+                        className={`rounded-xl border px-3 py-3 flex flex-col justify-center ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-200'}`}
                         >
-                        <div className="flex items-center gap-2 mb-3">
-                          <Icon className={`w-4 h-4 ${stat.color}`} />
-                          <span className={`text-xs uppercase tracking-[0.18em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{stat.label}</span>
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Icon className={`w-3.5 h-3.5 ${stat.color}`} />
+                          <span className={`text-[9px] uppercase tracking-[0.14em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{stat.label}</span>
                         </div>
-                        <div className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                        <div className={`text-2xl font-black leading-none ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                           {stat.format ? stat.format(stat.value) : <AnimatedCount value={stat.value} />}
                         </div>
                       </div>
@@ -5308,59 +5471,50 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                   })}
                 </div>
 
-                <div className="space-y-4">
-                  <div className={`rounded-2xl border p-5 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-200'}`}>
-                    <div className="grid grid-cols-2 gap-4">
-                      {[
-                        { label: 'Porcentaje leido', value: sessionSummary.readPercentage, accent: '#22c55e' },
-                        { label: t('tiktok.summary.filtered'), value: sessionSummary.filteredPercentage, accent: '#f59e0b' },
-                      ].map((ring) => (
-                        <div key={ring.label} className="flex flex-col items-center gap-3">
-                          <div
-                            className="relative h-24 w-24 rounded-full"
-                            style={{ background: `conic-gradient(${ring.accent} ${Math.min(100, ring.value)}%, rgba(148,163,184,0.18) 0)` }}
-                          >
-                            <div className={`absolute inset-[10px] rounded-full flex items-center justify-center ${darkMode ? 'bg-slate-950/90' : 'bg-white/95'}`}>
-                              <span className={`text-lg font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                <AnimatedCount value={ring.value} decimals={0} suffix="%" />
-                              </span>
-                            </div>
+                <div className={`rounded-xl border p-3.5 flex flex-col gap-3 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-200'}`}>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { label: 'Porcentaje leido', value: sessionSummary.readPercentage, accent: '#22c55e' },
+                      { label: t('tiktok.summary.filtered'), value: sessionSummary.filteredPercentage, accent: '#f59e0b' },
+                    ].map((ring) => (
+                      <div key={ring.label} className="flex flex-col items-center gap-1.5">
+                        <div
+                          className="relative h-[68px] w-[68px] rounded-full"
+                          style={{ background: `conic-gradient(${ring.accent} ${Math.min(100, ring.value)}%, rgba(148,163,184,0.18) 0)` }}
+                        >
+                          <div className={`absolute inset-[8px] rounded-full flex items-center justify-center ${darkMode ? 'bg-slate-950/90' : 'bg-white/95'}`}>
+                            <span className={`text-sm font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                              <AnimatedCount value={ring.value} decimals={0} suffix="%" />
+                            </span>
                           </div>
-                          <span className={`text-xs text-center uppercase tracking-[0.18em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{ring.label}</span>
                         </div>
-                      ))}
-                    </div>
+                        <span className={`text-[9px] text-center uppercase tracking-[0.12em] leading-tight ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{ring.label}</span>
+                      </div>
+                    ))}
                   </div>
-
-                  <div className={`rounded-2xl border p-5 space-y-4 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-200'}`}>
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-cyan-300" />
-                      <span className={`text-xs uppercase tracking-[0.18em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Insights</span>
+                  <div className={`border-t pt-3 grid grid-cols-2 gap-x-3 gap-y-2 ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
+                    <div>
+                      <p className={`text-[10px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Usuarios unicos</p>
+                      <p className={`text-lg font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}><AnimatedCount value={sessionSummary.uniqueUsers} /></p>
                     </div>
-                    <div className="grid gap-3">
-                      <div>
-                        <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Usuarios unicos que escribieron</p>
-                        <p className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}><AnimatedCount value={sessionSummary.uniqueUsers} /></p>
-                      </div>
-                      <div>
-                        <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Usuario mas activo</p>
-                        <p className={`text-base font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                          {sessionSummary.mostActiveUser ? `${sessionSummary.mostActiveUser.username} (${sessionSummary.mostActiveUser.count})` : 'Sin datos'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t('tiktok.summary.filtered')}</p>
-                        <p className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}><AnimatedCount value={sessionSummary.filteredCount} /></p>
-                      </div>
+                    <div>
+                      <p className={`text-[10px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t('tiktok.summary.filtered')}</p>
+                      <p className={`text-lg font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}><AnimatedCount value={sessionSummary.filteredCount} /></p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className={`text-[10px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Usuario mas activo</p>
+                      <p className={`text-sm font-bold truncate ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                        {sessionSummary.mostActiveUser ? `${sessionSummary.mostActiveUser.username} (${sessionSummary.mostActiveUser.count})` : 'Sin datos'}
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end">
+              <div className="mt-4 flex justify-end">
                 <button
                   onClick={closeSessionSummary}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-white font-bold hover:opacity-90 transition"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-white font-bold text-sm hover:opacity-90 transition"
                 >
                   {t('tiktok.summary.close')}
                 </button>

@@ -3789,7 +3789,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     sessionPeakMessagesPerMinuteRef.current = 0
   }
 
-  const buildSessionSummary = () => {
+  const buildSessionSummary = (sentInfo = null) => {
     const uniqueUsers = Array.from(sessionUniqueUsersRef.current)
     const mostActiveEntry = Object.entries(sessionUserCountsRef.current)
       .sort((a, b) => b[1] - a[1])[0]
@@ -3805,7 +3805,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       uniqueUsers: uniqueUsers.length,
       readPercentage: receivedCount > 0 ? (readCount / receivedCount) * 100 : 0,
       filteredPercentage: receivedCount > 0 ? (filteredCount / receivedCount) * 100 : 0,
-      mostActiveUser: mostActiveEntry ? { username: mostActiveEntry[0], count: mostActiveEntry[1] } : null
+      mostActiveUser: mostActiveEntry ? { username: mostActiveEntry[0], count: mostActiveEntry[1] } : null,
+      dominantEmotion: sentInfo?.dominant || null,
+      dominantEmotionPct: sentInfo?.dominantPct || 0
     }
   }
 
@@ -3978,8 +3980,10 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
   }, [isConnected, chatSentiment])
 
   const saveSentimentSession = () => {
-    const history = sentimentHistoryRef.current
-    if (history.length === 0) return
+    const history = [...sentimentHistoryRef.current]
+    // Asegura al menos una muestra usando el sentimiento actual (sesiones cortas)
+    if (chatSentiment) history.push({ state: chatSentiment, ts: Date.now() })
+    if (history.length === 0) { sentimentHistoryRef.current = []; return null }
     const counts = {}
     for (const { state } of history) counts[state] = (counts[state] || 0) + 1
     const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0]
@@ -4002,6 +4006,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       localStorage.setItem('voltvoice_sentiment_sessions', JSON.stringify(stored))
     } catch { /* ignore */ }
     sentimentHistoryRef.current = []
+    return { dominant, dominantPct }
   }
 
   const handleDisconnect = async () => {
@@ -4021,8 +4026,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       speakQueueRef.current = []
       isProcessingRef.current = false
       stopPlaybackNow()
-      saveSentimentSession()
-      setSessionSummary(buildSessionSummary())
+      const sentInfoYT = saveSentimentSession()
+      setSessionSummary(buildSessionSummary(sentInfoYT))
       setShowSessionSummary(true)
       setIsConnected(false)
       setConnectedTikTokUser('')
@@ -4071,8 +4076,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
         wsRef.current = null
       }
 
-      saveSentimentSession()
-      setSessionSummary(buildSessionSummary())
+      const sentInfoTk = saveSentimentSession()
+      setSessionSummary(buildSessionSummary(sentInfoTk))
       setShowSessionSummary(true)
       setIsConnected(false)
       setConnectedTikTokUser('')
@@ -4570,7 +4575,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                   onMouseLeave={() => setShowSentimentTip(false)}
                 >
                   <div className="flex items-center gap-1">
-                    <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>PULSO</span>
+                    <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>EMOCIÓN</span>
                   </div>
                   {s ? (
                     <div className="flex items-center gap-1">
@@ -5244,9 +5249,9 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
       )}
 
       {showSessionSummary && sessionSummary && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center p-4 sm:p-6">
+        <div className="absolute inset-0 z-30 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/55 backdrop-blur-md" />
-          <div className={`relative w-full max-w-4xl rounded-[28px] border shadow-2xl overflow-hidden ${
+          <div className={`relative w-full max-w-2xl rounded-3xl border shadow-2xl overflow-hidden ${
             darkMode
               ? 'bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_rgba(15,23,42,0.96)_48%,_rgba(2,6,23,0.98)_100%)] border-cyan-400/25'
               : 'bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_rgba(255,255,255,0.96)_45%,_rgba(241,245,249,0.98)_100%)] border-cyan-200'
@@ -5255,49 +5260,68 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               <div className="absolute -top-16 right-10 h-40 w-40 rounded-full bg-cyan-400/20 blur-3xl" />
               <div className="absolute bottom-0 left-10 h-40 w-40 rounded-full bg-fuchsia-500/15 blur-3xl" />
             </div>
-            <div className="relative p-6 sm:p-8">
-              <div className="flex items-start justify-between gap-4 mb-6">
+            <div className="relative p-5 sm:p-6">
+              <div className="flex items-start justify-between gap-4 mb-4">
                 <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-300 text-xs font-semibold uppercase tracking-[0.2em]">
-                    <Sparkles className="w-3.5 h-3.5" />
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-300 text-[10px] font-semibold uppercase tracking-[0.2em]">
+                    <Sparkles className="w-3 h-3" />
                     {t('tiktok.summary.title')}
                   </div>
-                  <h3 className={`mt-3 text-3xl sm:text-4xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                  <h3 className={`mt-2 text-2xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                     Cierre del directo
                   </h3>
-                  <p className={`mt-2 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                  <p className={`mt-1 text-sm ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
                     {summaryTone}. {t('tiktok.summary.desc')}
                   </p>
                 </div>
                 <button
                   onClick={closeSessionSummary}
-                  className={`rounded-full p-2 border transition-colors ${
+                  className={`rounded-full p-1.5 border transition-colors shrink-0 ${
                     darkMode ? 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10' : 'border-slate-200 bg-white/70 text-slate-700 hover:bg-white'
                   }`}
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
-                <div className="grid grid-cols-2 gap-4">
+              {/* Emocion predominante */}
+              {(() => {
+                const e = sessionSummary.dominantEmotion ? SENTIMENT_STATES[sessionSummary.dominantEmotion] : null
+                if (!e) return null
+                return (
+                  <div className="mb-4 rounded-2xl border p-3.5 flex items-center gap-3.5" style={{ backgroundColor: e.bg, borderColor: e.border }}>
+                    <span className="text-3xl leading-none shrink-0">{e.emoji}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-[10px] uppercase tracking-[0.18em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Emocion predominante</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: e.color, backgroundColor: e.color + '22' }}>{sessionSummary.dominantEmotionPct}% del directo</span>
+                      </div>
+                      <p className="text-lg font-black leading-tight" style={{ color: e.color }}>{e.label}</p>
+                      <p className={`text-xs leading-snug ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{e.insight}</p>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-stretch">
+                <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: t('tiktok.summary.received'), value: sessionSummary.receivedCount, icon: MessageCircle, color: 'text-cyan-300' },
                     { label: 'Mensajes leidos', value: sessionSummary.readCount, icon: Volume2, color: 'text-emerald-300' },
                     { label: t('tiktok.summary.uptime'), value: sessionSummary.uptimeSeconds, icon: Clock3, color: 'text-violet-300', format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s` },
                     { label: t('tiktok.summary.peak'), value: sessionSummary.peakMessagesPerMinute, icon: TrendingUp, color: 'text-amber-300' },
-                  ].map((stat, index) => {
+                  ].map((stat) => {
                     const Icon = stat.icon
                     return (
                       <div
                         key={stat.label}
-                        className={`rounded-2xl border px-4 py-5 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-200'}`}
+                        className={`rounded-xl border px-3 py-3 flex flex-col justify-center ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-200'}`}
                         >
-                        <div className="flex items-center gap-2 mb-3">
-                          <Icon className={`w-4 h-4 ${stat.color}`} />
-                          <span className={`text-xs uppercase tracking-[0.18em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{stat.label}</span>
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <Icon className={`w-3.5 h-3.5 ${stat.color}`} />
+                          <span className={`text-[9px] uppercase tracking-[0.14em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{stat.label}</span>
                         </div>
-                        <div className={`text-3xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                        <div className={`text-2xl font-black leading-none ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                           {stat.format ? stat.format(stat.value) : <AnimatedCount value={stat.value} />}
                         </div>
                       </div>
@@ -5305,59 +5329,50 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
                   })}
                 </div>
 
-                <div className="space-y-4">
-                  <div className={`rounded-2xl border p-5 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-200'}`}>
-                    <div className="grid grid-cols-2 gap-4">
-                      {[
-                        { label: 'Porcentaje leido', value: sessionSummary.readPercentage, accent: '#22c55e' },
-                        { label: t('tiktok.summary.filtered'), value: sessionSummary.filteredPercentage, accent: '#f59e0b' },
-                      ].map((ring) => (
-                        <div key={ring.label} className="flex flex-col items-center gap-3">
-                          <div
-                            className="relative h-24 w-24 rounded-full"
-                            style={{ background: `conic-gradient(${ring.accent} ${Math.min(100, ring.value)}%, rgba(148,163,184,0.18) 0)` }}
-                          >
-                            <div className={`absolute inset-[10px] rounded-full flex items-center justify-center ${darkMode ? 'bg-slate-950/90' : 'bg-white/95'}`}>
-                              <span className={`text-lg font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                <AnimatedCount value={ring.value} decimals={0} suffix="%" />
-                              </span>
-                            </div>
+                <div className={`rounded-xl border p-3.5 flex flex-col gap-3 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-200'}`}>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { label: 'Porcentaje leido', value: sessionSummary.readPercentage, accent: '#22c55e' },
+                      { label: t('tiktok.summary.filtered'), value: sessionSummary.filteredPercentage, accent: '#f59e0b' },
+                    ].map((ring) => (
+                      <div key={ring.label} className="flex flex-col items-center gap-1.5">
+                        <div
+                          className="relative h-[68px] w-[68px] rounded-full"
+                          style={{ background: `conic-gradient(${ring.accent} ${Math.min(100, ring.value)}%, rgba(148,163,184,0.18) 0)` }}
+                        >
+                          <div className={`absolute inset-[8px] rounded-full flex items-center justify-center ${darkMode ? 'bg-slate-950/90' : 'bg-white/95'}`}>
+                            <span className={`text-sm font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                              <AnimatedCount value={ring.value} decimals={0} suffix="%" />
+                            </span>
                           </div>
-                          <span className={`text-xs text-center uppercase tracking-[0.18em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{ring.label}</span>
                         </div>
-                      ))}
-                    </div>
+                        <span className={`text-[9px] text-center uppercase tracking-[0.12em] leading-tight ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{ring.label}</span>
+                      </div>
+                    ))}
                   </div>
-
-                  <div className={`rounded-2xl border p-5 space-y-4 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-200'}`}>
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-cyan-300" />
-                      <span className={`text-xs uppercase tracking-[0.18em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Insights</span>
+                  <div className={`border-t pt-3 grid grid-cols-2 gap-x-3 gap-y-2 ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
+                    <div>
+                      <p className={`text-[10px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Usuarios unicos</p>
+                      <p className={`text-lg font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}><AnimatedCount value={sessionSummary.uniqueUsers} /></p>
                     </div>
-                    <div className="grid gap-3">
-                      <div>
-                        <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Usuarios unicos que escribieron</p>
-                        <p className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}><AnimatedCount value={sessionSummary.uniqueUsers} /></p>
-                      </div>
-                      <div>
-                        <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Usuario mas activo</p>
-                        <p className={`text-base font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                          {sessionSummary.mostActiveUser ? `${sessionSummary.mostActiveUser.username} (${sessionSummary.mostActiveUser.count})` : 'Sin datos'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t('tiktok.summary.filtered')}</p>
-                        <p className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}><AnimatedCount value={sessionSummary.filteredCount} /></p>
-                      </div>
+                    <div>
+                      <p className={`text-[10px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t('tiktok.summary.filtered')}</p>
+                      <p className={`text-lg font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}><AnimatedCount value={sessionSummary.filteredCount} /></p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className={`text-[10px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Usuario mas activo</p>
+                      <p className={`text-sm font-bold truncate ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                        {sessionSummary.mostActiveUser ? `${sessionSummary.mostActiveUser.username} (${sessionSummary.mostActiveUser.count})` : 'Sin datos'}
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end">
+              <div className="mt-4 flex justify-end">
                 <button
                   onClick={closeSessionSummary}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-white font-bold hover:opacity-90 transition"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-fuchsia-500 text-white font-bold text-sm hover:opacity-90 transition"
                 >
                   {t('tiktok.summary.close')}
                 </button>
