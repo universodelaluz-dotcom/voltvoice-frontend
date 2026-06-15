@@ -52,6 +52,9 @@ const getApiFingerprint = () => {
 const DEFAULT_CONFIG = {
   audioSpeed: 1.0,
   chatVolume: 0.8,
+  // Configurador de voz Inworld (global por usuario, aplica a TikTok y YouTube)
+  voiceTemperature: 0.98, // 0 = plano, 2 = muy variable. Default recomendado ~0.98
+  emotionMode: false,     // OFF = voz realista (tts-1.5-max). ON = voz con emoción (tts-2)
   readOnlyMessage: false,
   readByCommandEnabled: false,
   readByCommandPrefix: 'bot/',
@@ -198,10 +201,16 @@ const normalizeUserConfig = (rawConfig = {}) => {
   const normalizedMaxChars = Number.isFinite(assistantMaxChars)
     ? Math.min(500, Math.max(50, Math.round(assistantMaxChars)))
     : DEFAULT_CONFIG.botAssistantMaxResponseChars
+  const voiceTemp = Number(config.voiceTemperature)
+  const normalizedVoiceTemp = Number.isFinite(voiceTemp)
+    ? Math.min(2, Math.max(0, voiceTemp))
+    : DEFAULT_CONFIG.voiceTemperature
 
   return {
     ...DEFAULT_CONFIG,
     ...config,
+    voiceTemperature: normalizedVoiceTemp,
+    emotionMode: config.emotionMode === true,
     chatNickColorDark: config.chatNickColorDark || config.chatNickColor || DEFAULT_CONFIG.chatNickColorDark,
     chatNickColorLight: config.chatNickColorLight || DEFAULT_CONFIG.chatNickColorLight,
     chatMsgColorDark: config.chatMsgColorDark || config.chatMsgColor || DEFAULT_CONFIG.chatMsgColorDark,

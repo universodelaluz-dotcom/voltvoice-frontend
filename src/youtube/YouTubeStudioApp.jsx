@@ -35,6 +35,9 @@ const API_URL = resolveApiUrl()
 const DEFAULT_CONFIG = {
   audioSpeed: 1.0,
   chatVolume: 0.8,
+  // Configurador de voz Inworld (se envía en cada request de síntesis)
+  voiceTemperature: 0.98, // 0 = plano, 2 = muy variable. Recomendado ~0.98
+  emotionMode: false,     // OFF = voz realista (tts-1.5-max). ON = voz con emoción (tts-2)
   readOnlyMessage: false,
   readByCommandEnabled: false,
   readByCommandPrefix: 'bot/',

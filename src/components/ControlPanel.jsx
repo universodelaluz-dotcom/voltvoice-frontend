@@ -940,6 +940,52 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
             </div>
             </div>
           </div>
+          {/* ===== CONFIGURADOR DE VOZ (Inworld) — global, aplica a TikTok y YouTube ===== */}
+          <div className={`rounded-xl border p-4 mb-4 ${darkMode ? 'bg-slate-900/70 border-cyan-500/20' : 'bg-white border-slate-200'}`}>
+            <SectionHeader title={isEnglish ? 'Voice configurator' : 'Configurador de voz'} tone="lectura" darkMode={darkMode} />
+
+            <CheckOption
+              label={isEnglish ? 'Emotion mode (more expressive)' : 'Modo emociones (más expresivo)'}
+              checked={config.emotionMode === true}
+              onChange={() => updateConfig('emotionMode', !config.emotionMode)}
+              darkMode={darkMode}
+              hint={isEnglish
+                ? 'ON uses the expressive model (tts-2) and adds emotion based on the text. OFF uses the most realistic voice (tts-1.5-max).'
+                : 'ON usa el modelo expresivo (tts-2) y agrega emoción según el texto. OFF usa la voz más realista (tts-1.5-max).'}
+            />
+
+            <div className={`mt-2 rounded-xl px-4 py-3 border ${darkMode ? 'bg-white/5 border-gray-700/40' : 'bg-white border-slate-300 shadow-sm'}`}>
+              <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-cyan-300' : 'text-slate-700'}`}>
+                {isEnglish ? 'Variability (temperature)' : 'Variabilidad (temperatura)'}
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="0.02"
+                  value={Number.isFinite(Number(config.voiceTemperature)) ? Number(config.voiceTemperature) : 0.98}
+                  onChange={(e) => updateConfig('voiceTemperature', Number(e.target.value))}
+                  className="flex-1"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  max="2"
+                  step="0.02"
+                  value={Number.isFinite(Number(config.voiceTemperature)) ? Number(config.voiceTemperature) : 0.98}
+                  onChange={(e) => updateConfig('voiceTemperature', Math.min(2, Math.max(0, Number(e.target.value) || 0.98)))}
+                  className={`w-20 px-2 py-1.5 text-sm rounded-lg border ${darkMode ? 'bg-gray-800/80 border-cyan-500/30 text-gray-100' : 'bg-white border-gray-300 text-slate-800'}`}
+                />
+              </div>
+              <div className={`flex justify-between text-[10px] mt-1 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                <span>{isEnglish ? 'Flat' : 'Plano'}</span>
+                <span>{isEnglish ? 'Recommended ~0.98' : 'Recomendado ~0.98'}</span>
+                <span>{isEnglish ? 'Very variable' : 'Muy variable'}</span>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
             {/* LEFT SIDE: Lectura + Notificaciones */}

@@ -3434,6 +3434,8 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                         messageUsername: nextItem.username,
                         messageText: nextItem.text,
                         voiceId: nextVoiceId,
+                        emotionMode: configRef.current?.emotionMode === true,
+                        voiceTemperature: configRef.current?.voiceTemperature,
                         preGenerate: true
                       })
                     })
@@ -3552,7 +3554,9 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                 username: connectedTikTokUser || normalizeTikTokUsername(tiktokUser),
                 messageUsername: username,
                 messageText: text,
-                voiceId
+                voiceId,
+                emotionMode: configRef.current?.emotionMode === true,
+                voiceTemperature: configRef.current?.voiceTemperature
               })
             })
             data = await response.json()
@@ -3722,6 +3726,8 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                     messageUsername: nextItem.username,
                     messageText: nextItem.text,
                     voiceId: nextVoiceId,
+                    emotionMode: configRef.current?.emotionMode === true,
+                    voiceTemperature: configRef.current?.voiceTemperature,
                     preGenerate: true
                   })
                 })
