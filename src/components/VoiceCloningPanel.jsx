@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef } from 'react'
-import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Edit2, Bot, Lock, Play, Square } from 'lucide-react'
+import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Edit2, Bot, Lock, Play, Square, Volume2 } from 'lucide-react'
 import AIRoleplayWorkshop from './AIRoleplayWorkshop'
 import { useTranslation } from 'react-i18next'
 
@@ -156,6 +156,14 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   const [editingVoiceId, setEditingVoiceId] = useState(null)
   const [editingVoiceName, setEditingVoiceName] = useState('')
 
+  // Edición de volumen por voz
+  const [editingVolumeId, setEditingVolumeId] = useState(null)
+  const [editingVolumeValue, setEditingVolumeValue] = useState(1.0)
+
+  // Web Audio API para aplicar ganancia en preview
+  const audioCtxRef = useRef(null)
+  const testVolumeGainRef = useRef(1.0)
+
   // Prueba de voz
   const [testVoiceId, setTestVoiceId] = useState(null)
   const [testText, setTestText] = useState(t('voiceClone.test.placeholder'))
@@ -309,6 +317,33 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
     }
   }
 
+  const handleSaveVolumeEdit = async () => {
+    try {
+      const token = sessionStorage.getItem('sv-token')
+      const res = await fetch(`${API_URL}/api/settings/voices/${editingVolumeId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ volumeGain: editingVolumeValue })
+      })
+
+      if (res.ok) {
+        setUserVoices(prev =>
+          prev.map(v => v.id === editingVolumeId ? { ...v, volume_gain: editingVolumeValue } : v)
+        )
+        setMessage(isEnglish ? 'Volume saved.' : 'Volumen guardado.')
+        setEditingVolumeId(null)
+        setTimeout(() => setMessage(null), 2500)
+      } else {
+        setError(isEnglish ? 'Error saving volume.' : 'Error guardando volumen.')
+      }
+    } catch (err) {
+      setError(`Error: ${err.message}`)
+    }
+  }
+
   const handleDeleteVoice = async (id, name) => {
     if (!confirm(t('voiceClone.delete.confirm', { name }))) return
 
@@ -383,6 +418,8 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       }
 
       if (response.ok && (data.audio || data.audioUrl)) {
+        const selectedVoice = userVoices.find(v => v.voice_id === testVoiceId)
+        testVolumeGainRef.current = parseFloat(selectedVoice?.volume_gain ?? 1.0)
         setTestAudioUrl(data.audio || data.audioUrl)
         setShouldAutoPlayTestAudio(true)
         setMessage(t('voiceClone.test.success'))
@@ -712,46 +749,103 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
         </p>
       ) : (
         <div className="space-y-2">
-          {voices.map((voice) => (
+          {voices.map((voice) => {
+            const gain = voice.volume_gain ?? 1.0
+            const gainPct = Math.round(gain * 100)
+            const isEditingName = editingVoiceId === voice.id
+            const isEditingVol = editingVolumeId === voice.id
+            return (
             <div
               key={voice.id}
-              className={`flex items-center justify-between px-4 py-3 rounded-lg ${darkMode ? 'bg-gray-800/60 border border-gray-700/50' : 'bg-gray-50 border border-gray-200'}`}
+              className={`px-4 py-3 rounded-lg ${darkMode ? 'bg-gray-800/60 border border-gray-700/50' : 'bg-gray-50 border border-gray-200'}`}
             >
-              <div className="flex-1">
-                {editingVoiceId === voice.id ? (
-                  <input
-                    type="text"
-                    value={editingVoiceName}
-                    onChange={(e) => setEditingVoiceName(e.target.value)}
-                    autoFocus
-                    className={`w-full mb-1 px-2 py-1 rounded ${darkMode ? 'bg-[#0f0f23] border border-cyan-400/30 text-white focus:outline-none focus:border-cyan-400' : 'bg-white border border-indigo-300 text-gray-900 focus:outline-none focus:border-indigo-500'}`}
-                  />
-                ) : (
-                  <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{voice.voice_name}</p>
-                )}
-                <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                  {new Date(voice.created_at).toLocaleDateString()}
-                </p>
+              {/* Fila principal */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  {isEditingName ? (
+                    <input
+                      type="text"
+                      value={editingVoiceName}
+                      onChange={(e) => setEditingVoiceName(e.target.value)}
+                      autoFocus
+                      className={`w-full mb-1 px-2 py-1 rounded ${darkMode ? 'bg-[#0f0f23] border border-cyan-400/30 text-white focus:outline-none focus:border-cyan-400' : 'bg-white border border-indigo-300 text-gray-900 focus:outline-none focus:border-indigo-500'}`}
+                    />
+                  ) : (
+                    <p className={`font-semibold truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{voice.voice_name}</p>
+                  )}
+                  <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                    {new Date(voice.created_at).toLocaleDateString()}
+                    {!isEditingName && !isEditingVol && gainPct !== 100 && (
+                      <span className={`ml-2 font-semibold ${gainPct < 100 ? 'text-amber-400' : 'text-cyan-400'}`}>
+                        🔊 {gainPct}%
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {isEditingName ? (
+                    <>
+                      <button onClick={handleSaveVoiceEdit} className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded text-xs font-semibold transition-colors">{t('common.save')}</button>
+                      <button onClick={() => { setEditingVoiceId(null); setEditingVoiceName('') }} className="px-2 py-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 rounded text-xs font-semibold transition-colors">{t('common.cancel')}</button>
+                    </>
+                  ) : isEditingVol ? (
+                    <>
+                      <button onClick={handleSaveVolumeEdit} className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded text-xs font-semibold transition-colors">{t('common.save')}</button>
+                      <button onClick={() => setEditingVolumeId(null)} className="px-2 py-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 rounded text-xs font-semibold transition-colors">{t('common.cancel')}</button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => handleEditVoice(voice)} className="p-1.5 rounded hover:bg-cyan-500/20 transition-colors" title={t('voiceClone.actions.rename')}>
+                        <Edit2 className="w-4 h-4 text-cyan-400" />
+                      </button>
+                      <button
+                        onClick={() => { setEditingVolumeId(voice.id); setEditingVolumeValue(gain) }}
+                        className={`p-1.5 rounded hover:bg-purple-500/20 transition-colors ${gainPct !== 100 ? 'text-purple-300' : darkMode ? 'text-gray-400' : 'text-gray-500'}`}
+                        title={isEnglish ? 'Adjust volume' : 'Ajustar volumen'}
+                      >
+                        <Volume2 className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => handleDeleteVoice(voice.id, voice.voice_name)} className="p-1.5 rounded hover:bg-red-500/20 transition-colors" title={t('voiceClone.actions.delete')}>
+                        <Trash2 className="w-4 h-4 text-red-400" />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                {editingVoiceId === voice.id ? (
-                  <>
-                    <button onClick={handleSaveVoiceEdit} className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded text-xs font-semibold transition-colors flex-shrink-0">{t('common.save')}</button>
-                    <button onClick={() => { setEditingVoiceId(null); setEditingVoiceName('') }} className="px-2 py-1 bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 rounded text-xs font-semibold transition-colors flex-shrink-0">{t('common.cancel')}</button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={() => handleEditVoice(voice)} className="p-1.5 rounded hover:bg-cyan-500/20 transition-colors flex-shrink-0" title={t('voiceClone.actions.rename')}>
-                      <Edit2 className="w-4 h-4 text-cyan-400" />
-                    </button>
-                    <button onClick={() => handleDeleteVoice(voice.id, voice.voice_name)} className="p-1.5 rounded hover:bg-red-500/20 transition-colors flex-shrink-0" title={t('voiceClone.actions.delete')}>
-                      <Trash2 className="w-4 h-4 text-red-400" />
-                    </button>
-                  </>
-                )}
-              </div>
+
+              {/* Fila de ajuste de volumen */}
+              {isEditingVol && (
+                <div className={`mt-3 pt-3 border-t ${darkMode ? 'border-gray-700/50' : 'border-gray-200'}`}>
+                  <div className="flex items-center gap-3">
+                    <Volume2 className={`w-4 h-4 flex-shrink-0 ${editingVolumeValue < 1 ? 'text-amber-400' : 'text-cyan-400'}`} />
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="2.0"
+                      step="0.05"
+                      value={editingVolumeValue}
+                      onChange={(e) => setEditingVolumeValue(parseFloat(e.target.value))}
+                      className="flex-1 accent-purple-500 cursor-pointer"
+                      style={{ accentColor: editingVolumeValue < 1 ? '#f59e0b' : editingVolumeValue > 1 ? '#22d3ee' : '#a855f7' }}
+                    />
+                    <span className={`text-sm font-bold w-12 text-right flex-shrink-0 ${
+                      editingVolumeValue < 1 ? 'text-amber-400' :
+                      editingVolumeValue > 1 ? 'text-cyan-400' :
+                      darkMode ? 'text-gray-300' : 'text-gray-600'
+                    }`}>
+                      {Math.round(editingVolumeValue * 100)}%
+                    </span>
+                  </div>
+                  <div className={`flex justify-between text-xs mt-1 px-7 ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}>
+                    <span>10%</span>
+                    <span className={darkMode ? 'text-gray-500' : 'text-gray-400'}>100%</span>
+                    <span>200%</span>
+                  </div>
+                </div>
+              )}
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
@@ -816,6 +910,27 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                 className="w-full"
                 autoPlay={shouldAutoPlayTestAudio}
                 onPlay={() => setShouldAutoPlayTestAudio(false)}
+                onLoadedMetadata={(e) => {
+                  const gain = testVolumeGainRef.current
+                  if (!gain || gain === 1.0) return
+                  if (gain <= 1.0) {
+                    e.target.volume = gain
+                  } else {
+                    try {
+                      if (!audioCtxRef.current) {
+                        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
+                      }
+                      const ctx = audioCtxRef.current
+                      const source = ctx.createMediaElementSource(e.target)
+                      const gainNode = ctx.createGain()
+                      gainNode.gain.value = gain
+                      source.connect(gainNode)
+                      gainNode.connect(ctx.destination)
+                    } catch (_) {
+                      e.target.volume = Math.min(1, gain)
+                    }
+                  }
+                }}
               >
                 <source src={testAudioUrl} type="audio/mpeg" />
               </audio>
