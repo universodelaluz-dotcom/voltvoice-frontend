@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef } from 'react'
-import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Edit2, Bot, Lock, Play, Square, Volume2 } from 'lucide-react'
+import { Upload, Zap, AlertCircle, CheckCircle, Loader, Trash2, Mic2, Edit2, Bot, Lock, Play, Square, Volume2, PlayCircle, StopCircle } from 'lucide-react'
 import AIRoleplayWorkshop from './AIRoleplayWorkshop'
 import { useTranslation } from 'react-i18next'
 
@@ -163,6 +163,12 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
   // Web Audio API para aplicar ganancia en preview
   const audioCtxRef = useRef(null)
   const testVolumeGainRef = useRef(1.0)
+
+  // Preview rápido por voz (botón play en lista)
+  const [quickPreviewId, setQuickPreviewId] = useState(null)   // voice.id cargando
+  const [quickPreviewAudio, setQuickPreviewAudio] = useState({ voiceId: null, url: null }) // {voiceId: voice.id, url}
+  const quickPreviewRef = useRef(null)
+  const quickAudioCtxRef = useRef(null)
 
   // Prueba de voz
   const [testVoiceId, setTestVoiceId] = useState(null)
@@ -341,6 +347,50 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
       }
     } catch (err) {
       setError(`Error: ${err.message}`)
+    }
+  }
+
+  const QUICK_PREVIEW_TEXT = isEnglish
+    ? "This is your cloned voice. What do you think?"
+    : "Esta es tu voz clonada. ¿Qué te parece?"
+
+  const handleQuickPreview = async (voice) => {
+    // Si ya está sonando esta voz, detenerla
+    if (quickPreviewAudio.voiceId === voice.id && quickPreviewRef.current) {
+      quickPreviewRef.current.pause()
+      quickPreviewRef.current.currentTime = 0
+      setQuickPreviewAudio({ voiceId: null, url: null })
+      return
+    }
+
+    // Detener cualquier preview previo
+    if (quickPreviewRef.current) {
+      quickPreviewRef.current.pause()
+      quickPreviewRef.current.currentTime = 0
+    }
+    setQuickPreviewAudio({ voiceId: null, url: null })
+    setQuickPreviewId(voice.id)
+
+    try {
+      const token = sessionStorage.getItem('sv-token')
+      const response = await fetch(`${API_URL}/api/inworld/tts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ text: QUICK_PREVIEW_TEXT, voiceId: voice.voice_id })
+      })
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && (data.audio || data.audioUrl)) {
+        setQuickPreviewAudio({ voiceId: voice.id, url: data.audio || data.audioUrl })
+      } else {
+        setError(data.error || (isEnglish ? 'Preview failed.' : 'Error al previsualizar.'))
+      }
+    } catch (err) {
+      setError(`Error: ${err.message}`)
+    } finally {
+      setQuickPreviewId(null)
     }
   }
 
@@ -795,6 +845,26 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                     </>
                   ) : (
                     <>
+                      {/* Botón preview rápido */}
+                      <button
+                        onClick={() => handleQuickPreview(voice)}
+                        disabled={quickPreviewId === voice.id}
+                        className={`p-1.5 rounded transition-colors ${
+                          quickPreviewAudio.voiceId === voice.id
+                            ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                            : quickPreviewId === voice.id
+                            ? 'text-gray-400 cursor-wait'
+                            : darkMode ? 'hover:bg-green-500/20 text-gray-400 hover:text-green-400' : 'hover:bg-green-500/10 text-gray-400 hover:text-green-600'
+                        }`}
+                        title={isEnglish ? 'Quick listen' : 'Escuchar rápido'}
+                      >
+                        {quickPreviewId === voice.id
+                          ? <Loader className="w-4 h-4 animate-spin" />
+                          : quickPreviewAudio.voiceId === voice.id
+                          ? <StopCircle className="w-4 h-4" />
+                          : <PlayCircle className="w-4 h-4" />
+                        }
+                      </button>
                       <button onClick={() => handleEditVoice(voice)} className="p-1.5 rounded hover:bg-cyan-500/20 transition-colors" title={t('voiceClone.actions.rename')}>
                         <Edit2 className="w-4 h-4 text-cyan-400" />
                       </button>
@@ -812,6 +882,36 @@ export default function VoiceWorkshopPanel({ onCloneSuccess, darkModeOverride, c
                   )}
                 </div>
               </div>
+
+              {/* Mini-player de preview rápido */}
+              {quickPreviewAudio.voiceId === voice.id && quickPreviewAudio.url && (
+                <div className={`mt-2 pt-2 border-t ${darkMode ? 'border-gray-700/50' : 'border-gray-200'}`}>
+                  <p className={`text-xs mb-1 italic ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    "{QUICK_PREVIEW_TEXT}"
+                  </p>
+                  <audio
+                    key={quickPreviewAudio.url}
+                    ref={quickPreviewRef}
+                    controls
+                    autoPlay
+                    className="w-full h-8"
+                    onEnded={() => setQuickPreviewAudio({ voiceId: null, url: null })}
+                    onLoadedMetadata={(e) => {
+                      const g = voice.volume_gain ?? 1.0
+                      if (g <= 1.0) { e.target.volume = g; return }
+                      try {
+                        if (!quickAudioCtxRef.current) quickAudioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
+                        const ctx = quickAudioCtxRef.current
+                        const src = ctx.createMediaElementSource(e.target)
+                        const gn = ctx.createGain(); gn.gain.value = g
+                        src.connect(gn); gn.connect(ctx.destination)
+                      } catch (_) { e.target.volume = Math.min(1, g) }
+                    }}
+                  >
+                    <source src={quickPreviewAudio.url} type="audio/mpeg" />
+                  </audio>
+                </div>
+              )}
 
               {/* Fila de ajuste de volumen */}
               {isEditingVol && (
