@@ -439,7 +439,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   const [presetStatus, setPresetStatus] = useState('')
   const [showProfanityEditor, setShowProfanityEditor] = useState(false)
   const [showModerationList, setShowModerationList] = useState(false)
-  const [showUserVoiceAssignments, setShowUserVoiceAssignments] = useState(false)
+  const [showUserVoiceAssignments, setShowUserVoiceAssignments] = useState(() => Boolean(config?.userVoiceAssignmentsEnabled))
   const [newAssignmentUsername, setNewAssignmentUsername] = useState('')
   const [newAssignmentVoiceId, setNewAssignmentVoiceId] = useState('')
   const [showAllowedUsersList, setShowAllowedUsersList] = useState(false)
@@ -479,6 +479,13 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
   }
 
   // Cargar voces al montar y escuchar evento de voz nueva
+  // Sync showUserVoiceAssignments when config loads from backend
+  useEffect(() => {
+    if (config?.userVoiceAssignmentsEnabled !== undefined) {
+      setShowUserVoiceAssignments(Boolean(config.userVoiceAssignmentsEnabled))
+    }
+  }, [config?.userVoiceAssignmentsEnabled])
+
   useEffect(() => {
     loadUserVoices()
     loadBotCharacters()
@@ -1486,7 +1493,7 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                   <FeatureLockedOverlay darkMode={darkMode} message="Disponible en packs" showIcon showMessage />
                 )}
                 <div>
-                <button onClick={() => setShowUserVoiceAssignments(!showUserVoiceAssignments)} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
+                <button onClick={() => { const next = !showUserVoiceAssignments; setShowUserVoiceAssignments(next); updateConfig('userVoiceAssignmentsEnabled', next) }} className="flex items-center gap-3 w-full hover:opacity-80 transition-opacity">
                   <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                     showUserVoiceAssignments ? (darkMode ? 'bg-cyan-500 border-cyan-400' : 'bg-slate-800 border-slate-800') : darkMode ? 'border-gray-400' : 'border-slate-500 bg-white'
                   }`}>

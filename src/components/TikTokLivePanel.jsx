@@ -793,7 +793,7 @@ const SENTIMENT_STATES = {
   quiet:        { emoji: '😴', label: 'APAGADO',     color: '#475569', bg: 'rgba(71,85,105,0.08)',   border: 'rgba(71,85,105,0.22)',   insight: 'Poca actividad. Un momento ideal para hacer una pregunta directa al chat.' },
 }
 
-export default function TikTokLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride, platformMode = 'tiktok', tokens = 0, setTokens = null }) {
+export default function TikTokLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride, platformMode = 'tiktok', tokens = 0, setTokens = null, voiceGainMap = {} }) {
   const { t, i18n } = useTranslation()
   const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
   const isYouTubeMode = platformMode === 'youtube'
@@ -1745,6 +1745,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     }
   }, [config.generalVoiceId, isConnected])
   useEffect(() => { volumeRef.current = volume }, [volume])
+  const voiceGainMapRef = useRef({})
+  useEffect(() => { voiceGainMapRef.current = voiceGainMap }, [voiceGainMap])
   useEffect(() => { bannedRef.current = bannedUsers; chatStore.syncBannedUsers(bannedUsers) }, [bannedUsers])
   useEffect(() => { nickOverridesRef.current = nickOverrides; chatStore.syncNickOverrides(nickOverrides) }, [nickOverrides])
   useEffect(() => { chatStore.syncHighlightedUsers(highlightedUsers) }, [highlightedUsers])
@@ -2889,7 +2891,7 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
     const isQuestionEligible = item.isQuestion || isQuestion(item.sourceText || item.rawText || item.text || '')
 
     // PRIORIDAD 0: Voz personalizada por usuario (MÁXIMA PRIORIDAD)
-    if (canUseAdvancedVoiceTools && c.userVoiceAssignments && c.userVoiceAssignments.length > 0) {
+    if (canUseAdvancedVoiceTools && c.userVoiceAssignmentsEnabled && c.userVoiceAssignments && c.userVoiceAssignments.length > 0) {
       // Normalizar username: quitar @ si lo tiene para comparación
       const normalizedUsername = username ? username.toLowerCase().replace(/^@+/, '') : ''
       const userAssignment = normalizedUsername ? c.userVoiceAssignments.find(a => a.username && a.username.toLowerCase() === normalizedUsername) : null
@@ -3225,7 +3227,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
               const audio = new Audio(backendAudio)
               currentAudioRef.current = audio
               audio.playbackRate = c.audioSpeed || 1.0
-              audio.volume = volumeRef.current
+              const _vGain1 = voiceGainMapRef.current[voiceId] ?? 1.0
+              audio.volume = Math.min(1, volumeRef.current * Math.min(1, _vGain1))
               audio.onended = () => {
                 currentAudioRef.current = null
                 activePlaybackResolveRef.current = null
@@ -3542,7 +3545,8 @@ export default function TikTokLivePanel({ config = {}, updateConfig, configReady
             const audio = new Audio(data.audio)
             currentAudioRef.current = audio
             audio.playbackRate = c.audioSpeed || 1.0
-            audio.volume = volumeRef.current
+            const _vGain2 = voiceGainMapRef.current[voiceId] ?? 1.0
+            audio.volume = Math.min(1, volumeRef.current * Math.min(1, _vGain2))
             audio.onended = () => {
               currentAudioRef.current = null
               activePlaybackResolveRef.current = null

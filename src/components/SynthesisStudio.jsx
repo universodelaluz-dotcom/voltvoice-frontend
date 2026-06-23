@@ -248,7 +248,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
           id: v.voice_id,
           name: v.voice_name,
           category: v.provider === 'inworld-cloned' ? 'inworld-cloned' : 'inworld-generated',
-          engine: 'inworld'
+          engine: 'inworld',
+          volumeGain: v.volume_gain ?? 1.0
         }))
         setUserVoices(formatted)
       }
@@ -794,6 +795,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
           platformMode={platformMode}
           tokens={tokens}
           setTokens={setTokens}
+          voiceGainMap={Object.fromEntries(userVoices.filter(v => v.volumeGain && v.volumeGain !== 1.0).map(v => [v.id, v.volumeGain]))}
         />
 
         {/* Nav buttons - fila debajo del panel */}
