@@ -10,6 +10,8 @@ const staticPages = {
   '/how-it-works/': path.resolve(__dirname, 'public', 'how-it-works', 'index.html'),
   '/precios/': path.resolve(__dirname, 'public', 'precios', 'index.html'),
   '/youtube/': path.resolve(__dirname, 'youtube.html'),
+  '/privacy/': path.resolve(__dirname, 'public', 'privacy', 'index.html'),
+  '/terms/': path.resolve(__dirname, 'public', 'terms', 'index.html'),
 }
 
 export default defineConfig({

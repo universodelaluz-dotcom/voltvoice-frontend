@@ -11,7 +11,9 @@
     { "source": "/youtube", "destination": "/youtube.html", "permanent": false },
     { "source": "/youtube/", "destination": "/youtube.html", "permanent": false },
     { "source": "/como-funciona", "destination": "/como-funciona/", "permanent": true },
-    { "source": "/how-it-works", "destination": "/how-it-works/", "permanent": true }
+    { "source": "/how-it-works", "destination": "/how-it-works/", "permanent": true },
+    { "source": "/privacy", "destination": "/privacy/", "permanent": true },
+    { "source": "/terms", "destination": "/terms/", "permanent": true }
   ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" }
