@@ -4,7 +4,7 @@ import TikTokLivePanel from './TikTokLivePanel'
 import YouTubeLivePanel from './YouTubeLivePanel'
 import AudioVisualizer from './AudioVisualizer'
 import BotInvoker from './BotInvoker'
-import { Mic2, Volume2, Zap, ChevronDown, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Shield, Lock, Download } from 'lucide-react'
+import { Mic2, Volume2, Zap, ChevronDown, ChevronUp, Loader, AlertCircle, Users, Send, Clock, Sun, Moon, Settings, BarChart3, Shield, Lock, Download, SlidersHorizontal, Gauge, Smile, Sparkles, Gem } from 'lucide-react'
 
 const getEffectiveUserPlan = (userObj = null) => {
   const normalizePlan = (rawPlan = 'free') => {
@@ -80,6 +80,21 @@ export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, 
   const { t, i18n } = useTranslation()
   const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
   const audioSpeed = config.audioSpeed || 1.0
+  // Opciones avanzadas del menú de "TEXTO A PROBAR"
+  const voiceTemperature = Number.isFinite(Number(config.voiceTemperature)) ? Number(config.voiceTemperature) : 0.98
+  const expressiveMode = config.emotionMode === true
+  const voiceEmotion = config.voiceEmotion || 'auto'
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
+  const EMOTION_CHOICES = [
+    { id: 'auto', es: 'Automático', en: 'Auto', emoji: '✨' },
+    { id: 'none', es: 'Neutral', en: 'Neutral', emoji: '😐' },
+    { id: 'excited', es: 'Emocionado', en: 'Excited', emoji: '🤩' },
+    { id: 'laugh', es: 'Alegre', en: 'Cheerful', emoji: '😄' },
+    { id: 'angry', es: 'Enojado', en: 'Angry', emoji: '😡' },
+    { id: 'sad', es: 'Triste', en: 'Sad', emoji: '😢' },
+    { id: 'surprise', es: 'Sorprendido', en: 'Surprised', emoji: '😮' },
+    { id: 'love', es: 'Cariñoso', en: 'Warm', emoji: '🥰' },
+  ]
   const PREMIUM_TEST_CHAR_LIMIT = 3500
   const FREE_LOCAL_LIMIT_CODE = 'FREE_LOCAL_VOICE_DAILY_LIMIT_REACHED'
   const effectivePlanRaw = getEffectiveUserPlan(user)
@@ -451,11 +466,15 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
       return
     }
 
-    // Si ya existe audio para este mismo texto y voz, solo reproducir sin consumir tokens
+    // Firma de las opciones avanzadas: si cambian, hay que regenerar el audio.
+    const optionsSignature = `${expressiveMode ? 1 : 0}|${voiceTemperature}|${voiceEmotion}`
+
+    // Si ya existe audio para este mismo texto, voz y opciones, solo reproducir sin consumir tokens
     if (
       synthesisCache.current.audioUrl &&
       text.trim() === synthesisCache.current.text &&
-      selectedVoice === synthesisCache.current.voiceId
+      selectedVoice === synthesisCache.current.voiceId &&
+      optionsSignature === synthesisCache.current.options
     ) {
       setError(null)
       setAudioUrl(synthesisCache.current.audioUrl)
@@ -497,7 +516,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
           }
         setError(data.error || t('studio.errors.synthesis'))
         } else {
-          synthesisCache.current = { text: text.trim(), voiceId: selectedVoice, audioUrl: data.audio }
+          synthesisCache.current = { text: text.trim(), voiceId: selectedVoice, audioUrl: data.audio, options: optionsSignature }
           setAudioUrl(data.audio)
           setAudioPlaybackNonce((prev) => prev + 1)
           setIsPlaying(true)
@@ -517,7 +536,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
           },
           body: JSON.stringify({
             text,
-            voiceId: selectedVoice
+            voiceId: selectedVoice,
+            emotionMode: config.emotionMode === true,
+            voiceTemperature: voiceTemperature,
+            emotion: voiceEmotion
           })
         })
 
@@ -531,7 +553,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
               username: (config?.lastTiktokUser || "preview_studio").trim(),
               messageUsername: "preview",
               messageText: text,
-              voiceId: selectedVoice
+              voiceId: selectedVoice,
+              emotionMode: config.emotionMode === true,
+              voiceTemperature: voiceTemperature
             })
           })
         }
@@ -540,7 +564,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
 
         if (response.ok && (data.audio || data.success)) {
           const generatedAudioUrl = data.audio || data.audioUrl
-          synthesisCache.current = { text: text.trim(), voiceId: selectedVoice, audioUrl: generatedAudioUrl }
+          synthesisCache.current = { text: text.trim(), voiceId: selectedVoice, audioUrl: generatedAudioUrl, options: optionsSignature }
           setAudioUrl(generatedAudioUrl)
           setAudioPlaybackNonce((prev) => prev + 1)
           const estTokens = text.length
@@ -600,7 +624,22 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
       const binary = atob(base64)
       const bytes = new Uint8Array(binary.length)
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-      const decoded = await audioCtx.decodeAudioData(bytes.buffer)
+      let decoded = await audioCtx.decodeAudioData(bytes.buffer)
+
+      // Aplicar la MISMA velocidad que escuchas en vivo (playbackRate) al WAV exportado.
+      // Se renderiza con OfflineAudioContext para "hornear" el cambio de velocidad/tono.
+      const exportSpeed = Number(audioSpeed) || 1.0
+      if (Math.abs(exportSpeed - 1.0) > 0.001) {
+        const offlineLength = Math.max(1, Math.ceil(decoded.length / exportSpeed))
+        const OfflineCtx = window.OfflineAudioContext || window.webkitOfflineAudioContext
+        const offlineCtx = new OfflineCtx(decoded.numberOfChannels, offlineLength, decoded.sampleRate)
+        const source = offlineCtx.createBufferSource()
+        source.buffer = decoded
+        source.playbackRate.value = exportSpeed
+        source.connect(offlineCtx.destination)
+        source.start(0)
+        decoded = await offlineCtx.startRendering()
+      }
 
       const numChannels = decoded.numberOfChannels
       const sampleRate = decoded.sampleRate
@@ -877,6 +916,165 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
               <div className={`${darkMode ? "flex justify-between text-xs text-gray-400" : "flex justify-between text-xs text-gray-500"}`}>
                 <span>{t('studio.chars', { count: charCount, max: PREMIUM_TEST_CHAR_LIMIT })}</span>
                 <span>{t('studio.tokens.charInfo')}</span>
+              </div>
+
+              {/* Micro-menú: opciones avanzadas (velocidad / emociones / temperatura / modo) */}
+              <div className={`pt-2 mt-1 border-t ${darkMode ? 'border-white/10' : 'border-indigo-100'}`}>
+                <button
+                  type="button"
+                  onClick={() => setShowAdvancedOptions((v) => !v)}
+                  className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    darkMode
+                      ? 'bg-[#0f0f23] border border-purple-400/30 text-purple-200 hover:border-purple-400/60'
+                      : 'bg-indigo-50 border border-indigo-200 text-indigo-700 hover:border-indigo-400'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <SlidersHorizontal className="w-4 h-4" />
+                    {isEnglish ? 'Advanced options' : 'Opciones avanzadas'}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className={`text-[11px] font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {audioSpeed.toFixed(1)}x · {expressiveMode ? (isEnglish ? 'Expressive' : 'Expresivo') : (isEnglish ? 'Realistic' : 'Realista')}
+                    </span>
+                    {showAdvancedOptions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </span>
+                </button>
+
+                {showAdvancedOptions && (
+                  <div className={`mt-2 space-y-4 rounded-lg p-3 ${darkMode ? 'bg-[#0f0f23] border border-purple-400/20' : 'bg-indigo-50/60 border border-indigo-100'}`}>
+                    {/* Modo: Realista vs Expresivo */}
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <Gem className={`w-3.5 h-3.5 ${darkMode ? 'text-cyan-300' : 'text-indigo-600'}`} />
+                        <label className={`text-xs font-bold uppercase tracking-wide ${darkMode ? 'text-cyan-200' : 'text-indigo-700'}`}>
+                          {isEnglish ? 'Mode' : 'Modo'}
+                        </label>
+                      </div>
+                      <div className={`grid grid-cols-2 gap-1 p-1 rounded-lg ${darkMode ? 'bg-black/30' : 'bg-white'}`}>
+                        <button
+                          type="button"
+                          onClick={() => updateConfig('emotionMode', false)}
+                          className={`py-2 rounded-md text-xs font-bold transition-all ${
+                            !expressiveMode
+                              ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow'
+                              : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+                          }`}
+                        >
+                          {isEnglish ? '🎯 Realistic' : '🎯 Realista'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateConfig('emotionMode', true)}
+                          className={`py-2 rounded-md text-xs font-bold transition-all ${
+                            expressiveMode
+                              ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow'
+                              : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+                          }`}
+                        >
+                          {isEnglish ? '🎭 Expressive' : '🎭 Expresivo'}
+                        </button>
+                      </div>
+                      <p className={`mt-1 text-[11px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        {expressiveMode
+                          ? (isEnglish ? 'Adds emotion to the voice (tts-2 model).' : 'Añade emoción a la voz (modelo tts-2).')
+                          : (isEnglish ? 'Clean, natural voice without steering.' : 'Voz limpia y natural, sin dramatismo.')}
+                      </p>
+                    </div>
+
+                    {/* Velocidad */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <Zap className={`w-3.5 h-3.5 ${darkMode ? 'text-cyan-300' : 'text-indigo-600'}`} />
+                          <label className={`text-xs font-bold uppercase tracking-wide ${darkMode ? 'text-cyan-200' : 'text-indigo-700'}`}>
+                            {isEnglish ? 'Speed' : 'Velocidad'}
+                          </label>
+                        </div>
+                        <span className={`text-xs font-bold tabular-nums ${darkMode ? 'text-cyan-300' : 'text-indigo-700'}`}>{audioSpeed.toFixed(1)}x</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.5"
+                        max="2"
+                        step="0.1"
+                        value={audioSpeed}
+                        onChange={(e) => updateConfig('audioSpeed', Number(e.target.value))}
+                        className="w-full accent-cyan-500 cursor-pointer"
+                      />
+                      <div className={`flex justify-between text-[10px] mt-0.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        <span>{isEnglish ? 'Slow' : 'Lenta'}</span>
+                        <span>{isEnglish ? 'Normal' : 'Normal'}</span>
+                        <span>{isEnglish ? 'Fast' : 'Rápida'}</span>
+                      </div>
+                    </div>
+
+                    {/* Temperatura / medidor */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <Gauge className={`w-3.5 h-3.5 ${darkMode ? 'text-pink-300' : 'text-pink-600'}`} />
+                          <label className={`text-xs font-bold uppercase tracking-wide ${darkMode ? 'text-pink-200' : 'text-pink-600'}`}>
+                            {isEnglish ? 'Expressiveness (temp.)' : 'Expresividad (temp.)'}
+                          </label>
+                        </div>
+                        <span className={`text-xs font-bold tabular-nums ${darkMode ? 'text-pink-300' : 'text-pink-600'}`}>{voiceTemperature.toFixed(2)}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="2"
+                        step="0.01"
+                        value={voiceTemperature}
+                        onChange={(e) => updateConfig('voiceTemperature', Number(e.target.value))}
+                        className="w-full accent-pink-500 cursor-pointer"
+                      />
+                      <div className={`flex justify-between text-[10px] mt-0.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        <span>{isEnglish ? 'Flat' : 'Plana'}</span>
+                        <span>{isEnglish ? 'Balanced' : 'Equilibrada'}</span>
+                        <span>{isEnglish ? 'Variable' : 'Variable'}</span>
+                      </div>
+                    </div>
+
+                    {/* Emociones (solo en modo expresivo) */}
+                    <div className={expressiveMode ? '' : 'opacity-50'}>
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <Smile className={`w-3.5 h-3.5 ${darkMode ? 'text-purple-300' : 'text-purple-600'}`} />
+                        <label className={`text-xs font-bold uppercase tracking-wide ${darkMode ? 'text-purple-200' : 'text-purple-600'}`}>
+                          {isEnglish ? 'Emotion' : 'Emoción'}
+                        </label>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {EMOTION_CHOICES.map((emo) => {
+                          const active = voiceEmotion === emo.id
+                          return (
+                            <button
+                              key={emo.id}
+                              type="button"
+                              disabled={!expressiveMode}
+                              onClick={() => updateConfig('voiceEmotion', emo.id)}
+                              className={`px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                                active
+                                  ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow'
+                                  : darkMode
+                                    ? 'bg-black/30 text-gray-300 hover:bg-black/50 border border-purple-400/20'
+                                    : 'bg-white text-gray-600 hover:bg-purple-50 border border-purple-200'
+                              } ${!expressiveMode ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                            >
+                              <span className="mr-1">{emo.emoji}</span>{isEnglish ? emo.en : emo.es}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      {!expressiveMode && (
+                        <p className={`mt-1.5 text-[11px] flex items-center gap-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          <Sparkles className="w-3 h-3" />
+                          {isEnglish ? 'Switch to Expressive mode to use emotions.' : 'Activa el modo Expresivo para usar emociones.'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
