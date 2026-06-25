@@ -1002,10 +1002,11 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
                         onChange={(e) => updateConfig('audioSpeed', Number(e.target.value))}
                         className="w-full accent-cyan-500 cursor-pointer"
                       />
-                      <div className={`flex justify-between text-[10px] mt-0.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                        <span>{isEnglish ? 'Slow' : 'Lenta'}</span>
-                        <span>{isEnglish ? 'Normal' : 'Normal'}</span>
-                        <span>{isEnglish ? 'Fast' : 'Rápida'}</span>
+                      <div className={`relative h-3.5 text-[10px] mt-0.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        <span className="absolute left-0">{isEnglish ? 'Slow' : 'Lenta'}</span>
+                        {/* 1.0x cae al 33.3% del recorrido (rango 0.5–2), no en el centro */}
+                        <span className="absolute -translate-x-1/2" style={{ left: '33.33%' }}>{isEnglish ? 'Normal' : 'Normal'}</span>
+                        <span className="absolute right-0">{isEnglish ? 'Fast' : 'Rápida'}</span>
                       </div>
                     </div>
 

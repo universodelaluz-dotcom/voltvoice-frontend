@@ -3989,7 +3989,15 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
       filteredPercentage: receivedCount > 0 ? (filteredCount / receivedCount) * 100 : 0,
       mostActiveUser: mostActiveEntry ? { username: mostActiveEntry[0], count: mostActiveEntry[1] } : null,
       dominantEmotion: sentInfo?.dominant || null,
-      dominantEmotionPct: sentInfo?.dominantPct || 0
+      dominantEmotionPct: sentInfo?.dominantPct || 0,
+      emotionBreakdown: (() => {
+        const counts = sentInfo?.counts
+        const total = sentInfo?.total || 0
+        if (!counts || total <= 0) return []
+        return Object.entries(counts)
+          .map(([state, n]) => ({ state, count: n, pct: Math.round((n / total) * 100) }))
+          .sort((a, b) => b.count - a.count)
+      })()
     }
   }
 
@@ -4020,7 +4028,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
       localStorage.setItem('voltvoice_sentiment_sessions', JSON.stringify(stored))
     } catch { /* ignore */ }
     sentimentHistoryRef.current = []
-    return { dominant, dominantPct }
+    return { dominant, dominantPct, counts, total: history.length }
   }
 
   const closeSessionSummary = () => {
@@ -5503,6 +5511,31 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                   </div>
                 )
               })()}
+
+              {/* Desglose de todas las emociones */}
+              {Array.isArray(sessionSummary.emotionBreakdown) && sessionSummary.emotionBreakdown.length > 1 && (
+                <div className={`mb-4 rounded-2xl border p-3.5 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-200'}`}>
+                  <span className={`text-[10px] uppercase tracking-[0.18em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {isEnglish ? 'Emotion breakdown' : 'Desglose de emociones'}
+                  </span>
+                  <div className="mt-2.5 flex flex-col gap-2">
+                    {sessionSummary.emotionBreakdown.map(({ state, pct }) => {
+                      const em = SENTIMENT_STATES[state]
+                      if (!em) return null
+                      return (
+                        <div key={state} className="flex items-center gap-2.5">
+                          <span className="text-base leading-none shrink-0 w-5 text-center">{em.emoji}</span>
+                          <span className={`text-[11px] font-bold w-20 shrink-0 truncate ${darkMode ? 'text-slate-200' : 'text-slate-700'}`} style={{ color: em.color }}>{em.label}</span>
+                          <div className={`relative flex-1 h-2 rounded-full overflow-hidden ${darkMode ? 'bg-white/10' : 'bg-slate-200'}`}>
+                            <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.max(2, pct)}%`, backgroundColor: em.color }} />
+                          </div>
+                          <span className={`text-[11px] font-black tabular-nums w-9 text-right shrink-0 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{pct}%</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-stretch">
                 <div className="grid grid-cols-2 gap-3">
