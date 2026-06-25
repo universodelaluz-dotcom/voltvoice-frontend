@@ -605,6 +605,8 @@ export function App() {
     if (params.get('payment') === 'success') return 'studio'
     if (params.get('preview') === 'admin') return 'admin'
     if (params.get('preview') === 'auth') return 'auth'
+    const path = window.location.pathname
+    if (path === '/tiktok' || path.startsWith('/tiktok/')) return 'studio'
     return 'landing'
   }) // 'landing', 'studio', 'voice-workshop', 'pricing', 'control-panel', 'statistics', 'auth', 'admin'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
@@ -1245,6 +1247,16 @@ export function App() {
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
+
+  // Sincronizar URL con la página actual para que /tiktok persista al refrescar
+  useEffect(() => {
+    const path = window.location.pathname
+    if (currentPage === 'studio' && path !== '/tiktok') {
+      window.history.pushState({}, '', '/tiktok')
+    } else if (currentPage === 'landing' && path === '/tiktok') {
+      window.history.pushState({}, '', '/')
+    }
+  }, [currentPage])
 
   // Bloquear scroll solo cuando falta consentimiento de cookies en landing.
   useEffect(() => {

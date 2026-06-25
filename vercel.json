@@ -16,7 +16,9 @@
     { "source": "/terms", "destination": "/terms/", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" }
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/tiktok", "destination": "/index.html" },
+    { "source": "/tiktok/", "destination": "/index.html" }
   ],
   "headers": [
     {
