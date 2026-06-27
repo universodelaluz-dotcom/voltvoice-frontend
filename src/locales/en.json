@@ -9,10 +9,10 @@
     "enterStudio": "Enter Studio",
     "backToStudio": "Back to Studio",
     "hero": {
-      "badge": "🚀 #1 Platform for TikTok & YouTube LIVE",
+      "badge": "🚀 #1 Platform for YouTube & TikTok LIVE",
       "title": "Your LIVE will never sound",
       "titleHighlight": "generic",
-      "subtitle": "Give AI voice to your TikTok and YouTube LIVE chat. Real characters, real interaction, zero effort.",
+      "subtitle": "Give AI voice to your YouTube and TikTok LIVE chat. Real characters, real interaction, zero effort.",
       "ctaStart": "Start Free",
       "ctaWatch": "Watch Demo",
       "statsUsers": "Active creators",
@@ -20,7 +20,7 @@
       "statsUptime": "Guaranteed uptime",
       "viewPlans": "View Plans",
       "tags": [
-        "🎮 TikTok & YouTube LIVE ready",
+        "🎮 YouTube & TikTok LIVE ready",
         "😂 AI voices that react to your chat",
         "😈 Unique characters per viewer type"
       ]
@@ -29,7 +29,7 @@
       "title": "Everything you need to",
       "titleHighlight": "dominate your LIVE",
       "aiVoice": "Real-time AI Voice",
-      "aiVoiceDesc": "Reads TikTok and YouTube chat comments with premium natural voices. No delays, no interruptions.",
+      "aiVoiceDesc": "Reads YouTube and TikTok chat comments with premium natural voices. No delays, no interruptions.",
       "smartFilter": "Smart chat filter",
       "smartFilterDesc": "Filters spam and prioritizes the most relevant comments automatically on any platform.",
       "multiVoice": "Multiple voices",
@@ -37,9 +37,9 @@
       "voiceClone": "Voice cloning",
       "voiceCloneDesc": "Create your own personalized AI voice in minutes.",
       "analytics": "Real-time analytics",
-      "analyticsDesc": "Monitor messages, tokens used and stream performance on TikTok or YouTube.",
-      "multiLang": "TikTok & YouTube",
-      "multiLangDesc": "Full support for TikTok LIVE and YouTube LIVE in one single platform."
+      "analyticsDesc": "Monitor messages, tokens used and stream performance on YouTube or TikTok.",
+      "multiLang": "YouTube & TikTok",
+      "multiLangDesc": "Full support for YouTube LIVE and TikTok LIVE in one single platform."
     },
     "testimonials": {
       "title": "What our",
@@ -101,7 +101,7 @@
         {
           "icon": "?",
           "q": "How does Stream Voicer work?",
-          "a": "Stream Voicer reads your TikTok LIVE or YouTube LIVE chat messages in real time and plays them with AI voice to keep interaction constant in your stream."
+          "a": "Stream Voicer reads your YouTube LIVE or TikTok LIVE chat messages in real time and plays them with AI voice to keep interaction constant in your stream."
         },
         {
           "icon": "?",
@@ -151,7 +151,7 @@
         {
           "icon": "?",
           "q": "Does it work with YouTube LIVE too?",
-          "a": "Yes. Stream Voicer supports both TikTok LIVE and YouTube LIVE. You can switch between platforms from the studio at any time."
+          "a": "Yes. Stream Voicer supports both YouTube LIVE and TikTok LIVE. You can switch between platforms from the studio at any time."
         },
         {
           "icon": "?",
@@ -287,7 +287,7 @@
         "icon": "🎮",
         "title": "Ready for Live Streaming",
         "subtitle": "Works where you need it.",
-        "description": "Compatible with TikTok LIVE and YouTube LIVE in real time."
+        "description": "Compatible with YouTube LIVE and TikTok LIVE in real time."
       },
       {
         "icon": "🔒",
@@ -300,7 +300,7 @@
       {
         "step": "1",
         "title": "Connect your channel",
-        "description": "Connect your TikTok LIVE or YouTube LIVE in seconds"
+        "description": "Connect your YouTube LIVE or TikTok LIVE in seconds"
       },
       {
         "step": "2",

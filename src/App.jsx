@@ -607,7 +607,7 @@ export function App() {
     if (params.get('preview') === 'admin') return 'admin'
     if (params.get('preview') === 'auth') return 'auth'
     const path = window.location.pathname
-    if (path === '/tiktok' || path.startsWith('/tiktok/')) return 'studio'
+    if (path === '/tiktok' || path.startsWith('/tiktok/') || path === '/youtube' || path.startsWith('/youtube/') || path === '/studio' || path.startsWith('/studio/')) return 'studio'
     return 'landing'
   }) // 'landing', 'studio', 'voice-workshop', 'pricing', 'control-panel', 'statistics', 'auth', 'admin'
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
@@ -647,7 +647,7 @@ export function App() {
   const [tokens, setTokens] = useState(100)
   const [platformMode, setPlatformMode] = useState(() => localStorage.getItem('sv-preferred-platform') || null)
   const [showPlatformPopup, setShowPlatformPopup] = useState(false)
-  const [platformPopupRemember, setPlatformPopupRemember] = useState(true)
+  const [platformPopupRemember, setPlatformPopupRemember] = useState(false)
   const isLocalDevBypass = false // Desactivado para requerir login en local
   const canOpenStudioWithoutAuth = Boolean(user) || isLocalDevBypass
 
@@ -1036,7 +1036,17 @@ export function App() {
     if (remember) {
       localStorage.setItem('sv-preferred-platform', platform)
       updateConfig({ preferredPlatform: platform })
+    } else {
+      localStorage.removeItem('sv-preferred-platform')
+      updateConfig({ preferredPlatform: null })
     }
+  }
+
+  const handleResetPlatform = () => {
+    localStorage.removeItem('sv-preferred-platform')
+    updateConfig({ preferredPlatform: null })
+    setPlatformPopupRemember(false)
+    setShowPlatformPopup(true)
   }
 
   const handleAssumeTestUser = (userData, token) => {
@@ -1268,15 +1278,17 @@ export function App() {
     window.scrollTo(0, 0)
   }, [])
 
-  // Sincronizar URL con la página actual para que /tiktok persista al refrescar
+  // Sincronizar URL con la página y plataforma actuales
   useEffect(() => {
     const path = window.location.pathname
-    if (currentPage === 'studio' && path !== '/tiktok') {
-      window.history.pushState({}, '', '/tiktok')
-    } else if (currentPage === 'landing' && path === '/tiktok') {
+    if (currentPage === 'studio') {
+      const effectivePlatform = platformMode || 'youtube'
+      const targetPath = effectivePlatform === 'youtube' ? '/youtube' : '/tiktok'
+      if (path !== targetPath) window.history.pushState({}, '', targetPath)
+    } else if (currentPage === 'landing' && (path === '/tiktok' || path === '/youtube' || path === '/studio')) {
       window.history.pushState({}, '', '/')
     }
-  }, [currentPage])
+  }, [currentPage, platformMode])
 
   // Bloquear scroll solo cuando falta consentimiento de cookies en landing.
   useEffect(() => {
@@ -1825,7 +1837,7 @@ export function App() {
   // Studio + Voice Workshop + paneles secundarios: todos en el mismo bloque con display:none/block
   // para que SynthesisStudio nunca se desmonte (manteniendo el WebSocket de TikTok vivo al navegar a voice-workshop)
   if (['studio', 'control-panel', 'statistics', 'admin', 'voice-workshop'].includes(currentPage)) {
-    const effectivePlatform = platformMode || 'tiktok'
+    const effectivePlatform = platformMode || 'youtube'
     return (
       <>
         {paymentNoticeBanner}
@@ -1837,18 +1849,18 @@ export function App() {
               <p className={`text-sm text-center mb-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('platformPopup.subtitle')}</p>
               <div className="flex gap-3 mb-5">
                 <button
-                  onClick={() => handlePlatformSelect('tiktok', platformPopupRemember)}
-                  className="flex-1 flex flex-col items-center gap-2 py-4 rounded-xl border-2 border-pink-500 bg-gradient-to-br from-pink-600/20 to-pink-500/10 hover:from-pink-600/40 hover:to-pink-500/30 transition-all font-bold text-pink-400"
-                >
-                  <svg viewBox="0 0 24 24" className="w-8 h-8 fill-current"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.84 4.84 0 0 1-1.01-.07z"/></svg>
-                  TikTok
-                </button>
-                <button
                   onClick={() => handlePlatformSelect('youtube', platformPopupRemember)}
                   className="flex-1 flex flex-col items-center gap-2 py-4 rounded-xl border-2 border-red-500 bg-gradient-to-br from-red-600/20 to-red-500/10 hover:from-red-600/40 hover:to-red-500/30 transition-all font-bold text-red-400"
                 >
                   <svg viewBox="0 0 24 24" className="w-8 h-8 fill-current"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
                   YouTube
+                </button>
+                <button
+                  onClick={() => handlePlatformSelect('tiktok', platformPopupRemember)}
+                  className="flex-1 flex flex-col items-center gap-2 py-4 rounded-xl border-2 border-pink-500 bg-gradient-to-br from-pink-600/20 to-pink-500/10 hover:from-pink-600/40 hover:to-pink-500/30 transition-all font-bold text-pink-400"
+                >
+                  <svg viewBox="0 0 24 24" className="w-8 h-8 fill-current"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.84 4.84 0 0 1-1.01-.07z"/></svg>
+                  TikTok
                 </button>
               </div>
               <label className={`flex items-center gap-2 text-sm cursor-pointer select-none ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -1880,6 +1892,7 @@ export function App() {
               user={user}
               platformMode={effectivePlatform}
               onSwitchPlatform={(p) => { setPlatformMode(p); if (localStorage.getItem('sv-preferred-platform')) { localStorage.setItem('sv-preferred-platform', p); updateConfig({ preferredPlatform: p }) } }}
+              onResetPlatform={handleResetPlatform}
             />
           </div>
           <div style={{ display: currentPage === 'control-panel' ? 'block' : 'none' }}>

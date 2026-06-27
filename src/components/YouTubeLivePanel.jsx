@@ -4337,12 +4337,12 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                     className={`px-2.5 py-1 rounded-md border text-[11px] font-black tracking-wide transition ${darkMode
                       ? 'border-cyan-400/40 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20'
                       : 'border-cyan-300 bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}`}
-                    title="Abrir link del stream"
+                    title="Open stream link"
                   >
-                    Link activo
+                    Link active
                   </button>
                 ) : (
-                  <span className={`font-black ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>Canal activo</span>
+                  <span className={`font-black ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>Active channel</span>
                 )
               ) : (
                 <span className={`font-black ${darkMode ? 'text-cyan-300' : 'text-cyan-700'}`}>{sessionTikTokHandle}</span>
