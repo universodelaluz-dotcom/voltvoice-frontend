@@ -76,7 +76,7 @@ const normalizePlanTier = (rawPlan = 'free') => {
   return normalized
 }
 
-export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAdmin, onGoPricingPage, darkMode, setDarkMode, config, updateConfig, configReady = true, user, platformMode = 'tiktok' }) {
+export function SynthesisStudio({ onGoHome, onGoVoiceCloning, onGoControlPanel, onGoStatistics, onGoAdmin, onGoPricingPage, darkMode, setDarkMode, config, updateConfig, configReady = true, user, platformMode = 'tiktok', onSwitchPlatform }) {
   const { t, i18n } = useTranslation()
   const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
   const audioSpeed = config.audioSpeed || 1.0
@@ -772,6 +772,35 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://voltvoice-backend.onren
             >
               {darkMode ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
             </button>
+            {/* Platform switcher */}
+            {onSwitchPlatform && (
+              <>
+                <button
+                  onClick={() => onSwitchPlatform('tiktok')}
+                  title="TikTok Live"
+                  className={`flex items-center justify-center gap-1 px-2 sm:px-3 border-r transition-all text-xs font-bold ${
+                    platformMode === 'tiktok'
+                      ? (darkMode ? 'border-white/10 bg-pink-600/40 text-pink-300' : 'border-slate-300 bg-pink-100 text-pink-700')
+                      : (darkMode ? 'border-white/10 bg-slate-800 text-slate-400 hover:bg-slate-700' : 'border-slate-300 bg-white text-slate-500 hover:bg-slate-100')
+                  }`}
+                >
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.84 4.84 0 0 1-1.01-.07z"/></svg>
+                  <span className="hidden sm:inline">TikTok</span>
+                </button>
+                <button
+                  onClick={() => onSwitchPlatform('youtube')}
+                  title="YouTube Live"
+                  className={`flex items-center justify-center gap-1 px-2 sm:px-3 border-r transition-all text-xs font-bold ${
+                    platformMode === 'youtube'
+                      ? (darkMode ? 'border-white/10 bg-red-700/40 text-red-300' : 'border-slate-300 bg-red-100 text-red-700')
+                      : (darkMode ? 'border-white/10 bg-slate-800 text-slate-400 hover:bg-slate-700' : 'border-slate-300 bg-white text-slate-500 hover:bg-slate-100')
+                  }`}
+                >
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                  <span className="hidden sm:inline">YouTube</span>
+                </button>
+              </>
+            )}
             {/* Admin */}
             {isAdminRole && onGoAdmin && (
               <button

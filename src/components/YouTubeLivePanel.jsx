@@ -779,18 +779,18 @@ function NicksManagerPanel({ nickOverrides, setNickOverrides, editingNickInTable
 }
 
 const SENTIMENT_STATES = {
-  euphoric:     { emoji: '🔥', label: 'EUFÓRICO',    color: '#ef4444', bg: 'rgba(239,68,68,0.10)',    border: 'rgba(239,68,68,0.28)',    insight: 'El chat está en su pico. Lo que hacés ahora tiene impacto inmediato.' },
-  chaotic:      { emoji: '🌪️', label: 'CAÓTICO',     color: '#a855f7', bg: 'rgba(168,85,247,0.10)',   border: 'rgba(168,85,247,0.28)',   insight: 'Mucho ruido, poca señal. El chat perdió el hilo.' },
-  joyful:       { emoji: '😂', label: 'RISUEÑO',     color: '#facc15', bg: 'rgba(250,204,21,0.10)',   border: 'rgba(250,204,21,0.30)',   insight: 'El chat se está riendo. Ideal para improvisar o soltar un chiste.' },
-  surprised:    { emoji: '🤯', label: 'SORPRENDIDO', color: '#fb923c', bg: 'rgba(251,146,60,0.10)',   border: 'rgba(251,146,60,0.28)',   insight: 'Algo los impactó. Aprovechá el momento para anclar la emoción.' },
-  affectionate: { emoji: '🥰', label: 'CARIÑOSO',    color: '#ec4899', bg: 'rgba(236,72,153,0.10)',   border: 'rgba(236,72,153,0.28)',   insight: 'El chat te quiere. Hay mucho apoyo emocional en este momento.' },
-  energized:    { emoji: '⚡', label: 'ENERGIZADO',  color: '#f97316', bg: 'rgba(249,115,22,0.10)',   border: 'rgba(249,115,22,0.28)',   insight: 'Alta energía y buena onda. Buen momento para proponer algo al chat.' },
-  tense:        { emoji: '😤', label: 'TENSO',       color: '#eab308', bg: 'rgba(234,179,8,0.10)',    border: 'rgba(234,179,8,0.28)',    insight: 'Hay negatividad o molestia. Algo no está cayendo bien.' },
-  curious:      { emoji: '🤔', label: 'CURIOSO',     color: '#3b82f6', bg: 'rgba(59,130,246,0.10)',   border: 'rgba(59,130,246,0.28)',   insight: 'El chat tiene preguntas. Pausá y respondé directo.' },
-  awkward:      { emoji: '😬', label: 'INCÓMODO',    color: '#94a3b8', bg: 'rgba(148,163,184,0.10)', border: 'rgba(148,163,184,0.28)',  insight: 'El chat está dividido. Señales mezcladas, puede haber tensión oculta.' },
-  positive:     { emoji: '😄', label: 'POSITIVO',    color: '#22c55e', bg: 'rgba(34,197,94,0.10)',    border: 'rgba(34,197,94,0.28)',    insight: 'Buen ambiente. El contenido está conectando con la gente.' },
-  neutral:      { emoji: '😐', label: 'NEUTRO',      color: '#64748b', bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.22)', insight: 'Chat estable. Sin tendencia clara aún.' },
-  quiet:        { emoji: '😴', label: 'APAGADO',     color: '#475569', bg: 'rgba(71,85,105,0.08)',   border: 'rgba(71,85,105,0.22)',   insight: 'Poca actividad. Un momento ideal para hacer una pregunta directa al chat.' },
+  euphoric:     { emoji: '🔥', label: 'EUFÓRICO',    labelEn: 'EUPHORIC',      color: '#ef4444', bg: 'rgba(239,68,68,0.10)',    border: 'rgba(239,68,68,0.28)',    insight: 'El chat está en su pico. Lo que hacés ahora tiene impacto inmediato.', insightEn: 'Chat is at its peak. What you do now has immediate impact.' },
+  chaotic:      { emoji: '🌪️', label: 'CAÓTICO',     labelEn: 'CHAOTIC',       color: '#a855f7', bg: 'rgba(168,85,247,0.10)',   border: 'rgba(168,85,247,0.28)',   insight: 'Mucho ruido, poca señal. El chat perdió el hilo.', insightEn: 'Too much noise. Chat lost the thread.' },
+  joyful:       { emoji: '😂', label: 'RISUEÑO',     labelEn: 'JOYFUL',        color: '#facc15', bg: 'rgba(250,204,21,0.10)',   border: 'rgba(250,204,21,0.30)',   insight: 'El chat se está riendo. Ideal para improvisar o soltar un chiste.', insightEn: 'Chat is laughing. Great time to improvise or crack a joke.' },
+  surprised:    { emoji: '🤯', label: 'SORPRENDIDO', labelEn: 'SURPRISED',     color: '#fb923c', bg: 'rgba(251,146,60,0.10)',   border: 'rgba(251,146,60,0.28)',   insight: 'Algo los impactó. Aprovechá el momento para anclar la emoción.', insightEn: 'Something surprised them. Capitalize on this moment.' },
+  affectionate: { emoji: '🥰', label: 'CARIÑOSO',    labelEn: 'AFFECTIONATE',  color: '#ec4899', bg: 'rgba(236,72,153,0.10)',   border: 'rgba(236,72,153,0.28)',   insight: 'El chat te quiere. Hay mucho apoyo emocional en este momento.', insightEn: 'Chat loves you. Lots of emotional support right now.' },
+  energized:    { emoji: '⚡', label: 'ENERGIZADO',  labelEn: 'ENERGIZED',     color: '#f97316', bg: 'rgba(249,115,22,0.10)',   border: 'rgba(249,115,22,0.28)',   insight: 'Alta energía y buena onda. Buen momento para proponer algo al chat.', insightEn: 'High energy and good vibes. Great time to propose something to chat.' },
+  tense:        { emoji: '😤', label: 'TENSO',       labelEn: 'TENSE',         color: '#eab308', bg: 'rgba(234,179,8,0.10)',    border: 'rgba(234,179,8,0.28)',    insight: 'Hay negatividad o molestia. Algo no está cayendo bien.', insightEn: 'Negativity or frustration detected. Something is not landing well.' },
+  curious:      { emoji: '🤔', label: 'CURIOSO',     labelEn: 'CURIOUS',       color: '#3b82f6', bg: 'rgba(59,130,246,0.10)',   border: 'rgba(59,130,246,0.28)',   insight: 'El chat tiene preguntas. Pausá y respondé directo.', insightEn: 'Chat has questions. Pause and answer directly.' },
+  awkward:      { emoji: '😬', label: 'INCÓMODO',    labelEn: 'AWKWARD',       color: '#94a3b8', bg: 'rgba(148,163,184,0.10)', border: 'rgba(148,163,184,0.28)',  insight: 'El chat está dividido. Señales mezcladas, puede haber tensión oculta.', insightEn: 'Chat is divided. Mixed signals, hidden tension possible.' },
+  positive:     { emoji: '😄', label: 'POSITIVO',    labelEn: 'POSITIVE',      color: '#22c55e', bg: 'rgba(34,197,94,0.10)',    border: 'rgba(34,197,94,0.28)',    insight: 'Buen ambiente. El contenido está conectando con la gente.', insightEn: 'Good vibes. The content is connecting with people.' },
+  neutral:      { emoji: '😐', label: 'NEUTRO',      labelEn: 'NEUTRAL',       color: '#64748b', bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.22)', insight: 'Chat estable. Sin tendencia clara aún.', insightEn: 'Stable chat. No clear trend yet.' },
+  quiet:        { emoji: '😴', label: 'APAGADO',     labelEn: 'QUIET',         color: '#475569', bg: 'rgba(71,85,105,0.08)',   border: 'rgba(71,85,105,0.22)',   insight: 'Poca actividad. Un momento ideal para hacer una pregunta directa al chat.', insightEn: 'Low activity. A great time to ask chat a direct question.' },
 }
 
 export default function YouTubeLivePanel({ config = {}, updateConfig, configReady = true, user = null, darkModeOverride, platformMode = 'tiktok', tokens = 0, setTokens = null, voiceGainMap = {} }) {
@@ -798,10 +798,10 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
   const isEnglish = String(i18n?.resolvedLanguage || i18n?.language || '').toLowerCase().startsWith('en')
   const isYouTubeMode = platformMode === 'youtube'
   const platformConnectPlaceholder = isYouTubeMode ? 'Canal de YouTube (ej. @canal)' : t('tiktok.connect.placeholderWithExample')
-  const platformSessionLabel = isYouTubeMode ? 'Sesion YouTube' : t('tiktok.panel.sessionTab')
-  const emptyChatWaitingLabel = isYouTubeMode ? 'Esperando mensajes del chat en vivo de YouTube...' : 'Esperando comentarios en vivo...'
-  const emptyChatConnectTitle = isYouTubeMode ? 'Conecta tu chat de YouTube para iniciar' : t('tiktok.panel.connectToChat')
-  const emptyChatConnectHint = isYouTubeMode ? 'Escribe tu canal y presiona Conectar para comenzar.' : t('tiktok.panel.connectHint')
+  const platformSessionLabel = isYouTubeMode ? t('tiktok.panel.sessionYoutube') : t('tiktok.panel.sessionTab')
+  const emptyChatWaitingLabel = isYouTubeMode ? t('tiktok.chat.empty') : t('tiktok.chat.empty')
+  const emptyChatConnectTitle = isYouTubeMode ? t('tiktok.youtube.connectTitle') : t('tiktok.panel.connectToChat')
+  const emptyChatConnectHint = isYouTubeMode ? t('tiktok.youtube.connectHint') : t('tiktok.panel.connectHint')
   const addonExpiresAtMs = user?.subscription?.addonPack?.expiresAt ? Date.parse(user.subscription.addonPack.expiresAt) : NaN
   const addonActive = Boolean(user?.subscription?.addonPack?.active) && Number.isFinite(addonExpiresAtMs) && addonExpiresAtMs > Date.now()
   const addonPlanRaw = addonActive ? String(user?.subscription?.addonPack?.planKey || '').trim().toLowerCase() : ''
@@ -905,6 +905,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
   const [error, setError] = useState(null)
   const [copiedUsername, setCopiedUsername] = useState(null)
   const [stats, setStats] = useState({ count: 0, uptime: 0 })
+  const [viewerCount, setViewerCount] = useState(null)
   const connectedAtRef = useRef(null)
   const [donors, setDonors] = useState(new Set())
   const donorsRef = useRef(new Set())
@@ -2417,6 +2418,8 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
           }
 
         } else if (data.data && data.data.type === 'viewer_count') {
+          const vc = Number(data.data.viewerCount)
+          if (Number.isFinite(vc) && vc >= 0) setViewerCount(vc)
           if (c.announceViewers && canAnnounce('viewer_count', c.viewerCooldown || 120)) {
             const text = `Hay ${data.data.viewerCount} personas viéndote`
             queueMessage(text, 'sistema', { isNotification: true })
@@ -4222,6 +4225,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
       setShowSessionSummary(true)
       setIsConnected(false)
       setConnectedTikTokUser('')
+      setViewerCount(null)
       clearSmoothIncoming()
       youtubeSeenIdsRef.current = new Set()
       youtubeInitialBatchConsumedRef.current = false
@@ -4273,6 +4277,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
       setShowSessionSummary(true)
       setIsConnected(false)
       setConnectedTikTokUser('')
+      setViewerCount(null)
     } catch (err) {
       console.error('[TikTok] Error desconectando:', err)
     }
@@ -4512,7 +4517,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                     : 'bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-2 hover:opacity-90'}`}
                 >
                   <Youtube className="w-4 h-4" />
-                  {youtubeAuthState.authenticated ? 'YouTube autenticado' : 'Autenticar con YouTube'}
+                  {youtubeAuthState.authenticated ? t('tiktok.youtube.authenticated') : t('tiktok.youtube.authenticate')}
                 </button>
                 {youtubeAuthState.authenticated && (
                   <button
@@ -4541,7 +4546,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                   style={{ padding: '7px 12px', fontSize: '13px' }}
                 >
                   {isConnecting ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-                  {isConnecting ? 'Conectando...' : 'Conectar chat'}
+                  {isConnecting ? t('tiktok.youtube.connecting') : t('tiktok.youtube.connectChat')}
                 </button>
               </div>
             </div>
@@ -4667,7 +4672,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                         : 'bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-2 hover:opacity-90'}`}
                     >
                       <Youtube className="w-4 h-4" />
-                      {youtubeAuthState.authenticated ? 'YouTube autenticado' : 'Autenticar con YouTube'}
+                      {youtubeAuthState.authenticated ? t('tiktok.youtube.authenticated') : t('tiktok.youtube.authenticate')}
                     </button>
                     <button
                       type="submit"
@@ -4675,7 +4680,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                       className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:opacity-90 disabled:opacity-50 text-white font-semibold rounded-lg transition flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 px-3 py-2"
                     >
                       {isConnecting ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-                      {isConnecting ? 'Conectando...' : 'Conectar chat'}
+                      {isConnecting ? t('tiktok.youtube.connecting') : t('tiktok.youtube.connectChat')}
                     </button>
                   </div>
                   <div className="flex items-center gap-2">
@@ -4756,6 +4761,16 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                 {stats.uptime < 60 ? `${stats.uptime}s` : `${Math.floor(stats.uptime / 60)}m ${stats.uptime % 60}s`}
               </p>
             </div>
+            {/* Conectados */}
+            {isConnected && viewerCount !== null && (
+              <div className={`flex-1 flex flex-col justify-center gap-0.5 px-2 sm:px-4 py-2 border-r ${darkMode ? 'border-white/8' : 'border-slate-200'}`}>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <Users className={`w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 ${darkMode ? 'text-amber-400/60' : 'text-amber-500/60'}`} />
+                  <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-amber-400/60' : 'text-amber-600/70'}`}>CONECTADOS</span>
+                </div>
+                <p className={`text-lg sm:text-xl font-black tabular-nums leading-none ${darkMode ? 'text-amber-300' : 'text-amber-700'}`}>{viewerCount.toLocaleString()}</p>
+              </div>
+            )}
             {/* Emocion del chat */}
             {(() => {
               const s = chatSentiment && isConnected ? SENTIMENT_STATES[chatSentiment] : null
@@ -4767,12 +4782,12 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                   onMouseLeave={() => setShowSentimentTip(false)}
                 >
                   <div className="flex items-center gap-1">
-                    <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>EMOCIÓN</span>
+                    <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{isEnglish ? 'EMOTION' : 'EMOCIÓN'}</span>
                   </div>
                   {s ? (
                     <div className="flex items-center gap-1">
                       <span className="text-base leading-none">{s.emoji}</span>
-                      <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest leading-none hidden sm:block" style={{ color: s.color }}>{s.label}</span>
+                      <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest leading-none hidden sm:block" style={{ color: s.color }}>{isEnglish ? s.labelEn : s.label}</span>
                     </div>
                   ) : (
                     <span className={`text-base leading-none ${darkMode ? 'text-slate-600' : 'text-slate-300'}`}>—</span>
@@ -4781,9 +4796,9 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                     <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-30 px-3 py-2 rounded-lg text-xs shadow-xl border whitespace-nowrap max-w-[240px] ${
                       darkMode ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'
                     }`}>
-                      <span className="font-bold" style={{ color: s.color }}>{s.emoji} {s.label}</span>
+                      <span className="font-bold" style={{ color: s.color }}>{s.emoji} {isEnglish ? s.labelEn : s.label}</span>
                       <br />
-                      <span className={darkMode ? 'text-slate-400' : 'text-slate-500'}>{s.insight}</span>
+                      <span className={darkMode ? 'text-slate-400' : 'text-slate-500'}>{isEnglish ? s.insightEn : s.insight}</span>
                     </div>
                   )}
                 </div>
@@ -5190,7 +5205,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
               }`}
               title="Da o quita voz a alguien con un click. Actívalo y haz click en un nick del chat: lo agrega a 'leer solo lista elegida' (o se la quita si ya la tenía)."
             >
-              <Volume2 className="w-4 h-4 shrink-0" />{voiceClickArmed ? 'Elige nick…' : 'Voz x click'}
+              <Volume2 className="w-4 h-4 shrink-0" />{voiceClickArmed ? t('tiktok.controls.chooseNick') : t('tiktok.controls.voiceClick')}
             </button>
             {/* Estilo */}
             <button
@@ -5477,7 +5492,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                     {t('tiktok.summary.title')}
                   </div>
                   <h3 className={`mt-2 text-2xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                    Cierre del directo
+                    {t('tiktok.summary.streamEnd')}
                   </h3>
                   <p className={`mt-1 text-sm ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
                     {summaryTone}. {t('tiktok.summary.desc')}
@@ -5502,11 +5517,11 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                     <span className="text-3xl leading-none shrink-0">{e.emoji}</span>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[10px] uppercase tracking-[0.18em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Emocion predominante</span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: e.color, backgroundColor: e.color + '22' }}>{sessionSummary.dominantEmotionPct}% del directo</span>
+                        <span className={`text-[10px] uppercase tracking-[0.18em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t('tiktok.summary.dominantEmotion')}</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: e.color, backgroundColor: e.color + '22' }}>{sessionSummary.dominantEmotionPct}{t('tiktok.summary.ofStream')}</span>
                       </div>
-                      <p className="text-lg font-black leading-tight" style={{ color: e.color }}>{e.label}</p>
-                      <p className={`text-xs leading-snug ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{e.insight}</p>
+                      <p className="text-lg font-black leading-tight" style={{ color: e.color }}>{isEnglish ? e.labelEn : e.label}</p>
+                      <p className={`text-xs leading-snug ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{isEnglish ? e.insightEn : e.insight}</p>
                     </div>
                   </div>
                 )
@@ -5525,7 +5540,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                       return (
                         <div key={state} className="flex items-center gap-2.5">
                           <span className="text-base leading-none shrink-0 w-5 text-center">{em.emoji}</span>
-                          <span className={`text-[11px] font-bold w-20 shrink-0 truncate ${darkMode ? 'text-slate-200' : 'text-slate-700'}`} style={{ color: em.color }}>{em.label}</span>
+                          <span className={`text-[11px] font-bold w-20 shrink-0 truncate ${darkMode ? 'text-slate-200' : 'text-slate-700'}`} style={{ color: em.color }}>{isEnglish ? em.labelEn : em.label}</span>
                           <div className={`relative flex-1 h-2 rounded-full overflow-hidden ${darkMode ? 'bg-white/10' : 'bg-slate-200'}`}>
                             <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.max(2, pct)}%`, backgroundColor: em.color }} />
                           </div>
@@ -5541,7 +5556,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: t('tiktok.summary.received'), value: sessionSummary.receivedCount, icon: MessageCircle, color: 'text-cyan-300' },
-                    { label: 'Mensajes leidos', value: sessionSummary.readCount, icon: Volume2, color: 'text-emerald-300' },
+                    { label: t('tiktok.summary.read'), value: sessionSummary.readCount, icon: Volume2, color: 'text-emerald-300' },
                     { label: t('tiktok.summary.uptime'), value: sessionSummary.uptimeSeconds, icon: Clock3, color: 'text-violet-300', format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s` },
                     { label: t('tiktok.summary.peak'), value: sessionSummary.peakMessagesPerMinute, icon: TrendingUp, color: 'text-amber-300' },
                   ].map((stat) => {
@@ -5566,7 +5581,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                 <div className={`rounded-xl border p-3.5 flex flex-col gap-3 ${darkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-200'}`}>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { label: 'Porcentaje leido', value: sessionSummary.readPercentage, accent: '#22c55e' },
+                      { label: t('tiktok.summary.readPct'), value: sessionSummary.readPercentage, accent: '#22c55e' },
                       { label: t('tiktok.summary.filtered'), value: sessionSummary.filteredPercentage, accent: '#f59e0b' },
                     ].map((ring) => (
                       <div key={ring.label} className="flex flex-col items-center gap-1.5">
@@ -5586,7 +5601,7 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                   </div>
                   <div className={`border-t pt-3 grid grid-cols-2 gap-x-3 gap-y-2 ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
                     <div>
-                      <p className={`text-[10px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Usuarios unicos</p>
+                      <p className={`text-[10px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t('tiktok.summary.uniqueUsers')}</p>
                       <p className={`text-lg font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}><AnimatedCount value={sessionSummary.uniqueUsers} /></p>
                     </div>
                     <div>
@@ -5594,9 +5609,9 @@ export default function YouTubeLivePanel({ config = {}, updateConfig, configRead
                       <p className={`text-lg font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}><AnimatedCount value={sessionSummary.filteredCount} /></p>
                     </div>
                     <div className="col-span-2">
-                      <p className={`text-[10px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Usuario mas activo</p>
+                      <p className={`text-[10px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{t('tiktok.summary.mostActive')}</p>
                       <p className={`text-sm font-bold truncate ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                        {sessionSummary.mostActiveUser ? `${sessionSummary.mostActiveUser.username} (${sessionSummary.mostActiveUser.count})` : 'Sin datos'}
+                        {sessionSummary.mostActiveUser ? `${sessionSummary.mostActiveUser.username} (${sessionSummary.mostActiveUser.count})` : t('tiktok.summary.noData')}
                       </p>
                     </div>
                   </div>

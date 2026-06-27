@@ -9,10 +9,10 @@
     "enterStudio": "Entrar al Studio",
     "backToStudio": "Volver al Studio",
     "hero": {
-      "badge": "Plataforma #1 para TikTok LIVE",
+      "badge": "🚀 Plataforma #1 para TikTok & YouTube LIVE",
       "title": "Tu LIVE ya no sonará",
       "titleHighlight": "genérico",
-      "subtitle": "Dale voz a tu chat de TikTok LIVE con personajes en vivo y crea una experiencia única.",
+      "subtitle": "Dale voz con IA a tu chat de TikTok y YouTube LIVE. Personajes reales, interacción real, cero esfuerzo.",
       "ctaStart": "Comenzar Gratis",
       "ctaWatch": "Ver Demo",
       "statsUsers": "Creadores activos",
@@ -20,26 +20,26 @@
       "statsUptime": "Uptime garantizado",
       "viewPlans": "Ver Planes",
       "tags": [
-        "🎭 Tu personaje famoso leyendo comentarios",
-        "🎙️ Narrador gracioso reaccionando",
-        "🧌 Voz troll para donaciones"
+        "🎮 Compatible con TikTok y YouTube LIVE",
+        "🎙️ Voces con IA que reaccionan a tu chat",
+        "🎭 Personajes únicos por tipo de viewer"
       ]
     },
     "features": {
       "title": "Todo lo que necesitas para",
       "titleHighlight": "dominar tu LIVE",
       "aiVoice": "Voz por IA en tiempo real",
-      "aiVoiceDesc": "Lee comentarios del chat con voces naturales premium. Sin delays, sin interrupciones.",
+      "aiVoiceDesc": "Lee comentarios de TikTok y YouTube con voces naturales premium. Sin delays, sin interrupciones.",
       "smartFilter": "Filtro inteligente de chat",
-      "smartFilterDesc": "Filtra spam y prioriza los comentarios más relevantes automáticamente.",
+      "smartFilterDesc": "Filtra spam y prioriza los comentarios más relevantes automáticamente en cualquier plataforma.",
       "multiVoice": "Múltiples voces",
-      "multiVoiceDesc": "Asigna voces diferentes según el tipo de usuario: donadores, moderadores, followers.",
+      "multiVoiceDesc": "Asigna voces diferentes según el tipo de usuario: donadores, moderadores, suscriptores.",
       "voiceClone": "Clonación de voz",
       "voiceCloneDesc": "Crea tu propia voz personalizada con IA en minutos.",
       "analytics": "Analíticas en tiempo real",
-      "analyticsDesc": "Monitorea mensajes, tokens usados y rendimiento de tu stream.",
-      "multiLang": "Multiidioma",
-      "multiLangDesc": "Soporte para múltiples idiomas y configuraciones regionales."
+      "analyticsDesc": "Monitorea mensajes, tokens usados y rendimiento en TikTok o YouTube.",
+      "multiLang": "TikTok & YouTube",
+      "multiLangDesc": "Soporte completo para TikTok LIVE y YouTube LIVE en una sola plataforma."
     },
     "testimonials": {
       "title": "Lo que dicen nuestros",
@@ -53,10 +53,10 @@
           "stars": 5
         },
         {
-          "name": "@sofiaart",
-          "type": "TikTok Creator Art",
-          "benefit": "🤝 Tu chat trabaja por ti",
-          "text": "No tengo que estar leyendo comentarios todo el tiempo. Stream Voicer los procesa, destaca los mejores y mantiene la conversación fluida. Yo solo me concentro en crear contenido y el chat se cuida solo.",
+          "name": "@sofiaart_yt",
+          "type": "YouTube Creator Arte",
+          "benefit": "🤝 Funciona igual de bien en YouTube",
+          "text": "Conecté mi canal de YouTube y en minutos mi chat ya estaba siendo leído con voces. No tengo que estar leyendo comentarios todo el tiempo. Stream Voicer mantiene la conversación solo.",
           "stars": 5
         },
         {
@@ -67,24 +67,24 @@
           "stars": 5
         },
         {
-          "name": "@dianabeauty_tk",
-          "type": "TikTok Creator Belleza",
-          "benefit": "💬 Convierte mensajes en participación",
-          "text": "Cada comentario que llega se convierte en una participación real. Ya no es solo \"jeje\" abajo, ahora los comentarios generan conversación. Mi comunidad se siente escuchada y eso atrae más personas al Live.",
+          "name": "@dianabeauty_yt",
+          "type": "YouTube Creator Belleza",
+          "benefit": "💬 Superchats y comentarios con voz",
+          "text": "Hago stream en YouTube y la integración fue perfecta. Cada superchat y comentario se lee con una voz real. Mi comunidad se siente escuchada y eso hace que la gente se quede más tiempo viendo.",
           "stars": 5
         },
         {
           "name": "@javierstreamer22",
           "type": "TikTok Creator Competitivo",
           "benefit": "🏆 Destaca a tus seguidores y donadores",
-          "text": "El sistema automáticamente reconoce a mis followers y donadores. No tengo que perder tiempo dándoles shout-outs manuales. Ellos se sienten valorados naturalmente y eso me genera más donaciones y suscripciones.",
+          "text": "El sistema automáticamente reconoce a mis followers y donadores tanto en TikTok como en YouTube. Ellos se sienten valorados naturalmente y eso me genera más donaciones y suscripciones.",
           "stars": 5
         },
         {
           "name": "@mariacomedy_tk",
           "type": "TikTok Creator Comedia",
-          "benefit": "🎬 Haz tu stream dinámico sin hablar más",
-          "text": "Mi Live es mucho más dinámico y entretenido sin que tenga que estar hablando todo el tiempo para mantener atención. El chat está tan activo y valorado que la gente viene por la comunidad, no solo por mí.",
+          "benefit": "🎬 Una herramienta, dos plataformas",
+          "text": "Alterno entre TikTok y YouTube según el día, y Stream Voicer funciona en las dos. Mi Live es mucho más dinámico y no tengo que usar herramientas distintas para cada plataforma.",
           "stars": 5
         }
       ]
@@ -101,7 +101,7 @@
         {
           "icon": "❓",
           "q": "¿Cómo funciona Stream Voicer?",
-          "a": "Stream Voicer lee en tiempo real los mensajes de tu chat de TikTok LIVE y los reproduce con voz para mantener interacción constante en tu stream."
+          "a": "Stream Voicer lee en tiempo real los mensajes de tu chat de TikTok LIVE o YouTube LIVE y los reproduce con voz IA para mantener interacción constante en tu stream."
         },
         {
           "icon": "❓",
@@ -150,7 +150,12 @@
         },
         {
           "icon": "❓",
-          "q": "¿Es seguro conectar mi TikTok?",
+          "q": "¿También funciona con YouTube LIVE?",
+          "a": "Sí. Stream Voicer soporta tanto TikTok LIVE como YouTube LIVE. Puedes cambiar de plataforma desde el studio en cualquier momento."
+        },
+        {
+          "icon": "❓",
+          "q": "¿Es seguro conectar mi TikTok o YouTube?",
           "a": "Sí. Solo se usa el acceso necesario para leer la actividad pública de tu LIVE. No compartimos tus datos con terceros."
         },
         {
@@ -282,7 +287,7 @@
         "icon": "❓",
         "title": "Preparado para Streaming en Vivo",
         "subtitle": "Funciona donde lo necesitas.",
-        "description": "Optimizado para TikTok LIVE y flujos en tiempo real."
+        "description": "Compatible con TikTok LIVE y YouTube LIVE en tiempo real."
       },
       {
         "icon": "❓",
@@ -295,7 +300,7 @@
       {
         "step": "1",
         "title": "Conecta tu canal",
-        "description": "Vincula tu cuenta de TikTok o YouTube en segundos"
+        "description": "Conecta tu TikTok LIVE o YouTube LIVE en segundos"
       },
       {
         "step": "2",
@@ -551,6 +556,7 @@
     "panel": {
       "title": "Tiktok Live Chat",
       "sessionTab": "Sesion",
+      "sessionYoutube": "Sesion YouTube",
       "helpBtn": "AYUDA",
       "disconnected": "DESCONECTADO",
       "waitingLive": "ESPERANDO LIVE",
@@ -594,7 +600,17 @@
       "styleTitle": "Tamaño y colores del chat",
       "nicks": "Nicks",
       "nicksTitle": "Ver y editar nicks guardados",
-      "chatStyle": "Estilo de chat"
+      "chatStyle": "Estilo de chat",
+      "voiceClick": "Voz x click",
+      "chooseNick": "Elige nick…"
+    },
+    "youtube": {
+      "authenticated": "YouTube autenticado",
+      "authenticate": "Autenticar con YouTube",
+      "connectChat": "Conectar chat",
+      "connecting": "Conectando...",
+      "connectTitle": "Conecta tu chat de YouTube para iniciar",
+      "connectHint": "Escribe tu canal y presiona Conectar para comenzar."
     },
     "highlight": {
       "byType": "Remarcar por tipo",
@@ -605,9 +621,17 @@
       "title": "Resumen premium",
       "desc": "Asi se movio tu chat en esta sesion.",
       "received": "Mensajes recibidos",
+      "read": "Mensajes leidos",
       "uptime": "Tiempo de transmision",
       "peak": "Pico mensajes/min",
       "filtered": "Mensajes filtrados",
+      "readPct": "Porcentaje leido",
+      "uniqueUsers": "Usuarios unicos",
+      "mostActive": "Usuario mas activo",
+      "noData": "Sin datos",
+      "streamEnd": "Cierre del directo",
+      "dominantEmotion": "Emocion predominante",
+      "ofStream": "% del directo",
       "close": "Cerrar resumen"
     },
     "faq": {
@@ -926,7 +950,9 @@
       "onlySubs": "Leer solo suscriptores",
       "onlySubsHint": "Solo lee usuarios suscritos al creador del live",
       "onlyCommunity": "Filtro de miembros de comunidad",
-      "onlyCommunityHint": "Solo lee usuarios Fan o SuperFan del LIVE bajo el mismo filtro de comunidad"
+      "onlyCommunityHint": "Solo lee usuarios Fan o SuperFan del LIVE bajo el mismo filtro de comunidad",
+      "onlyAllowedList": "Leer solo lista elegida",
+      "onlyAllowedListHint": "Solo lee mensajes de los usuarios que agregues a la lista. Ignora a todos los demás."
     },
     "voiceSection": {
       "title": "Voces",
@@ -1299,6 +1325,11 @@
       "example": "(ejemplo)",
       "custom": "?"
     }
+  },
+  "platformPopup": {
+    "title": "¿Con qué plataforma quieres empezar?",
+    "subtitle": "Podrás cambiar en cualquier momento desde el studio.",
+    "remember": "Recordar mi elección la próxima vez"
   },
   "common": {
     "loading": "Cargando...",

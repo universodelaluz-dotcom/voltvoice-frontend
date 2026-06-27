@@ -9,10 +9,10 @@
     "enterStudio": "Enter Studio",
     "backToStudio": "Back to Studio",
     "hero": {
-      "badge": "🚀 #1 Platform for TikTok LIVE",
+      "badge": "🚀 #1 Platform for TikTok & YouTube LIVE",
       "title": "Your LIVE will never sound",
       "titleHighlight": "generic",
-      "subtitle": "Give voice to your TikTok LIVE chat with live characters and create a unique experience.",
+      "subtitle": "Give AI voice to your TikTok and YouTube LIVE chat. Real characters, real interaction, zero effort.",
       "ctaStart": "Start Free",
       "ctaWatch": "Watch Demo",
       "statsUsers": "Active creators",
@@ -20,26 +20,26 @@
       "statsUptime": "Guaranteed uptime",
       "viewPlans": "View Plans",
       "tags": [
-        "🎮 Your famous character reading comments",
-        "😂 Funny narrator reacting",
-        "😈 Troll voice for donations"
+        "🎮 TikTok & YouTube LIVE ready",
+        "😂 AI voices that react to your chat",
+        "😈 Unique characters per viewer type"
       ]
     },
     "features": {
       "title": "Everything you need to",
       "titleHighlight": "dominate your LIVE",
       "aiVoice": "Real-time AI Voice",
-      "aiVoiceDesc": "Reads chat comments with premium natural voices. No delays, no interruptions.",
+      "aiVoiceDesc": "Reads TikTok and YouTube chat comments with premium natural voices. No delays, no interruptions.",
       "smartFilter": "Smart chat filter",
-      "smartFilterDesc": "Filters spam and prioritizes the most relevant comments automatically.",
+      "smartFilterDesc": "Filters spam and prioritizes the most relevant comments automatically on any platform.",
       "multiVoice": "Multiple voices",
-      "multiVoiceDesc": "Assign different voices based on user type: donors, moderators, followers.",
+      "multiVoiceDesc": "Assign different voices based on user type: donors, moderators, subscribers.",
       "voiceClone": "Voice cloning",
       "voiceCloneDesc": "Create your own personalized AI voice in minutes.",
       "analytics": "Real-time analytics",
-      "analyticsDesc": "Monitor messages, tokens used and stream performance.",
-      "multiLang": "Multilanguage",
-      "multiLangDesc": "Support for multiple languages and regional settings."
+      "analyticsDesc": "Monitor messages, tokens used and stream performance on TikTok or YouTube.",
+      "multiLang": "TikTok & YouTube",
+      "multiLangDesc": "Full support for TikTok LIVE and YouTube LIVE in one single platform."
     },
     "testimonials": {
       "title": "What our",
@@ -47,44 +47,44 @@
       "items": [
         {
           "name": "@alexgamertok",
-          "type": "TikTok Creator Gaming",
+          "type": "TikTok Gaming Creator",
           "benefit": "🟢 Your stream never dies",
           "text": "Before, if I stayed quiet for 30 seconds the Live would die alone. With Stream Voicer the chat has a life of its own: viewers read, comment and stay even when I'm focused on the game.",
           "stars": 5
         },
         {
-          "name": "@sofiaart",
-          "type": "TikTok Creator Art",
+          "name": "@sofiaart_yt",
+          "type": "YouTube Creator Art",
           "benefit": "💬 Your chat works for you",
-          "text": "I don't have to be reading comments all the time. Stream Voicer processes them, highlights the best ones and keeps the conversation flowing. I just focus on creating content and the chat takes care of itself.",
+          "text": "I connected my YouTube channel and in minutes my chat was already being read with voices. I don't have to be reading comments all the time. Stream Voicer keeps the conversation flowing on its own.",
           "stars": 5
         },
         {
           "name": "@carlosmusica.live",
-          "type": "TikTok Creator Music",
+          "type": "TikTok Music Creator",
           "benefit": "⚡ More interaction without more effort",
           "text": "My Lives now have 3x more engagement without me doing anything different. People comment more because they know their messages will be valued. It's incredible how much interaction it generates without extra effort.",
           "stars": 5
         },
         {
-          "name": "@dianabeauty_tk",
-          "type": "TikTok Creator Beauty",
-          "benefit": "🎯 Turn messages into participation",
-          "text": "Every comment that arrives turns into real participation. It's no longer just \"lol\" at the bottom, now comments generate conversation. My community feels heard and that attracts more people to the Live.",
+          "name": "@dianabeauty_yt",
+          "type": "YouTube Beauty Creator",
+          "benefit": "🎯 Works perfectly on YouTube too",
+          "text": "I stream on YouTube and the integration was seamless. Every superchat and comment gets read with a real voice. My community feels heard and that keeps people watching longer.",
           "stars": 5
         },
         {
           "name": "@javierstreamer22",
-          "type": "TikTok Creator Competitive",
+          "type": "TikTok Competitive Creator",
           "benefit": "⭐ Highlight your followers and donors",
-          "text": "The system automatically recognizes my followers and donors. I don't have to waste time giving them manual shout-outs. They feel valued naturally and that generates more donations and subscriptions for me.",
+          "text": "The system automatically recognizes my followers and donors across TikTok and YouTube. They feel valued naturally and that generates more donations and subscriptions for me.",
           "stars": 5
         },
         {
           "name": "@mariacomedy_tk",
-          "type": "TikTok Creator Comedy",
-          "benefit": "🚀 Make your stream dynamic without talking more",
-          "text": "My Live is much more dynamic and entertaining without having to be talking all the time to keep attention. The chat is so active and valued that people come for the community, not just for me.",
+          "type": "TikTok Comedy Creator",
+          "benefit": "🚀 One tool, two platforms",
+          "text": "I switch between TikTok and YouTube depending on the day, and Stream Voicer works on both. My Live is much more dynamic and I don't have to use different tools for each platform.",
           "stars": 5
         }
       ]
@@ -101,7 +101,7 @@
         {
           "icon": "?",
           "q": "How does Stream Voicer work?",
-          "a": "Stream Voicer reads your TikTok LIVE chat messages in real time and plays them with voice to keep interaction constant in your stream."
+          "a": "Stream Voicer reads your TikTok LIVE or YouTube LIVE chat messages in real time and plays them with AI voice to keep interaction constant in your stream."
         },
         {
           "icon": "?",
@@ -150,7 +150,12 @@
         },
         {
           "icon": "?",
-          "q": "Is connecting my TikTok safe?",
+          "q": "Does it work with YouTube LIVE too?",
+          "a": "Yes. Stream Voicer supports both TikTok LIVE and YouTube LIVE. You can switch between platforms from the studio at any time."
+        },
+        {
+          "icon": "?",
+          "q": "Is connecting my TikTok or YouTube safe?",
           "a": "Yes. Only the access required to read public activity from your LIVE is used. We do not share your data with third parties."
         },
         {
@@ -282,7 +287,7 @@
         "icon": "🎮",
         "title": "Ready for Live Streaming",
         "subtitle": "Works where you need it.",
-        "description": "Optimized for TikTok LIVE and real-time flows."
+        "description": "Compatible with TikTok LIVE and YouTube LIVE in real time."
       },
       {
         "icon": "🔒",
@@ -295,7 +300,7 @@
       {
         "step": "1",
         "title": "Connect your channel",
-        "description": "Link your TikTok or YouTube account in seconds"
+        "description": "Connect your TikTok LIVE or YouTube LIVE in seconds"
       },
       {
         "step": "2",
@@ -551,6 +556,7 @@
     "panel": {
       "title": "TikTok LIVE in Real Time",
       "sessionTab": "Session",
+      "sessionYoutube": "YouTube Session",
       "helpBtn": "HELP",
       "disconnected": "DISCONNECTED",
       "waitingLive": "WAITING FOR LIVE",
@@ -594,7 +600,17 @@
       "styleTitle": "Chat size and colors",
       "nicks": "Nicks",
       "nicksTitle": "View and edit saved nicks",
-      "chatStyle": "Chat Style"
+      "chatStyle": "Chat Style",
+      "voiceClick": "Voice x click",
+      "chooseNick": "Choose nick…"
+    },
+    "youtube": {
+      "authenticated": "YouTube authenticated",
+      "authenticate": "Authenticate with YouTube",
+      "connectChat": "Connect chat",
+      "connecting": "Connecting...",
+      "connectTitle": "Connect your YouTube chat to start",
+      "connectHint": "Enter your channel and press Connect to begin."
     },
     "highlight": {
       "byType": "Highlight by type",
@@ -605,9 +621,17 @@
       "title": "Premium summary",
       "desc": "Here's how your chat moved this session.",
       "received": "Messages received",
+      "read": "Messages read",
       "uptime": "Broadcast time",
       "peak": "Peak msgs/min",
       "filtered": "Filtered messages",
+      "readPct": "Read percentage",
+      "uniqueUsers": "Unique users",
+      "mostActive": "Most active user",
+      "noData": "No data",
+      "streamEnd": "Stream summary",
+      "dominantEmotion": "Dominant emotion",
+      "ofStream": "% of stream",
       "close": "Close summary"
     },
     "faq": {
@@ -926,7 +950,9 @@
       "onlySubs": "Read subscribers only",
       "onlySubsHint": "Only reads users subscribed to the live creator",
       "onlyCommunity": "Community members filter",
-      "onlyCommunityHint": "Only reads Fan or SuperFan users of the LIVE under the same community filter"
+      "onlyCommunityHint": "Only reads Fan or SuperFan users of the LIVE under the same community filter",
+      "onlyAllowedList": "Read selected list only",
+      "onlyAllowedListHint": "Only reads messages from users you add to the list. Ignores everyone else."
     },
     "voiceSection": {
       "title": "Voices",
@@ -1299,6 +1325,11 @@
       "example": "(example)",
       "custom": "✓"
     }
+  },
+  "platformPopup": {
+    "title": "Which platform do you want to start with?",
+    "subtitle": "You can switch at any time from the studio.",
+    "remember": "Remember my choice next time"
   },
   "common": {
     "loading": "Loading...",

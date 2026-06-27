@@ -164,6 +164,7 @@ export function YouTubeStudioApp() {
   const [selectedPaymentPackage, setSelectedPaymentPackage] = useState(350000)
   const [selectedCheckoutItem, setSelectedCheckoutItem] = useState(null)
   const [paymentNotice, setPaymentNotice] = useState(null)
+  const [authReady, setAuthReady] = useState(false)
   const isLocalDevHost = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname)
   const isAdminPreview = (() => {
     if (typeof window === 'undefined') return false
@@ -204,6 +205,7 @@ export function YouTubeStudioApp() {
     const nextToken = getStoredToken()
     setAuthToken(nextToken)
     setUser(getStoredUser())
+    setAuthReady(true)
   }, [])
 
   useEffect(() => {
@@ -395,6 +397,10 @@ export function YouTubeStudioApp() {
       </div>
     </div>
   ) : null
+
+  if (!authReady) {
+    return <div className={shellBg}>{header}</div>
+  }
 
   if (!loggedIn) {
     return (

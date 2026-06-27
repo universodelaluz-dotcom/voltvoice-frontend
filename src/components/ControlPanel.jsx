@@ -1074,8 +1074,8 @@ export function ControlPanel({ onClose, onGoAIRoleplay, onGoSynthesis, darkMode,
                         {onlyAllowedUsers && <Check className="w-4 h-4 text-white" />}
                       </div>
                       <span className={`text-[15px] ${darkMode ? 'text-white' : 'text-slate-800'} ${onlyAllowedUsers ? 'font-semibold' : 'font-medium'}`}>
-                        Leer solo lista elegida
-                        <Hint text="Solo lee mensajes de los usuarios que agregues a la lista. Ignora a todos los demás." darkMode={darkMode} />
+                        {t('control.reading.onlyAllowedList')}
+                        <Hint text={t('control.reading.onlyAllowedListHint')} darkMode={darkMode} />
                       </span>
                       {allowedUsersList.length > 0 && <span className={`ml-auto text-xs font-semibold ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>{allowedUsersList.length}</span>}
                     </button>

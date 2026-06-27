@@ -154,6 +154,7 @@ const DEFAULT_CONFIG = {
   variedVoicesEnabled: false,
   variedVoicesSelected: [],
   configUpdatedAt: 0,
+  preferredPlatform: null,
 }
 
 const normalizeHighlightedUsers = (value) => {
@@ -644,6 +645,9 @@ export function App() {
   const [user, setUser] = useState(null)
   const [authToken, setAuthToken] = useState(null)
   const [tokens, setTokens] = useState(100)
+  const [platformMode, setPlatformMode] = useState(() => localStorage.getItem('sv-preferred-platform') || null)
+  const [showPlatformPopup, setShowPlatformPopup] = useState(false)
+  const [platformPopupRemember, setPlatformPopupRemember] = useState(true)
   const isLocalDevBypass = false // Desactivado para requerir login en local
   const canOpenStudioWithoutAuth = Boolean(user) || isLocalDevBypass
 
@@ -870,6 +874,13 @@ export function App() {
         const mergedConfig = normalizeUserConfig(mergedRaw)
         setConfig(mergedConfig)
         setDarkMode(mergedConfig.themeMode !== 'light')
+        if (mergedConfig.preferredPlatform && (mergedConfig.preferredPlatform === 'tiktok' || mergedConfig.preferredPlatform === 'youtube')) {
+          setPlatformMode(mergedConfig.preferredPlatform)
+          localStorage.setItem('sv-preferred-platform', mergedConfig.preferredPlatform)
+          setShowPlatformPopup(false)
+        } else if (!localStorage.getItem('sv-preferred-platform')) {
+          setShowPlatformPopup(true)
+        }
         if (hasRemoteConfig && preferCached && Object.keys(cachedConfigRaw).length > 0) {
           // Backfill asíncrono: solo si local es mas reciente que remoto.
           persistConfigNow(token, mergedConfig).catch(() => {})
@@ -1017,6 +1028,15 @@ export function App() {
       })
       .catch(() => {})
     setCurrentPage('studio')
+  }
+
+  const handlePlatformSelect = (platform, remember) => {
+    setPlatformMode(platform)
+    setShowPlatformPopup(false)
+    if (remember) {
+      localStorage.setItem('sv-preferred-platform', platform)
+      updateConfig({ preferredPlatform: platform })
+    }
   }
 
   const handleAssumeTestUser = (userData, token) => {
@@ -1282,7 +1302,10 @@ export function App() {
   }, [currentPage, canOpenStudioWithoutAuth])
 
   // Guard global: nunca permitir vistas privadas sin sesión válida.
+  // Espera a configReady=true para no dispararse antes de que la restauración
+  // de sesión (async desde localStorage/backend) haya terminado.
   useEffect(() => {
+    if (!configReady) return
     const privatePages = new Set(['studio', 'control-panel', 'statistics', 'admin', 'voice-workshop', 'ai-roleplay'])
     if (!privatePages.has(currentPage)) return
     if (canOpenStudioWithoutAuth) return
@@ -1294,7 +1317,7 @@ export function App() {
         : 'Para entrar al Studio debes iniciar sesión con tu cuenta.'
     })
     setCurrentPage('auth')
-  }, [currentPage, canOpenStudioWithoutAuth])
+  }, [currentPage, canOpenStudioWithoutAuth, configReady])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -1802,9 +1825,44 @@ export function App() {
   // Studio + Voice Workshop + paneles secundarios: todos en el mismo bloque con display:none/block
   // para que SynthesisStudio nunca se desmonte (manteniendo el WebSocket de TikTok vivo al navegar a voice-workshop)
   if (['studio', 'control-panel', 'statistics', 'admin', 'voice-workshop'].includes(currentPage)) {
+    const effectivePlatform = platformMode || 'tiktok'
     return (
       <>
         {paymentNoticeBanner}
+        {/* Popup de selección de plataforma */}
+        {showPlatformPopup && currentPage === 'studio' && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+            <div className={`w-full max-w-sm rounded-2xl border p-6 shadow-2xl ${darkMode ? 'bg-[#0f1122] border-cyan-400/30 text-white' : 'bg-white border-slate-200 text-gray-900'}`}>
+              <h2 className="text-xl font-black text-center mb-1">{t('platformPopup.title')}</h2>
+              <p className={`text-sm text-center mb-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('platformPopup.subtitle')}</p>
+              <div className="flex gap-3 mb-5">
+                <button
+                  onClick={() => handlePlatformSelect('tiktok', platformPopupRemember)}
+                  className="flex-1 flex flex-col items-center gap-2 py-4 rounded-xl border-2 border-pink-500 bg-gradient-to-br from-pink-600/20 to-pink-500/10 hover:from-pink-600/40 hover:to-pink-500/30 transition-all font-bold text-pink-400"
+                >
+                  <svg viewBox="0 0 24 24" className="w-8 h-8 fill-current"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.84 4.84 0 0 1-1.01-.07z"/></svg>
+                  TikTok
+                </button>
+                <button
+                  onClick={() => handlePlatformSelect('youtube', platformPopupRemember)}
+                  className="flex-1 flex flex-col items-center gap-2 py-4 rounded-xl border-2 border-red-500 bg-gradient-to-br from-red-600/20 to-red-500/10 hover:from-red-600/40 hover:to-red-500/30 transition-all font-bold text-red-400"
+                >
+                  <svg viewBox="0 0 24 24" className="w-8 h-8 fill-current"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                  YouTube
+                </button>
+              </div>
+              <label className={`flex items-center gap-2 text-sm cursor-pointer select-none ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                <input
+                  type="checkbox"
+                  checked={platformPopupRemember}
+                  onChange={e => setPlatformPopupRemember(e.target.checked)}
+                  className="w-4 h-4 accent-cyan-500"
+                />
+                {t('platformPopup.remember')}
+              </label>
+            </div>
+          </div>
+        )}
         <Suspense fallback={LAZY_FALLBACK}>
           <div style={{ display: currentPage === 'studio' ? 'block' : 'none' }}>
             <SynthesisStudio
@@ -1820,6 +1878,8 @@ export function App() {
               updateConfig={updateConfig}
               configReady={configReady}
               user={user}
+              platformMode={effectivePlatform}
+              onSwitchPlatform={(p) => { setPlatformMode(p); if (localStorage.getItem('sv-preferred-platform')) { localStorage.setItem('sv-preferred-platform', p); updateConfig({ preferredPlatform: p }) } }}
             />
           </div>
           <div style={{ display: currentPage === 'control-panel' ? 'block' : 'none' }}>
@@ -1977,7 +2037,7 @@ export function App() {
           <div className="mb-2 md:mb-3 flex justify-center">
             <img
               src="/images/streamvoicer6.png"
-              alt={isEnglish ? 'StreamVoicer - TikTok Live chat reader with AI voice' : 'StreamVoicer - Lector de chat para TikTok Live con voz IA'}
+              alt={isEnglish ? 'StreamVoicer - TikTok & YouTube Live chat reader with AI voice' : 'StreamVoicer - Lector de chat para TikTok y YouTube Live con voz IA'}
               fetchPriority="high"
               decoding="async"
               className="w-full max-w-4xl h-auto object-contain opacity-90"
